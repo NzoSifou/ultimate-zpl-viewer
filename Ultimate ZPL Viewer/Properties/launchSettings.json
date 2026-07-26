@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Ultimate ZPL Viewer (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Ultimate ZPL Viewer (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

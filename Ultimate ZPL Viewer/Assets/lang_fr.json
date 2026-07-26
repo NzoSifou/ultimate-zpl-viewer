@@ -1,0 +1,1808 @@
+{
+  "language": "fr",
+  "displayName": "Français",
+  "titlebar": {
+    "untitled": "Sans titre",
+    "settings": "Paramètres",
+    "tooltipSettings": "Paramètres",
+    "tooltipShowToolbar": "Afficher la barre d'outils",
+    "tooltipHideToolbar": "Masquer la barre d'outils",
+    "tooltipFullscreen": "Plein écran",
+    "tooltipBack": "Retour"
+  },
+  "toolbar": {
+    "newFile": "Nouveau fichier",
+    "openFile": "Ouvrir un fichier",
+    "save": "Enregistrer",
+    "saveAs": "Enregistrer sous…",
+    "recentEmpty": "Aucun fichier récent",
+    "recentClear": "Effacer la liste",
+    "density": "Densité :",
+    "size": "Taille :",
+    "rotate": "Tourner",
+    "print": "Imprimer",
+    "pdf": "PDF",
+    "png": "PNG",
+    "zoomOut": "Zoom arrière (−10 %, maintenir pour accélérer)",
+    "zoomIn": "Zoom avant (+10 %, maintenir pour accélérer)",
+    "zoomReset": "Réinitialiser le zoom (100 %)",
+    "widthTooLarge": "La largeur dépasse 50 cm : l'aperçu est limité à 50 cm.",
+    "heightTooLarge": "La hauteur dépasse 50 cm : l'aperçu est limité à 50 cm."
+  },
+  "editor": {
+    "shortDescription": {
+      "A": "Définir la police du champ (par nom)",
+      "A@": "Définir la police du champ (par chemin)",
+      "B0": "Code-barres Aztec",
+      "B1": "Code-barres Code 11",
+      "B2": "Code-barres Interleaved 2 of 5",
+      "B3": "Code-barres Code 39",
+      "B4": "Code-barres Code 49",
+      "B5": "Code-barres Planet Code",
+      "B7": "Code-barres PDF417",
+      "B8": "Code-barres EAN-8",
+      "B9": "Code-barres UPC-E",
+      "BA": "Code-barres Code 93",
+      "BB": "Code-barres Codablock",
+      "BC": "Code-barres Code 128",
+      "BD": "Code-barres UPS MaxiCode",
+      "BE": "Code-barres EAN-13",
+      "BF": "Code-barres MicroPDF417",
+      "BI": "Code-barres Industrial 2 of 5",
+      "BJ": "Code-barres Standard 2 of 5",
+      "BK": "Code-barres ANSI Codabar",
+      "BL": "Code-barres LOGMARS",
+      "BM": "Code-barres MSI",
+      "BO": "Code-barres Aztec",
+      "BP": "Code-barres Plessey",
+      "BQ": "Code-barres QR Code (modèle 2 uniquement ; ni mode mixte ni Kanji)",
+      "BR": "Code-barres GS1 DataBar (RSS)",
+      "BS": "Extension UPC/EAN",
+      "BT": "Code-barres TLC 39",
+      "BU": "Code-barres UPC-A",
+      "BX": "Code-barres Data Matrix (qualité 200 uniquement)",
+      "BY": "Paramètres par défaut des codes-barres",
+      "BZ": "Code-barres postal",
+      "CC": "Changer le caractère de commande (caret)",
+      "CD": "Changer le caractère délimiteur",
+      "CF": "Changer la police par défaut",
+      "CI": "Changer l'encodage (jeux de caractères 0-13, 15, 27, 28, 31, 33-36 uniquement)",
+      "CM": "Réaffecter les lettres de mémoire",
+      "CN": "Couper maintenant",
+      "CO": "Activer le cache de police",
+      "CP": "Retirer l'étiquette",
+      "CT": "Changer le caractère tilde",
+      "CV": "Validation de code (préférez le linter Labelary)",
+      "CW": "Définir l'identifiant de police",
+      "~DB": "Télécharger une police bitmap",
+      "~DE": "Télécharger un encodage",
+      "DF": "Télécharger un format",
+      "~DG": "Télécharger un graphique",
+      "~DN": "Interrompre le téléchargement de graphique",
+      "~DS": "Télécharger une police vectorielle",
+      "~DT": "Télécharger une police TrueType",
+      "~DU": "Télécharger une police TrueType non bornée",
+      "~DY": "Télécharger des objets (extensions G, B, P et T uniquement)",
+      "EG": "Effacer tous les graphiques",
+      "FB": "Bloc de champ",
+      "FC": "Horloge du champ",
+      "FD": "Données du champ",
+      "FE": "Caractère d'insertion des données du champ",
+      "FH": "Indicateur hexadécimal du champ",
+      "FL": "Liaison de police",
+      "FM": "Origines multiples du champ",
+      "FN": "Numéro de champ",
+      "FO": "Origine du champ",
+      "FP": "Paramètre du champ",
+      "FR": "Impression inversée du champ",
+      "FS": "Séparateur de champ",
+      "FT": "Composition du champ",
+      "FV": "Variable du champ",
+      "FW": "Orientation du champ",
+      "FX": "Commentaire",
+      "GB": "Boîte graphique",
+      "GC": "Cercle graphique",
+      "GD": "Ligne diagonale graphique",
+      "GE": "Ellipse graphique",
+      "GF": "Champ graphique",
+      "GS": "Symbole graphique",
+      "~HB": "État de la batterie",
+      "~HD": "Diagnostic de la tête d'impression",
+      "HF": "Format hôte",
+      "HG": "Graphique hôte",
+      "HH": "Renvoi de l'étiquette de configuration",
+      "~HI": "Identification de l'hôte",
+      "HL": "Envoyer le journal RFID à l'hôte",
+      "~HM": "État de la mémoire vive de l'hôte",
+      "~HQ": "Requête hôte",
+      "HR": "Calibrer la position de l'étiquette RFID",
+      "~HS": "Renvoi de l'état de l'hôte",
+      "HT": "Liste des polices liées à l'hôte",
+      "~HU": "Configuration des alertes de l'hôte",
+      "HV": "Vérification hôte",
+      "HW": "Liste du répertoire de l'hôte",
+      "HY": "Charger un graphique vers l'hôte",
+      "HZ": "Afficher les informations de description",
+      "ID": "Supprimer un objet",
+      "IL": "Charger une image",
+      "IM": "Déplacer une image",
+      "IS": "Enregistrer une image",
+      "~JA": "Tout annuler",
+      "JB": "Initialiser la mémoire flash",
+      "~JB": "Réinitialiser la mémoire optionnelle",
+      "~JC": "Régler le calibrage du capteur de support",
+      "~JD": "Activer le diagnostic des communications",
+      "~JE": "Désactiver le diagnostic des communications",
+      "~JF": "Régler le comportement en cas de batterie faible",
+      "~JG": "Calibrage graphique des capteurs",
+      "JH": "Régler les alertes de préavis",
+      "JI": "Démarrer ZBI",
+      "JJ": "Configurer le port auxiliaire",
+      "~JL": "Régler la longueur de l'étiquette",
+      "JM": "Régler la densité d'impression",
+      "~JN": "Test de tête fatal",
+      "~JO": "Test de tête non fatal",
+      "~JP": "Suspendre et annuler le format",
+      "~JQ": "Arrêter ZBI",
+      "~JR": "Réinitialisation à la mise sous tension",
+      "JS": "Sélection des capteurs",
+      "~JS": "Modifier la séquence de recul",
+      "JT": "Régler l'intervalle du test de tête",
+      "JU": "Mettre à jour la configuration",
+      "JW": "Régler la tension du ruban",
+      "~JX": "Annuler le format en cours",
+      "JZ": "Réimprimer après une erreur",
+      "~KB": "Décharger la batterie",
+      "KC": "Définir l'identifiant client DHCP",
+      "KD": "Choisir le format de date et d'heure",
+      "KL": "Choisir la langue",
+      "KN": "Définir le nom de l'imprimante",
+      "KP": "Définir le mot de passe du panneau de commande",
+      "KV": "Valeurs kiosque",
+      "LF": "Lister les liaisons de police",
+      "LH": "Origine de l'étiquette",
+      "LL": "Longueur de l'étiquette",
+      "LR": "Impression inversée de l'étiquette",
+      "LS": "Décalage latéral de l'étiquette",
+      "LT": "Décalage haut de l'étiquette",
+      "MA": "Alertes de maintenance",
+      "MC": "Effacer le tampon",
+      "MD": "Modifier la densité",
+      "MF": "Comportement de chargement du support",
+      "MI": "Ajuster le message d'information de maintenance",
+      "ML": "Régler la longueur maximale de l'étiquette",
+      "MM": "Mode d'impression",
+      "MN": "Suivi du support",
+      "MP": "Protection des modes",
+      "MT": "Type de support",
+      "MU": "Définir les unités de mesure",
+      "MW": "Modifier l'avertissement de tête froide",
+      "NB": "Régler la vérification du serveur d'impression au démarrage réseau",
+      "NC": "Définir le périphérique réseau principal",
+      "~NC": "Connexion réseau",
+      "ND": "Modifier les paramètres réseau",
+      "NI": "Numéro d'identification réseau",
+      "NN": "Configurer SNMP",
+      "NP": "Définir le périphérique principal",
+      "~NR": "Rendre toutes les imprimantes réseau transparentes",
+      "NS": "Modifier les paramètres du réseau filaire",
+      "~NT": "Rendre l'imprimante courante transparente",
+      "NT": "Configurer SMTP",
+      "NW": "Régler le délai d'expiration du mot de passe",
+      "PA": "Propriétés avancées du texte",
+      "PF": "Avancer de N lignes",
+      "PH": "Avancer jusqu'à la position d'origine",
+      "~PL": "Longueur de présentation supplémentaire",
+      "PM": "Imprimer en miroir",
+      "~PM": "Déclasser l'imprimante",
+      "PN": "Présenter maintenant",
+      "PO": "Orientation d'impression",
+      "PP": "Pause programmable",
+      "PQ": "Quantité à imprimer",
+      "PR": "Vitesse d'impression",
+      "~PR": "Réimpression applicateur",
+      "~PS": "Démarrer l'impression",
+      "PW": "Largeur d'impression",
+      "RA": "Lire l'octet AFI ou DSFID RFID",
+      "RB": "Configurer la structure de données EPC RFID",
+      "RE": "Activer le bit EAS RFID",
+      "RF": "Lire ou écrire des données RFID (écriture uniquement)",
+      "RI": "Lire l'identifiant de l'étiquette RFID",
+      "RL": "Verrouiller/déverrouiller la mémoire de l'étiquette RFID",
+      "RM": "Configurer le déplacement RFID",
+      "RN": "Configurer la détection de plusieurs étiquettes RFID",
+      "~RO": "Réinitialiser le compteur",
+      "RQ": "Écrire les données EPC et mots de passe RFID",
+      "RR": "Configurer les tentatives RFID et l'antenne adaptative",
+      "RS": "Configurer la RFID",
+      "RT": "Lire l'étiquette RFID",
+      "RU": "Lire l'identifiant de l'étiquette RFID",
+      "~RV": "Configurer les rapports RFID",
+      "RW": "Configurer les niveaux de puissance RFID",
+      "RZ": "Définir le mot de passe de l'étiquette RFID",
+      "SC": "Configurer les communications série",
+      "~SD": "Régler la densité",
+      "SE": "Sélectionner un encodage",
+      "SF": "Champ sérialisé",
+      "SI": "Régler l'intensité des capteurs",
+      "SL": "Régler le mode et la langue de l'horloge temps réel",
+      "SN": "Données sérialisées",
+      "SO": "Régler le décalage de l'horloge temps réel",
+      "SP": "Démarrer l'impression",
+      "SQ": "Arrêter et redémarrer les alertes",
+      "SR": "Régler la résistance de la tête d'impression",
+      "SS": "Régler les capteurs de support",
+      "ST": "Régler la date et l'heure de l'horloge temps réel",
+      "SX": "Définir une alerte",
+      "SZ": "Définir la version ZPL (version 2 uniquement)",
+      "~TA": "Ajuster la position de déchirement",
+      "TB": "Bloc de texte",
+      "TO": "Transférer un objet",
+      "WA": "Configurer l'antenne sans fil",
+      "~WC": "Imprimer l'étiquette de configuration",
+      "WD": "Imprimer l'étiquette de répertoire",
+      "WE": "Configurer WEP",
+      "WF": "Écrire l'octet AFI ou DSFID RFID",
+      "WI": "Modifier les paramètres du réseau sans fil",
+      "WL": "Configurer LEAP",
+      "~WL": "Imprimer l'étiquette de configuration réseau",
+      "WP": "Définir le mot de passe sans fil",
+      "~WQ": "Requête d'écriture",
+      "WR": "Régler le débit de transmission sans fil",
+      "~WR": "Réinitialiser la carte radio sans fil",
+      "WS": "Configurer la carte radio sans fil",
+      "WT": "Écrire l'étiquette RFID",
+      "WV": "Configurer la vérification d'écriture RFID",
+      "WX": "Configurer la sécurité sans fil",
+      "XA": "Début de format",
+      "XB": "Supprimer le recul",
+      "XF": "Rappeler un format",
+      "XG": "Rappeler un graphique",
+      "XS": "Régler le calibrage dynamique",
+      "XZ": "Fin de format",
+      "ZZ": "Mise en veille de l'imprimante"
+    },
+    "description": {
+      "A": "Définit la police du champ courant à partir d'un nom de police.",
+      "A@": "Définit la police du champ courant à partir d'un chemin de fichier de police.",
+      "B0": "Configure le champ courant en code-barres Aztec.",
+      "B1": "Configure le champ courant en code-barres Code 11. À noter que le Code 11 est déconseillé pour les nouvelles applications.",
+      "B2": "Configure le champ courant en code-barres Interleaved 2 of 5.",
+      "B3": "Configure le champ courant en code-barres Code 39.",
+      "B4": "Configure le champ courant en code-barres Code 49. À noter que le Code 49 est déconseillé pour les nouvelles applications.",
+      "B5": "Configure le champ courant en code-barres USPS PLANET. À noter que l'USPS PLANET est déconseillé pour les nouvelles applications.",
+      "B7": "Configure le champ courant en code-barres PDF417.",
+      "B8": "Configure le champ courant en code-barres EAN-8.",
+      "B9": "Configure le champ courant en code-barres UPC-E.",
+      "BA": "Configure le champ courant en code-barres Code 93.",
+      "BB": "Configure le champ courant en code-barres Codablock. À noter que le Codablock est déconseillé pour les nouvelles applications.",
+      "BC": "Configure le champ courant en code-barres Code 128.",
+      "BD": "Configure le champ courant en code-barres UPS MaxiCode.",
+      "BE": "Configure le champ courant en code-barres EAN-13.",
+      "BF": "Configure le champ courant en code-barres MicroPDF417.",
+      "BI": "Configure le champ courant en code-barres Industrial 2 of 5.",
+      "BJ": "Configure le champ courant en code-barres Standard 2 of 5.",
+      "BK": "Configure le champ courant en code-barres ANSI Codabar. À noter que le Codabar est déconseillé pour les nouvelles applications.",
+      "BL": "Configure le champ courant en code-barres LOGMARS. À noter que le LOGMARS est déconseillé pour les nouvelles applications, à l'exception possible de certains systèmes du Département de la Défense américain.",
+      "BM": "Configure le champ courant en code-barres MSI. À noter que le MSI est déconseillé pour les nouvelles applications.",
+      "BO": "Configure le champ courant en code-barres Aztec.",
+      "BP": "Configure le champ courant en code-barres Plessey. À noter que le Plessey est déconseillé pour les nouvelles applications.",
+      "BQ": "Configure le champ courant en code-barres QR Code. À noter que la chaîne de données de la commande ^FD correspondante doit commencer par un préfixe de configuration du code-barres. Par exemple, « ^FDQA,12345 » règle le niveau de correction d'erreur sur Q (haute fiabilité), sélectionne le mode de saisie A (changement automatique de mode d'encodage) et encode les données « 12345 » dans le code-barres.",
+      "BR": "Configure le champ courant en code-barres GS1 DataBar (RSS).",
+      "BS": "Configure le champ courant en extension UPC/EAN.",
+      "BT": "Configure le champ courant en code-barres TLC 39. À noter que le TLC 39 est déconseillé pour les nouvelles applications.",
+      "BU": "Configure le champ courant en code-barres UPC-A.",
+      "BX": "Configure le champ courant en code-barres Data Matrix.",
+      "BY": "Configure les paramètres par défaut globaux des codes-barres.",
+      "BZ": "Configure le champ courant en code-barres postal USPS.",
+      "CC": "Change le caractère caret, utilisé pour débuter la plupart des commandes.",
+      "CD": "Change le caractère délimiteur de paramètres.",
+      "CF": "Définit la police par défaut. Elle est utilisée par tous les champs de texte suivants qui ne précisent pas de police via les commandes ^A ou ^A@.",
+      "CI": "Définit le jeu de caractères courant.",
+      "CM": "Change les désignations par lettre des périphériques de mémoire.",
+      "CN": "Actionne le massicot en mode kiosque.",
+      "CO": "Configure le cache de glyphes, utilisé en interne pour améliorer la vitesse d'impression lorsque les mêmes glyphes de police vectorielle sont utilisés de façon répétée.",
+      "CP": "Retire une étiquette imprimée de la zone de présentation.",
+      "CT": "Change le caractère tilde, utilisé pour débuter les commandes de contrôle.",
+      "CV": "Configure la validation des données des codes-barres. Par défaut, le ZPL est très tolérant sur les erreurs de données des codes-barres, mais cette commande permet d'activer des vérifications plus strictes.",
+      "CW": "Configure un alias de nom de police, afin qu'un fichier de police donné puisse ensuite être utilisé par son nom via les commandes ^A et ^CF.",
+      "~DB": "Charge une police bitmap intégrée et l'enregistre au chemin indiqué. À noter que les polices bitmap sont déconseillées pour les nouvelles applications.",
+      "~DE": "Charge une table d'encodage personnalisée et l'enregistre au chemin indiqué. À noter que les tables d'encodage personnalisées sont déconseillées pour les nouvelles applications.",
+      "DF": "Enregistre le reste de la définition d'étiquette dans un fichier pour une réutilisation ultérieure via ^XF.",
+      "~DG": "Charge une image intégrée et l'enregistre au chemin indiqué.",
+      "~DN": "Interrompt une commande de chargement d'image (~DG).",
+      "~DS": "Charge une police vectorielle intégrée et l'enregistre au chemin indiqué. À noter que la plupart des polices modernes doivent être chargées avec la commande ~DU plutôt qu'avec ~DS.",
+      "~DT": "Charge une police TrueType intégrée et l'enregistre au chemin indiqué. À noter que la plupart des polices modernes doivent être chargées avec la commande ~DU plutôt qu'avec ~DT.",
+      "~DU": "Charge une police TrueType intégrée et l'enregistre au chemin indiqué.",
+      "~DY": "Charge un fichier intégré et l'enregistre au chemin indiqué. Cette commande sert le plus souvent à charger des images et des polices, mais d'autres types de fichiers sont également pris en charge. En raison de la variété des types de fichiers supportés, cette commande est assez complexe. Il est recommandé d'utiliser plutôt ~DU pour charger des polices, et ~DG pour charger des images.",
+      "EG": "Efface tous les fichiers image GRF de tous les périphériques accessibles en écriture. À noter que pour supprimer des fichiers précis, on peut utiliser la commande ^ID à la place.",
+      "FB": "Met en forme le champ courant en bloc de texte qui renvoie le texte sur plusieurs lignes.",
+      "FC": "Configure le(s) caractère(s) d'échappement de l'horloge, permettant au champ courant d'insérer des valeurs de temps dynamiques dans ses données. À noter que cette commande nécessite que l'imprimante ou le moteur d'impression dispose d'une horloge temps réel matérielle, absente de certaines imprimantes physiques.",
+      "FD": "Définit la chaîne de données du champ courant. Ces données sont généralement imprimées sur l'étiquette sous forme de texte ou encodées en code-barres, selon le type de champ.",
+      "FE": "Configure le caractère d'insertion des données du champ, permettant au champ courant d'incorporer les données d'autres champs numérotés via la commande ^FN. Par exemple, si le caractère d'insertion est #, le texte #3# sert d'emplacement pour les données du champ numéro 3, le texte #2,F,1,5# pour les 5 premiers caractères des données du champ 2, et le texte #4,B,3,3# pour les 3 derniers caractères des données du champ 4.",
+      "FH": "Configure le caractère d'échappement hexadécimal, permettant au champ courant d'insérer des codes de caractères dans ses données. Cela est particulièrement utile lorsque les données du champ peuvent contenir des caractères qui seraient sinon interprétés comme des délimiteurs de commande ou de paramètre ZPL.",
+      "FL": "Lie (ou délie) une police à une autre, permettant au moteur de polices de basculer d'une police à l'autre lorsqu'une police ne possède pas le glyphe nécessaire pour afficher un caractère.",
+      "FM": "Utilisée conjointement à ^B7 ou ^BF, cette commande configure plusieurs positions de codes-barres pour le champ courant, permettant de répartir les données du champ sur plusieurs codes-barres via l'ajout structuré (structured append).",
+      "FN": "Définit le numéro du champ courant. Avec la commande ^DF pour enregistrer des définitions d'étiquette en vue d'une réutilisation, ^FN sert à définir les numéros de champ disponibles pour référence ultérieure. Avec la commande ^XF pour charger des définitions enregistrées, ^FN sert à référencer les numéros de champ précédemment définis.",
+      "FO": "Définit la position du coin supérieur gauche du champ courant.",
+      "FP": "Configure le sens d'impression du champ courant.",
+      "FR": "Configure le champ courant pour inverser la couleur de fond, dessinant du noir sur blanc et du blanc sur noir. C'est aussi appelé dessin en mode XOR.",
+      "FS": "Termine le champ courant et démarre le champ suivant.",
+      "FT": "Définit la position du coin inférieur gauche du champ courant.",
+      "FV": "Définit la chaîne de données du champ courant. Cette commande est une alternative à ^FD et permet d'utiliser des données variables lorsque la commande ^MC est employée pour conserver le contenu rendu sur plusieurs étiquettes.",
+      "FW": "Définit l'orientation et l'alignement par défaut des champs.",
+      "FX": "Ajoute un commentaire au code ZPL. Les commentaires n'affectent pas le rendu de l'étiquette et servent à documenter des hypothèses, des concepts ou des questions.",
+      "GB": "Configure le champ courant en boîte graphique.",
+      "GC": "Configure le champ courant en cercle graphique.",
+      "GD": "Configure le champ courant en ligne diagonale graphique.",
+      "GE": "Configure le champ courant en ellipse graphique.",
+      "GF": "Configure le champ courant en champ image intégrée.",
+      "GS": "Configure le champ courant en symbole graphique, faisant correspondre les valeurs ASCII des données du champ à des symboles non ASCII (D = symbole d'homologation Underwriter Labs, E = symbole d'homologation de la Canadian Standards Association).",
+      "~HB": "Demande un rapport d'état de la batterie via le terminal.",
+      "~HD": "Demande un rapport de diagnostic de la tête d'impression via le terminal.",
+      "HF": "Demande un fichier de définition d'étiquette via le terminal.",
+      "HG": "Demande un fichier image via le terminal.",
+      "HH": "Demande un rapport de configuration complet via le terminal.",
+      "~HI": "Demande un rapport de configuration de base via le terminal.",
+      "HL": "Demande le journal des données RFID via le terminal.",
+      "~HM": "Demande un rapport d'état de la mémoire vive via le terminal.",
+      "~HQ": "Demande des informations via le terminal.",
+      "HR": "Calibre la position de l'étiquette RFID et envoie les résultats via le terminal.",
+      "~HS": "Demande un rapport d'état matériel via le terminal.",
+      "HT": "Demande la liste des liaisons de police via le terminal.",
+      "~HU": "Demande un rapport de configuration des alertes via le terminal.",
+      "HV": "Demande les données associées à un champ précis via le terminal.",
+      "HW": "Demande une liste de fichiers via le terminal.",
+      "HY": "Demande un fichier image via le terminal.",
+      "HZ": "Demande les informations de l'imprimante au format XML via le terminal.",
+      "ID": "Supprime un fichier ou un ensemble de fichiers de la mémoire de l'imprimante.",
+      "IL": "Configure le champ courant en champ image d'étiquette. Le fichier image est généralement enregistré au préalable en mémoire via la commande ^IS.",
+      "IM": "Configure le champ courant en champ image.",
+      "IS": "Enregistre la définition d'étiquette courante dans un fichier image pour une réutilisation ultérieure via ^IL.",
+      "~JA": "Annule le travail d'impression en cours, ainsi que toutes les définitions d'étiquette actuellement dans le tampon en attente d'impression.",
+      "JB": "Réinitialise un périphérique de mémoire flash installé dans l'imprimante.",
+      "~JB": "Réinitialise la carte PCMCIA installée dans l'imprimante (c.-à-d. le lecteur B:). Pour réinitialiser d'autres périphériques de mémoire flash, voir plutôt la commande ^JB.",
+      "~JC": "Recalibre la longueur de l'étiquette et les réglages des capteurs.",
+      "~JD": "Active le mode diagnostic. Tant qu'il est actif, les valeurs d'octets reçues par l'imprimante sont rendues sur des étiquettes de diagnostic au lieu d'être interprétées comme du ZPL. Le mode diagnostic est utile pour déboguer les problèmes de communication et d'encodage. Il peut être désactivé avec la commande ~JE.",
+      "~JE": "Désactive le mode diagnostic (précédemment activé avec la commande ~JD).",
+      "~JF": "Configure si l'imprimante suspend ou non l'impression lorsque sa batterie est très faible, afin d'éviter la perte de données.",
+      "~JG": "Imprime une étiquette de graphique de calibrage des capteurs. Le graphique affiche les valeurs définies par les commandes ~JC ou ^SS.",
+      "JH": "Configure les réglages de préavis de l'imprimante.",
+      "JI": "Démarre une nouvelle session ZBI (interpréteur BASIC). La session peut être terminée avec la commande ~JQ.",
+      "JJ": "Configure le port auxiliaire, utilisé pour piloter les vérificateurs et les applicateurs.",
+      "~JL": "Recalibre la longueur de l'étiquette.",
+      "JM": "Réduit de moitié la densité d'impression, doublant de fait la taille physique de tout le contenu de l'étiquette.",
+      "~JN": "Démarre un test de la tête d'impression. L'imprimante s'arrête si le test échoue.",
+      "~JO": "Démarre un test de la tête d'impression. L'imprimante se met en pause si le test échoue.",
+      "~JP": "Annule la définition d'étiquette en cours de traitement (le cas échéant) et met l'impression en pause.",
+      "~JQ": "Termine la session ZBI (interpréteur BASIC) en cours, si elle a été démarrée par une commande ^JI ou ~JI.",
+      "~JR": "Réinitialise l'imprimante, simulant un cycle d'alimentation manuel.",
+      "JS": "Sélectionne le capteur de support actif.",
+      "~JS": "Configure les actions de recul de l'étiquette.",
+      "JT": "Configure l'intervalle du test de la tête d'impression.",
+      "JU": "Charge ou enregistre la configuration de l'imprimante.",
+      "JW": "Règle la tension du ruban.",
+      "~JX": "Annule la définition d'étiquette courante.",
+      "JZ": "Configure si les étiquettes interrompues par une condition d'erreur doivent être réimprimées ou non dès que l'erreur est corrigée.",
+      "~KB": "Décharge complètement la batterie rechargeable, si l'imprimante en possède une.",
+      "KC": "Active et désactive les identifiants client réseau personnalisés.",
+      "KD": "Définit le format de date et d'heure utilisé sur les panneaux de commande et les étiquettes de diagnostic de configuration.",
+      "KL": "Définit la langue d'affichage du panneau de commande.",
+      "KN": "Définit le nom réseau de l'imprimante.",
+      "KP": "Définit le mot de passe du panneau de commande.",
+      "KV": "Définit divers paramètres du mode kiosque. Le mode kiosque peut être activé avec la commande ^MM.",
+      "LF": "Génère une étiquette de configuration contenant la liste des liaisons de police. Si l'étiquette courante contient déjà du contenu, l'étiquette de configuration sera générée après l'étiquette courante.",
+      "LH": "Définit la position d'origine de l'étiquette, qui sert d'origine (0, 0) au système de coordonnées de l'étiquette.",
+      "LL": "Définit la longueur de l'étiquette (le plus souvent utilisée avec un support continu).",
+      "LR": "Configure tous les champs suivants de l'étiquette courante pour inverser la couleur de fond, dessinant du noir sur blanc et du blanc sur noir. C'est aussi appelé dessin en mode XOR. Cette commande est l'équivalent global de la commande ^FR propre au champ.",
+      "LS": "Décale tout le contenu de l'étiquette vers la gauche ou la droite.",
+      "LT": "Décale tout le contenu de l'étiquette vers le haut ou le bas.",
+      "MA": "Configure l'impression des étiquettes d'alerte de maintenance. Les messages d'alerte peuvent être configurés avec la commande ^MI.",
+      "MC": "Permet de conserver la sortie de l'étiquette précédente dans l'étiquette suivante.",
+      "MD": "Modifie le niveau de densité d'impression, relativement à la densité de base configurée par la commande ~SD.",
+      "MF": "Configure les actions de chargement du support à la mise sous tension et à la fermeture de la tête.",
+      "MI": "Configure les messages utilisés sur les étiquettes d'alerte de maintenance. La fréquence de ces étiquettes peut être configurée avec la commande ^MA.",
+      "ML": "Configure la longueur maximale de l'étiquette.",
+      "MM": "Configure l'action après impression.",
+      "MN": "Configure le type de support de l'étiquette.",
+      "MP": "Active et désactive les fonctions du panneau de commande.",
+      "MT": "Configure le type de support de l'étiquette.",
+      "MU": "Personnalise les unités du système de coordonnées de l'étiquette, afin que les commandes acceptant normalement des coordonnées et des distances en points puissent utiliser des unités physiques comme les millimètres et les pouces. Cette commande permet aussi, en option, la conversion de DPI des définitions d'étiquette.",
+      "MW": "Active et désactive l'avertissement de tête froide.",
+      "NB": "",
+      "NC": "",
+      "~NC": "",
+      "ND": "",
+      "NI": "",
+      "NN": "",
+      "NP": "",
+      "~NR": "",
+      "NS": "",
+      "~NT": "",
+      "NT": "",
+      "NW": "",
+      "PA": "Configure les réglages avancés de mise en page du texte et du moteur de polices.",
+      "PF": "Fait avancer l'étiquette du nombre indiqué de rangées de points, en ignorant toute impression sur ces rangées.",
+      "PH": "Déclenche la génération d'une étiquette vierge.",
+      "~PL": "Augmente la longueur de la section d'étiquette éjectée par l'imprimante pendant un cycle de présentation.",
+      "PM": "Configure le mode miroir, qui reflète le contenu de l'étiquette autour d'un axe vertical.",
+      "~PM": "Déclenche le mode de déclassement.",
+      "PN": "Déclenche un cycle de présentation, éjectant une section de l'étiquette courante.",
+      "PO": "Configure le mode inversé, qui reflète le contenu de l'étiquette autour d'un axe horizontal.",
+      "PP": "Met l'impression en pause jusqu'à réception d'une commande ~PS.",
+      "PQ": "Configure le nombre d'étiquettes générées par une seule définition d'étiquette.",
+      "PR": "Configure la vitesse du support pendant l'impression, l'avance et le recul.",
+      "~PR": "Déclenche la réimpression de la dernière étiquette imprimée.",
+      "~PS": "Reprend l'impression après que l'imprimante a été mise en pause via la commande ~PP.",
+      "PW": "Définit la largeur d'impression de l'étiquette.",
+      "RA": "",
+      "RB": "",
+      "RE": "",
+      "RF": "",
+      "RI": "",
+      "RL": "",
+      "RM": "",
+      "RN": "",
+      "~RO": "",
+      "RQ": "",
+      "RR": "",
+      "RS": "",
+      "RT": "",
+      "RU": "",
+      "~RV": "",
+      "RW": "",
+      "RZ": "",
+      "SC": "Configure les paramètres de communication série.",
+      "~SD": "Configure le niveau de densité d'impression. La densité peut aussi être modifiée avec la commande ^MD.",
+      "SE": "Sélectionne une table d'encodage personnalisée, requise par certaines polices pour associer correctement les caractères aux glyphes.",
+      "SF": "Configure les données du champ courant pour qu'elles s'incrémentent automatiquement. Le nombre d'étiquettes (et d'incréments) est contrôlé par la commande ^PQ.",
+      "SI": "Configure l'intensité du capteur de support.",
+      "SL": "Configure le mode et la langue de l'horloge temps réel.",
+      "SN": "Configure les données du champ courant en nombre à incrémentation sérielle. Le nombre d'étiquettes (et d'incréments) est contrôlé par la commande ^PQ.",
+      "SO": "Définit le décalage horaire de l'horloge secondaire ou tertiaire, si l'imprimante possède une horloge. Pour régler l'horloge principale, utilisez plutôt la commande ^ST.",
+      "SP": "Démarre le processus d'impression d'un segment de l'étiquette avant que la définition complète n'ait été traitée. Cette commande ne doit être utilisée que sur des étiquettes particulièrement complexes, et uniquement dans des scénarios particulièrement sensibles au temps.",
+      "SQ": "Arrête et redémarre les alertes d'erreur configurées précédemment avec la commande ^SX.",
+      "SR": "Définit la résistance de la tête d'impression. Cette commande doit être utilisée avec précaution, car les limites de sécurité dépendent du matériel.",
+      "SS": "Configure les seuils du capteur de support.",
+      "ST": "Définit la date et l'heure de l'horloge principale, si l'imprimante possède une horloge.",
+      "SX": "Configure les alertes d'erreur.",
+      "SZ": "Définit la version ZPL.",
+      "~TA": "Ajuste la position de déchirement de l'étiquette.",
+      "TB": "Met en forme le champ courant en bloc de texte qui renvoie le texte sur plusieurs lignes.",
+      "TO": "Copie un ou plusieurs fichiers de la mémoire de l'imprimante d'un emplacement à un autre.",
+      "WA": "",
+      "~WC": "",
+      "WD": "",
+      "WE": "",
+      "WF": "",
+      "WI": "",
+      "WL": "",
+      "~WL": "",
+      "WP": "",
+      "~WQ": "",
+      "WR": "",
+      "~WR": "",
+      "WS": "",
+      "WT": "",
+      "WV": "",
+      "WX": "",
+      "XA": "Débute une définition d'étiquette. Toute définition d'étiquette doit commencer par cette commande.",
+      "XB": "Désactive l'avance et le recul après l'étiquette courante.",
+      "XF": "Charge une définition d'étiquette précédemment enregistrée via la commande ^DF. La commande ^FN peut ensuite servir à ajouter des données variables aux champs précédemment définis, d'après leurs numéros de champ.",
+      "XG": "Configure le champ courant en champ image.",
+      "XS": "Active et désactive le calibrage dynamique du support.",
+      "XZ": "Termine une définition d'étiquette. Toute définition d'étiquette doit se terminer par cette commande.",
+      "ZZ": "Met l'imprimante en mode veille."
+    },
+    "parameters": {
+      "A": {
+        "font": "Nom et orientation de la police à utiliser. Les noms de police sont soit une lettre majuscule (A-Z), soit un chiffre (0-9). Valeurs d'orientation valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). L'orientation par défaut est celle configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur de police à utiliser, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut dépend de la police sélectionnée.",
+        "width": "Largeur de police à utiliser, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut dépend de la police sélectionnée."
+      },
+      "A@": {
+        "orientation": "Orientation de la police à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur de police à utiliser, en points. La valeur par défaut dépend de la police sélectionnée.",
+        "width": "Largeur de police à utiliser, en points. La valeur par défaut dépend de la police sélectionnée.",
+        "path": "Chemin du fichier de police."
+      },
+      "B0": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "magnification": "Grossissement du code-barres à utiliser. Tout nombre entre 1 et 10 est accepté. La valeur par défaut dépend de la densité d'impression utilisée.",
+        "eci": "Indique si les données du code-barres utilisent l'ECI (extended channel interpretation) pour changer de jeu de caractères. Valeurs valides : Y et N. La valeur par défaut est N (pas d'ECI).",
+        "size": "Taille du code-barres Aztec à utiliser. Valeurs valides : 101-104 (tailles Aztec compactes), 201-232 (tailles Aztec pleine étendue), 300 (runes Aztec) et 1-99 (dimensionnement dynamique pour un pourcentage minimal de correction d'erreur donné). Par défaut, le code-barres est dimensionné dynamiquement pour contenir les données encodées.",
+        "readerInit": "Indique si le code-barres est un code-barres d'initialisation de lecteur. Valeurs valides : Y et N. La valeur par défaut est N (pas d'initialisation de lecteur).",
+        "symbols": "En cas d'ajout structuré (structured append) répartissant les données sur plusieurs codes-barres, ce paramètre indique le nombre total de codes-barres utilisés. Tout nombre entre 1 et 26 est accepté. La valeur par défaut est 1, ce qui indique que l'ajout structuré n'est pas utilisé.",
+        "id": "En cas d'ajout structuré (structured append) répartissant les données sur plusieurs codes-barres, ce paramètre indique l'identifiant de message, utilisé pour corréler les codes-barres liés et réduire le risque de problèmes de lecture. Par défaut, aucun identifiant de message n'est utilisé."
+      },
+      "B1": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "checkDigit": "Indique s'il faut ajouter un chiffre de contrôle supplémentaire au code-barres. Valeurs valides : Y et N. La valeur par défaut est N (pas de chiffre de contrôle supplémentaire).",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres)."
+      },
+      "B2": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres).",
+        "checkDigit": "Indique s'il faut ajouter un chiffre de contrôle au code-barres. Valeurs valides : Y et N. La valeur par défaut est N (pas de chiffre de contrôle)."
+      },
+      "B3": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "checkDigit": "Indique s'il faut ajouter un chiffre de contrôle au code-barres. Valeurs valides : Y et N. La valeur par défaut est N (pas de chiffre de contrôle).",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres)."
+      },
+      "B4": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "heightMultiplier": "Multiplicateur de hauteur de ligne du code-barres. Ce nombre est multiplié par la largeur de module spécifiée dans la commande ^BY pour déterminer la hauteur de ligne. Tout nombre entre 1 et la hauteur de l'étiquette est accepté. La valeur par défaut est 1.",
+        "line": "Emplacement du texte lisible par l'humain. Valeurs valides : N (aucun texte lisible), A (au-dessus du code-barres) et B (sous le code-barres). La valeur par défaut est N (aucun texte lisible).",
+        "mode": "Mode d'encodage à utiliser pour encoder les données. Valeurs valides : 0 (mode alphanumérique standard), 1 (mode d'ajout), 2 (mode numérique), 3 (mode alphanumérique groupé), 4 (décalage alphanumérique 1), 5 (décalage alphanumérique 2) et A (optimisation automatique). La valeur par défaut est A (optimisation automatique)."
+      },
+      "B5": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 9 999 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est N (aucun texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres)."
+      },
+      "B7": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "rowHeight": "Hauteur de ligne du code-barres, en points. Tout nombre entre 1 et la hauteur de l'étiquette est accepté. La valeur par défaut est la hauteur de ligne nécessaire pour que la hauteur totale du code-barres corresponde à la hauteur configurée via la commande ^BY.",
+        "security": "Niveau de correction d'erreur à appliquer. Tout nombre entre 0 et 8 est accepté. Plus le nombre est élevé, plus le code-barres généré est grand et résistant aux erreurs de lecture. La valeur par défaut est 0 (les erreurs de lecture sont détectées mais non corrigées).",
+        "columns": "Nombre de colonnes de données à encoder. Tout nombre entre 1 et 30 est accepté. Ce paramètre permet de contrôler la largeur du code-barres. La valeur par défaut dépend de la quantité de données encodées.",
+        "rows": "Nombre de lignes à encoder. Tout nombre entre 3 et 90 est accepté. Ce paramètre permet de contrôler la hauteur du code-barres. La valeur par défaut dépend de la quantité de données encodées.",
+        "truncate": "Indique s'il faut générer un code-barres PDF417 tronqué, aussi appelé PDF417 compact. Les codes-barres PDF417 tronqués sont plus étroits car ils n'incluent pas les indicateurs de ligne de droite, mais ne doivent être utilisés que lorsque l'endommagement de l'étiquette est improbable. Valeurs valides : Y et N. La valeur par défaut est N (ne pas tronquer)."
+      },
+      "B8": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres)."
+      },
+      "B9": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres).",
+        "checkDigit": "Indique s'il faut afficher le chiffre de contrôle dans le texte lisible par l'humain. Valeurs valides : Y et N. La valeur par défaut est Y (afficher le chiffre de contrôle)."
+      },
+      "BA": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres).",
+        "checkDigit": "Indique s'il faut afficher les chiffres de contrôle dans le texte lisible par l'humain. Valeurs valides : Y et N. La valeur par défaut est N (les chiffres de contrôle ne sont pas affichés)."
+      },
+      "BB": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur de ligne du code-barres, en points. Tout nombre entre 2 et 32 000 est accepté. La valeur par défaut est 8.",
+        "checkDigit": "Indique s'il faut calculer les chiffres de contrôle. Valeurs valides : Y et N. La valeur par défaut est Y (les chiffres de contrôle sont calculés). Ne peut valoir N que si Codablock A est utilisé.",
+        "columns": "Nombre de colonnes (caractères) par ligne. Tout nombre entre 2 et 62 est accepté.",
+        "rows": "Nombre de lignes à générer. Pour Codablock A, tout nombre entre 1 et 22 est accepté. Pour Codablock E et Codablock F, tout nombre entre 2 et 4 est accepté.",
+        "mode": "Variante Codablock à utiliser. Valeurs valides : A (Codablock A), F (Codablock F) et E (Codablock E). La valeur par défaut est F (Codablock F)."
+      },
+      "BC": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres), sauf pour le mode U où la valeur par défaut est Y (s'il est imprimé, le texte est placé au-dessus du code-barres).",
+        "checkDigit": "Indique s'il faut calculer un chiffre de contrôle GS1 (UCC) Mod 10. Valeurs valides : Y et N. La valeur par défaut est N (le chiffre de contrôle GS1 n'est pas calculé).",
+        "mode": "Mode d'encodage des données du code-barres. Valeurs valides : N (aucun mode, les sous-ensembles sont spécifiés explicitement dans les données du champ), U (mode UCC case, les données du champ doivent contenir 19 chiffres), A (mode automatique, le moteur ZPL détermine automatiquement les sous-ensembles utilisés) et D (mode UCC/EAN, les données du champ doivent contenir des numéros GS1). La valeur par défaut est N (aucun mode, les sous-ensembles sont spécifiés explicitement dans les données du champ)."
+      },
+      "BD": {
+        "mode": "Mode d'encodage des données du code-barres. Valeurs valides : 2 (code postal numérique), 3 (code postal alphanumérique), 4 (standard), 5 (EEC complet) et 6 (programmation de lecteur). La valeur par défaut est 2 (code postal numérique).",
+        "position": "En cas d'ajout structuré (structured append) répartissant les données sur plusieurs codes-barres, ce paramètre indique la position de ce code-barres dans la séquence globale. La valeur par défaut est 1 (suppose que l'ajout structuré n'est pas utilisé).",
+        "total": "En cas d'ajout structuré (structured append) répartissant les données sur plusieurs codes-barres, ce paramètre indique le nombre total de codes-barres présents dans la séquence. La valeur par défaut est 1 (suppose que l'ajout structuré n'est pas utilisé)."
+      },
+      "BE": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres)."
+      },
+      "BF": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "rowHeight": "Hauteur de ligne du code-barres, en points. Tout nombre entre 1 et 9 999 est accepté. La valeur par défaut est la hauteur de ligne nécessaire pour que la hauteur totale du code-barres corresponde à la hauteur configurée via la commande ^BY.",
+        "mode": "Mode (ou variante) MicroPDF417 à utiliser. Tout nombre entre 0 et 33 est accepté. Les modes 0-5 utilisent 1 colonne de données, les modes 6-12 en utilisent 2, les modes 13-22 en utilisent 3, et les modes 23-33 en utilisent 4. La valeur par défaut est le mode 0 (1 colonne de données et 11 lignes de données)."
+      },
+      "BI": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres)."
+      },
+      "BJ": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres)."
+      },
+      "BK": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "checkDigit": "Indique s'il faut ajouter un chiffre de contrôle. Ce paramètre n'est disponible que pour des raisons de rétrocompatibilité et ne peut valoir que N (pas de chiffre de contrôle).",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres).",
+        "startChar": "Caractère de début Codabar à utiliser. Valeurs valides : A, B, C et D. La valeur par défaut est A.",
+        "stopChar": "Caractère de fin Codabar à utiliser. Valeurs valides : A, B, C et D. La valeur par défaut est A."
+      },
+      "BL": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (le texte est placé sous le code-barres)."
+      },
+      "BM": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "checkDigitType": "Type de chiffre de contrôle à utiliser. Valeurs valides : A (aucun chiffre de contrôle), B (Mod 10), C (Mod 1010) et D (Mod 1110). La valeur par défaut est B (Mod 10).",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres).",
+        "checkDigit": "Indique s'il faut afficher le chiffre de contrôle dans le texte lisible par l'humain. Valeurs valides : Y et N. La valeur par défaut est N (ne pas afficher le chiffre de contrôle)."
+      },
+      "BO": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "magnification": "Grossissement du code-barres à utiliser. Tout nombre entre 1 et 10 est accepté. La valeur par défaut dépend de la densité d'impression utilisée.",
+        "eci": "Indique si les données du code-barres utilisent l'ECI (extended channel interpretation) pour changer de jeu de caractères. Valeurs valides : Y et N. La valeur par défaut est N (pas d'ECI).",
+        "size": "Taille du code-barres Aztec à utiliser. Valeurs valides : 101-104 (tailles Aztec compactes), 201-232 (tailles Aztec pleine étendue), 300 (runes Aztec) et 1-99 (dimensionnement dynamique pour un pourcentage minimal de correction d'erreur donné). Par défaut, le code-barres est dimensionné dynamiquement pour contenir les données encodées.",
+        "readerInit": "Indique si le code-barres est un code-barres d'initialisation de lecteur. Valeurs valides : Y et N. La valeur par défaut est N (pas d'initialisation de lecteur).",
+        "symbols": "En cas d'ajout structuré (structured append) répartissant les données sur plusieurs codes-barres, ce paramètre indique le nombre total de codes-barres utilisés. Tout nombre entre 1 et 26 est accepté. La valeur par défaut est 1, ce qui indique que l'ajout structuré n'est pas utilisé.",
+        "id": "En cas d'ajout structuré (structured append) répartissant les données sur plusieurs codes-barres, ce paramètre indique l'identifiant de message, utilisé pour corréler les codes-barres liés et réduire le risque de problèmes de lecture. Par défaut, aucun identifiant de message n'est utilisé."
+      },
+      "BP": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "checkDigit": "Indique s'il faut afficher le chiffre de contrôle dans le texte lisible par l'humain. Valeurs valides : Y et N. La valeur par défaut est N (ne pas afficher le chiffre de contrôle).",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres)."
+      },
+      "BQ": {
+        "orientation": "Orientation du code-barres à utiliser. Ce paramètre n'est disponible que pour des raisons de rétrocompatibilité et ne peut valoir que N (aucune rotation).",
+        "model": "Modèle de QR Code à utiliser. Valeurs valides : 1 (original) et 2 (amélioré). La valeur par défaut est le modèle 2 (amélioré). Utilisez toujours le modèle 2.",
+        "magnification": "Grossissement du code-barres à utiliser. Tout nombre entre 1 et 100 est accepté. La valeur par défaut dépend de la densité d'impression utilisée.",
+        "errorCorrection": "Niveau de correction d'erreur à appliquer. Valeurs valides : H (fiabilité maximale), Q (haute fiabilité), M (fiabilité moyenne) et L (fiabilité inférieure). La valeur par défaut est Q (haute fiabilité).",
+        "mask": "Motif de masque à appliquer au code-barres. Tout nombre entre 0 et 7 est accepté. La valeur par défaut est 7."
+      },
+      "BR": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "type": "Type de code-barres GS1 DataBar à générer. Valeurs valides : 1 (GS1 DataBar Omnidirectional), 2 (GS1 DataBar Truncated), 3 (GS1 DataBar Stacked), 4 (GS1 DataBar Stacked Omnidirectional), 5 (GS1 DataBar Limited), 6 (GS1 DataBar Expanded), 7 (UPC-A), 8 (UPC-E), 9 (EAN-13), 10 (EAN-8), 11 (GS1-128 + CC-A/CC-B) et 12 (GS1-128 + CC-C). La valeur par défaut est 1 (GS1 DataBar Omnidirectional).",
+        "magnification": "Grossissement du code-barres à utiliser. Tout nombre entre 1 et 10 est accepté. La valeur par défaut dépend de la densité d'impression utilisée.",
+        "sepHeight": "Hauteur du séparateur entre le composant linéaire et le composant 2D. Peut valoir 1 ou 2. La valeur par défaut est 1.",
+        "height": "Hauteur du code-barres du composant linéaire, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est 25.",
+        "segWidth": "Largeur de segment, pour les codes-barres GS1 DataBar Expanded Stacked Omnidirectional (une variante de type 6). Tout nombre entre 2 et 20 est accepté. Aucune valeur par défaut."
+      },
+      "BS": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (s'il est imprimé, le texte est placé au-dessus du code-barres)."
+      },
+      "BT": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "width": "Largeur de module du Code 39, en points. Tout nombre entre 1 et 10 est accepté. La valeur par défaut dépend de la densité d'impression de l'imprimante.",
+        "widthRatio": "Ratio du Code 39 entre les barres larges et les barres étroites. Tout nombre décimal entre 2 et 3 est accepté. Le nombre doit être un multiple de 0,1 (c.-à-d. 2.0, 2.1, 2.2, 2.3, … , 2.9, 3.0). La valeur par défaut est 2.",
+        "height": "Hauteur du code-barres Code 39, en points. Tout nombre entre 1 et 9 999 est accepté. La valeur par défaut dépend de la densité d'impression de l'imprimante.",
+        "pdfWidth": "Largeur de module MicroPDF417, en points. Tout nombre entre 1 et 10 est accepté. La valeur par défaut dépend de la densité d'impression de l'imprimante.",
+        "pdfHeight": "Hauteur de ligne MicroPDF417, en points. Tout nombre entre 1 et 255 est accepté. La valeur par défaut dépend de la densité d'impression de l'imprimante."
+      },
+      "BU": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 9 999 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est Y (inclure le texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres).",
+        "checkDigit": "Indique s'il faut afficher le chiffre de contrôle dans le texte lisible par l'humain. Valeurs valides : Y et N. La valeur par défaut est Y (afficher le chiffre de contrôle)."
+      },
+      "BX": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur d'élément du code-barres, en points. Les éléments individuels sont carrés, donc la hauteur et la largeur d'élément sont identiques. Tout nombre entre 1 et la largeur de l'étiquette est accepté. La valeur par défaut est la hauteur d'élément nécessaire pour que la hauteur totale du code-barres corresponde à la hauteur configurée via la commande ^BY.",
+        "quality": "Niveau de correction d'erreur à appliquer. Valeurs valides : 0 (ECC 0), 50 (ECC 50), 80 (ECC 80), 100 (ECC 100), 140 (ECC 140) et 200 (ECC 200). La valeur par défaut est 0 (les erreurs de lecture sont détectées mais non corrigées). Utilisez toujours le niveau de qualité 200 (ECC 200).",
+        "columns": "Nombre de colonnes à encoder. Pour les codes-barres ECC 200, les nombres pairs entre 1 et 144 sont acceptés. Ce paramètre permet de contrôler la largeur du code-barres. La valeur par défaut dépend de la quantité de données encodées.",
+        "rows": "Nombre de lignes à encoder. Pour les codes-barres ECC 200, les nombres pairs entre 1 et 144 sont acceptés. Ce paramètre permet de contrôler la hauteur du code-barres. La valeur par défaut dépend de la quantité de données encodées.",
+        "format": "Type de données à encoder. Valeurs valides : 1, 2, 3, 4, 5 et 6. La valeur par défaut est 6. Ce paramètre est ignoré pour les codes-barres ECC 200 (le niveau de qualité recommandé).",
+        "escape": "Caractère d'échappement utilisé pour échapper les séquences de contrôle dans les données du champ. La valeur par défaut est « ~ » (tilde).",
+        "ratio": "Rapport d'aspect souhaité, le cas échéant. Valeurs valides : 1 (carré) et 2 (rectangulaire)."
+      },
+      "BY": {
+        "width": "Largeur de module par défaut du code-barres, en points. Tout nombre entre 1 et 100 est accepté. La valeur par défaut est la valeur configurée précédemment, ou 2 si aucune valeur n'a été définie.",
+        "widthRatio": "Ratio par défaut entre les barres larges et les barres étroites. Tout nombre décimal entre 2 et 3 est accepté. Le nombre doit être un multiple de 0,1 (c.-à-d. 2.0, 2.1, 2.2, 2.3, … , 2.9, 3.0). Des nombres plus grands réduisent généralement les échecs de lecture. La valeur par défaut est la valeur configurée précédemment, ou 3 si aucune valeur n'a été définie.",
+        "height": "Hauteur par défaut du code-barres, en points. Tout nombre positif est accepté. La valeur par défaut est la valeur configurée précédemment, ou 10 si aucune valeur n'a été définie."
+      },
+      "BZ": {
+        "orientation": "Orientation du code-barres à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du code-barres, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la hauteur configurée via la commande ^BY, qui vaut elle-même 10 par défaut.",
+        "line": "Indique s'il faut inclure le texte lisible par l'humain avec le code-barres. Valeurs valides : Y et N. La valeur par défaut est N (ne pas inclure de texte lisible).",
+        "lineAbove": "Indique s'il faut placer le texte lisible par l'humain au-dessus du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (s'il est imprimé, le texte est placé sous le code-barres).",
+        "type": "Type de code-barres postal à générer. Valeurs valides : 0 (code-barres POSTNET), 1 (code-barres PLANET) et 3 (code-barres USPS Intelligent Mail)."
+      },
+      "CC": {
+        "caret": "Nouveau caractère caret. Tout caractère ASCII est accepté. La valeur par défaut est « ^ »."
+      },
+      "CD": {
+        "delim": "Nouveau délimiteur de paramètres. Tout caractère ASCII est accepté. La valeur par défaut est « , »."
+      },
+      "CF": {
+        "fontName": "Nom de la nouvelle police par défaut. Les noms de police sont soit une lettre majuscule (A-Z), soit un chiffre (0-9). La valeur par défaut est la valeur configurée précédemment, ou A si aucune valeur n'a été définie.",
+        "height": "Hauteur de la nouvelle police par défaut, en points. La valeur par défaut dépend de la police sélectionnée.",
+        "width": "Largeur de la nouvelle police par défaut, en points. La valeur par défaut dépend de la police sélectionnée."
+      },
+      "CI": {
+        "charset": "Jeu de caractères à utiliser. Tout nombre entre 0 et 36 est accepté. La valeur par défaut est 0 (Code Page 850). Il est recommandé d'utiliser toujours la valeur 28 (UTF-8).",
+        "src1": "Correspondances de caractères personnalisées optionnelles, spécifiées par paires d'entiers. Tout nombre entre 0 et 255 est accepté. Ce paramètre n'affecte que les variantes de la Code Page 850 (valeurs de jeu de caractères 0 à 13).",
+        "dest1": "Correspondances de caractères personnalisées optionnelles, spécifiées par paires d'entiers. Tout nombre entre 0 et 255 est accepté. Ce paramètre n'affecte que les variantes de la Code Page 850 (valeurs de jeu de caractères 0 à 13).",
+        "src2": "Correspondances de caractères personnalisées optionnelles, spécifiées par paires d'entiers. Tout nombre entre 0 et 255 est accepté. Ce paramètre n'affecte que les variantes de la Code Page 850 (valeurs de jeu de caractères 0 à 13).",
+        "dest2": "Correspondances de caractères personnalisées optionnelles, spécifiées par paires d'entiers. Tout nombre entre 0 et 255 est accepté. Ce paramètre n'affecte que les variantes de la Code Page 850 (valeurs de jeu de caractères 0 à 13)."
+      },
+      "CM": {
+        "bAlias": "Nouvel alias pour le périphérique B:. Valeurs valides : B, E, R et A. La valeur par défaut est B.",
+        "eAlias": "Nouvel alias pour le périphérique E:. Valeurs valides : B, E, R et A. La valeur par défaut est E.",
+        "rAlias": "Nouvel alias pour le périphérique R:. Valeurs valides : B, E, R et A. La valeur par défaut est R.",
+        "aAlias": "Nouvel alias pour le périphérique A:. Valeurs valides : B, E, R et A. La valeur par défaut est A.",
+        "multiple": "Indicateur qui, lorsqu'il vaut M, autorise E à être associé à plus d'un périphérique."
+      },
+      "CN": {
+        "override": "Indique s'il faut utiliser la quantité de coupe kiosque par défaut (de la commande ^KV) ou effectuer une coupe complète. Valeurs valides : 0 (utiliser la quantité de coupe par défaut) et 1 (effectuer une coupe complète). Aucune valeur par défaut."
+      },
+      "CO": {
+        "on": "Indique si le cache de glyphes est activé. Valeurs valides : Y (cache activé) et N (cache désactivé). La valeur par défaut est Y (cache activé).",
+        "kilobytes": "Quantité de mémoire supplémentaire à allouer au cache de glyphes, en kilo-octets. Tout nombre entre 1 et 9 999 est accepté. La valeur par défaut est 40 kilo-octets.",
+        "type": "Type de cache de glyphes à configurer. Valeurs valides : 0 (cache externe pour les polices ordinaires) et 1 (cache interne pour les polices asiatiques)."
+      },
+      "CP": {
+        "mode": "Mode de retrait de l'étiquette. Valeurs valides : 0 (éjecter l'étiquette), 1 (rétracter l'étiquette) et 2 (utiliser le mode spécifié via la commande ^KV). Aucune valeur par défaut."
+      },
+      "CT": {
+        "tilde": "Nouveau caractère tilde. Tout caractère ASCII est accepté. La valeur par défaut est « ~ »."
+      },
+      "CV": {
+        "validate": "Indique s'il faut valider plus strictement les données du code-barres. Valeurs valides : Y et N. La valeur par défaut est N (pas de validation stricte)."
+      },
+      "CW": {
+        "fontName": "Nom de police à utiliser pour le fichier de police spécifié. Les noms de police sont soit une lettre majuscule (A-Z), soit un chiffre (0-9). Si aucune valeur n'est spécifiée, la commande est ignorée.",
+        "path": "Chemin du fichier de police auquel le nom de police spécifié doit correspondre (alias). Tout chemin de police valide est accepté. Si le fichier de police spécifié n'existe pas, la commande est ignorée."
+      },
+      "~DB": {
+        "path": "Chemin du fichier où enregistrer la police bitmap. La valeur par défaut est R:UNKNOWN.FNT.",
+        "orient": "Paramètre ignoré.",
+        "height": "Hauteur maximale des glyphes, en points. Tout nombre entre 1 et 32 000 est accepté. Aucune valeur par défaut.",
+        "width": "Largeur maximale des glyphes, en points. Tout nombre entre 1 et 32 000 est accepté. Aucune valeur par défaut.",
+        "ascent": "Ascendante maximale des glyphes, en points. Tout nombre entre 1 et 32 000 est accepté. Aucune valeur par défaut.",
+        "space": "Largeur du caractère espace, en points. Tout nombre entre 1 et 32 000 est accepté. Aucune valeur par défaut.",
+        "glyphs": "Nombre de glyphes dans la police. Tout nombre entre 1 et 256 est accepté. Aucune valeur par défaut.",
+        "copyright": "Détenteur du copyright de la police. Longueur maximale : 63 caractères. Aucune valeur par défaut.",
+        "data": "Données des glyphes de la police, sous forme de séquences (code de caractère + hauteur + largeur + décalage x + décalage y + avance + données bitmap). Aucune valeur par défaut."
+      },
+      "~DE": {
+        "path": "Chemin du fichier où enregistrer la table d'encodage. La valeur par défaut est R:UNKNOWN.DAT.",
+        "size": "Taille de la table d'encodage, en octets. Aucune valeur par défaut.",
+        "data": "Données de la table d'encodage, sous forme de chaîne de valeurs hexadécimales. Aucune valeur par défaut."
+      },
+      "DF": {
+        "path": "Chemin du fichier où enregistrer la définition d'étiquette. La commande ^XF pourra ensuite servir à charger la définition depuis ce chemin. La valeur par défaut est R:UNKNOWN.ZPL."
+      },
+      "~DG": {
+        "path": "Chemin du fichier où enregistrer l'image. La commande ^XG pourra ensuite servir à charger l'image depuis ce chemin. La valeur par défaut est R:UNKNOWN.GRF.",
+        "totalBytes": "Nombre total d'octets de l'image. Comme chaque pixel utilise 1 bit, cette valeur doit être le nombre total de pixels de l'image divisé par 8 (car il y a 8 bits par octet). Aucune valeur par défaut.",
+        "rowBytes": "Nombre d'octets par ligne de pixels dans l'image. Comme chaque pixel utilise 1 bit, cette valeur doit être la largeur en pixels de l'image divisée par 8 (car il y a 8 bits par octet). La valeur par défaut est 1, ce qui est presque toujours incorrect.",
+        "data": "Données de l'image, au format hexadécimal. Aucune valeur par défaut."
+      },
+      "~DS": {
+        "path": "Chemin du fichier où enregistrer la police. La valeur par défaut est R:UNKNOWN.FNT.",
+        "size": "Nombre total d'octets du fichier de police. Aucune valeur par défaut.",
+        "data": "Données de la police, au format hexadécimal. Aucune valeur par défaut."
+      },
+      "~DT": {
+        "path": "Chemin du fichier où enregistrer la police. La valeur par défaut est R:UNKNOWN.FNT.",
+        "size": "Nombre total d'octets du fichier de police. Aucune valeur par défaut.",
+        "data": "Données de la police, au format hexadécimal. Aucune valeur par défaut."
+      },
+      "~DU": {
+        "path": "Chemin du fichier où enregistrer la police. La valeur par défaut est R:UNKNOWN.FNT.",
+        "size": "Nombre total d'octets du fichier de police. Aucune valeur par défaut.",
+        "data": "Données de la police, au format hexadécimal. Aucune valeur par défaut."
+      },
+      "~DY": {
+        "path": "Chemin du fichier où enregistrer le fichier. L'extension doit être omise, car elle est déterminée par le troisième paramètre (extension). La valeur par défaut est R:UNKNOWN.",
+        "format": "Format des données contenues dans le sixième paramètre. Valeurs valides : A (format hexadécimal), B (format binaire brut), C (compressé AR) et P (données PNG au format hexadécimal). Aucune valeur par défaut.",
+        "extension": "Type de fichier attendu et extension de nom de fichier à utiliser. De nombreuses valeurs sont possibles, mais les plus courantes sont G (fichier GRF), T (fichier TTF) et P (fichier PNG). La valeur par défaut est G (fichier GRF).",
+        "totalBytes": "Nombre total d'octets du fichier. Aucune valeur par défaut.",
+        "rowBytes": "Nombre d'octets par ligne de pixels dans l'image, si le fichier est une image. Ce paramètre est ignoré si le paramètre d'extension n'est pas G (le fichier n'est pas un fichier GRF). Aucune valeur par défaut.",
+        "data": "Données du fichier, au format indiqué dans le deuxième paramètre. Aucune valeur par défaut."
+      },
+      "FB": {
+        "maxWidth": "Largeur maximale du bloc de texte, en points. Le texte plus long que cette largeur est renvoyé à la ligne. Tout nombre entre 0 et 9 999 est accepté. La valeur par défaut est 0, ce qui est rarement utile.",
+        "maxLines": "Nombre maximal de lignes de texte autorisées. Si le texte ne tient pas sur le nombre de lignes spécifié, le texte restant est dessiné par-dessus le texte précédent sur la dernière ligne. Tout nombre entre 1 et 9 999 est accepté. La valeur par défaut est 1.",
+        "lineSpacing": "Espacement supplémentaire à ajouter entre les lignes, en points. Les nombres positifs augmentent la distance entre les lignes, les nombres négatifs la réduisent. Tout nombre entre -9 999 et 9 999 est accepté. La valeur par défaut est 0.",
+        "alignment": "Alignement du texte à appliquer au bloc de texte. Valeurs valides : L (gauche), R (droite), C (centré) et J (justifié). La valeur par défaut est L (gauche).",
+        "hangingIndent": "Retrait négatif à appliquer à toutes les lignes sauf la première, en points. Tout nombre entre 0 et 9 999 est accepté. La valeur par défaut est 0."
+      },
+      "FC": {
+        "indicator1": "Caractère d'échappement à utiliser pour les valeurs de temps de l'horloge principale. Tout caractère ASCII est accepté. La valeur par défaut est « % ».",
+        "indicator2": "Caractère d'échappement à utiliser pour les valeurs de temps de l'horloge secondaire. Tout caractère ASCII est accepté, sauf ceux utilisés pour les deux autres paramètres. Aucune valeur par défaut.",
+        "indicator3": "Caractère d'échappement à utiliser pour les valeurs de temps de l'horloge tertiaire. Tout caractère ASCII est accepté, sauf ceux utilisés pour les deux autres paramètres. Aucune valeur par défaut."
+      },
+      "FD": {
+        "data": "Chaîne de données. Aucune valeur par défaut."
+      },
+      "FE": {
+        "embedChar": "Chemin du fichier de police d'extension. Le moteur de polices basculera vers cette police s'il rencontre un glyphe manquant dans la police de base. Aucune valeur par défaut."
+      },
+      "FH": {
+        "hexIndicator": "Caractère d'échappement hexadécimal. Tout caractère ASCII est accepté, sauf les lettres minuscules a-z et les délimiteurs de commande et de paramètre ZPL. La valeur par défaut est « _ » (tiret bas)."
+      },
+      "FL": {
+        "extensionPath": "Caractère d'insertion des données du champ. Tout caractère ASCII est accepté, sauf les délimiteurs de commande et de paramètre ZPL.",
+        "basePath": "Chemin du fichier de police de base. Si le moteur de polices rencontre un glyphe manquant dans cette police, il basculera vers la police d'extension. Aucune valeur par défaut.",
+        "link": "Indique s'il faut lier ou délier les polices. Valeurs valides : 0 (délier) et 1 (lier). La valeur par défaut est 0 (délier)."
+      },
+      "FM": {
+        "x1": "Positions des codes-barres, en points, spécifiées par paires d'entiers (valeurs x et y). Tout nombre entre 0 et 32 000 est accepté. Aucune valeur par défaut.",
+        "y1": "Positions des codes-barres, en points, spécifiées par paires d'entiers (valeurs x et y). Tout nombre entre 0 et 32 000 est accepté. Aucune valeur par défaut.",
+        "x2": "Positions des codes-barres, en points, spécifiées par paires d'entiers (valeurs x et y). Tout nombre entre 0 et 32 000 est accepté. Aucune valeur par défaut.",
+        "y2": "Positions des codes-barres, en points, spécifiées par paires d'entiers (valeurs x et y). Tout nombre entre 0 et 32 000 est accepté. Aucune valeur par défaut."
+      },
+      "FN": {
+        "fieldNumber": "Numéro de champ du champ courant. Tout nombre entre 0 et 9 999 est accepté. La valeur par défaut est 0."
+      },
+      "FO": {
+        "x": "Coordonnée x de la position du champ, en points. Tout nombre entre 0 et 32 000 est accepté. La valeur par défaut est 0.",
+        "y": "Coordonnée y de la position du champ, en points. Tout nombre entre 0 et 32 000 est accepté. La valeur par défaut est 0.",
+        "alignment": "Alignement de l'origine à utiliser. Valeurs valides : 0 (alignement à gauche), 1 (alignement à droite) et 2 (alignement automatique selon le sens du texte des données du champ). La valeur par défaut est la valeur configurée précédemment via la commande ^FW, le cas échéant."
+      },
+      "FP": {
+        "direction": "Sens d'impression. Valeurs valides : H (horizontal / de gauche à droite), V (vertical / de haut en bas) et R (inverse / de droite à gauche). La valeur par défaut est H (horizontal / de gauche à droite).",
+        "characterSpacing": "Espacement supplémentaire à ajouter entre les caractères, en points. Les nombres positifs augmentent la distance entre les caractères, les nombres négatifs la réduisent. Tout nombre entre -10 et 9 999 est accepté. La valeur par défaut est 0."
+      },
+      "FT": {
+        "x": "Coordonnée x de la position du champ, en points. Tout nombre entre 0 et 32 000 est accepté. La valeur par défaut est le bord droit du champ précédent.",
+        "y": "Coordonnée y de la position du champ, en points. Tout nombre entre 0 et 32 000 est accepté. La valeur par défaut est le bord inférieur du champ précédent.",
+        "alignment": "Alignement de l'origine à utiliser. Valeurs valides : 0 (alignement à gauche), 1 (alignement à droite) et 2 (alignement automatique selon le sens du texte des données du champ). La valeur par défaut est la valeur configurée précédemment via la commande ^FW, le cas échéant."
+      },
+      "FV": {
+        "data": "Chaîne de données. Aucune valeur par défaut."
+      },
+      "FW": {
+        "orientation": "Orientation par défaut des champs. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est N (aucune rotation).",
+        "alignment": "Alignement par défaut de l'origine du champ. Valeurs valides : 0 (alignement à gauche), 1 (alignement à droite) et 2 (alignement automatique selon le sens du texte des données du champ). La valeur par défaut est 0 (alignement à gauche)."
+      },
+      "FX": {
+        "comment": "Commentaire informatif."
+      },
+      "GB": {
+        "width": "Largeur de la boîte, en points. Tout nombre entre l'épaisseur de trait de la boîte et 32 000 est accepté. La valeur par défaut est l'épaisseur de trait de la boîte.",
+        "height": "Hauteur de la boîte, en points. Tout nombre entre l'épaisseur de trait de la boîte et 32 000 est accepté. La valeur par défaut est l'épaisseur de trait de la boîte.",
+        "thickness": "Épaisseur de trait pour dessiner la boîte, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est 1.",
+        "color": "Couleur de trait pour dessiner la boîte. Valeurs valides : B (noir) et W (blanc). La valeur par défaut est B (noir).",
+        "rounding": "Degré d'arrondi à appliquer aux coins de la boîte. Tout nombre entre 0 (pas d'arrondi) et 8 (arrondi maximal) est accepté. La valeur par défaut est 0 (pas d'arrondi)."
+      },
+      "GC": {
+        "diameter": "Diamètre du cercle, en points. Tout nombre entre 3 et 4 095 est accepté. La valeur par défaut est 3.",
+        "thickness": "Épaisseur de trait pour dessiner le cercle, en points. Tout nombre entre 1 et 4 095 est accepté. La valeur par défaut est 1.",
+        "color": "Couleur de trait pour dessiner le cercle. Valeurs valides : B (noir) et W (blanc). La valeur par défaut est B (noir)."
+      },
+      "GD": {
+        "width": "Largeur du rectangle qui définit la ligne diagonale, en points. Tout nombre entre 3 et 32 000 est accepté. La valeur par défaut est l'épaisseur de trait.",
+        "height": "Hauteur du rectangle qui définit la ligne diagonale, en points. Tout nombre entre 3 et 32 000 est accepté. La valeur par défaut est l'épaisseur de trait.",
+        "thickness": "Épaisseur de trait pour dessiner la ligne diagonale, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est 1.",
+        "color": "Couleur de trait pour dessiner la ligne diagonale. Valeurs valides : B (noir) et W (blanc). La valeur par défaut est B (noir).",
+        "orientation": "Direction de la ligne diagonale. Valeurs valides : R (de bas en haut) et L (de haut en bas). La valeur par défaut est R (de bas en haut)."
+      },
+      "GE": {
+        "width": "Largeur de l'ellipse, en points. Tout nombre entre 3 et 4 095 est accepté. La valeur par défaut est 3.",
+        "height": "Hauteur de l'ellipse, en points. Tout nombre entre 3 et 4 095 est accepté. La valeur par défaut est 3.",
+        "thickness": "Épaisseur de trait pour dessiner l'ellipse, en points. Tout nombre entre 1 et 4 095 est accepté. La valeur par défaut est 1.",
+        "color": "Couleur de trait pour dessiner l'ellipse. Valeurs valides : B (noir) et W (blanc). La valeur par défaut est B (noir)."
+      },
+      "GF": {
+        "format": "Format des données d'image contenues dans le cinquième paramètre. Valeurs valides : A (format hexadécimal), B (format binaire brut) et C (compressé AR). Aucune valeur par défaut.",
+        "dataBytes": "Nombre total d'octets de données dans le cinquième paramètre. La valeur de ce paramètre est toujours la même que totalBytes, sauf dans le cas du format C (compressé AR), très rarement utilisé.",
+        "totalBytes": "Nombre total d'octets de l'image. Comme chaque pixel utilise 1 bit, cette valeur doit être le nombre total de pixels de l'image divisé par 8 (car il y a 8 bits par octet). Aucune valeur par défaut.",
+        "rowBytes": "Nombre d'octets par ligne de pixels dans l'image. Comme chaque pixel utilise 1 bit, cette valeur doit être la largeur en pixels de l'image divisée par 8 (car il y a 8 bits par octet). Aucune valeur par défaut.",
+        "data": "Données de l'image, au format indiqué dans le premier paramètre. Aucune valeur par défaut."
+      },
+      "GS": {
+        "orientation": "Orientation du symbole à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "height": "Hauteur du symbole à utiliser, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la valeur configurée précédemment via la commande ^CF, le cas échéant.",
+        "width": "Largeur du symbole à utiliser, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la valeur configurée précédemment via la commande ^CF, le cas échéant."
+      },
+      "HF": {
+        "path": "Chemin du fichier depuis lequel lire la définition d'étiquette. La valeur par défaut est R:UNKNOWN.ZPL."
+      },
+      "HG": {
+        "path": "Chemin du fichier depuis lequel lire l'image. La valeur par défaut est R:UNKNOWN.GRF."
+      },
+      "~HQ": {
+        "query": "Type d'information demandée. Valeurs valides : ES (état d'erreur), HA (adresse matérielle), JT (résultats du test de la tête d'impression), MA (réglages d'alerte de maintenance), MI (informations de maintenance), OD (compteur kilométrique), PH (historique de vie de la tête d'impression), PP (chaîne plug and play), SN (numéro de série) et UI (informations USB). Aucune valeur par défaut."
+      },
+      "HR": {
+        "prefix": "Texte de préfixe à envoyer via le terminal avant l'envoi des résultats de calibrage. La valeur par défaut est « start ».",
+        "suffix": "Texte de suffixe à envoyer via le terminal après l'envoi des résultats de calibrage. La valeur par défaut est « end ».",
+        "start": "Position initiale de calibrage, en millimètres, relative au bord d'impression avant. Valeurs valides : F0 - F999 et B0 - B30, où les lettres indiquent le sens (F = vers l'avant, B = vers l'arrière). La valeur par défaut dépend du matériel.",
+        "end": "Position finale de calibrage, en millimètres, relative au bord d'impression avant. Valeurs valides : F0 - F999 et B0 - B30, où les lettres indiquent le sens (F = vers l'avant, B = vers l'arrière). La valeur par défaut dépend du matériel.",
+        "antennaSelection": "Indique si la sélection de l'antenne RFID doit être manuelle ou automatique. Valeurs valides : M (manuelle) et A (automatique). La valeur par défaut est A (automatique)."
+      },
+      "HV": {
+        "fieldNumber": "Numéro identifiant le champ dont les données sont demandées. Tout nombre entre 0 et 9 999 est accepté. La valeur par défaut est 0.",
+        "bytes": "Nombre d'octets de données demandés. Tout nombre entre 1 et 256 peut être spécifié. La valeur par défaut est 64.",
+        "prefix": "Préfixe personnalisé à envoyer via le terminal avant l'envoi des données du champ. Aucune valeur par défaut.",
+        "suffix": "Suffixe personnalisé à envoyer via le terminal après l'envoi des données du champ. Aucune valeur par défaut.",
+        "mode": "Indique s'il faut envoyer les données du champ pour chaque définition d'étiquette traitée, ou pour chaque étiquette générée. Valeurs valides : F (par définition d'étiquette) et L (par étiquette générée). La valeur par défaut est F (par définition d'étiquette)."
+      },
+      "HW": {
+        "path": "Motif de chemin de fichier utilisé pour rechercher les fichiers à inclure dans la liste. Les caractères génériques (*, ?) sont acceptés. La valeur par défaut est R:*.*.",
+        "format": "Format à utiliser pour envoyer la liste de fichiers. Valeurs valides : D (par défaut) et C (colonnes). La valeur par défaut est D (par défaut)."
+      },
+      "HY": {
+        "path": "Chemin du fichier depuis lequel lire l'image. La valeur par défaut est R:UNKNOWN.GRF."
+      },
+      "HZ": {
+        "selector": "Type d'information à envoyer. Valeurs valides : A (toutes les informations), F (configuration du format), L (liste du répertoire), O (informations sur un objet individuel) et R (état de l'imprimante). Aucune valeur par défaut.",
+        "path": "Chemin du fichier de l'objet individuel dont les informations sont demandées. La valeur par défaut est R:UNKNOWN.GRF. Utilisé uniquement lors de la demande d'informations sur un objet individuel (sélecteur = O).",
+        "longFilenames": "Indique s'il faut utiliser des noms de fichier longs (16 caractères). Utilisé uniquement lors de la demande d'informations sur un objet individuel (sélecteur = O)."
+      },
+      "ID": {
+        "path": "Motif de chemin de fichier utilisé pour rechercher les fichiers à supprimer. Les caractères génériques (*, ?) sont acceptés. La valeur par défaut est R:UNKNOWN.GRF."
+      },
+      "IL": {
+        "path": "Chemin du fichier image d'étiquette. La valeur par défaut est R:UNKNOWN.GRF."
+      },
+      "IM": {
+        "path": "Chemin du fichier image. La valeur par défaut est R:UNKNOWN.GRF."
+      },
+      "IS": {
+        "path": "Chemin du fichier où enregistrer l'image. La valeur par défaut est R:UNKNOWN.GRF.",
+        "print": "Indique s'il faut continuer d'imprimer la définition d'étiquette courante après l'avoir enregistrée en fichier image. Valeurs valides : Y (imprimer après enregistrement) et N (ne pas imprimer après enregistrement). La valeur par défaut est Y (imprimer après enregistrement)."
+      },
+      "JB": {
+        "device": "Périphérique à réinitialiser. Valeurs valides : A (carte Compact Flash), B (carte PCMCIA) et E (mémoire flash interne). Aucune valeur par défaut."
+      },
+      "~JF": {
+        "pause": "Indique s'il faut mettre en pause lorsque la batterie de l'imprimante est très faible. Valeurs valides : Y (mettre en pause en cas de batterie faible) et N (ne pas mettre en pause en cas de batterie faible). La valeur par défaut est Y (mettre en pause en cas de batterie faible)."
+      },
+      "JH": {
+        "settings": "Active ou désactive les avertissements liés au support. Valeurs valides : E (activer) et D (désactiver). La valeur par défaut est D (désactiver). Le nombre d'étiquettes par rouleau. Tout nombre entre 100 et 9 999 est accepté. La valeur par défaut est 900. Indique si le rouleau d'étiquettes a été remplacé. Valeurs valides : Y et N. La valeur par défaut est N (les étiquettes n'ont pas été remplacées). La longueur du ruban. Les valeurs valides varient selon le modèle d'imprimante, tout comme la valeur par défaut. Indique si le ruban a été remplacé. Valeurs valides : Y et N. La valeur par défaut est N (le ruban n'a pas été remplacé). Active ou désactive les avertissements liés à la maintenance matérielle. Valeurs valides : E (activer) et D (désactiver). La valeur par défaut est D (désactiver). L'intervalle prévu entre deux nettoyages de la tête d'impression. Tout nombre entre 0 et 16 est accepté, où le nombre N représente un intervalle de (100+(50*N)) mètres. Indique si la tête d'impression a été nettoyée. Valeurs valides : Y et N. La valeur par défaut est N (la tête n'a pas été nettoyée). L'intervalle prévu entre deux remplacements de la tête d'impression, en pouces. Tout nombre entre 100 et 3 500 000 est accepté. La valeur par défaut est 1 000 000. Indique si la tête d'impression a été remplacée. Valeurs valides : Y et N. La valeur par défaut est N (la tête n'a pas été remplacée)."
+      },
+      "JI": {
+        "path": "Chemin du script d'initialisation BASIC à exécuter automatiquement, le cas échéant. Aucune valeur par défaut.",
+        "console": "Indique s'il faut activer la console. Valeurs valides : Y (activer la console) et N (ne pas activer la console). La valeur par défaut est Y (activer la console).",
+        "echo": "Indique s'il faut activer l'écho. Valeurs valides : Y (activer l'écho) et N (ne pas activer l'écho). La valeur par défaut est Y (activer l'écho).",
+        "memory": ""
+      },
+      "JJ": {
+        "opMode": "Mode opérationnel. Valeurs valides : 0 (arrêt), 1 (arrêter en cas d'erreur) et 2 (arrêter peu après une erreur). La valeur par défaut est 0 (arrêt).",
+        "appMode": "Mode d'application. Valeurs valides : 0 (arrêt), 1 (signal bas pendant l'impression), 2 (signal haut pendant l'impression), 3 (signal bas après l'impression) et 4 (signal haut après l'impression). La valeur par défaut est 0 (arrêt).",
+        "signalMode": "Mode du signal de démarrage d'impression. Valeurs valides : P (mode impulsion) et L (mode niveau).",
+        "errMode": "Mode d'erreur d'étiquette. Valeurs valides : E (mode erreur) et F (mode avance). La valeur par défaut est F (mode avance).",
+        "reprintMode": "Mode de réimpression. Valeurs valides : E (activé) et D (désactivé). La valeur par défaut est D (désactivé).",
+        "ribbonMode": "Mode d'avertissement de ruban faible. Valeurs valides : E (activé) et D (désactivé). La valeur par défaut est E (activé)."
+      },
+      "JM": {
+        "adjustment": "Indique s'il faut utiliser la densité d'impression normale ou la demi-densité. Valeurs valides : A (densité normale) et B (demi-densité). La valeur par défaut est la valeur configurée précédemment, ou A (densité normale) si aucune valeur n'a été configurée auparavant."
+      },
+      "JS": {
+        "sensor": "Capteur de support actif. Valeurs valides : A (sélection automatique), R (capteur de support par réflexion) et T (capteur de support par transmission). La valeur par défaut varie selon le modèle d'imprimante."
+      },
+      "~JS": {
+        "sequence": "Actions de recul de l'étiquette. Valeurs valides : A (recul de 100 % après impression), B (recul de 100 % avant impression), N (normal, c.-à-d. recul de 90 % après impression), O (désactivé, c.-à-d. pas de recul), ou tout multiple de 10 entre 10 et 90 (pourcentage de recul après impression). La valeur par défaut est N (normal, c.-à-d. recul de 90 % après impression)."
+      },
+      "JT": {
+        "interval": "Intervalle, en étiquettes, entre chaque test de la tête d'impression. Tout nombre entre 0 et 9999 est accepté. La valeur par défaut est 0 (pas de test).",
+        "manual": "Indique s'il faut configurer la plage d'éléments de test manuellement. Valeurs valides : Y (configuration manuelle) et N (configuration automatique).",
+        "first": "Premier élément à tester (si le mode manuel est Y). Tout nombre entre 0 et 9999 est accepté. La valeur par défaut est 0.",
+        "last": "Dernier élément à tester (si le mode manuel est Y). Tout nombre entre 0 et 9999 est accepté. La valeur par défaut est 9999."
+      },
+      "JU": {
+        "configuration": "Configuration de l'imprimante à charger ou enregistrer. Valeurs valides : S (enregistrer les réglages actuels), R (recharger les derniers réglages enregistrés), F (recharger les réglages d'usine) et N (recharger les réglages réseau d'usine). Aucune valeur par défaut."
+      },
+      "JW": {
+        "tension": "Tension du ruban. Valeurs valides : L (tension faible), M (tension moyenne) et H (tension élevée). Aucune valeur par défaut."
+      },
+      "JZ": {
+        "reprint": "Indique s'il faut réimprimer les étiquettes interrompues par une condition d'erreur. Valeurs valides : Y (réimprimer) et N (ne pas réimprimer). Aucune valeur par défaut."
+      },
+      "KC": {
+        "enable": "Indique s'il faut activer un identifiant client réseau personnalisé. Valeurs valides : 0 (désactiver), 1 (activer et utiliser l'adresse MAC), 2 (activer et utiliser la valeur ASCII spécifiée) et 3 (activer et utiliser la valeur hexadécimale spécifiée). La valeur par défaut est 0 (désactiver).",
+        "device": "Périphérique réseau à configurer. Valeurs valides : 0 (tous les périphériques réseau), 1 (le périphérique réseau sans fil), 2 (le périphérique réseau filaire externe) et 3 (le périphérique réseau filaire interne). La valeur par défaut est 1 (le périphérique réseau sans fil).",
+        "prefix": "Préfixe personnalisé optionnel à utiliser. Jusqu'à 11 caractères ASCII ou 22 caractères hexadécimaux, selon la valeur du premier paramètre.",
+        "identifier": "Identifiant client à utiliser. Jusqu'à 60 caractères ASCII ou 120 caractères hexadécimaux, selon la valeur du premier paramètre."
+      },
+      "KD": {
+        "format": "Format de date et d'heure à utiliser. Valeurs valides : 1 (mm/jj/aa avec heure sur 24 h), 2 (mm/jj/aa avec heure sur 12 h), 3 (jj/mm/aa avec heure sur 24 h) et 4 (jj/mm/aa avec heure sur 12 h). La valeur par défaut est 1 (mm/jj/aa avec heure sur 24 h)."
+      },
+      "KL": {
+        "language": "Langue d'affichage du panneau de commande. Valeurs valides : 1 (anglais), 2 (espagnol), 3 (français), 4 (allemand), 5 (italien), 6 (norvégien), 7 (portugais), 8 (suédois), 9 (danois), 10 (espagnol), 11 (néerlandais), 12 (finnois), 13 (japonais), 14 (coréen), 15 (chinois simplifié), 16 (chinois traditionnel), 17 (russe), 18 (polonais), 19 (tchèque) et 20 (roumain). La valeur par défaut est 1 (anglais)."
+      },
+      "KN": {
+        "name": "Nom réseau de l'imprimante. Longueur maximale : 16 caractères.",
+        "shortDescription": "Description de l'imprimante, le cas échéant. Longueur maximale : 35 caractères."
+      },
+      "KP": {
+        "password": "Nouveau mot de passe du panneau de commande. Doit comporter quatre chiffres. La valeur par défaut est 1234.",
+        "level": "Niveau de mot de passe. Tout nombre entre 1 et 4 est accepté. La valeur par défaut est 3."
+      },
+      "KV": {
+        "cutAmount": "Longueur à laisser non coupée, en millimètres. Tout nombre entre 10 et 60 est accepté. La valeur 0 est également acceptée. La valeur par défaut est la valeur configurée précédemment, ou 0 si aucune valeur n'a été configurée auparavant.",
+        "cutMargin": "Marge de coupe, en millimètres. Tout nombre entre 2 et 9 est accepté. La valeur par défaut est la valeur configurée précédemment, ou 9 si aucune valeur n'a été configurée auparavant.",
+        "presentType": "Type d'action de présentation. Valeurs valides : 0 (éjecter après impression), 1 (rétracter après impression) et 2 (aucune action). La valeur par défaut est la valeur configurée précédemment, ou 0 (éjecter la page) si aucune valeur n'a été configurée auparavant.",
+        "presentTimeout": "Durée, en secondes, d'attente de la récupération d'une étiquette avant de la rétracter. Tout nombre entre 0 et 300 est accepté. La valeur par défaut est la valeur configurée précédemment, ou 0 (pas de délai) si aucune valeur n'a été configurée auparavant.",
+        "loopLen": "Longueur de la boucle du présentateur, en millimètres. Tout nombre entre 3 et 1023 est accepté. La valeur 0 peut aussi être utilisée pour indiquer l'absence de boucle. La valeur par défaut est la valeur configurée précédemment, ou 400 si aucune valeur n'a été configurée auparavant."
+      },
+      "LH": {
+        "x": "Coordonnée x de la nouvelle origine, en points, relative à l'origine d'origine (coin supérieur gauche de l'étiquette). Tout nombre entre 0 et 32 000 est accepté. La valeur par défaut est la valeur configurée précédemment, ou 0 si aucune valeur n'a été configurée auparavant.",
+        "y": "Coordonnée y de la nouvelle origine, en points, relative à l'origine d'origine (coin supérieur gauche de l'étiquette). Tout nombre entre 0 et 32 000 est accepté. La valeur par défaut est la valeur configurée précédemment, ou 0 si aucune valeur n'a été configurée auparavant."
+      },
+      "LL": {
+        "length": "Longueur de l'étiquette, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut dépend de la configuration précédente.",
+        "allMedia": "Indique si la longueur de l'étiquette s'applique à tous les supports (Y) ou seulement au support continu (N). La valeur par défaut est N (support continu uniquement)."
+      },
+      "LR": {
+        "reverse": "Indique s'il faut activer le mode inversé. Valeurs valides : Y (activer le mode inversé) et N (désactiver le mode inversé). La valeur par défaut est N (désactiver le mode inversé)."
+      },
+      "LS": {
+        "distance": "Distance de décalage du contenu de l'étiquette vers la gauche, en points. Tout nombre entre -9 999 et 9 999 est accepté. Les valeurs positives décalent le contenu vers la gauche, les valeurs négatives vers la droite. La valeur par défaut est la valeur configurée précédemment, ou 0 si aucune valeur n'a été configurée auparavant."
+      },
+      "LT": {
+        "distance": "Distance de décalage du contenu de l'étiquette vers le bas, en points. Tout nombre entre -120 et 120 est accepté. Les valeurs positives décalent le contenu vers le bas, les valeurs négatives vers le haut. La valeur par défaut est la valeur configurée précédemment, ou 0 si aucune valeur n'a été configurée auparavant."
+      },
+      "MA": {
+        "type": "Type d'alerte de maintenance à configurer. Valeurs valides : R (alertes de remplacement de la tête d'impression) et C (alertes de nettoyage de la tête d'impression). Aucune valeur par défaut.",
+        "print": "Indique s'il faut imprimer une étiquette d'alerte de maintenance pour le type d'alerte spécifié. Valeurs valides : Y (imprimer les étiquettes d'alerte) et N (ne pas imprimer les étiquettes d'alerte). La valeur par défaut est N (ne pas imprimer les étiquettes d'alerte).",
+        "threshold": "Distance d'étiquettes initiale au bout de laquelle la première étiquette d'alerte de maintenance doit être imprimée. Pour le type d'alerte R, tout nombre entre 0 et 150 est accepté ; unité : kilomètres. Pour le type d'alerte C, tout nombre entre 0 et 2 000 est accepté ; unité : mètres. La valeur par défaut est 50 km pour le type R et 0 m pour le type C.",
+        "frequency": "Distance d'étiquettes au bout de laquelle l'étiquette d'alerte de maintenance doit être réimprimée, en mètres. Tout nombre entre 0 et 2 000 est accepté. La valeur par défaut est 0.",
+        "units": "Unités à utiliser pour rapporter les informations de maintenance. Valeurs valides : C (centimètres), I (pouces) et M (mètres). La valeur par défaut est I (pouces)."
+      },
+      "MC": {
+        "clear": "Indique s'il faut effacer le contenu de l'étiquette précédente avant de dessiner l'étiquette suivante. Valeurs valides : Y (effacer le contenu précédent) et N (ne pas effacer le contenu précédent). La valeur par défaut est Y (effacer le contenu précédent)."
+      },
+      "MD": {
+        "darknessModifier": "Valeur d'augmentation ou de diminution du niveau de densité. Tout nombre entre -30 et 30 est accepté. Les nombres négatifs éclaircissent l'impression, les nombres positifs l'assombrissent. Aucune valeur par défaut."
+      },
+      "MF": {
+        "powerupAction": "Action de chargement du support à la mise sous tension. Valeurs valides : F (avancer le support jusqu'à la première marque inter-étiquettes), C (recalibrer le capteur de support), L (réinitialiser la longueur de l'étiquette), N (ne rien faire) et S (effectuer un calibrage court). La valeur par défaut est C (recalibrer le capteur de support).",
+        "closingAction": "Action de chargement du support à la fermeture de la tête. Valeurs valides : F (avancer le support jusqu'à la première marque inter-étiquettes), C (recalibrer le capteur de support), L (réinitialiser la longueur de l'étiquette), N (ne rien faire) et S (effectuer un calibrage court). La valeur par défaut est C (recalibrer le capteur de support)."
+      },
+      "MI": {
+        "type": "Type d'alerte de maintenance à configurer. Valeurs valides : R (alertes de remplacement de la tête d'impression) et C (alertes de nettoyage de la tête d'impression). La valeur par défaut est R (alertes de remplacement de la tête d'impression).",
+        "message": "Message à imprimer sur l'étiquette d'alerte de maintenance. Longueur maximale : 63 caractères. La valeur par défaut est « PLEASE REPLACE PRINT HEAD » pour le type d'alerte R, et « PLEASE CLEAN PRINT HEAD » pour le type d'alerte C."
+      },
+      "ML": {
+        "maxLength": "Longueur maximale de l'étiquette, en points. Aucune valeur par défaut."
+      },
+      "MM": {
+        "mode": "Action après impression à effectuer par l'imprimante après chaque étiquette imprimée. Valeurs valides : T (avancer l'étiquette jusqu'à la barre de déchirement pour un déchirement manuel), P (avancer l'étiquette et attendre un décollement manuel), R (rembobiner l'étiquette sur un dérouleur externe), A (avancer l'étiquette pour un applicateur), C (avancer l'étiquette pour une coupe automatique), D (attendre une commande de coupe différée), F (encoder les données RFID sans recul) et K (présenter l'étiquette pour retrait depuis un kiosque). La valeur par défaut est T (avancer l'étiquette jusqu'à la barre de déchirement pour un déchirement manuel).",
+        "prepeel": "Indique s'il faut pré-décoller chaque étiquette avant l'impression. Valeurs valides : Y (pré-décoller les étiquettes) et N (ne pas pré-décoller les étiquettes). La valeur par défaut est N (ne pas pré-décoller les étiquettes)."
+      },
+      "MN": {
+        "media": "Type de support d'étiquette utilisé. Valeurs valides : N (support continu), V (support continu de longueur variable), W ou Y (support non continu à détection de bande), M (support non continu à détection de marque) et A (détection automatique du type de support pendant le calibrage). Aucune valeur par défaut.",
+        "offset": "Décalage de la marque de support par rapport à la coupure réelle de l'étiquette, en points. Les valeurs valides dépendent du matériel, mais les valeurs entre -75 et 283 sont généralement valides. La valeur par défaut est 0."
+      },
+      "MP": {
+        "function": "Fonction du panneau de commande à désactiver. Valeurs valides : D (désactiver le mode densité), P (désactiver le mode position), C (désactiver le mode calibrage), W (désactiver la pause), F (désactiver l'avance), X (désactiver l'annulation), M (désactiver les réglages du menu), S (désactiver les sauvegardes de mode) et E (réactiver tous les modes). Aucune valeur par défaut."
+      },
+      "MT": {
+        "mediaType": "Type de support d'étiquette utilisé. Valeurs valides : D (support thermique direct) et T (support à transfert thermique). Aucune valeur par défaut."
+      },
+      "MU": {
+        "units": "Unités à utiliser pour spécifier les coordonnées et distances de l'étiquette. Valeurs valides : D (points), I (pouces) et M (millimètres). Aucune valeur par défaut.",
+        "baseDpi": "DPI de base de la définition d'étiquette. Ce paramètre est ignoré si l'unité n'est pas D (points). Valeurs valides : 150, 200, 300 et 600. Aucune valeur par défaut.",
+        "desiredDpi": "DPI souhaité de la définition d'étiquette. Ce paramètre est ignoré si l'unité n'est pas D (points). Valeurs valides : 150, 200, 300 et 600. Cette valeur doit être un multiple entier du DPI de base. Aucune valeur par défaut."
+      },
+      "MW": {
+        "enable": "Indique s'il faut activer l'avertissement de tête froide. Valeurs valides : Y (activer) et N (désactiver). Aucune valeur par défaut."
+      },
+      "NB": {
+        "check": ""
+      },
+      "NC": {
+        "device": ""
+      },
+      "~NC": {
+        "networkId": ""
+      },
+      "ND": {
+        "device": "",
+        "res": "",
+        "ip": "",
+        "mask": "",
+        "gateway": "",
+        "wins": "",
+        "timeout": "",
+        "secs": "",
+        "arp": "",
+        "port": ""
+      },
+      "NI": {
+        "networkId": ""
+      },
+      "NN": {
+        "name": "",
+        "contact": "",
+        "location": "",
+        "getCommunity": "",
+        "setCommunity": "",
+        "trapCommunity": ""
+      },
+      "NP": {
+        "device": ""
+      },
+      "NS": {
+        "res": "",
+        "ip": "",
+        "mask": "",
+        "gateway": "",
+        "wins": "",
+        "timeout": "",
+        "secs": "",
+        "arp": "",
+        "port": ""
+      },
+      "NT": {
+        "server": "",
+        "domain": ""
+      },
+      "NW": {
+        "timeout": ""
+      },
+      "PA": {
+        "defaultGlyph": "Indique s'il faut utiliser un caractère espace ou le glyphe .notdef lorsqu'une police ne peut pas afficher un caractère. Le glyphe .notdef est généralement un rectangle vertical vide. Valeurs valides : 0 (utiliser un caractère espace) et 1 (utiliser le glyphe .notdef). La valeur par défaut est la valeur configurée précédemment, ou 0 (utiliser un caractère espace) si aucune valeur n'a été configurée auparavant.",
+        "bidi": "Indique s'il faut activer la mise en page bidirectionnelle du texte, importante pour les écritures arabe et hébraïque. Valeurs valides : 0 (désactiver la mise en page bidi) et 1 (activer la mise en page bidi). La valeur par défaut est la valeur configurée précédemment, ou 0 (désactiver la mise en page bidi) si aucune valeur n'a été configurée auparavant.",
+        "charShaping": "Indique s'il faut activer le façonnage des caractères (character shaping), important pour les écritures arabe et indiennes. Valeurs valides : 0 (désactiver le façonnage) et 1 (activer le façonnage). La valeur par défaut est la valeur configurée précédemment, ou 0 (désactiver le façonnage) si aucune valeur n'a été configurée auparavant.",
+        "openTypeSupport": "Indique s'il faut activer la prise en charge des fonctionnalités OpenType avancées, comme les ligatures. Valeurs valides : 0 (désactiver les fonctionnalités OpenType) et 1 (activer les fonctionnalités OpenType). La valeur par défaut est la valeur configurée précédemment, ou 0 (désactiver les fonctionnalités OpenType) si aucune valeur n'a été configurée auparavant."
+      },
+      "PF": {
+        "rows": "Nombre de rangées de points (à partir du bas de l'étiquette) à faire avancer. Tout nombre entre 0 et 32 000 est accepté. Aucune valeur par défaut."
+      },
+      "~PL": {
+        "length": "Longueur de la section d'étiquette supplémentaire à éjecter, en millimètres. Tout nombre entre 0 et 255 est accepté. La valeur par défaut est 0."
+      },
+      "PM": {
+        "mirror": "Indique s'il faut refléter (miroir) le contenu de l'étiquette. Valeurs valides : Y (refléter le contenu) et N (ne pas refléter le contenu). Aucune valeur par défaut."
+      },
+      "~PM": {
+        "serialNumber": "Numéro de série de l'imprimante. Le numéro de série correct doit être utilisé. Aucune valeur par défaut.",
+        "wipeCount": "Nombre de fois où effacer la mémoire de l'imprimante. Tout nombre entre 0 et 3 est accepté. La valeur par défaut est 0."
+      },
+      "PN": {
+        "length": "Longueur de la section d'étiquette à éjecter, en millimètres. Tout nombre entre 0 et 255 est accepté. Aucune valeur par défaut."
+      },
+      "PO": {
+        "orientation": "Indique s'il faut inverser le contenu de l'étiquette. Valeurs valides : I (inverser le contenu) et N (ne pas inverser le contenu). La valeur par défaut est N (ne pas inverser le contenu)."
+      },
+      "PQ": {
+        "labels": "Nombre d'étiquettes générées par la définition d'étiquette courante. Tout nombre entre 1 et 99 999 999 est accepté. La valeur par défaut est 1.",
+        "labelsBetweenPauses": "Nombre d'étiquettes entre chaque pause d'impression. Tout nombre entre 0 et 99 999 999 est accepté. La valeur par défaut est 0 (pas de pause).",
+        "replicates": "Nombre de duplicatas d'étiquette à générer pour chaque numéro de série. Tout nombre entre 0 et 99 999 999 est accepté. La valeur par défaut est 0 (pas de duplicata).",
+        "noPause": "Indique s'il faut empêcher les pauses de l'imprimante. Valeurs valides : Y (empêcher les pauses) et N (ne pas empêcher les pauses). La valeur par défaut est N (ne pas empêcher les pauses).",
+        "cutOnError": "Indique s'il faut couper les étiquettes après une étiquette d'erreur. Valeurs valides : Y (couper après l'étiquette d'erreur) et N (ne pas couper après l'étiquette d'erreur). La valeur par défaut est Y (couper après l'étiquette d'erreur)."
+      },
+      "PR": {
+        "printSpeed": "Vitesse d'impression, en pouces par seconde. Tout nombre entre 1 et 14 est accepté. La valeur par défaut est 2.",
+        "slewSpeed": "Vitesse d'avance, en pouces par seconde. Tout nombre entre 1 et 14 est accepté. La valeur par défaut est 6.",
+        "backfeedSpeed": "Vitesse de recul, en pouces par seconde. Tout nombre entre 1 et 14 est accepté. La valeur par défaut est 2."
+      },
+      "PW": {
+        "width": "Largeur d'impression de l'étiquette, en points. Tout nombre entre 2 et la largeur de l'étiquette est accepté. La valeur par défaut est la valeur configurée précédemment, ou la largeur de l'étiquette si aucune valeur n'a été configurée auparavant."
+      },
+      "RA": {
+        "fieldNumber": "",
+        "format": "",
+        "retries": "",
+        "motion": "",
+        "byteType": ""
+      },
+      "RB": {
+        "totalBits": "",
+        "partition1": "",
+        "partition2": ""
+      },
+      "RE": {
+        "enable": "",
+        "retries": ""
+      },
+      "RF": {
+        "operation": "",
+        "format": "",
+        "passwordOrBlock": "",
+        "bytes": "",
+        "memoryBank": ""
+      },
+      "RI": {
+        "fieldNumber": "",
+        "order": "",
+        "retries": "",
+        "motion": ""
+      },
+      "RL": {
+        "lockAction": "",
+        "p1": "",
+        "p2": "",
+        "epcOp": "",
+        "userOp": ""
+      },
+      "RM": {
+        "enable": ""
+      },
+      "RN": {
+        "enable": ""
+      },
+      "~RO": {
+        "counter": ""
+      },
+      "RQ": {
+        "format": "",
+        "chipType": "",
+        "option": ""
+      },
+      "RR": {
+        "retries": "",
+        "adaptive": ""
+      },
+      "RS": {
+        "type": "",
+        "pos": "",
+        "voidLen": "",
+        "labels": "",
+        "onError": "",
+        "signal": "",
+        "deprecated": "",
+        "voidSpeed": ""
+      },
+      "RT": {
+        "fieldNumber": "",
+        "startBlock": "",
+        "blocks": "",
+        "format": "",
+        "retries": "",
+        "motion": "",
+        "mode": ""
+      },
+      "RU": {
+        "prefix": "",
+        "escapeChar": ""
+      },
+      "~RV": {
+        "enable": ""
+      },
+      "RW": {
+        "readPower": "",
+        "writePower": "",
+        "antennaElement": ""
+      },
+      "RZ": {
+        "password": "",
+        "passwordType": "",
+        "lockType": ""
+      },
+      "SC": {
+        "baud": "Débit en bauds à utiliser, en bits par seconde. Valeurs valides : 110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600 et 115200. Aucune valeur par défaut.",
+        "wordBits": "Nombre de bits de données dans chaque caractère. Valeurs valides : 7 et 8. Aucune valeur par défaut.",
+        "parity": "Type de bit de parité à utiliser pour la détection d'erreurs. Valeurs valides : N (aucun), O (impair) et E (pair). Aucune valeur par défaut.",
+        "stopBits": "Nombre de bits d'arrêt à envoyer après chaque caractère. Valeurs valides : 1 et 2. Aucune valeur par défaut.",
+        "mode": "Mode de contrôle de flux à utiliser pendant l'établissement de la liaison. Valeurs valides : X (XON/XOFF), D (DTR/DSR), R (RTS) et M (DTR/DSR XON/XOFF). Aucune valeur par défaut.",
+        "protocol": "Protocole de communication à utiliser. Valeurs valides : A (ACK/NAK), N (aucun) et Z (réservé). Aucune valeur par défaut."
+      },
+      "~SD": {
+        "darkness": "Niveau de densité d'impression. Tout nombre entre 0 et 30 est accepté. Des nombres plus élevés assombrissent l'impression. La valeur par défaut est la valeur configurée précédemment."
+      },
+      "SE": {
+        "path": "Chemin du fichier depuis lequel charger la table d'encodage. Le fichier doit utiliser l'extension .DAT. Aucune valeur par défaut."
+      },
+      "SF": {
+        "mask": "Masque à appliquer aux données du champ pour déterminer comment les incrémenter. Doit correspondre à la valeur de départ spécifiée dans la commande ^FD. Caractères valides : D (nombres décimaux), H (nombres hexadécimaux), O (nombres octaux), A (lettres ASCII), N (caractères ASCII alphanumériques) et % (caractères ignorés). Aucune valeur par défaut.",
+        "increment": "Incrément à appliquer aux données du champ pour chaque étiquette supplémentaire. La valeur par défaut est 1."
+      },
+      "SI": {
+        "setting": "Réglage précis à configurer. Valeurs valides : 1 (luminosité) et 2 (ligne de base). Aucune valeur par défaut.",
+        "value": "Valeur d'intensité. Tout nombre entre 0 et 196 est accepté. Aucune valeur par défaut."
+      },
+      "SL": {
+        "mode": "Mode d'horloge. Valeurs valides : S (utiliser l'heure au début de l'analyse ZPL), T (utiliser l'heure au début de la mise en file d'impression), ou tout nombre entre 1 et 999 (utiliser l'heure du dernier tic d'horloge, avec la résolution d'horloge indiquée, en secondes).",
+        "language": "Langue à utiliser pour localiser les données de date/heure du champ. Valeurs valides : 1 (anglais), 2 (espagnol), 3 (français), 4 (allemand), 5 (italien), 6 (norvégien), 7 (portugais), 8 (suédois), 9 (danois), 10 (espagnol), 11 (néerlandais), 12 (finnois), 13 (japonais), 14 (coréen), 15 (chinois simplifié), 16 (chinois traditionnel), 17 (russe), 18 (polonais), 19 (tchèque) et 20 (roumain). La valeur par défaut est la valeur configurée précédemment, ou la langue du panneau de commande si aucune valeur n'a été configurée auparavant."
+      },
+      "SN": {
+        "start": "Nombre de départ. La valeur par défaut est 1.",
+        "increment": "Incrément (ou décrément) à appliquer aux données du champ pour chaque étiquette supplémentaire. Tout nombre, positif ou négatif, contenant jusqu'à 12 chiffres, est accepté. La valeur par défaut est 1.",
+        "pad": "Indique s'il faut compléter les nombres par des zéros pour correspondre à la largeur du nombre de départ d'origine. Valeurs valides : Y (compléter par des zéros) et N (ne pas compléter par des zéros). La valeur par défaut est N (ne pas compléter par des zéros)."
+      },
+      "SO": {
+        "clock": "Horloge à modifier. Valeurs valides : 2 (secondaire) et 3 (tertiaire). Aucune valeur par défaut.",
+        "months": "Décalage en mois. Tout nombre entre -32 000 et 32 000 est accepté. La valeur par défaut est 0.",
+        "days": "Décalage en jours. Tout nombre entre -32 000 et 32 000 est accepté. La valeur par défaut est 0.",
+        "years": "Décalage en années. Tout nombre entre -32 000 et 32 000 est accepté. La valeur par défaut est 0.",
+        "hours": "Décalage en heures. Tout nombre entre -32 000 et 32 000 est accepté. La valeur par défaut est 0.",
+        "minutes": "Décalage en minutes. Tout nombre entre -32 000 et 32 000 est accepté. La valeur par défaut est 0.",
+        "seconds": "Décalage en secondes. Tout nombre entre -32 000 et 32 000 est accepté. La valeur par défaut est 0."
+      },
+      "SP": {
+        "row": "Numéro de rangée de points à laquelle commencer l'impression du segment d'étiquette courant. Tout nombre entre 0 et 32 000 est accepté. La valeur par défaut est 0."
+      },
+      "SQ": {
+        "condition": "Condition d'erreur de l'alerte à arrêter ou démarrer. Valeurs valides : les lettres A à W (pour les erreurs individuelles) et * (pour toutes les erreurs).",
+        "destination": "Destination de l'alerte à arrêter ou démarrer. Valeurs valides : A (port série), B (port parallèle), C (e-mail), D (TCP), E (UDP), F (SNMP) et * (toutes les destinations).",
+        "stop": "Indique s'il faut arrêter ou démarrer l'alerte. Valeurs valides : Y (arrêter les alertes) et N (démarrer les alertes). La valeur par défaut est Y (arrêter les alertes)."
+      },
+      "SR": {
+        "resistance": "Résistance de la tête d'impression. Tout nombre entre 488 et 1175 est accepté. La valeur par défaut est la valeur configurée précédemment."
+      },
+      "SS": {
+        "web": "Seuil du capteur de bande. Tout nombre entre 0 et 100 est accepté. La valeur par défaut est la valeur auto-calibrée.",
+        "media": "Seuil du capteur de support. Tout nombre entre 0 et 100 est accepté. La valeur par défaut est la valeur auto-calibrée.",
+        "ribbon": "Seuil du capteur de ruban. Tout nombre entre 0 et 100 est accepté. La valeur par défaut est la valeur auto-calibrée.",
+        "length": "Longueur de l'étiquette, en points. Tout nombre entre 1 et 32 000 est accepté. La valeur par défaut est la valeur auto-calibrée.",
+        "int1": "Intensité de la LED de support. Tout nombre entre 0 et 255 est accepté. La valeur par défaut est la valeur auto-calibrée.",
+        "int2": "Intensité de la LED du ruban. Tout nombre entre 0 et 255 est accepté. La valeur par défaut est la valeur auto-calibrée.",
+        "sense": "Seuil du capteur de marque noire. Tout nombre entre 0 et 100 est accepté. La valeur par défaut est la valeur auto-calibrée.",
+        "mediaSense": "Seuil du capteur de marque noire du support. Tout nombre entre 0 et 100 est accepté. La valeur par défaut est la valeur auto-calibrée.",
+        "ledSense": "Intensité de la LED du capteur de marque noire. Tout nombre entre 0 et 255 est accepté. La valeur par défaut est la valeur auto-calibrée."
+      },
+      "ST": {
+        "month": "Mois. Tout nombre entre 1 et 12 est accepté. La valeur par défaut est le mois actuel.",
+        "day": "Jour. Tout nombre entre 1 et 31 est accepté. La valeur par défaut est le jour actuel.",
+        "year": "Année. Tout nombre entre 1998 et 2097 est accepté. La valeur par défaut est l'année actuelle.",
+        "hour": "Heure. Tout nombre entre 0 et 23 est accepté. La valeur par défaut est l'heure actuelle.",
+        "minute": "Minute. Tout nombre entre 0 et 59 est accepté. La valeur par défaut est la minute actuelle.",
+        "second": "Seconde. Tout nombre entre 0 et 59 est accepté. La valeur par défaut est la seconde actuelle.",
+        "format": "Format d'heure utilisé dans le quatrième paramètre. Valeurs valides : A (AM), P (PM) et M (format 24 h/militaire). La valeur par défaut est M (format 24 h/militaire)."
+      },
+      "SX": {
+        "condition": "Condition d'erreur de l'alerte à configurer. Valeurs valides : les lettres A à W (pour les erreurs individuelles) et * (pour toutes les erreurs).",
+        "destination": "Destination de l'alerte à configurer. Valeurs valides : A (port série), B (port parallèle), C (e-mail), D (TCP), E (UDP) et F (SNMP).",
+        "set": "Indique s'il faut alerter à l'activation. Valeurs valides : Y (alerter à l'activation) et N (ne pas alerter à l'activation). La valeur par défaut est la valeur configurée précédemment.",
+        "clear": "Indique s'il faut alerter à l'effacement. Valeurs valides : Y (alerter à l'effacement) et N (ne pas alerter à l'effacement). La valeur par défaut est la valeur configurée précédemment.",
+        "setting": "Détails de la destination, selon le type de destination configuré : une adresse e-mail, une adresse IP, ou un trap SNMP.",
+        "port": "Port de destination, selon le type de destination configuré : un numéro de port TCP, ou un numéro de port UDP."
+      },
+      "SZ": {
+        "version": "Version ZPL. Valeurs valides : 1 (ZPL) et 2 (ZPL II). L'utilisation de la valeur 1 (ZPL) est fortement déconseillée. La valeur par défaut est 2 (ZPL II)."
+      },
+      "~TA": {
+        "adjustment": "Ajustement de la position de déchirement, en points. Tout nombre entre -120 et 120 est accepté. La valeur par défaut est la valeur configurée précédemment, ou 0 si aucune valeur n'a été configurée auparavant."
+      },
+      "TB": {
+        "orientation": "Orientation du bloc de texte à utiliser. Valeurs valides : N (aucune rotation), R (rotation de 90° dans le sens horaire), I (rotation de 180° dans le sens horaire) et B (rotation de 270° dans le sens horaire). La valeur par défaut est l'orientation configurée via la commande ^A ou ^FW, qui vaut elle-même N (aucune rotation) par défaut.",
+        "maxWidth": "Largeur maximale du bloc de texte, en points. Le texte plus long que cette largeur est renvoyé à la ligne. Tout nombre entre 1 et la largeur de l'étiquette est accepté. La valeur par défaut est 1, ce qui est rarement utile.",
+        "maxHeight": "Hauteur maximale du bloc de texte, en points. Tout texte dépassant cette limite est tronqué. Tout nombre entre 1 et la hauteur de l'étiquette est accepté. La valeur par défaut est 1, ce qui est rarement utile."
+      },
+      "TO": {
+        "from": "Chemin(s) du/des fichier(s) à copier (source). Les caractères génériques (*, ?) sont acceptés.",
+        "to": "Chemin(s) du/des fichier(s) où copier (destination). Les caractères génériques (*, ?) sont acceptés."
+      },
+      "WA": {
+        "receive": "",
+        "transmit": ""
+      },
+      "WD": {
+        "path": ""
+      },
+      "WE": {
+        "mode": "",
+        "index": "",
+        "authType": "",
+        "keyType": "",
+        "key1": "",
+        "key2": "",
+        "key3": "",
+        "key4": ""
+      },
+      "WF": {
+        "retries": "",
+        "motion": "",
+        "protect": "",
+        "format": "",
+        "type": ""
+      },
+      "WI": {
+        "res": "",
+        "ip": "",
+        "mask": "",
+        "gateway": "",
+        "wins": "",
+        "timeout": "",
+        "secs": "",
+        "arp": "",
+        "port": ""
+      },
+      "WL": {
+        "mode": "",
+        "username": "",
+        "password": ""
+      },
+      "WP": {
+        "oldPassword": "",
+        "newPassword": ""
+      },
+      "~WQ": {
+        "query": ""
+      },
+      "WR": {
+        "rate1": "",
+        "rate2": "",
+        "rate55": "",
+        "rate11": "",
+        "power": ""
+      },
+      "WS": {
+        "essid": "",
+        "mode": "",
+        "preamble": "",
+        "pulse": "",
+        "interval": "",
+        "mask": "",
+        "international": ""
+      },
+      "WT": {
+        "block": "",
+        "retries": "",
+        "motion": "",
+        "protect": "",
+        "format": "",
+        "verify": ""
+      },
+      "WV": {
+        "enable": ""
+      },
+      "WX": {
+        "securityType": "",
+        "parameters": ""
+      },
+      "XF": {
+        "path": "Chemin du fichier depuis lequel charger la définition d'étiquette. La valeur par défaut est R:UNKNOWN.ZPL."
+      },
+      "XG": {
+        "path": "Chemin du fichier image. La valeur par défaut est R:UNKNOWN.GRF.",
+        "magnificationX": "Grossissement horizontal à appliquer à l'image. Tout nombre entre 1 et 10 est accepté. La valeur par défaut est 1.",
+        "magnificationY": "Grossissement vertical à appliquer à l'image. Tout nombre entre 1 et 10 est accepté. La valeur par défaut est 1."
+      },
+      "XS": {
+        "length": "Indique s'il faut calibrer dynamiquement la longueur de l'étiquette. Valeurs valides : Y (activer le calibrage dynamique de la longueur) et N (désactiver le calibrage dynamique de la longueur). La valeur par défaut est Y (activer le calibrage dynamique de la longueur).",
+        "threshold": "Indique s'il faut calibrer dynamiquement le seuil d'étiquette. Valeurs valides : Y (activer le calibrage dynamique du seuil) et N (désactiver le calibrage dynamique du seuil). La valeur par défaut est Y (activer le calibrage dynamique du seuil).",
+        "gain": "Indique s'il faut calibrer dynamiquement le gain d'étiquette. Valeurs valides : Y (activer le calibrage dynamique du gain) et N (désactiver le calibrage dynamique du gain). La valeur par défaut est Y (activer le calibrage dynamique du gain)."
+      },
+      "ZZ": {
+        "seconds": "Nombre de secondes à attendre avant l'arrêt. Tout nombre entre 0 et 999 999 est accepté. La valeur par défaut est la valeur configurée précédemment, ou 0 si aucune valeur n'a été configurée auparavant.",
+        "immediate": "Indique s'il faut se mettre en veille immédiatement. Valeurs valides : Y (se mettre en veille immédiatement, même si des étiquettes sont encore en file d'impression) et N (attendre que toutes les étiquettes en attente soient imprimées avant de se mettre en veille). La valeur par défaut est N (attendre que toutes les étiquettes en attente soient imprimées)."
+      }
+    }
+  },
+  "settings": {
+    "nav": {
+      "general": "Général",
+      "document": "Document",
+      "editor": "Éditeur et aperçu",
+      "print": "Impression",
+      "appearance": "Apparence et langue",
+      "toolbar": "Barre d'outils",
+      "screen": "Écran",
+      "virtualPrinter": "Imprimante virtuelle",
+      "about": "À propos"
+    },
+    "general": {
+      "title": "Général",
+      "subtitle": "Comportement général de l'application.",
+      "cards": {
+        "confirmPrint": {
+          "title": "Confirmer avant impression",
+          "desc": "Demander une confirmation avant d'envoyer une étiquette à l'imprimante."
+        },
+        "reopen": {
+          "title": "Rouvrir le(s) dernier(s) fichier(s)",
+          "desc": "Recharge les fichiers ouverts lors de la dernière session au démarrage."
+        },
+        "showPath": {
+          "title": "Afficher le chemin dans le titre",
+          "desc": "Affiche le chemin complet du fichier entre parenthèses dans la barre de titre."
+        },
+        "reset": {
+          "title": "Réinitialiser les paramètres",
+          "desc": "Rétablit tous les paramètres à leurs valeurs par défaut."
+        },
+        "tabPath": {
+          "title": "Afficher le chemin lors du survol d'un onglet",
+          "desc": "Affiche le chemin complet entre parenthèses dans l'info-bulle d'un onglet."
+        }
+      },
+      "lbl": {
+        "reset": "Réinitialiser",
+        "cancel": "Annuler",
+        "resetDlgTitle": "Réinitialiser les paramètres",
+        "resetDlgBody": "Rétablir tous les paramètres à leurs valeurs par défaut ?"
+      }
+    },
+    "document": {
+      "title": "Document",
+      "subtitle": "Unités, densité et dimensionnement automatique du document.",
+      "cards": {
+        "unit": {
+          "title": "Unité de mesure",
+          "desc": "Unité utilisée pour les dimensions du document."
+        },
+        "density": {
+          "title": "Densité par défaut",
+          "desc": "Résolution appliquée à la création et à l'ouverture d'un document."
+        },
+        "autoSize": {
+          "title": "Taille automatique",
+          "desc": "Calcule la taille du document à partir du code ZPL."
+        },
+        "newDocSize": {
+          "title": "Taille des nouveaux documents",
+          "desc": "Comment définir la taille lors d'un « Nouveau fichier »."
+        }
+      },
+      "opt": {
+        "unit": [
+          "mm",
+          "cm",
+          "pouces"
+        ],
+        "newDocMode": [
+          "Demander à chaque fois",
+          "Taille par défaut"
+        ]
+      },
+      "radio": {
+        "pwll": {
+          "label": "Selon ^PW / ^LL uniquement",
+          "desc": "La taille du document suit les commandes ^PW (largeur) et ^LL (hauteur) du code ZPL.\n\n• La taille est redéfinie quand ^PW ou ^LL est ajoutée ou que sa valeur change.\n• Les autres modifications du code ne touchent jamais à la taille : vous restez libre de la régler manuellement."
+        },
+        "elems": {
+          "label": "Selon ^PW / ^LL, sinon selon les éléments",
+          "desc": "Identique à l'option précédente, avec un calcul de secours :\n\n• Si ^PW ou ^LL est absente, la dimension manquante est calculée à partir de l'encombrement des éléments du document, et recalculée à chaque modification du code.\n• ^PW et ^LL restent toujours prioritaires sur le calcul."
+        }
+      }
+    },
+    "editor": {
+      "title": "Éditeur et aperçu",
+      "subtitle": "Personnalisez l'affichage de l'éditeur de code et de l'aperçu.",
+      "sub": {
+        "editor": "Éditeur",
+        "coloring": "Coloration syntaxique",
+        "preview": "Aperçu",
+        "rulers": "Règles",
+        "layout": "Disposition"
+      },
+      "cards": {
+        "fontSize": {
+          "title": "Taille de police",
+          "desc": "Taille du texte de l'éditeur."
+        },
+        "wordWrap": {
+          "title": "Retour à la ligne",
+          "desc": "Renvoie les longues lignes."
+        },
+        "minimap": {
+          "title": "Minimap",
+          "desc": "Aperçu miniature à droite (si scroll)."
+        },
+        "lineNumbers": {
+          "title": "Numéros de ligne",
+          "desc": "Affiche la colonne des numéros."
+        },
+        "lowWarnings": {
+          "title": "Avertissements légers",
+          "desc": "Affiche les conseils de code propre (peu prioritaires)."
+        },
+        "colorCmd": {
+          "title": "Commandes",
+          "desc": "Couleur des commandes (^XA…)."
+        },
+        "colorParam": {
+          "title": "Paramètres",
+          "desc": "Couleur des paramètres (les valeurs qui suivent une commande)."
+        },
+        "colorText": {
+          "title": "Texte",
+          "desc": "Couleur des données (^FD)."
+        },
+        "editScheme": {
+          "title": "Fichier du thème",
+          "desc": "Édition manuelle (JSON).",
+          "tooltip": "Ouvrir le fichier JSON du thème"
+        },
+        "grid": {
+          "title": "Grille",
+          "desc": "Affiche une grille en fond."
+        },
+        "gridSpacing": {
+          "title": "Espacement de la grille",
+          "desc": "Distance entre les lignes."
+        },
+        "gridColor": {
+          "title": "Couleur de la grille",
+          "desc": "Défaut (selon le thème) ou couleur personnalisée."
+        },
+        "rotation": {
+          "title": "Rotation par défaut",
+          "desc": "Rotation à l'ouverture."
+        },
+        "defaultZoom": {
+          "title": "Zoom par défaut",
+          "desc": "Zoom appliqué à l'aperçu à l'ouverture (0 % = ajuster à la fenêtre)."
+        },
+        "swap": {
+          "title": "Intervertir éditeur et aperçu",
+          "desc": "Place l'éditeur ZPL à droite et l'aperçu à gauche."
+        },
+        "previewCaption": {
+          "title": "Infos de l'aperçu",
+          "desc": "Taille, résolution et zoom en bas à droite."
+        },
+        "rulerH": {
+          "title": "Règle horizontale",
+          "desc": "Affiche une règle graduée en haut de l'aperçu."
+        },
+        "rulerV": {
+          "title": "Règle verticale",
+          "desc": "Affiche une règle graduée à gauche de l'aperçu."
+        },
+        "rulerUnit": {
+          "title": "Unité des règles",
+          "desc": "Unité de graduation des règles."
+        },
+        "rulerSubs": {
+          "title": "Précision des règles",
+          "desc": "Nombre de sous-graduations."
+        },
+        "rulerSize": {
+          "title": "Taille des règles",
+          "desc": "Épaisseur des bandes de règles."
+        }
+      },
+      "lbl": {
+        "fitWindow": "Ajuster à la fenêtre"
+      },
+      "opt": {
+        "gridColor": [
+          "Défaut",
+          "Personnalisé"
+        ],
+        "gridUnit": [
+          "px",
+          "mm",
+          "cm",
+          "pouces"
+        ],
+        "rulerSize": [
+          "Fine",
+          "Normale",
+          "Large"
+        ]
+      }
+    },
+    "print": {
+      "title": "Impression",
+      "subtitle": "Imprimante par défaut et options d'impression.",
+      "cards": {
+        "printer": {
+          "title": "Imprimante par défaut",
+          "desc": "Imprimante présélectionnée à l'ouverture de l'application."
+        }
+      },
+      "lbl": {
+        "lastPrinter": "Dernière imprimante sélectionnée"
+      }
+    },
+    "appearance": {
+      "title": "Apparence et langue",
+      "subtitle": "Thème, couleur d'accentuation et langue de l'interface.",
+      "languageLabel": "Langue",
+      "languageDesc": "Langue de l'interface. Déposez un fichier dans le dossier des langues pour en ajouter une.",
+      "languageInfo": "Un fichier de langue doit contenir « language » (le code) et « displayName » (le nom affiché) pour apparaître ici. La clé facultative « basedOn » permet de repartir d'une langue existante (indiquez son « language ») et de ne remplacer que les textes voulus.",
+      "invalidLang": {
+        "title": "Fichier de langue invalide",
+        "body": "Ce fichier de langue contient du JSON invalide. Vérifiez et corrigez son contenu, puis réessayez.",
+        "check": "Vérifier avec JSONLint",
+        "ok": "Ok"
+      },
+      "cards": {
+        "theme": {
+          "title": "Thème",
+          "desc": "Apparence claire, sombre ou selon les réglages du système."
+        },
+        "accent": {
+          "title": "Couleur d'accentuation",
+          "desc": "Couleur des boutons principaux et des éléments actifs."
+        }
+      },
+      "opt": {
+        "theme": [
+          "Système",
+          "Clair",
+          "Sombre",
+          "Sombre & Aperçu clair"
+        ],
+        "accent": [
+          "Système",
+          "Personnalisé"
+        ]
+      }
+    },
+    "toolbar": {
+      "title": "Barre d'outils",
+      "subtitle": "Glissez-déposez les éléments pour les réorganiser. Vous disposez de trois lignes : déposez un élément sur une autre ligne pour l'y déplacer. Chaque ligne se replie automatiquement si la fenêtre est trop étroite."
+    },
+    "screen": {
+      "title": "Écran",
+      "subtitle": "Renseignez la taille physique de votre écran pour un aperçu du document à taille réelle (zoom 100 %).",
+      "cards": {
+        "selector": {
+          "title": "Écran à configurer",
+          "desc": "Choisissez l'écran concerné."
+        },
+        "size": {
+          "title": "Taille de l'écran (diagonale)",
+          "descEdid": "Détectée automatiquement à partir de l'écran.",
+          "descManual": "Diagonale de la zone d'affichage (sans le cadre)."
+        }
+      },
+      "opt": {
+        "unit": [
+          "pouces",
+          "cm"
+        ]
+      },
+      "lbl": {
+        "noMonitor": "Aucun écran détecté.",
+        "identify": "Identifier",
+        "info": "La taille d'un ordinateur portable se situe souvent entre 13\" et 17\".\nLa taille d'un écran de bureau se situe souvent entre 21\" et 27\".\nVous pouvez mesurer la diagonale de la partie visible de votre écran (la zone qui affiche l'image, sans le cadre) afin de renseigner la taille de votre écran."
+      }
+    },
+    "virtualPrinter": {
+      "title": "Imprimante virtuelle",
+      "subtitle": "Imprimante « Ultimate ZPL Viewer » : capture les travaux ZPL envoyés à l'impression.",
+      "cards": {
+        "status": {
+          "title": "État",
+          "desc": "Statut d'installation de l'imprimante."
+        },
+        "manage": {
+          "title": "Gestion de l'imprimante",
+          "desc": "Installer, réinstaller ou désinstaller l'imprimante."
+        }
+      },
+      "lbl": {
+        "installed": "Installée",
+        "notInstalled": "Non installée",
+        "install": "Installer",
+        "reinstall": "Réinstaller",
+        "uninstall": "Désinstaller",
+        "opFailed": "Opération échouée.",
+        "dlgTitle": "Imprimante virtuelle"
+      }
+    },
+    "about": {
+      "title": "À propos",
+      "subtitle": "Informations sur l'application.",
+      "cards": {
+        "version": {
+          "title": "Version"
+        },
+        "developer": {
+          "title": "Développeur",
+          "desc": "Enzo Monchanin (NzoSifou)"
+        },
+        "tech": {
+          "title": "Technologies",
+          "desc": "WinUI 3 (Windows App SDK), .NET 8, Monaco Editor hébergé dans WebView2."
+        },
+        "privacy": {
+          "title": "Confidentialité",
+          "desc": "Le rendu ZPL est effectué entièrement en local : aucun code ZPL n'est envoyé à un service externe."
+        },
+        "thirdParty": {
+          "title": "Composants tiers",
+          "desc": "Monaco Editor — © Microsoft, licence MIT."
+        },
+        "copyright": {
+          "title": "Copyright"
+        }
+      },
+      "lbl": {
+        "copy": "Copier",
+        "unknownVersion": "inconnue",
+        "copyrightText": "© {year} Enzo Monchanin. Tous droits réservés."
+      }
+    }
+  }
+}

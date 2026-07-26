@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    x:Class="Ultimate_ZPL_Viewer.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Ultimate_ZPL_Viewer">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <!-- Other merged dictionaries here -->
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Accent override (microsoft-ui-xaml#6394): the WinUI 3 accent brushes
+                 derive from SystemAccentColorLight2 (dark theme) and Dark1 (light
+                 theme). Declaring these as Color entries (NOT SolidColorBrush) lets
+                 AccentColorService replace them at runtime; a theme reload then
+                 re-resolves every accent brush, hover/pressed shades included.
+                 Placeholder values are overwritten at startup from the settings. -->
+            <Color x:Key="SystemAccentColorLight1">#0093F9</Color>
+            <Color x:Key="SystemAccentColorLight2">#60CCFE</Color>
+            <Color x:Key="SystemAccentColorLight3">#98ECFE</Color>
+            <Color x:Key="SystemAccentColorDark1">#0078D4</Color>
+            <Color x:Key="SystemAccentColorDark2">#005EB7</Color>
+            <Color x:Key="SystemAccentColorDark3">#003D92</Color>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

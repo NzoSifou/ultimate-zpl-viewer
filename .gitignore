@@ -1,0 +1,57 @@
+# ============================================================================
+#  .gitignore — Ultimate ZPL Viewer
+#  Empêche de publier sur GitHub : artefacts de build, caches, fichiers propres
+#  à la machine, et tout fichier de secrets (même ajouté plus tard).
+#  (Note : en .gitignore, un « # » n'est un commentaire qu'en DÉBUT de ligne.)
+# ============================================================================
+
+# --- Résultats de compilation (régénérés par `dotnet build` / `publish`) ---
+[Bb]in/
+[Oo]bj/
+[Pp]ublish/
+
+# --- Sortie de l'installateur Inno Setup (le Setup.exe, ~85 Mo) ---
+# GitHub refuse les fichiers > 100 Mo : distribuez le Setup.exe via les
+# "Releases" GitHub, ne le committez pas.
+**/installer/Output/
+
+# --- Cache Visual Studio + fichiers utilisateur (spécifiques à la machine) ---
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# --- Dossier de données WebView2 créé au lancement de l'app ---
+*.WebView2/
+
+# --- NuGet ---
+packages/
+*.nupkg
+*.snupkg
+
+# ----------------------------------------------------------------------------
+#  SECRETS — à ne JAMAIS committer (filet de sécurité pour l'avenir)
+# ----------------------------------------------------------------------------
+# Fichiers d'environnement locaux.
+.env
+.env.*
+# ... mais on garde le modèle public :
+!.env.example
+# Certificats de signature de code / clés de nom fort.
+*.pfx
+*.snk
+*.pem
+*.key
+*.crt
+# Fichiers de configuration à secrets.
+secrets.json
+appsettings.*.Local.json
+
+# --- Réglages Claude Code locaux (contiennent des chemins de ta machine) ---
+.claude/settings.local.json
+
+# --- Divers ---
+*.log
+Thumbs.db
+.DS_Store

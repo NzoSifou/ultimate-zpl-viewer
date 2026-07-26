@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZPL Commands Color Scheme Schema",
+  "type": "object",
+  "properties": {
+    "commandColor": {
+      "type": "string",
+      "pattern": "^#([0-9A-Fa-f]{3}){1,2}$"
+    },
+    "parameterColor": {
+      "type": "string",
+      "pattern": "^#([0-9A-Fa-f]{3}){1,2}$"
+    },
+    "textColor": {
+      "type": "string",
+      "pattern": "^#([0-9A-Fa-f]{3}){1,2}$"
+    },
+    "textParameters": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "pattern": "^(\\^|~)[A-Z][A-Z0-9@]?$"
+          },
+          "alternativeCommand": {
+            "type": "string",
+            "pattern": "^~[A-Z][A-Z0-9@]?$"
+          },
+          "shortDescription": { "type": "string" },
+          "description": { "type": "string" },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "description": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": [ "string", "number" ]
+                },
+                "required": { "type":  "boolean" }
+              },
+              "required": [ "name", "description", "type" ]
+            }
+          }
+        },
+        "required": [ "command", "shortDescription", "description" ]
+      }
+    }
+  },
+  "required": [ "commandColor", "parameterColor", "textColor", "textParameters", "commands" ]
+}

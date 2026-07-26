@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            /* Transparent: the host WebView2 background is transparent too, so
+               only the rounded #container paints — no square dark corners. */
+            background: transparent;
+        }
+        /* No rounding needed here: the WebView2 is inset 4px in the host card,
+           so its square corners sit behind the card's rounded XAML fill. The
+           container paints the surface color so the browser canvas never shows. */
+        #container { width: 100%; height: 100%; background: #131313; }
+    </style>
+    <!-- ZPL color classes — injected at runtime via setColors message -->
+    <style id="zpl-theme"></style>
+</head>
+<body>
+    <div id="container"></div>
+
+    <!--
+        Monaco is loaded from CDN for quick startup.
+        To use local files instead (recommended for offline / production):
+          1. Run in Assets\: npm init -y && npm install monaco-editor@0.52.2
+          2. Copy node_modules\monaco-editor\min\ to Assets\monaco-editor\min\
+          3. Replace the two CDN references below with:
+               <script src="monaco-editor/min/vs/loader.js"></script>
+               require.config({ paths: { 'vs': 'monaco-editor/min/vs' } });
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+    <script>
+        // Monaco ships localized UI (menus, tooltips, context menu). The host passes
+        // the app language via ?lang= so we set availableLanguages before loading.
+        // Monaco ships fr/de/es/it/ja/ko/ru/zh-cn/zh-tw; anything else falls back to English.
+        var _lang = (new URLSearchParams(location.search).get('lang') || 'en').toLowerCase();
+        var _nls = _lang !== 'en' ? { availableLanguages: { '*': _lang } } : {};
+        require.config({
+            paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' },
+            'vs/nls': _nls
+        });
+
+        require(['vs/editor/editor.main'], function () {
+            // App dark theme: same surface color as the editor card (#131313).
+            monaco.editor.defineTheme('zpl-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [],
+                colors: { 'editor.background': '#131313' }
+            });
+
+            // Block file drops on the editor surface: Chromium would otherwise
+            // navigate the WebView to the dropped file. (Files are opened by
+            // dropping them anywhere else in the app.)
+            window.addEventListener('dragover', function (e) { e.preventDefault(); });
+            window.addEventListener('drop', function (e) { e.preventDefault(); });
+
+            window._docModels = {};
+            window._docViews = {};
+            window._docId = null;
+
+            var editor = monaco.editor.create(document.getElementById('container'), {
+                value: '',
+                language: 'plaintext',
+                theme: 'zpl-dark',
+                fontFamily: 'Consolas, "Courier New", monospace',
+                fontSize: 14,
+                lineHeight: 21,
+                wordWrap: 'off',
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                renderLineHighlight: 'none',
+                overviewRulerLanes: 0,
+                hideCursorInOverviewRuler: true,
+                contextmenu: true,
+                // Disable IDE-style assists — this is a plain-text ZPL editor
+                suggest: { enabled: false },
+                quickSuggestions: false,
+                parameterHints: { enabled: false },
+                // Hover stays ON: it is what shows the marker (error) message as a tooltip.
+                hover: { enabled: true },
+                links: { enabled: false },
+                occurrencesHighlight: 'off',
+                selectionHighlight: false,
+                roundedSelection: false,
+                foldingHighlight: false,
+                glyphMargin: false,
+                lineDecorationsWidth: 5,
+                lineNumbersMinChars: 3,
+                padding: { top: 8, bottom: 8 }
+            });
+
+            window.editor = editor;
+            window._decorations = [];
+            // Concrete hex colours per decoration class, kept in sync with setColors.
+            // The minimap can't read the CSS inlineClassName, so each decoration also
+            // carries an explicit minimap colour taken from here.
+            window._zplColors = { 'zpl-cmd': '#569CD6', 'zpl-param': '#9CDCFE', 'zpl-text': '#D4D4D4' };
+            window._lastRuns = [];
+
+            // Builds Monaco decorations from colour runs: the CSS class colours the
+            // text, and minimap.{color,position:Inline} colours the minimap too.
+            function buildDecorations(runs) {
+                var model = editor.getModel();
+                return runs.map(function (r) {
+                    var s = model.getPositionAt(r.s);
+                    var en = model.getPositionAt(r.e);
+                    return {
+                        range: new monaco.Range(s.lineNumber, s.column, en.lineNumber, en.column),
+                        options: {
+                            inlineClassName: r.c,
+                            minimap: {
+                                color: window._zplColors[r.c],
+                                position: monaco.editor.MinimapPosition.Inline
+                            }
+                        }
+                    };
+                });
+            }
+            function reapplyDecorations() {
+                window._decorations = editor.deltaDecorations(
+                    window._decorations, buildDecorations(window._lastRuns));
+            }
+            window._minimapWanted = false;
+            window._minimapOn = false;
+
+            // The minimap is only useful when the content is vertically scrollable,
+            // so hide it automatically when everything fits.
+            function updateMinimap() {
+                var info = editor.getLayoutInfo();
+                var scrollable = editor.getScrollHeight() > info.height + 1;
+                var on = !!window._minimapWanted && scrollable;
+                if (on !== window._minimapOn) {
+                    window._minimapOn = on;
+                    editor.updateOptions({ minimap: { enabled: on } });
+                }
+            }
+            editor.onDidContentSizeChange(updateMinimap);
+            editor.onDidLayoutChange(updateMinimap);
+
+            // Notify C# on every content change (undo/redo included — Monaco handles them natively).
+            editor.onDidChangeModelContent(function () {
+                window.chrome.webview.postMessage(JSON.stringify({
+                    type: 'textChanged',
+                    text: editor.getValue()
+                }));
+            });
+
+            // Ctrl+S → ask C# to save (Monaco would otherwise swallow it).
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function () {
+                window.chrome.webview.postMessage(JSON.stringify({ type: 'save' }));
+            });
+
+            // Report the cursor offset so C# can show the documentation of the
+            // command under the caret.
+            editor.onDidChangeCursorPosition(function (e) {
+                window.chrome.webview.postMessage(JSON.stringify({
+                    type: 'cursorChanged',
+                    offset: editor.getModel().getOffsetAt(e.position)
+                }));
+            });
+
+            // Receive messages from C#.
+            window.chrome.webview.addEventListener('message', function (e) {
+                try {
+                    var msg = JSON.parse(e.data);
+                    if (msg.type === 'setText') {
+                        // setValue resets the undo history — only used for file load / new file.
+                        editor.setValue(msg.text);
+                    } else if (msg.type === 'setColors') {
+                        // Inject CSS color classes so decorations can reference them by name.
+                        document.getElementById('zpl-theme').textContent =
+                            '.zpl-cmd{color:'   + msg.cmd   + '!important}' +
+                            '.zpl-param{color:' + msg.param + '!important}' +
+                            '.zpl-text{color:'  + msg.text  + '!important}';
+                        // Keep the minimap colours in sync and re-tint existing marks.
+                        window._zplColors = { 'zpl-cmd': msg.cmd, 'zpl-param': msg.param, 'zpl-text': msg.text };
+                        reapplyDecorations();
+                    } else if (msg.type === 'setTheme') {
+                        monaco.editor.setTheme(msg.dark ? 'zpl-dark' : 'vs');
+                        // On #container, never on body: a body background propagates
+                        // to the root canvas, which is painted square (it ignores the
+                        // container's rounded clip-path) and shows as dark corners.
+                        document.getElementById('container').style.background = msg.dark ? '#131313' : '#FFFFFF';
+                    } else if (msg.type === 'switchDoc') {
+                        // One Monaco model per tab: undo history and view state
+                        // (cursor, scroll) survive tab switches.
+                        var cur = window._docId;
+                        if (cur) {
+                            window._docModels[cur] = editor.getModel();
+                            window._docViews[cur] = editor.saveViewState();
+                        }
+                        window._docId = msg.id;
+                        var m = window._docModels[msg.id];
+                        if (!m) {
+                            m = monaco.editor.createModel(msg.text || '', 'plaintext');
+                            window._docModels[msg.id] = m;
+                        }
+                        editor.setModel(m);
+                        if (window._docViews[msg.id]) editor.restoreViewState(window._docViews[msg.id]);
+                    } else if (msg.type === 'closeDoc') {
+                        var mm = window._docModels[msg.id];
+                        if (mm && window._docId !== msg.id) mm.dispose();
+                        delete window._docModels[msg.id];
+                        delete window._docViews[msg.id];
+                    } else if (msg.type === 'setLineNumbers') {
+                        editor.updateOptions({ lineNumbers: msg.show ? 'on' : 'off' });
+                    } else if (msg.type === 'setEditorOptions') {
+                        var o = {};
+                        if (typeof msg.fontSize === 'number') o.fontSize = msg.fontSize;
+                        if (typeof msg.wordWrap === 'boolean') o.wordWrap = msg.wordWrap ? 'on' : 'off';
+                        editor.updateOptions(o);
+                        if (typeof msg.minimap === 'boolean') window._minimapWanted = msg.minimap;
+                        updateMinimap();
+                    } else if (msg.type === 'applyDecorations') {
+                        window._lastRuns = msg.runs;
+                        reapplyDecorations();
+                    } else if (msg.type === 'setMarkers') {
+                        // Native Monaco markers: red/yellow squiggles + hover tooltip with the message.
+                        var mdl = editor.getModel();
+                        var markers = msg.markers.map(function (m) {
+                            var s = mdl.getPositionAt(m.s);
+                            var en = mdl.getPositionAt(m.e);
+                            return {
+                                startLineNumber: s.lineNumber, startColumn: s.column,
+                                endLineNumber: en.lineNumber,  endColumn: en.column,
+                                message: m.m,
+                                severity: m.sev === 8 ? monaco.MarkerSeverity.Error
+                                                      : monaco.MarkerSeverity.Warning
+                            };
+                        });
+                        monaco.editor.setModelMarkers(mdl, 'zpl', markers);
+                    } else if (msg.type === 'revealLine') {
+                        editor.revealLineInCenterIfOutsideViewport(msg.line);
+                        editor.setPosition({ lineNumber: msg.line, column: 1 });
+                        editor.focus();
+                    }
+                } catch (err) {
+                    console.error('ZPL Editor bridge error:', err);
+                }
+            });
+
+            // Signal C# that Monaco is fully initialised and ready to receive messages.
+            window.chrome.webview.postMessage(JSON.stringify({ type: 'ready' }));
+        });
+    </script>
+</body>
+</html>

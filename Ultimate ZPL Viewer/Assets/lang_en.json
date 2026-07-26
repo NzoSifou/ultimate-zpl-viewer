@@ -1,0 +1,1808 @@
+{
+  "language": "en",
+  "displayName": "English",
+  "titlebar": {
+    "untitled": "Untitled",
+    "settings": "Settings",
+    "tooltipSettings": "Settings",
+    "tooltipShowToolbar": "Show toolbar",
+    "tooltipHideToolbar": "Hide toolbar",
+    "tooltipFullscreen": "Full screen",
+    "tooltipBack": "Back"
+  },
+  "toolbar": {
+    "newFile": "New file",
+    "openFile": "Open file",
+    "save": "Save",
+    "saveAs": "Save as…",
+    "recentEmpty": "No recent files",
+    "recentClear": "Clear list",
+    "density": "Density:",
+    "size": "Size:",
+    "rotate": "Rotate",
+    "print": "Print",
+    "pdf": "PDF",
+    "png": "PNG",
+    "zoomOut": "Zoom out (−10 %, hold to accelerate)",
+    "zoomIn": "Zoom in (+10 %, hold to accelerate)",
+    "zoomReset": "Reset zoom (100 %)",
+    "widthTooLarge": "Width exceeds 50 cm: the preview is capped at 50 cm.",
+    "heightTooLarge": "Height exceeds 50 cm: the preview is capped at 50 cm."
+  },
+  "editor": {
+    "shortDescription": {
+      "A": "Set field font (using font name)",
+      "A@": "Set field font (using font path)",
+      "B0": "Aztec bar code",
+      "B1": "Code 11 bar code",
+      "B2": "Interleaved 2 of 5 bar code",
+      "B3": "Code 39 bar code",
+      "B4": "Code 49 bar code",
+      "B5": "Planet Code bar code",
+      "B7": "PDF417 bar code",
+      "B8": "EAN-8 bar code",
+      "B9": "UPC-E bar code",
+      "BA": "Code 93 bar code",
+      "BB": "Codablock bar code",
+      "BC": "Code 128 bar code",
+      "BD": "UPS MaxiCode bar code",
+      "BE": "EAN-13 bar code",
+      "BF": "MicroPDF417 bar code",
+      "BI": "Industrial 2 of 5 bar code",
+      "BJ": "Standard 2 of 5 bar code",
+      "BK": "ANSI Codabar bar code",
+      "BL": "LOGMARS bar code",
+      "BM": "MSI bar code",
+      "BO": "Aztec bar code",
+      "BP": "Plessey bar code",
+      "BQ": "QR Code bar code (model 2 only; no mixed mode or Kanji)",
+      "BR": "GS1 DataBar (RSS) bar code",
+      "BS": "UPC/EAN extension",
+      "BT": "TLC 39 bar code",
+      "BU": "UPC-A bar code",
+      "BX": "Data Matrix bar code (quality 200 only)",
+      "BY": "Bar code field defaults",
+      "BZ": "Postal bar code",
+      "CC": "Change caret",
+      "CD": "Change delimiter",
+      "CF": "Change default font",
+      "CI": "Change encoding (charsets 0-13, 15, 27, 28, 31, 33-36 only)",
+      "CM": "Change memory letter designation",
+      "CN": "Cut now",
+      "CO": "Cache on",
+      "CP": "Remove label",
+      "CT": "Change tilde",
+      "CV": "Code validation (use the Labelary linter instead)",
+      "CW": "Set font identifier",
+      "~DB": "Download bitmap font",
+      "~DE": "Download encoding",
+      "DF": "Download format",
+      "~DG": "Download graphics",
+      "~DN": "Abort download graphics",
+      "~DS": "Download scalable font",
+      "~DT": "Download TrueType font",
+      "~DU": "Download unbounded TrueType font",
+      "~DY": "Download objects (extensions G, B, P and T only)",
+      "EG": "Erase all graphics",
+      "FB": "Field block",
+      "FC": "Field clock",
+      "FD": "Field data",
+      "FE": "Field data embed character",
+      "FH": "Field hexadecimal indicator",
+      "FL": "Font link",
+      "FM": "Field multiple origin locations",
+      "FN": "Field number",
+      "FO": "Field origin",
+      "FP": "Field parameter",
+      "FR": "Field reverse print",
+      "FS": "Field separator",
+      "FT": "Field typeset",
+      "FV": "Field variable",
+      "FW": "Field orientation",
+      "FX": "Comment",
+      "GB": "Graphic box",
+      "GC": "Graphic circle",
+      "GD": "Graphic diagonal line",
+      "GE": "Graphic ellipse",
+      "GF": "Graphic field",
+      "GS": "Graphic symbol",
+      "~HB": "Battery status",
+      "~HD": "Head diagnostic",
+      "HF": "Host format",
+      "HG": "Host graphic",
+      "HH": "Configuration label return",
+      "~HI": "Host identification",
+      "HL": "Send RFID data log to host",
+      "~HM": "Host RAM status",
+      "~HQ": "Host query",
+      "HR": "Calibrate RFID tag position",
+      "~HS": "Host status return",
+      "HT": "Host linked font list",
+      "~HU": "Host alert configuration",
+      "HV": "Host verification",
+      "HW": "Host directory list",
+      "HY": "Upload graphics",
+      "HZ": "Display description information",
+      "ID": "Delete object",
+      "IL": "Image load",
+      "IM": "Image move",
+      "IS": "Image save",
+      "~JA": "Cancel all",
+      "JB": "Initialize flash memory",
+      "~JB": "Reset optional memory",
+      "~JC": "Set media sensor calibration",
+      "~JD": "Enable communications diagnostics",
+      "~JE": "Disable communications diagnostics",
+      "~JF": "Set battery condition",
+      "~JG": "Graphing sensor calibration",
+      "JH": "Set early warning settings",
+      "JI": "Start ZBI",
+      "JJ": "Set auxiliary port",
+      "~JL": "Set label length",
+      "JM": "Set print density",
+      "~JN": "Head test fatal",
+      "~JO": "Head test not fatal",
+      "~JP": "Pause and cancel format",
+      "~JQ": "Stop ZBI",
+      "~JR": "Power on reset",
+      "JS": "Sensor select",
+      "~JS": "Change backfeed sequence",
+      "JT": "Set head test interval",
+      "JU": "Configuration update",
+      "JW": "Set ribbon tension",
+      "~JX": "Cancel current format",
+      "JZ": "Reprint after error",
+      "~KB": "Kill battery",
+      "KC": "Set DHCP client ID",
+      "KD": "Select date and time format",
+      "KL": "Select language",
+      "KN": "Set printer name",
+      "KP": "Set control panel password",
+      "KV": "Kiosk values",
+      "LF": "List font links",
+      "LH": "Label home",
+      "LL": "Label length",
+      "LR": "Label reverse print",
+      "LS": "Label shift",
+      "LT": "Label top",
+      "MA": "Maintenance alerts",
+      "MC": "Map clear",
+      "MD": "Modify darkness",
+      "MF": "Media feed",
+      "MI": "Adjust maintenance information message",
+      "ML": "Set max label length",
+      "MM": "Print mode",
+      "MN": "Media tracking",
+      "MP": "Mode protection",
+      "MT": "Media type",
+      "MU": "Set units of measurement",
+      "MW": "Modify head cold warning",
+      "NB": "Set network boot print server check",
+      "NC": "Set primary network device",
+      "~NC": "Network connect",
+      "ND": "Modify network settings",
+      "NI": "Network ID number",
+      "NN": "Configure SNMP",
+      "NP": "Set primary device",
+      "~NR": "Set all network printers transparent",
+      "NS": "Modify wired network settings",
+      "~NT": "Set current printer transparent",
+      "NT": "Configure SMTP",
+      "NW": "Set password timeout",
+      "PA": "Advanced text properties",
+      "PF": "Slew rows",
+      "PH": "Slew to home position",
+      "~PL": "Additional present length",
+      "PM": "Print mirror image",
+      "~PM": "Decommission printer",
+      "PN": "Present now",
+      "PO": "Print orientation",
+      "PP": "Programmable pause",
+      "PQ": "Print quantity",
+      "PR": "Print rate",
+      "~PR": "Applicator reprint",
+      "~PS": "Print start",
+      "PW": "Print width",
+      "RA": "Read RFID AFI or DSFID byte",
+      "RB": "Configure RFID EPC data structure",
+      "RE": "Enable RFID EAS bit",
+      "RF": "Read or write RFID data (write operations only)",
+      "RI": "Read RFID tag ID",
+      "RL": "Lock and unlock RFID tag memory",
+      "RM": "Configure RFID motion",
+      "RN": "Configure RFID multiple tag detection",
+      "~RO": "Reset counter",
+      "RQ": "Write RFID EPC data and passwords",
+      "RR": "Configure RFID retries and adaptive antenna",
+      "RS": "Configure RFID",
+      "RT": "Read RFID tag",
+      "RU": "Read RFID tag ID",
+      "~RV": "Configure RFID reporting",
+      "RW": "Configure RFID power levels",
+      "RZ": "Set RFID tag password",
+      "SC": "Set serial communications",
+      "~SD": "Set darkness",
+      "SE": "Select encoding",
+      "SF": "Serialized field",
+      "SI": "Set sensor intensity",
+      "SL": "Set RTC mode and language",
+      "SN": "Serialized data",
+      "SO": "Set RTC offset",
+      "SP": "Start print",
+      "SQ": "Stop and start alerts",
+      "SR": "Set printhead resistance",
+      "SS": "Set media sensors",
+      "ST": "Set RTC date and time",
+      "SX": "Set alert",
+      "SZ": "Set ZPL version (version 2 only)",
+      "~TA": "Tear-off adjust position",
+      "TB": "Text block",
+      "TO": "Transfer object",
+      "WA": "Configure wireless antenna",
+      "~WC": "Print configuration label",
+      "WD": "Print directory label",
+      "WE": "Configure WEP",
+      "WF": "Write RFID AFI or DSFID byte",
+      "WI": "Modify wireless network settings",
+      "WL": "Configure LEAP",
+      "~WL": "Print network configuration label",
+      "WP": "Set wireless password",
+      "~WQ": "Write query",
+      "WR": "Set wireless transmit rate",
+      "~WR": "Reset wireless radio card",
+      "WS": "Configure wireless radio card",
+      "WT": "Write RFID tag",
+      "WV": "Configure RFID write verify",
+      "WX": "Configure wireless security",
+      "XA": "Start format",
+      "XB": "Supress backfeed",
+      "XF": "Recall format",
+      "XG": "Recall graphics",
+      "XS": "Set dynamic calibration",
+      "XZ": "End format",
+      "ZZ": "Printer sleep"
+    },
+    "description": {
+      "A": "Sets the font for the current field, using a font name.",
+      "A@": "Sets the font for the current field, using a font file path.",
+      "B0": "Configures the current field as an Aztec bar code.",
+      "B1": "Configures the current field as a Code 11 bar code. Note that Code 11 is not recommended for use in new applications.",
+      "B2": "Configures the current field as an Interleaved 2 of 5 bar code.",
+      "B3": "Configures the current field as a Code 39 bar code.",
+      "B4": "Configures the current field as a Code 49 bar code. Note that Code 49 is not recommended for use in new applications.",
+      "B5": "Configures the current field as a USPS PLANET bar code. Note that USPS PLANET is not recommended for use in new applications.",
+      "B7": "Configures the current field as a PDF417 bar code.",
+      "B8": "Configures the current field as an EAN-8 bar code.",
+      "B9": "Configures the current field as a UPC-E bar code.",
+      "BA": "Configures the current field as a Code 93 bar code.",
+      "BB": "Configures the current field as a Codablock bar code. Note that Codablock is not recommended for use in new applications.",
+      "BC": "Configures the current field as a Code 128 bar code.",
+      "BD": "Configures the current field as a UPS MaxiCode bar code.",
+      "BE": "Configures the current field as an EAN-13 bar code.",
+      "BF": "Configures the current field as a MicroPDF417 bar code.",
+      "BI": "Configures the current field as an Industrial 2 of 5 bar code.",
+      "BJ": "Configures the current field as a Standard 2 of 5 bar code.",
+      "BK": "Configures the current field as an ANSI Codabar bar code. Note that Codabar is not recommended for use in new applications.",
+      "BL": "Configures the current field as a LOGMARS bar code. Note that LOGMARS is not recommended for use in new applications, with the possible exception of some US Department of Defense systems.",
+      "BM": "Configures the current field as a MSI bar code. Note that MSI is not recommended for use in new applications.",
+      "BO": "Configures the current field as an Aztec bar code.",
+      "BP": "Configures the current field as a Plessey bar code. Note that Plessey is not recommended for use in new applications.",
+      "BQ": "Configures the current field as a QR Code bar code. Note that the data string in the corresponding ^FD command is expected to start with a bar code configuration prefix. For example, \"^FDQA,12345\" sets the error correction level to Q (high reliability), selects input mode A (automated encode mode switching) and encodes the data \"12345\" in the bar code.",
+      "BR": "Configures the current field as a GS1 DataBar (RSS) bar code.",
+      "BS": "Configures the current field as a UPC/EAN extension.",
+      "BT": "Configures the current field as a TLC 39 bar code. Note that TLC 39 is not recommended for use in new applications.",
+      "BU": "Configures the current field as a UPC-A bar code.",
+      "BX": "Configures the current field as a Data Matrix bar code.",
+      "BY": "Configures the global bar code defaults.",
+      "BZ": "Configures the current field as a USPS postal bar code.",
+      "CC": "Changes the caret character, which is used to start most commands.",
+      "CD": "Changes the parameter delimiter character.",
+      "CF": "Sets the default font. The default font is used by all subsequent text fields which do not specify a font using the ^A or ^A@ commands.",
+      "CI": "Sets the current character set.",
+      "CM": "Changes the memory device letter designations.",
+      "CN": "Cycles the media cutter when in kiosk mode.",
+      "CO": "Configures the glyph cache, which is used internally to improve print speed when the same scalable font glyphs are used repeatedly.",
+      "CP": "Removes a printed label from the presenter area.",
+      "CT": "Changes the tilde character, which is used to start control commands.",
+      "CV": "Configures bar code data validation. By default ZPL is very lenient about bar code data errors, but this command can be used to enable stricter checks.",
+      "CW": "Configures a font name alias, so that a particular font file can later be used by font name via the ^A and ^CF commands.",
+      "~DB": "Uploads an embedded bitmap font, storing it at the specified file path. Note that bitmap fonts are not recommended for use in new applications.",
+      "~DE": "Uploads a custom encoding table, storing it at the specified file path. Note that custom encoding tables are not recommended for use in new applications.",
+      "DF": "Saves the remainder of the label definition to a file for later use via ^XF.",
+      "~DG": "Uploads an embedded image, storing it at the specified file path.",
+      "~DN": "Aborts an image upload (~DG) command.",
+      "~DS": "Uploads an embedded scalable font, storing it at the specified file path. Note that most modern fonts should be uploaded using the ~DU command, rather than the ~DS command.",
+      "~DT": "Uploads an embedded TrueType font, storing it at the specified file path. Note that most modern fonts should be uploaded using the ~DU command, rather than the ~DT command.",
+      "~DU": "Uploads an embedded TrueType font, storing it at the specified file path.",
+      "~DY": "Uploads an embedded file, storing it at the specified file path. This command is most commonly used to upload images and fonts, although other file types can be uploaded as well. Because of the variety of supported file types, this command is fairly complex. It is recommended that the ~DU command be used instead when uploading fonts, and that the ~DG command be used instead when uploading images.",
+      "EG": "Erases all GRF image files from all writeable devices. Note that if specific files need to be deleted, the ^ID command can be used instead.",
+      "FB": "Formats the current field as a text block which wraps text across multiple lines.",
+      "FC": "Configures the clock value escape character(s), allowing the current field to embed dynamic time values in the field data. Note that this command requires that the printer or print engine have access to real-time clock hardware, which not all physical printers include.",
+      "FD": "Sets the current field's data string. This data is usually printed to the label as text or encoded as a bar code, depending on the field type.",
+      "FE": "Configures the field data embed character, which allows the current field to embed field data from other fields which are numbered using the ^FN command. For example, if the embed character is set to #, then the text #3# can be used as a placeholder for the field data from field number 3, or the text #2,F,1,5# can be used as a placeholder for the first 5 characters of the field data from field 2, or the text #4,B,3,3# can be used as a placeholder for the last 3 characters of the field data from field 4.",
+      "FH": "Configures the hexadecimal escape character, allowing the current field to embed character codes in the field data. This can be particularly useful when field data values may contain characters which would otherwise be interpreted as ZPL command or parameter delimiters.",
+      "FL": "Links (or unlinks) one font to another, allowing the font engine to fall back from one font to another when a font is missing the glyph needed to render a character.",
+      "FM": "When used in conjunction with ^B7 or ^BF, this command configures multiple bar code positions for the current field, allowing the field data to be split across multiple bar codes using structured append.",
+      "FN": "Sets the current field's field number. When using the ^DF command to save label definitions for later use, the ^FN command is used to define the field numbers available for later reference. When using the ^XF command to load previously saved label definitions, the ^FN command is used to reference the field numbers previously defined.",
+      "FO": "Sets the position of the top left corner of the current field.",
+      "FP": "Configures the current field's print direction.",
+      "FR": "Configures the current field to reverse the background color, drawing black over white and white over black. This is also known as XOR mode drawing.",
+      "FS": "Ends the current field and starts the next field.",
+      "FT": "Sets the position of the bottom left corner of the current field.",
+      "FV": "Sets the current field's data string. This command is an alternative to the ^FD command, and allows the use of variable data when the ^MC command is used to retain rendered content across multiple labels.",
+      "FW": "Sets the default field orientation and alignment.",
+      "FX": "Adds a comment to the ZPL code. Comments do not affect the rendering of the label, and can be used to document assumptions, concepts or questions.",
+      "GB": "Configures the current field as a graphical box.",
+      "GC": "Configures the current field as a graphical circle.",
+      "GD": "Configures the current field as a graphical diagonal line.",
+      "GE": "Configures the current field as a graphical ellipse.",
+      "GF": "Configures the current field as an embedded image field.",
+      "GS": "Configures the current field as a graphical symbol, mapping ASCII values in the field data to non-ASCII symbols (A = ®, B = ©, C = ™, D = Underwriter Labs approval symbol, E = Canadian Standards Association approval symbol).",
+      "~HB": "Requests a battery status report via the terminal.",
+      "~HD": "Requests a head diagnostic report via the terminal.",
+      "HF": "Requests a label definition file via the terminal.",
+      "HG": "Requests an image graphics file via the terminal.",
+      "HH": "Requests a full configuration report via the terminal.",
+      "~HI": "Requests a basic configuration report via the terminal.",
+      "HL": "Requests the RFID data log via the terminal.",
+      "~HM": "Requests a RAM status report via the terminal.",
+      "~HQ": "Requests information via the terminal.",
+      "HR": "Calibrates the RFID tag position and sends the results via the terminal.",
+      "~HS": "Requests a hardware status report via the terminal.",
+      "HT": "Requests a list of font links via the terminal.",
+      "~HU": "Requests an alert configuration report via the terminal.",
+      "HV": "Requests the field data associated with a specific field via the terminal.",
+      "HW": "Requests a file listing via the terminal.",
+      "HY": "Requests an image graphics file via the terminal.",
+      "HZ": "Requests printer information in XML format via the terminal.",
+      "ID": "Deletes a file or set of files from printer memory.",
+      "IL": "Configures the current field as a label image field. The label image file is usually previously saved to memory using the ^IS command.",
+      "IM": "Configures the current field as an image graphics field.",
+      "IS": "Saves the current label definition to an image file for later use via ^IL.",
+      "~JA": "Cancels the current print job, as well as any label definitions currently in the buffer waiting to be printed.",
+      "JB": "Reinitializes a flash memory device installed in the printer.",
+      "~JB": "Reinitializes the PCMCIA card installed in the printer (i.e. the B: drive). If you need to reinitialize any other flash memory devices, see the ^JB command instead.",
+      "~JC": "Recalibrates the label length and sensor settings.",
+      "~JD": "Enables diagnostic mode. While diagnostic mode is enabled, the byte values received by the printer are rendered to diagnostic labels, rather than interpreted as ZPL. Diagnostic mode is useful to debug communications and encoding issues. Diagnostic mode can be disabled with the ~JE command.",
+      "~JE": "Disables diagnostic mode (previously enabled with the ~JD command).",
+      "~JF": "Configures whether or not the printer pauses printing when the printer battery has very low power, in order to avoid data loss.",
+      "~JG": "Prints a sensor calibration graph label. The graph displays the values set by the ~JC or ^SS commands.",
+      "JH": "Configures the early warning settings for the printer.",
+      "JI": "Starts a new ZBI (BASIC interpreter) session. The session can be ended with the ~JQ command.",
+      "JJ": "Configures the auxiliary port, which is used to control verifier and applicator devices.",
+      "~JL": "Recalibrates the label length.",
+      "JM": "Halves the print density, effectively doubling the physical size of any label content.",
+      "~JN": "Starts a printhead test. The printer will halt if the test fails.",
+      "~JO": "Starts a printhead test. The printer will pause if the test fails.",
+      "~JP": "Cancels the currently-processing label definition (if any) and pauses printing.",
+      "~JQ": "Ends the current ZBI (BASIC interpreter) session, if one was previously started with a ^JI or ~JI command.",
+      "~JR": "Resets the printer, simulating a manual power cycle.",
+      "JS": "Selects the active media sensor.",
+      "~JS": "Configures the label backfeed actions.",
+      "JT": "Configures the printhead test interval.",
+      "JU": "Loads or saves the printer configuration.",
+      "JW": "Sets the ribbon tension.",
+      "~JX": "Cancels the current label definition.",
+      "JZ": "Configures whether or not to reprint labels which were interrupted by an error condition as soon as the error is corrected.",
+      "~KB": "Completely drains the rechargeable battery, if the printer has one.",
+      "KC": "Enables and disables custom network client identifiers.",
+      "KD": "Sets the date and time format used on control panels and configuration diagnostic labels.",
+      "KL": "Sets the control panel display language.",
+      "KN": "Sets the printer network name.",
+      "KP": "Sets the control panel password.",
+      "KV": "Sets various kiosk mode parameters. Kiosk mode can be enabled with the ^MM command.",
+      "LF": "Generates a configuration label containing a list of font links. If the current label already contains content, the configuration label will be generated after the current label.",
+      "LH": "Sets the label home position, which serves as the origin (0, 0) of the label coordinate system.",
+      "LL": "Sets the label length (most commonly used with continuous media).",
+      "LR": "Configures all subsequent fields in the current label to reverse the background color, drawing black over white and white over black. This is also known as XOR mode drawing. This command is the global equivalent of the field-specific ^FR command.",
+      "LS": "Shifts all label content to the left or the right.",
+      "LT": "Shifts all label content up or down.",
+      "MA": "Configures the printing of maintenance alert labels. The alert messages can be configured using the ^MI command.",
+      "MC": "Allows the previous label output to be kept as part of the next label.",
+      "MD": "Modifies the print darkness level, relative to the base print darkness configured with the ~SD command.",
+      "MF": "Configures the power-up and head-close media feed actions.",
+      "MI": "Configures the messages used on the maintenance alert labels. The frequency of the maintenance alert labels can be configured using the ^MA command.",
+      "ML": "Configures the maximum label length.",
+      "MM": "Configures the post-print action.",
+      "MN": "Configures the label media type.",
+      "MP": "Enables and disables control panel functionality.",
+      "MT": "Configures the label media type.",
+      "MU": "Customizes the units of the label coordinate system, so that commands which normally accept coordinates and distances in dots may instead use physical units like millimeters and inches. This command also optionally allows DPI conversion of label definitions.",
+      "MW": "Enables and disables the head cold warning.",
+      "NB": "",
+      "NC": "",
+      "~NC": "",
+      "ND": "",
+      "NI": "",
+      "NN": "",
+      "NP": "",
+      "~NR": "",
+      "NS": "",
+      "~NT": "",
+      "NT": "",
+      "NW": "",
+      "PA": "Configures advanced text layout and font engine settings.",
+      "PF": "Slews the label the specified number of dot rows, skipping all printing across those rows.",
+      "PH": "Triggers the generation of one blank label.",
+      "~PL": "Increases the length of the label section ejected by the printer during a present cycle.",
+      "PM": "Configures mirror mode, which mirrors label content across a vertical axis.",
+      "~PM": "Triggers decommission mode.",
+      "PN": "Triggers a present cycle, ejecting a section of the current label.",
+      "PO": "Configures inverted mode, which mirrors label content across a horizontal axis.",
+      "PP": "Pauses printing until a ~PS command is received.",
+      "PQ": "Configures the number of labels generated by a single label definition.",
+      "PR": "Configures the media speed during printing, slew and backfeed.",
+      "~PR": "Triggers a reprint of the last label printed.",
+      "~PS": "Resumes printing after a printer has been paused via the ~PP command.",
+      "PW": "Sets the label print width.",
+      "RA": "",
+      "RB": "",
+      "RE": "",
+      "RF": "",
+      "RI": "",
+      "RL": "",
+      "RM": "",
+      "RN": "",
+      "~RO": "",
+      "RQ": "",
+      "RR": "",
+      "RS": "",
+      "RT": "",
+      "RU": "",
+      "~RV": "",
+      "RW": "",
+      "RZ": "",
+      "SC": "Configures the serial communication parameters.",
+      "~SD": "Configures the print darkness level. The darkness level can also be modified using the ^MD command.",
+      "SE": "Selects a custom encoding table, required by some fonts in order to correctly map characters to glyphs.",
+      "SF": "Configures the current field data to increment automatically. The number of labels (and increments) is controlled by the ^PQ command.",
+      "SI": "Configures the media sensor intensity.",
+      "SL": "Configures the real-time clock mode and language.",
+      "SN": "Configures the current field data as a serially-incrementing number. The number of labels (and increments) is controlled by the ^PQ command.",
+      "SO": "Sets the time offset of the secondary or tertiary clock, if the printer has a clock. To set the primary clock, use the ^ST command instead.",
+      "SP": "Starts the printing process for a segment of the label before the full label definition has been processed. This command should only be used on particularly complex labels, and only in particularly time-sensitive scenarios.",
+      "SQ": "Stops and starts error alerts configured previously with the ^SX command.",
+      "SR": "Sets the printhead resistance. This command should be used with care, as safe limits are hardware-specific.",
+      "SS": "Configures the media sensor thresholds.",
+      "ST": "Sets the primary clock date and time, if the printer has a clock.",
+      "SX": "Configures error alerts.",
+      "SZ": "Sets the ZPL version.",
+      "~TA": "Adjusts the label tear-off position.",
+      "TB": "Formats the current field as a text block which wraps text across multiple lines.",
+      "TO": "Copies one or more files in printer memory from one location to another.",
+      "WA": "",
+      "~WC": "",
+      "WD": "",
+      "WE": "",
+      "WF": "",
+      "WI": "",
+      "WL": "",
+      "~WL": "",
+      "WP": "",
+      "~WQ": "",
+      "WR": "",
+      "~WR": "",
+      "WS": "",
+      "WT": "",
+      "WV": "",
+      "WX": "",
+      "XA": "Begins a label definition. All label definitions must start with this command.",
+      "XB": "Disables forward feed / back feed after the current label.",
+      "XF": "Loads a label definition previously saved via the ^DF command. The ^FN command can then be used to add variable data to previously-defined fields, based on their field numbers.",
+      "XG": "Configures the current field as an image graphics field.",
+      "XS": "Enables and disables dynamic media calibration.",
+      "XZ": "Ends a label definition. All label definitions must end with this command.",
+      "ZZ": "Places the printer in sleep mode."
+    },
+    "parameters": {
+      "A": {
+        "font": "The font name and font orientation to use. Font names are either a capital letter (A-Z) or a number (0-9). Valid orientation values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default orientation is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The font height to use, in dots. Any number between 1 and 32,000 may be used. The default value depends on the font selected.",
+        "width": "The font width to use, in dots. Any number between 1 and 32,000 may be used. The default value depends on the font selected."
+      },
+      "A@": {
+        "orientation": "The font orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The font height to use, in dots. The default value depends on the font selected.",
+        "width": "The font width to use, in dots. The default value depends on the font selected.",
+        "path": "The path to the font file."
+      },
+      "B0": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "magnification": "The bar code magnification to use. Any number between 1 and 10 may be used. The default value depends on the print density being used.",
+        "eci": "Whether or not the bar code data uses ECI (extended channel interpretation) to switch character sets. Valid values are Y and N. The default value is N (no ECI).",
+        "size": "The Aztec bar code size to use. Valid values are 101-104 (compact Aztec code sizes), 201-232 (full-range Aztec code sizes), 300 (Aztec runes), and 1-99 (dynamic sizing for a specific minimum error correction percentage). By default, the bar code is sized dynamically to fit the encoded data.",
+        "readerInit": "Whether or not the bar code is a reader initialization bar code. Valid values are Y and N. The default value is N (no reader initialization).",
+        "symbols": "If using structured append to split data across multiple bar codes, this parameter indicates the total number of bar codes being used. Any number between 1 and 26 may be used. The default value is 1, indicating that structured append is not being used.",
+        "id": "If using structured append to split data across multiple bar codes, this parameter indicates the message ID, which is used to correlate linked bar codes and reduce the likelihood of scanning issues. By default, no message ID is used."
+      },
+      "B1": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "checkDigit": "Whether or not to add an extra check digit to the bar code. Valid values are Y and N. The default value is N (no extra check digit).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code)."
+      },
+      "B2": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code).",
+        "checkDigit": "Whether or not to add a check digit to the bar code. Valid values are Y and N. The default value is N (no check digit)."
+      },
+      "B3": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "checkDigit": "Whether or not to add a check digit to the bar code. Valid values are Y and N. The default value is N (no check digit).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code)."
+      },
+      "B4": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "heightMultiplier": "The bar code row height multiplier. This number is multiplied by the module width specified in the ^BY command to determine the row height. Any number between 1 and the label height may be used. The default value is 1.",
+        "line": "The location of the human-readable text. Valid values are N (no human-readable text), A (above the bar code), and B (below the bar code). The default value is N (no human-readable text).",
+        "mode": "The encoding mode to use to encode the data. Valid values are 0 (regular alphanumeric mode), 1 (append mode), 2 (numeric mode), 3 (group alphanumeric mode), 4 (alphanumeric shift 1), 5 (alphanumeric shift 2), and A (automatic optimization). The default value is A (automatic optimization)."
+      },
+      "B5": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 9,999 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is N (no human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code)."
+      },
+      "B7": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "rowHeight": "The bar code row height, in dots. Any number between 1 and the label height may be used. The default value is the row height necessary for the total bar code height to match the bar code height configured via the ^BY command.",
+        "security": "The level of error correction to apply. Any number between 0 and 8 may be used. The higher the number, the larger the generated bar code and the more resilient it is to scan errors. The default value is 0 (scan errors are detected but not corrected).",
+        "columns": "The number of data columns to encode. Any number between 1 and 30 may be used. This parameter can be used to control the bar code width. The default value depends on the amount of data encoded.",
+        "rows": "The number of rows to encode. Any number between 3 and 90 may be used. This parameter can be used to control the bar code height. The default value depends on the amount of data encoded.",
+        "truncate": "Whether or not to generate a truncated PDF417 bar code, also known as compact PDF417. Truncated PDF417 bar codes are narrower because they do not include right row indicators, but should only be used when label damage is unlikely. Valid values are Y and N. The default value is N (do not truncate)."
+      },
+      "B8": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code)."
+      },
+      "B9": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code).",
+        "checkDigit": "Whether or not to show the check digit in the human-readable text. Valid values are Y and N. The default value is Y (show check digit)."
+      },
+      "BA": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code).",
+        "checkDigit": "Whether or not to show the check digits in the human-readable text. Valid values are Y and N. The default value is N (check digits are not shown)."
+      },
+      "BB": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code row height, in dots. Any number between 2 and 32,000 may be used. The default value is 8.",
+        "checkDigit": "Whether or not to calculate check digits. Valid values are Y and N. The default value is Y (check digits are calculated). Can only be set to N if Codablock A is used.",
+        "columns": "The number of columns (characters) per row. Any number between 2 and 62 may be used.",
+        "rows": "The number of rows to generate. For Codablock A, any number between 1 and 22 may be used. For Codablock E and Codablock F, any number between 2 and 4 may be used.",
+        "mode": "The Codablock variant to use. Valid values are A (Codablock A), F (Codablock F) and E (Codablock E). The default value is F (Codablock F)."
+      },
+      "BC": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code), except for mode U where the default is Y (if printed, text is placed above the bar code).",
+        "checkDigit": "Whether or not to calculate a GS1 (UCC) Mod 10 check digit. Valid values are Y and N. The default value is N (GS1 check digit is not calculated).",
+        "mode": "The mode to use to encode the bar code data. Valid values are N (no mode, subsets are specified explicitly as part of the field data), U (UCC case mode, field data must contain 19 digits), A (automatic mode, the ZPL engine automatically determines the subsets that are used to encode the data), and D (UCC/EAN mode, field data must contain GS1 numbers). The default value is N (no mode, subsets are specified explicitly as part of the field data)."
+      },
+      "BD": {
+        "mode": "The mode to use to encode the bar code data. Valid values are 2 (numeric postal code), 3 (alphanumeric postal code), 4 (standard), 5 (full EEC), and 6 (reader programming). The default value is 2 (numeric postal code).",
+        "position": "If using structured append to split data across multiple bar codes, this parameter indicates the position of this bar code in the overall bar code sequence. The default value is 1 (assumes that structured append is not being used).",
+        "total": "If using structured append to split data across multiple bar codes, this parameter indicates the total number of bar codes which are in the bar code sequence. The default value is 1 (assumes that structured append is not being used)."
+      },
+      "BE": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code)."
+      },
+      "BF": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "rowHeight": "The bar code row height, in dots. Any number between 1 and 9,999 may be used. The default value is the row height necessary for the total bar code height to match the bar code height configured via the ^BY command.",
+        "mode": "The MicroPDF417 mode (or variant) to use. Any number between 0 and 33 may be used. Modes 0-5 use 1 data column, modes 6-12 use 2 data columns, modes 13-22 use 3 data columns, and modes 23-33 use 4 data columns. The default value is mode 0 (1 data column and 11 data rows)."
+      },
+      "BI": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code)."
+      },
+      "BJ": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code)."
+      },
+      "BK": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "checkDigit": "Whether or not to add a check digit. This parameter is only available for backward compatibility purposes and can only be set to N (no check digit).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code).",
+        "startChar": "The Codabar start character to use. Valid values are A, B, C and D. The default value is A.",
+        "stopChar": "The Codabar stop character to use. Valid values are A, B, C and D. The default value is A."
+      },
+      "BL": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (text is placed below the bar code)."
+      },
+      "BM": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "checkDigitType": "The type of check digit to use. Valid values are A (no check digit), B (Mod 10), C (Mod 1010) and D (Mod 1110). The default value is B (Mod 10).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code).",
+        "checkDigit": "Whether or not to show the check digit in the human-readable text. Valid values are Y and N. The default value is N (do not show check digit)."
+      },
+      "BO": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "magnification": "The bar code magnification to use. Any number between 1 and 10 may be used. The default value depends on the print density being used.",
+        "eci": "Whether or not the bar code data uses ECI (extended channel interpretation) to switch character sets. Valid values are Y and N. The default value is N (no ECI).",
+        "size": "The Aztec bar code size to use. Valid values are 101-104 (compact Aztec code sizes), 201-232 (full-range Aztec code sizes), 300 (Aztec runes), and 1-99 (dynamic sizing for a specific minimum error correction percentage). By default, the bar code is sized dynamically to fit the encoded data.",
+        "readerInit": "Whether or not the bar code is a reader initialization bar code. Valid values are Y and N. The default value is N (no reader initialization).",
+        "symbols": "If using structured append to split data across multiple bar codes, this parameter indicates the total number of bar codes being used. Any number between 1 and 26 may be used. The default value is 1, indicating that structured append is not being used.",
+        "id": "If using structured append to split data across multiple bar codes, this parameter indicates the message ID, which is used to correlate linked bar codes and reduce the likelihood of scanning issues. By default, no message ID is used."
+      },
+      "BP": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "checkDigit": "Whether or not to show the check digit in the human-readable text. Valid values are Y and N. The default value is N (do not show check digit).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code)."
+      },
+      "BQ": {
+        "orientation": "The bar code orientation to use. This parameter is only available for backward compatibility purposes and can only be set to N (no rotation).",
+        "model": "The QR Code model to use. Valid values are 1 (original) and 2 (enhanced). The default value is model 2 (enhanced). Always use model 2.",
+        "magnification": "The bar code magnification to use. Any number between 1 and 100 may be used. The default value depends on the print density being used.",
+        "errorCorrection": "The level of error correction to apply. Valid values are H (highest reliability), Q (high reliability), M (medium reliability), and L (lower reliability). The default value is Q (high reliability).",
+        "mask": "The mask pattern to apply to the bar code. Any number between 0 and 7 may be used. The default value is 7."
+      },
+      "BR": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "type": "The type of GS1 DataBar bar code to generate. Valid values are 1 (GS1 DataBar Omnidirectional), 2 (GS1 DataBar Truncated), 3 (GS1 DataBar Stacked), 4 (GS1 DataBar Stacked Omnidirectional), 5 (GS1 DataBar Limited), 6 (GS1 DataBar Expanded), 7 (UPC-A), 8 (UPC-E), 9 (EAN-13), 10 (EAN-8), 11 (GS1-128 + CC-A/CC-B) and 12 (GS1-128 + CC-C). The default value is 1 (GS1 DataBar Omnidirectional).",
+        "magnification": "The bar code magnification to use. Any number between 1 and 10 may be used. The default value depends on the print density being used.",
+        "sepHeight": "The height of the separator between the linear component and the 2D component. May be 1 or 2. The default value is 1.",
+        "height": "The bar code height of the linear component, in dots. Any number between 1 and 32,000 may be used. The default value is 25.",
+        "segWidth": "The segment width, for GS1 DataBar Expanded Stacked Omnidirectional bar codes (a type 6 variant). Any number between 2 and 20 may be used. There is no default value."
+      },
+      "BS": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is Y (if printed, text is placed above the bar code)."
+      },
+      "BT": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "width": "The Code 39 module width, in dots. Any number between 1 and 10 may be used. The default value depends on the print density of the printer.",
+        "widthRatio": "The Code 39 ratio between wide bars and narrow bars. Any decimal number between 2 and 3 may be used. The number must be a multiple of 0.1 (i.e. 2.0, 2.1, 2.2, 2.3, ... , 2.9, 3.0). The default value is 2.",
+        "height": "The Code 39 bar code height, in dots. Any number between 1 and 9,999 may be used. The default value depends on the print density of the printer.",
+        "pdfWidth": "The MicroPDF417 module width, in dots. Any number between 1 and 10 may be used. The default value depends on the print density of the printer.",
+        "pdfHeight": "The MicroPDF417 row height, in dots. Any number between 1 and 255 may be used. The default value depends on the print density of the printer."
+      },
+      "BU": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 9,999 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is Y (include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code).",
+        "checkDigit": "Whether or not to show the check digit in the human-readable text. Valid values are Y and N. The default value is Y (show check digit)."
+      },
+      "BX": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code element height, in dots. The individual elements are square, so the element height and width will be the same. Any number between 1 and the label width may be used. The default value is the element height necessary for the total bar code height to match the bar code height configured via the ^BY command.",
+        "quality": "The level of error correction to apply. Valid values are 0 (ECC 0), 50 (ECC 50), 80 (ECC 80), 100 (ECC 100), 140 (ECC 140) and 200 (ECC 200). The default value is 0 (scan errors are detected but not corrected). Always use quality level 200 (ECC 200).",
+        "columns": "The number of columns to encode. For ECC 200 bar codes, even numbers between 1 and 144 may be used. This parameter can be used to control the bar code width. The default value depends on the amount of data encoded.",
+        "rows": "The number of rows to encode. For ECC 200 bar codes, even numbers between 1 and 144 may be used. This parameter can be used to control the bar code height. The default value depends on the amount of data encoded.",
+        "format": "The type of data that needs to be encoded. Valid values are 1, 2, 3, 4, 5 and 6. The default value is 6. This parameter is ignored for ECC 200 bar codes (the recommended quality level).",
+        "escape": "The escape character used to escape control sequences in the field data. The default value is \"~\" (tilde).",
+        "ratio": "The desired aspect ratio, if any. Valid values are 1 (square) and 2 (rectangular)."
+      },
+      "BY": {
+        "width": "The default bar code module width, in dots. Any number between 1 and 100 may be used. The default value is the previously configured value, or 2 if no value has been set.",
+        "widthRatio": "The default ratio between wide bars and narrow bars. Any decimal number between 2 and 3 may be used. The number must be a multiple of 0.1 (i.e. 2.0, 2.1, 2.2, 2.3, ... , 2.9, 3.0). Larger numbers generally result in fewer bar code scan failures. The default value is the previously configured value, or 3 if no value has been set.",
+        "height": "The default bar code height, in dots. Any positive number may be used. The default value is the previously configured value, or 10 if no value has been set."
+      },
+      "BZ": {
+        "orientation": "The bar code orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The bar code height, in dots. Any number between 1 and 32,000 may be used. The default value is the bar code height configured via the ^BY command, which itself defaults to 10.",
+        "line": "Whether or not to include human-readable text with the bar code. Valid values are Y and N. The default value is N (do not include human-readable text).",
+        "lineAbove": "Whether or not to place the human-readable text above the bar code. Valid values are Y and N. The default value is N (if printed, text is placed below the bar code).",
+        "type": "The type of postal bar code to generate. Valid values are 0 (POSTNET bar code), 1 (PLANET bar code) and 3 (USPS Intelligent Mail bar code)."
+      },
+      "CC": {
+        "caret": "The new caret character. Any ASCII character may be used. The default value is '^'."
+      },
+      "CD": {
+        "delim": "The new parameter delimiter. Any ASCII character may be used. The default value is ','."
+      },
+      "CF": {
+        "fontName": "The name of the new default font. Font names are either a capital letter (A-Z) or a number (0-9). The default value is the previously configured value, or A if no value has been set.",
+        "height": "The height of the new default font, in dots. The default value depends on the font selected.",
+        "width": "The width of the new default font, in dots. The default value depends on the font selected."
+      },
+      "CI": {
+        "charset": "The character set to use. Any number between 0 and 36 may be used. The default value is 0 (Code Page 850). It is recommended that you always use value 28 (UTF-8).",
+        "src1": "Optional custom character mappings, specified as pairs of integers. Any numbers between 0 and 255 may be used. This parameter only affects Code Page 850 variants (charset values 0 - 13).",
+        "dest1": "Optional custom character mappings, specified as pairs of integers. Any numbers between 0 and 255 may be used. This parameter only affects Code Page 850 variants (charset values 0 - 13).",
+        "src2": "Optional custom character mappings, specified as pairs of integers. Any numbers between 0 and 255 may be used. This parameter only affects Code Page 850 variants (charset values 0 - 13).",
+        "dest2": "Optional custom character mappings, specified as pairs of integers. Any numbers between 0 and 255 may be used. This parameter only affects Code Page 850 variants (charset values 0 - 13)."
+      },
+      "CM": {
+        "bAlias": "The new alias for the B: device. Valid values are B, E, R and A. The default value is B.",
+        "eAlias": "The new alias for the E: device. Valid values are B, E, R and A. The default value is E.",
+        "rAlias": "The new alias for the R: device. Valid values are B, E, R and A. The default value is R.",
+        "aAlias": "The new alias for the A: device. Valid values are B, E, R and A. The default value is A.",
+        "multiple": "Flag which, when set to the value M, allows E to be mapped to more than one device."
+      },
+      "CN": {
+        "override": "Whether to use the default kiosk cut amount (from the ^KV command), or perform a full cut. Valid values are 0 (use the default cut amount) and 1 (perform a full cut). There is no default value."
+      },
+      "CO": {
+        "on": "Whether or not the glyph cache is enabled. Valid values are Y (cache on) and N (cache off). The default value is Y (cache on).",
+        "kilobytes": "The amount of extra memory to allocate to the glyph cache, in kilobytes. Any number between 1 and 9,999 may be used. The default value is 40 kilobytes.",
+        "type": "The type of glyph cache being configured. Valid values are 0 (external cache for regular fonts) and 1 (internal cache for Asian fonts)."
+      },
+      "CP": {
+        "mode": "The label removal mode. Valid values are 0 (eject label), 1 (retract label), and 2 (use the mode specified via the ^KV command). There is no default value."
+      },
+      "CT": {
+        "tilde": "The new tilde character. Any ASCII character may be used. The default value is '~'."
+      },
+      "CV": {
+        "validate": "Whether or not to more strictly validate bar code data. Valid values are Y and N. The default value is N (no strict validation)."
+      },
+      "CW": {
+        "fontName": "The font name to use for the specified font file. Font names are either a capital letter (A-Z) or a number (0-9). If no value is specified, the command is ignored.",
+        "path": "The font file path that the specified font name should alias to. Any valid font path may be used. If the specified font file does not exist, the command is ignored."
+      },
+      "~DB": {
+        "path": "The file path to save the bitmap font to. The default value is R:UNKNOWN.FNT.",
+        "orient": "An ignored parameter.",
+        "height": "The maximum glyph height, in dots. Any number between 1 and 32,000 may be used. There is no default value.",
+        "width": "The maximum glyph width, in dots. Any number between 1 and 32,000 may be used. There is no default value.",
+        "ascent": "The maximum glyph ascent, in dots. Any number between 1 and 32,000 may be used. There is no default value.",
+        "space": "The space character width, in dots. Any number between 1 and 32,000 may be used. There is no default value.",
+        "glyphs": "The number of glyphs in the font. Any number between 1 and 256 may be used. There is no default value.",
+        "copyright": "The font copyright holder. The maximum length is 63 characters. There is no default value.",
+        "data": "The font glyph data, as a series of (character code + height + width + x-offset + y-offset + advance + bitmap data) sequences. There is no default value."
+      },
+      "~DE": {
+        "path": "The file path to save the encoding table to. The default value is R:UNKNOWN.DAT.",
+        "size": "The size of the encoding table, in bytes. There is no default value.",
+        "data": "The encoding table data, as a string of hexadecimal values. There is no default value."
+      },
+      "DF": {
+        "path": "The file path to save the label definition to. The ^XF command can later be used to load the label definition from this path. The default value is R:UNKNOWN.ZPL."
+      },
+      "~DG": {
+        "path": "The file path to save the image to. The ^XG command can later be used to load the image from this path. The default value is R:UNKNOWN.GRF.",
+        "totalBytes": "The total number of bytes in the image. Because each pixel in the image uses 1 bit, this value should be the total number of pixels in the image, divided by 8 (since there are 8 bits per byte). There is no default value.",
+        "rowBytes": "The number of bytes per pixel row in the image. Because each pixel in the image uses 1 bit, this value should be the pixel width of the image, divided by 8 (since there are 8 bits per byte). The default value is 1, which is almost always incorrect.",
+        "data": "The image data, in hexadecimal format. There is no default value."
+      },
+      "~DS": {
+        "path": "The file path to save the font to. The default value is R:UNKNOWN.FNT.",
+        "size": "The total number of bytes in the font file. There is no default value.",
+        "data": "The font data, in hexadecimal format. There is no default value."
+      },
+      "~DT": {
+        "path": "The file path to save the font to. The default value is R:UNKNOWN.FNT.",
+        "size": "The total number of bytes in the font file. There is no default value.",
+        "data": "The font data, in hexadecimal format. There is no default value."
+      },
+      "~DU": {
+        "path": "The file path to save the font to. The default value is R:UNKNOWN.FNT.",
+        "size": "The total number of bytes in the font file. There is no default value.",
+        "data": "The font data, in hexadecimal format. There is no default value."
+      },
+      "~DY": {
+        "path": "The file path to save the file to. The file extension should be omitted, since it is determined based on the third (extension) parameter. The default value is R:UNKNOWN.",
+        "format": "The format of the data contained in the sixth parameter. Valid values are A (hexadecimal format), B (raw binary format), C (AR compressed), and P (hexadecimal format PNG data). There is no default value.",
+        "extension": "The file type to expect and the file name extension to use. There are many possible values, but some of the most common are G (GRF file), T (TTF file), and P (PNG file). The default value is G (GRF file).",
+        "totalBytes": "The total number of bytes in the file. There is no default value.",
+        "rowBytes": "The number of bytes per pixel row in the image, if the file is an image. This parameter is ignored if the extension parameter is not G (the file is not a GRF file). There is no default value.",
+        "data": "The file data, in the format specified in the second parameter. There is no default value."
+      },
+      "FB": {
+        "maxWidth": "The maximum text block width, in dots. Text longer than this width is wrapped to another line. Any number between 0 and 9,999 may be used. The default value is 0, which is rarely useful.",
+        "maxLines": "The maximum number of text lines to allow. If the text does not fit on the specified number of lines, any remaining text is drawn over the previous text on the last line. Any number between 1 and 9,999 may be used. The default value is 1.",
+        "lineSpacing": "Extra spacing to add between lines, in dots. Positive numbers increase the distance between lines, negative numbers decrease the distance between lines. Any number between -9,999 and 9,999 may be used. The default value is 0.",
+        "alignment": "The text alignment to apply to the text block. Valid values are L (left), R (right), C (center) and J (justified). The default value is L (left).",
+        "hangingIndent": "The hanging indent to apply to all lines except the first line, in dots. Any number between 0 and 9,999 may be used. The default value is 0."
+      },
+      "FC": {
+        "indicator1": "The escape character to use for primary clock time values. Any ASCII character may be used. The default value is '%'.",
+        "indicator2": "The escape character to use for secondary clock time values. Any ASCII character may be used, except for the values used for the other two parameters. There is no default value.",
+        "indicator3": "The escape character to use for tertiary clock time values. Any ASCII character may be used, except for the values used for the other two parameters. There is no default value."
+      },
+      "FD": {
+        "data": "The data string. There is no default value."
+      },
+      "FE": {
+        "embedChar": "The field data embed character. Any ASCII character may be used, except the ZPL command and parameter delimiters."
+      },
+      "FH": {
+        "hexIndicator": "The hexadecimal escape character. Any ASCII character may be used, except the lowercase letters a-z and the ZPL command and parameter delimiters. The default value is \"_\" (underscore)."
+      },
+      "FL": {
+        "extensionPath": "The extension font file path. The font engine will fall back to this font if it encounters a missing glyph in the base font. There is no default value.",
+        "basePath": "The base font file path. If the font engine encounters a missing glyph in this font, it will fall back to the extension font. There is no default value.",
+        "link": "Whether to link or unlink the fonts. Valid values are 0 (unlink) and 1 (link). The default value is 0 (unlink)."
+      },
+      "FM": {
+        "x1": "Bar code positions, in dots, specified as pairs of integers (x and y values). Any numbers between 0 and 32,000 may be used. There are no default values.",
+        "y1": "Bar code positions, in dots, specified as pairs of integers (x and y values). Any numbers between 0 and 32,000 may be used. There are no default values.",
+        "x2": "Bar code positions, in dots, specified as pairs of integers (x and y values). Any numbers between 0 and 32,000 may be used. There are no default values.",
+        "y2": "Bar code positions, in dots, specified as pairs of integers (x and y values). Any numbers between 0 and 32,000 may be used. There are no default values."
+      },
+      "FN": {
+        "fieldNumber": "The current field's field number. Any number between 0 and 9,999 may be used. The default value is 0."
+      },
+      "FO": {
+        "x": "The field position x-coordinate, in dots. Any number between 0 and 32,000 may be used. The default value is 0.",
+        "y": "The field position y-coordinate, in dots. Any number between 0 and 32,000 may be used. The default value is 0.",
+        "alignment": "The origin alignment to use. Valid values are 0 (left alignment), 1 (right alignment), and 2 (automatic alignment based on the direction of the field data text). The default value is the value previously configured via the ^FW command, if any."
+      },
+      "FP": {
+        "direction": "The print direction. Valid values are H (horizontal / left to right), V (vertical / top to bottom), and R (reverse / right to left). The default value is H (horizontal / left to right).",
+        "characterSpacing": "Extra spacing to add between characters, in dots. Positive numbers increase the distance between characters, negative numbers decrease the distance between characters. Any number between -10 and 9,999 may be used. The default value is 0."
+      },
+      "FT": {
+        "x": "The field position x-coordinate, in dots. Any number between 0 and 32,000 may be used. The default value is the right edge of the previous field.",
+        "y": "The field position y-coordinate, in dots. Any number between 0 and 32,000 may be used. The default value is the bottom edge of the previous field.",
+        "alignment": "The origin alignment to use. Valid values are 0 (left alignment), 1 (right alignment), and 2 (automatic alignment based on the direction of the field data text). The default value is the value previously configured via the ^FW command, if any."
+      },
+      "FV": {
+        "data": "The data string. There is no default value."
+      },
+      "FW": {
+        "orientation": "The default field orientation. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is N (no rotation).",
+        "alignment": "The default field origin alignment. Valid values are 0 (left alignment), 1 (right alignment), and 2 (automatic alignment based on the direction of the field data text). The default value is 0 (left alignment)."
+      },
+      "FX": {
+        "comment": "The informational comment."
+      },
+      "GB": {
+        "width": "The width of the box, in dots. Any number between the box line thickness and 32,000 may be used. The default value is the box line thickness.",
+        "height": "The height of the box, in dots. Any number between the box line thickness and 32,000 may be used. The default value is the box line thickness.",
+        "thickness": "The line thickness to use to draw the box, in dots. Any number between 1 and 32,000 may be used. The default value is 1.",
+        "color": "The line color to use to draw the box. Valid values are B (black) and W (white). The default value is B (black).",
+        "rounding": "The amount of rounding to apply to the box corners. Any number between 0 (no rounding) and 8 (maximum rounding) may be used. The default value is 0 (no rounding)."
+      },
+      "GC": {
+        "diameter": "The diameter of the circle, in dots. Any number between 3 and 4,095 may be used. The default value is 3.",
+        "thickness": "The line thickness to use to draw the circle, in dots. Any number between 1 and 4,095 may be used. The default value is 1.",
+        "color": "The line color to use to draw the circle. Valid values are B (black) and W (white). The default value is B (black)."
+      },
+      "GD": {
+        "width": "The width of the rectangle which defines the diagonal line, in dots. Any number between 3 and 32,000 may be used. The default value is the line thickness.",
+        "height": "The height of the rectangle which defines the diagonal line, in dots. Any number between 3 and 32,000 may be used. The default value is the line thickness.",
+        "thickness": "The line thickness to use to draw the diagonal line, in dots. Any number between 1 and 32,000 may be used. The default value is 1.",
+        "color": "The line color to use to draw the diagonal line. Valid values are B (black) and W (white). The default value is B (black).",
+        "orientation": "The direction of the diagonal line. Valid values are R (bottom to top) and L (top to bottom). The default value is R (bottom to top)."
+      },
+      "GE": {
+        "width": "The width of the ellipse, in dots. Any number between 3 and 4,095 may be used. The default value is 3.",
+        "height": "The height of the ellipse, in dots. Any number between 3 and 4,095 may be used. The default value is 3.",
+        "thickness": "The line thickness to use to draw the ellipse, in dots. Any number between 1 and 4,095 may be used. The default value is 1.",
+        "color": "The line color to use to draw the ellipse. Valid values are B (black) and W (white). The default value is B (black)."
+      },
+      "GF": {
+        "format": "The format of the image data contained in the fifth parameter. Valid values are A (hexadecimal format), B (raw binary format), and C (AR compressed). There is no default value.",
+        "dataBytes": "The total number of data bytes in the fifth parameter. The value of this parameter is always the same as totalBytes, except in the case of format C (AR compressed) which is very rarely used.",
+        "totalBytes": "The total number of bytes in the image. Because each pixel in the image uses 1 bit, this value should be the total number of pixels in the image, divided by 8 (since there are 8 bits per byte). There is no default value.",
+        "rowBytes": "The number of bytes per pixel row in the image. Because each pixel in the image uses 1 bit, this value should be the pixel width of the image, divided by 8 (since there are 8 bits per byte). There is no default value.",
+        "data": "The image data, in the format specified in the first parameter. There is no default value."
+      },
+      "GS": {
+        "orientation": "The symbol orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^FW command, which itself defaults to N (no rotation).",
+        "height": "The symbol height to use, in dots. Any number between 1 and 32,000 may be used. The default value is the value previously configured via the ^CF command, if any.",
+        "width": "The symbol width to use, in dots. Any number between 1 and 32,000 may be used. The default value is the value previously configured via the ^CF command, if any."
+      },
+      "HF": {
+        "path": "The file path to read the label definition from. The default value is R:UNKNOWN.ZPL."
+      },
+      "HG": {
+        "path": "The file path to read the image graphics from. The default value is R:UNKNOWN.GRF."
+      },
+      "~HQ": {
+        "query": "The type of information being requested. Valid values are ES (error status), HA (hardware address), JT (printhead test results), MA (maintenance alert settings), MI (maintenance information), OD (odometer), PH (printhead life history), PP (plug and play string), SN (serial number), and UI (USB information). There is no default value."
+      },
+      "HR": {
+        "prefix": "Prefix text to send via the terminal before sending the calibration results. The default value is 'start'.",
+        "suffix": "Suffix text to send via the terminal after sending the calibration results. The default value is 'end'.",
+        "start": "The initial calibration position, in millimeters, relative to the leading print edge. Valid values are F0 - F999 and B0 - B30, where the letters represent the direction (F = forwards, B = backwards). The default value is hardware-dependent.",
+        "end": "The final calibration position, in millimeters, relative to the leading print edge. Valid values are F0 - F999 and B0 - B30, where the letters represent the direction (F = forwards, B = backwards). The default value is hardware-dependent.",
+        "antennaSelection": "Whether the RFID antenna selection should be manual or automatic. Valid values are M (manual) and A (automatic). The default value is A (automatic)."
+      },
+      "HV": {
+        "fieldNumber": "The number identifying the field whose field data is being requested. Any number between 0 and 9,999 may be used. The default value is 0.",
+        "bytes": "The number of bytes of data being requested. Any number between 1 and 256 may be specified. The default value is 64.",
+        "prefix": "Custom prefix to send via the terminal before sending the field data. There is no default value.",
+        "suffix": "Custom suffix to send via the terminal after sending the field data. There is no default value.",
+        "mode": "Whether to send field data for each label definition processed, or for for each label generated. Valid values are F (per label definition) and L (per label generated). The default value is F (per label definition)."
+      },
+      "HW": {
+        "path": "The file path pattern used to search for files to include in the file listing. Wildcards (*, ?) are accepted. The default value is R:*.*.",
+        "format": "The format to use to send the file listing. Valid values are D (default) and C (columns). The default value is D (default)."
+      },
+      "HY": {
+        "path": "The file path to read the image graphics from. The default value is R:UNKNOWN.GRF."
+      },
+      "HZ": {
+        "selector": "The type of information to be sent. Valid values are A (all information), F (format configuration), L (directory listing), O (individual object information) and R (printer status). There is no default value.",
+        "path": "The file path of the individual object whose information is being requested. The default value is R:UNKNOWN.GRF. Used only when requesting individual object information (selector = O).",
+        "longFilenames": "Whether or not to use long (16 character) filenames. Used only when requesting individual object information (selector = O)."
+      },
+      "ID": {
+        "path": "The file path pattern used to search for files to delete. Wildcards (*, ?) are accepted. The default value is R:UNKNOWN.GRF."
+      },
+      "IL": {
+        "path": "The path to the label image file. The default value is R:UNKNOWN.GRF."
+      },
+      "IM": {
+        "path": "The path to the image graphics file. The default value is R:UNKNOWN.GRF."
+      },
+      "IS": {
+        "path": "The file path to save the image to. The default value is R:UNKNOWN.GRF.",
+        "print": "Whether or not to continue printing the current label definition after saving it as an image file. Valid values are Y (print after saving) and N (do not print after saving). The default value is Y (print after saving)."
+      },
+      "JB": {
+        "device": "The device to be reinitialized. Valid values are A (Compact Flash card), B (PCMCIA card) and E (internal flash memory). There is no default value."
+      },
+      "~JF": {
+        "pause": "Whether or not to pause when the printer battery has very low power. Valid values are Y (pause on low power) and N (do not pause on low power). The default value is Y (pause on low power)."
+      },
+      "JH": {
+        "settings": "Enable or disable media-related warnings. Valid values are E (enable) and D (disable). The default value is D (disable). The number of labels per label roll. Any number between 100 and 9,999 may be used. The default value is 900. Whether or not the label roll has been replaced. Valid values are Y and N. The default value is N (labels have not been replaced). The length of the ribbon. Valid values vary by printer model, as does the default value. Whether or not the ribbon has been replaced. Valid values are Y and N. The default value is N (ribbon has not been replaced). Enable or disable hardware maintenance-related warnings. Valid values are E (enable) and D (disable). The default value is D (disable). The expected interval between printhead cleanings. Any number between 0 and 16 may be used, where number N represents an interval of (100+(50*N)) meters. Whether or not the printhead has been cleaned. Valid values are Y and N. The default value is N (printhead has not been cleaned). The expected interval between printhead replacements, in inches. Any number between 100 and 3,500,000 may be used. The default value is 1,000,000. Whether or not the printhead has been replaced. Valid values are Y and N. The default value is N (printhead has not been replaced)."
+      },
+      "JI": {
+        "path": "The path to the BASIC initialization script to run automatically, if any. There is no default value.",
+        "console": "Whether or not to enable the console. Valid values are Y (enable the console) and N (do not enable the console). The default value is Y (enable the console).",
+        "echo": "Whether or not to enable echoing. Valid values are Y (enable echoing) and N (do not enable echoing). The default value is Y (enable echoing).",
+        "memory": ""
+      },
+      "JJ": {
+        "opMode": "The operational mode. Valid values are 0 (off), 1 (stop on error) and 2 (stop soon after error). The default value is 0 (off).",
+        "appMode": "The application mode. Valid values are 0 (off), 1 (signal low while printing), 2 (signal high while printing), 3 (signal low after printing) and 4 (signal high after printing). The default value is 0 (off).",
+        "signalMode": "The start print signal mode. Valid values are P (pulse mode) and L (level mode).",
+        "errMode": "The label error mode. Valid values are E (error mode) and F (feed mode). The default value is F (feed mode).",
+        "reprintMode": "The reprint mode. Valid values are E (enabled) and D (disabled). The default value is D (disabled).",
+        "ribbonMode": "The ribbon low warning mode. Valid values are E (enabled) and D (disabled). The default value is E (enabled)."
+      },
+      "JM": {
+        "adjustment": "Whether to use normal print density or half print density. Valid values are A (normal print density) and B (half print density). The default value is the previously configured value, or A (normal print density) if no value was previously configured."
+      },
+      "JS": {
+        "sensor": "The active media sensor. Valid values are A (auto-select), R (reflective media sensor) and T (transmissive media sensor). The default value varies by printer model."
+      },
+      "~JS": {
+        "sequence": "The label backfeed actions. Valid values are A (100% backfeed after printing), B (100% backfeed before printing), N (normal, i.e. 90% backfeed after printing), O (off, i.e. no backfeed), or any multiple of 10 between 10 and 90 (percent backfeed after printing). The default value is N (normal, i.e. 90% backfeed after printing)."
+      },
+      "JT": {
+        "interval": "The interval, in labels, between each printhead test. Any number between 0 and 9999 may be used. The default value is 0 (no test).",
+        "manual": "Whether or not to configure the test element range manually. Valid values are Y (manual configuration) and N (automatic configuration).",
+        "first": "The first element to test (if manual is Y). Any number between 0 and 9999 may be used. The default value is 0.",
+        "last": "The last element to test (if manual is Y). Any number between 0 and 9999 may be used. The default value is 9999."
+      },
+      "JU": {
+        "configuration": "The printer configuration to load or save. Valid values are S (save current settings), R (reload last saved settings), F (reload factory settings) and N (reload factory network settings). There is no default value."
+      },
+      "JW": {
+        "tension": "The ribbon tension. Valid values are L (low tension), M (medium tension) and H (high tension). There is no default value."
+      },
+      "JZ": {
+        "reprint": "Whether or not to reprint labels which were interrupted by an error condition. Valid values are Y (reprint) and N (do not reprint). There is no default value."
+      },
+      "KC": {
+        "enable": "Whether or not to enable a custom network client identifier. Valid values are 0 (disable), 1 (enable and use the MAC address), 2 (enable and use the specified ASCII value) and 3 (enable and use the specified hexadecimal value). The default value is 0 (disable).",
+        "device": "The network device to configure. Valid values are 0 (all network devices), 1 (the wireless network device), 2 (the external wired network device) and 3 (the internal wired network device). The default value is 1 (the wireless network device).",
+        "prefix": "Optional prefix to use. May be up to 11 ASCII characters or 22 hexadecimal characters, depending on the value of the first parameter.",
+        "identifier": "The client identifier to use. May be up to 60 ASCII characters or 120 hexadecimal characters, depending on the value of the first parameter."
+      },
+      "KD": {
+        "format": "The date and time format to use. Valid values are 1 (mm/dd/yy with a 24-hour time), 2 (mm/dd/yy with a 12-hour time), 3 (dd/mm/yy with a 24-hour time) and 4 (dd/mm/yy with a 12-hour time). The default value is 1 (mm/dd/yy with a 24-hour time)."
+      },
+      "KL": {
+        "language": "The control panel display language. Valid values are 1 (English), 2 (Spanish), 3 (French), 4 (German), 5 (Italian), 6 (Norwegian), 7 (Portuguese), 8 (Swedish), 9 (Danish), 10 (Spanish), 11 (Dutch), 12 (Finnish), 13 (Japanese), 14 (Korean), 15 (Simplified Chinese), 16 (Traditional Chinese), 17 (Russian), 18 (Polish), 19 (Czech) and 20 (Romanian). The default value is 1 (English)."
+      },
+      "KN": {
+        "name": "The printer network name. The maximum length is 16 characters.",
+        "shortDescription": "The printer description, if any. The maximum length is 35 characters."
+      },
+      "KP": {
+        "password": "The new control panel password. Must be four digits. The default value is 1234.",
+        "level": "The password level. Any number between 1 and 4 may be used. The default value is 3."
+      },
+      "KV": {
+        "cutAmount": "Amount to leave uncut, in millimeters. Any number between 10 and 60 may be used. The value 0 may also be used. The default value is the previously configured value, or 0 if no value was previously configured.",
+        "cutMargin": "The cut margin, in millimeters. Any number between 2 and 9 may be used. The default value is the previously configured value, or 9 if no value was previously configured.",
+        "presentType": "The present action type. Valid values are 0 (eject after printing), 1 (retract after printing) and 2 (no action). The default value is the previously configured value, or 0 (eject page) if no value was previously configured.",
+        "presentTimeout": "The amount of time, in seconds, to wait for a label to be retrieved before retracting it. Any number between 0 and 300 may be used. The default value is the previously configured value, or 0 (no timeout) if no value was previously configured.",
+        "loopLen": "The presenter loop length, in millimeters. Any number between 3 and 1023 may be used. The value 0 may also be used to indicate no loop. The default value is the previously configured value, or 400 if no value was previously configured."
+      },
+      "LH": {
+        "x": "The x-coordinate of the new origin, in dots, relative to the original origin (top left corner of the label). Any number between 0 and 32,000 may be used. The default value is the previously configured value, or 0 if no value was previously configured.",
+        "y": "The y-coordinate of the new origin, in dots, relative to the original origin (top left corner of the label). Any number between 0 and 32,000 may be used. The default value is the previously configured value, or 0 if no value was previously configured."
+      },
+      "LL": {
+        "length": "The label length, in dots. Any number between 1 and 32,000 may be used. The default value depends on previous configuration.",
+        "allMedia": "Whether or not the label length applies to all media (Y) or only to continuous media (N). The default value is N (continuous media only)."
+      },
+      "LR": {
+        "reverse": "Whether or not to enable reverse mode. Valid values are Y (enable reverse mode) and N (disable reverse mode). The default value is N (disable reverse mode)."
+      },
+      "LS": {
+        "distance": "The distance to shift label content to the left, in dots. Any number between -9,999 and 9,999 may be used. Positive values shift label content to the left, negative values shift label content to the right. The default value is the previously configured value, or 0 if no value was previously configured."
+      },
+      "LT": {
+        "distance": "The distance to shift label content down, in dots. Any number between -120 and 120 may be used. Positive values shift label content down, negative values shift label content up. The default value is the previously configured value, or 0 if no value was previously configured."
+      },
+      "MA": {
+        "type": "The type of maintenance alert to configure. Valid values are R (print head replacement alerts) and C (print head cleaning alerts). There is no default value.",
+        "print": "Whether or not to print a maintenance alert label for the specified alert type. Valid values are Y (print alert labels) and N (do not print alert labels). The default value is N (do not print alert labels).",
+        "threshold": "The initial label distance after which the first maintenance alert label should be printed. For alert type R, any number between 0 and 150 may be used; units are kilometers. For alert type C, any number between 0 and 2,000 may be used; units are meters. The default value is 50 km for alert type R, and 0 m for alert type C.",
+        "frequency": "The label distance after which the maintenance alert label should reprint, in meters. Any number between 0 and 2,000 may be used. The default value is 0.",
+        "units": "The units to use when reporting maintenance information. Valid values are C (centimeters), I (inches) and M (meters). The default value is I (inches)."
+      },
+      "MC": {
+        "clear": "Whether or not to clear the previous label contents before drawing the next label. Valid values are Y (clear the previous label contents) and N (do not clear the previous label contents). The default value is Y (clear the previous label contents)."
+      },
+      "MD": {
+        "darknessModifier": "The amount to increase or decrease the darkness level. Any number between -30 and 30 may be used. Negative numbers result in lighter print output, while positive numbers result in darker print output. There is no default value."
+      },
+      "MF": {
+        "powerupAction": "The media feed action to take on power-up. Valid values are F (feed media to first inter-label mark), C (recalibrate media sensor), L (reset the label length), N (do nothing), and S (perform a short calibration). The default value is C (recalibrate media sensor).",
+        "closingAction": "The media feed action to take on head-close. Valid values are F (feed media to first inter-label mark), C (recalibrate media sensor), L (reset the label length), N (do nothing), and S (perform a short calibration). The default value is C (recalibrate media sensor)."
+      },
+      "MI": {
+        "type": "The type of maintenance alert to configure. Valid values are R (print head replacement alerts) and C (print head cleaning alerts). The default value is R (print head replacement alerts).",
+        "message": "The message to print on the maintenance alert label. The maximum length is 63 characters. The default value is \"PLEASE REPLACE PRINT HEAD\" for alert type R, and \"PLEASE CLEAN PRINT HEAD\" for alert type C."
+      },
+      "ML": {
+        "maxLength": "The maximum label length, in dots. There is no default value."
+      },
+      "MM": {
+        "mode": "The post-print action to be taken by the printer after each label is printed. Valid values are T (advance label to tear-off bar for manual tear-off), P (advance label and wait for manual peel-off), R (rewind label on an external rewind device), A (advance label for applicator device), C (advance label for automated cutting), D (wait for delayed cut command), F (encode RFID data without backfeed), and K (present label for removal from kiosk). The default value is T (advance label to tear-off bar for manual tear-off).",
+        "prepeel": "Whether or not to pre-peel each label before printing. Valid values are Y (pre-peel labels) and N (do not pre-peel labels). The default value is N (do not pre-peel labels)."
+      },
+      "MN": {
+        "media": "The label media type being used. Valid values are N (continuous media), V (variable-length continuous media), W or Y (non-continuous web-sensing media), M (non-continuous mark-sensing media), and A (auto-detect media type during calibration). There is no default value.",
+        "offset": "The offset of the media mark relative to the actual label break, in dots. Valid values are hardware-specific, but values between -75 and 283 are usually valid. The default value is 0."
+      },
+      "MP": {
+        "function": "The control panel function to be disabled. Valid values are D (disable darkness mode), P (disable position mode), C (disable calibration mode), W (disable pause), F (disable feed), X (disable cancel), M (disable menu adjustments), S (disable mode saves), and E (re-enable all modes). There is no default value."
+      },
+      "MT": {
+        "mediaType": "The label media type being used. Valid values are D (direct thermal media) and T (thermal transfer media). There is no default value."
+      },
+      "MU": {
+        "units": "The units to use to specify label coordinates and distances. Valid values are D (dots), I (inches), and M (millimeters). There is no default value.",
+        "baseDpi": "The label definition base DPI. This parameter is ignored if units are not D (dots). Valid values are 150, 200, 300 and 600. There is no default value.",
+        "desiredDpi": "The label definition desired DPI. This parameter is ignored if units are not D (dots). Valid values are 150, 200, 300 and 600. This value must be a whole integer multiple of the base DPI. There is no default value."
+      },
+      "MW": {
+        "enable": "Whether or not to enable the head cold warning. Valid values are Y (enable) and N (disable). There is no default value."
+      },
+      "NB": {
+        "check": ""
+      },
+      "NC": {
+        "device": ""
+      },
+      "~NC": {
+        "networkId": ""
+      },
+      "ND": {
+        "device": "",
+        "res": "",
+        "ip": "",
+        "mask": "",
+        "gateway": "",
+        "wins": "",
+        "timeout": "",
+        "secs": "",
+        "arp": "",
+        "port": ""
+      },
+      "NI": {
+        "networkId": ""
+      },
+      "NN": {
+        "name": "",
+        "contact": "",
+        "location": "",
+        "getCommunity": "",
+        "setCommunity": "",
+        "trapCommunity": ""
+      },
+      "NP": {
+        "device": ""
+      },
+      "NS": {
+        "res": "",
+        "ip": "",
+        "mask": "",
+        "gateway": "",
+        "wins": "",
+        "timeout": "",
+        "secs": "",
+        "arp": "",
+        "port": ""
+      },
+      "NT": {
+        "server": "",
+        "domain": ""
+      },
+      "NW": {
+        "timeout": ""
+      },
+      "PA": {
+        "defaultGlyph": "Whether to use a space character or the .notdef glyph when a font is unable to display a character. The .notdef glyph is usually a blank vertical rectangle. Valid values are 0 (use a space character) and 1 (use the .notdef glyph). The default value is the previously configured value, or 0 (use a space character) if no value was previously configured.",
+        "bidi": "Whether or not to enable bidirectional text layout, which is important for Arabic and Hebrew scripts. Valid values are 0 (disable bidi layout) and 1 (enable bidi layout). The default value is the previously configured value, or 0 (disable bidi layout) if no value was previously configured.",
+        "charShaping": "Whether or not to enable character shaping, which is important for Arabic and Indic scripts. Valid values are 0 (disable character shaping) and 1 (enable character shaping). The default value is the previously configured value, or 0 (disable character shaping) if no value was previously configured.",
+        "openTypeSupport": "Whether or not to enable support for advanced OpenType font features, like ligatures. Valid values are 0 (disable OpenType features) and 1 (enable OpenType features). The default value is the previously configured value, or 0 (disable OpenType features) if no value was previously configured."
+      },
+      "PF": {
+        "rows": "The number of dot rows (starting at the bottom of the label) to slew. Any number between 0 and 32,000 may be used. There is no default value."
+      },
+      "~PL": {
+        "length": "The length of the extra label section to eject, in millimeters. Any number between 0 and 255 may be used. The default value is 0."
+      },
+      "PM": {
+        "mirror": "Whether or not to mirror label content. Valid values are Y (mirror label content) and N (do not mirror label content). There is no default value."
+      },
+      "~PM": {
+        "serialNumber": "The printer serial number. The correct serial number must be used. There is no default value.",
+        "wipeCount": "The number of times to wipe printer memory. Any number between 0 and 3 may be used. The default value is 0."
+      },
+      "PN": {
+        "length": "The length of the label section to eject, in millimeters. Any number between 0 and 255 may be used. There is no default value."
+      },
+      "PO": {
+        "orientation": "Whether or not to invert label content. Valid values are I (invert label content) and N (do not invert label content). The default value is N (do not invert label content)."
+      },
+      "PQ": {
+        "labels": "The number of labels generated by the current label definition. Any number between 1 and 99,999,999 may be used. The default value is 1.",
+        "labelsBetweenPauses": "The number of labels between print pauses. Any number between 0 and 99,999,999 may be used. The default value is 0 (no pauses).",
+        "replicates": "The number of label replicates to generate for each serial number. Any number between 0 and 99,999,999 may be used. The default value is 0 (no replicates).",
+        "noPause": "Whether or not to prevent printer pauses. Valid values are Y (prevent pauses) and N (do not prevent pauses). The default value is N (do not prevent pauses).",
+        "cutOnError": "Whether or not to cut the labels after an error label. Valid values are Y (cut after error label) and N (do not cut after error label). The default value is Y (cut after error label)."
+      },
+      "PR": {
+        "printSpeed": "The print speed, in inches per second. Any number between 1 and 14 may be used. The default value is 2.",
+        "slewSpeed": "The slew speed, in inches per second. Any number between 1 and 14 may be used. The default value is 6.",
+        "backfeedSpeed": "The backfeed speed, in inches per second. Any number between 1 and 14 may be used. The default value is 2."
+      },
+      "PW": {
+        "width": "The label print width, in dots. Any number between 2 and the label width may be used. The default value is the previously configured value, or the label width if no value was previously configured."
+      },
+      "RA": {
+        "fieldNumber": "",
+        "format": "",
+        "retries": "",
+        "motion": "",
+        "byteType": ""
+      },
+      "RB": {
+        "totalBits": "",
+        "partition1": "",
+        "partition2": ""
+      },
+      "RE": {
+        "enable": "",
+        "retries": ""
+      },
+      "RF": {
+        "operation": "",
+        "format": "",
+        "passwordOrBlock": "",
+        "bytes": "",
+        "memoryBank": ""
+      },
+      "RI": {
+        "fieldNumber": "",
+        "order": "",
+        "retries": "",
+        "motion": ""
+      },
+      "RL": {
+        "lockAction": "",
+        "p1": "",
+        "p2": "",
+        "epcOp": "",
+        "userOp": ""
+      },
+      "RM": {
+        "enable": ""
+      },
+      "RN": {
+        "enable": ""
+      },
+      "~RO": {
+        "counter": ""
+      },
+      "RQ": {
+        "format": "",
+        "chipType": "",
+        "option": ""
+      },
+      "RR": {
+        "retries": "",
+        "adaptive": ""
+      },
+      "RS": {
+        "type": "",
+        "pos": "",
+        "voidLen": "",
+        "labels": "",
+        "onError": "",
+        "signal": "",
+        "deprecated": "",
+        "voidSpeed": ""
+      },
+      "RT": {
+        "fieldNumber": "",
+        "startBlock": "",
+        "blocks": "",
+        "format": "",
+        "retries": "",
+        "motion": "",
+        "mode": ""
+      },
+      "RU": {
+        "prefix": "",
+        "escapeChar": ""
+      },
+      "~RV": {
+        "enable": ""
+      },
+      "RW": {
+        "readPower": "",
+        "writePower": "",
+        "antennaElement": ""
+      },
+      "RZ": {
+        "password": "",
+        "passwordType": "",
+        "lockType": ""
+      },
+      "SC": {
+        "baud": "The baud rate to use, in bits per second. Valid values are 110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, and 115200. There is no default value.",
+        "wordBits": "The number of data bits in each character. Valid values are 7 and 8. There is no default value.",
+        "parity": "The type of parity bit to use for error detection. Valid values are N (none), O (odd), and E (even). There is no default value.",
+        "stopBits": "The number of stop bits to send after each character. Valid values are 1 and 2. There is no default value.",
+        "mode": "The flow control mode to use during handshaking. Valid values are X (XON/XOFF), D (DTR/DSR), R (RTS), and M (DTR/DSR XON/XOFF). There is no default value.",
+        "protocol": "The communication protocol to use. Valid values are A (ACK/NAK), N (none), and Z (reserved). There is no default value."
+      },
+      "~SD": {
+        "darkness": "The print darkness level. Any number between 0 and 30 may be used. Higher numbers result in darker print output. The default value is the previously configured value."
+      },
+      "SE": {
+        "path": "The file path to load the encoding table from. The file must use the .DAT extension. There is no default value."
+      },
+      "SF": {
+        "mask": "The mask to apply to the field data when determining how to increment it. Must match the starting value specified in the ^FD command. Valid characters are D (representing decimal numbers), H (representing hexadecimal numbers), O (representing octal numbers), A (representing ASCII letters), N (representing alphanumeric ASCII characters), and % (representing ignored characters). There is no default value.",
+        "increment": "The increment to apply to the field data for each additional label. The default value is 1."
+      },
+      "SI": {
+        "setting": "The specific setting to configure. Valid values are 1 (brightness) and 2 (baseline). There is no default value.",
+        "value": "The intensity value. Any number between 0 and 196 may be used. There is no default value."
+      },
+      "SL": {
+        "mode": "The clock mode. Valid values are S (use time at start of ZPL parsing), T (use time at start of print queueing), or any number between 1 and 999 (use time at last clock tick, using the specified clock resolution, in seconds).",
+        "language": "The language to use to localize date/time field data. Valid values are 1 (English), 2 (Spanish), 3 (French), 4 (German), 5 (Italian), 6 (Norwegian), 7 (Portuguese), 8 (Swedish), 9 (Danish), 10 (Spanish), 11 (Dutch), 12 (Finnish), 13 (Japanese), 14 (Korean), 15 (Simplified Chinese), 16 (Traditional Chinese), 17 (Russian), 18 (Polish), 19 (Czech), and 20 (Romanian). The default value is the previously configured value, or the control panel language if no value was previously configured."
+      },
+      "SN": {
+        "start": "The starting number. The default value is 1.",
+        "increment": "The increment (or decrement) to apply to the field data for each additional label. Any number, positive or negative, containing up to 12 digits, may be used. The default value is 1.",
+        "pad": "Whether or not to pad the numbers with zeroes to match the original start number width. Valid values are Y (pad with zeroes) and N (do not pad with zeroes. The default value is N (do not pad with zeroes)."
+      },
+      "SO": {
+        "clock": "The clock to modify. Valid values are 2 (secondary) and 3 (tertiary). There is no default value.",
+        "months": "The months offset. Any number between -32,000 and 32,000 may be used. The default value is 0.",
+        "days": "The days offset. Any number between -32,000 and 32,000 may be used. The default value is 0.",
+        "years": "The years offset. Any number between -32,000 and 32,000 may be used. The default value is 0.",
+        "hours": "The hours offset. Any number between -32,000 and 32,000 may be used. The default value is 0.",
+        "minutes": "The minutes offset. Any number between -32,000 and 32,000 may be used. The default value is 0.",
+        "seconds": "The seconds offset. Any number between -32,000 and 32,000 may be used. The default value is 0."
+      },
+      "SP": {
+        "row": "The dot row number at which to start printing the current label segment. Any number between 0 and 32,000 may be used. The default value is 0."
+      },
+      "SQ": {
+        "condition": "The error condition for the alert to stop or start. Valid values are the letters A through W (for individual errors) and * (for all errors).",
+        "destination": "The destination of the alert to stop or start. Valid values are A (serial port), B (parallel port), C (email), D (TCP), E (UDP), F (SNMP) and * (all destinations).",
+        "stop": "Whether to stop or start the alert. Valid values are Y (stop the alerts) and N (start the alerts). The default value is Y (stop the alerts)."
+      },
+      "SR": {
+        "resistance": "The printhead resistance. Any number between 488 and 1175 may be used. The default value is the previously configured value."
+      },
+      "SS": {
+        "web": "The web sensor threshold. Any number between 0 and 100 may be used. The default value is the auto-calibrated value.",
+        "media": "The media sensor threshold. Any number between 0 and 100 may be used. The default value is the auto-calibrated value.",
+        "ribbon": "The ribbon sensor threshold. Any number between 0 and 100 may be used. The default value is the auto-calibrated value.",
+        "length": "The label length, in dots. Any number between 1 and 32,000 may be used. The default value is the auto-calibrated value.",
+        "int1": "The media LED intensity. Any number between 0 and 255 may be used. The default value is the auto-calibrated value.",
+        "int2": "The ribbon LED intensity. Any number between 0 and 255 may be used. The default value is the auto-calibrated value.",
+        "sense": "The black mark sensor threshold. Any number between 0 and 100 may be used. The default value is the auto-calibrated value.",
+        "mediaSense": "The media black mark sensor threshold. Any number between 0 and 100 may be used. The default value is the auto-calibrated value.",
+        "ledSense": "The black mark sensor LED intensity. Any number between 0 and 255 may be used. The default value is the auto-calibrated value."
+      },
+      "ST": {
+        "month": "The month. Any number between 1 and 12 may be used. The default value is the current month.",
+        "day": "The day. Any number between 1 and 31 may be used. The default value is the current day.",
+        "year": "The year. Any number between 1998 and 2097 may be used. The default value is the current year.",
+        "hour": "The hour. Any number between 0 and 23 may be used. The default value is the current hour.",
+        "minute": "The minute. Any number between 0 and 59 may be used. The default value is the current minute.",
+        "second": "The second. Any number between 0 and 59 may be used. The default value is the current second.",
+        "format": "The hour format that was used in the fourth parameter. Valid values are A (AM), P (PM) and M (military). The default value is M (military)."
+      },
+      "SX": {
+        "condition": "The error condition for the alert to configure. Valid values are the letters A through W (for individual errors) and * (for all errors).",
+        "destination": "The destination of the alert to configure. Valid values are A (serial port), B (parallel port), C (email), D (TCP), E (UDP) and F (SNMP).",
+        "set": "Whether or not to alert on set. Valid values are Y (alert on set) and N (do not alert on set). The default value is the previously configured value.",
+        "clear": "Whether or not to alert on clear. Valid values are Y (alert on clear) and N (do not alert on clear). The default value is the previously configured value.",
+        "setting": "Destination details, depending on the destination type configured: an email address, or an IP address, or an SNMP trap.",
+        "port": "Destination port, depending on the destination type configured: a TCP port number, or a UDP port number."
+      },
+      "SZ": {
+        "version": "The ZPL version. Valid values are 1 (ZPL) and 2 (ZPL II). Use of the value 1 (ZPL) is highly discouraged. The default value is 2 (ZPL II)."
+      },
+      "~TA": {
+        "adjustment": "The tear-off position adjustment, in dots. Any number between -120 and 120 may be used. The default value is the previously configured value, or 0 if no value was previously configured."
+      },
+      "TB": {
+        "orientation": "The text block orientation to use. Valid values are N (no rotation), R (rotate 90° clockwise), I (rotate 180° clockwise), and B (rotate 270° clockwise). The default value is the orientation configured via the ^A or ^FW command, which itself defaults to N (no rotation).",
+        "maxWidth": "The maximum text block width, in dots. Text longer than this width is wrapped to another line. Any number between 1 and the label width may be used. The default value is 1, which is rarely useful.",
+        "maxHeight": "The maximum text block height, in dots. Any text which exceeds this limit is truncated. Any number between 1 and the label height may be used. The default value is 1, which is rarely useful."
+      },
+      "TO": {
+        "from": "The file path(s) to copy the file(s) from. Wildcards (*, ?) are accepted.",
+        "to": "The file path(s) to copy the file(s) to. Wildcards (*, ?) are accepted."
+      },
+      "WA": {
+        "receive": "",
+        "transmit": ""
+      },
+      "WD": {
+        "path": ""
+      },
+      "WE": {
+        "mode": "",
+        "index": "",
+        "authType": "",
+        "keyType": "",
+        "key1": "",
+        "key2": "",
+        "key3": "",
+        "key4": ""
+      },
+      "WF": {
+        "retries": "",
+        "motion": "",
+        "protect": "",
+        "format": "",
+        "type": ""
+      },
+      "WI": {
+        "res": "",
+        "ip": "",
+        "mask": "",
+        "gateway": "",
+        "wins": "",
+        "timeout": "",
+        "secs": "",
+        "arp": "",
+        "port": ""
+      },
+      "WL": {
+        "mode": "",
+        "username": "",
+        "password": ""
+      },
+      "WP": {
+        "oldPassword": "",
+        "newPassword": ""
+      },
+      "~WQ": {
+        "query": ""
+      },
+      "WR": {
+        "rate1": "",
+        "rate2": "",
+        "rate55": "",
+        "rate11": "",
+        "power": ""
+      },
+      "WS": {
+        "essid": "",
+        "mode": "",
+        "preamble": "",
+        "pulse": "",
+        "interval": "",
+        "mask": "",
+        "international": ""
+      },
+      "WT": {
+        "block": "",
+        "retries": "",
+        "motion": "",
+        "protect": "",
+        "format": "",
+        "verify": ""
+      },
+      "WV": {
+        "enable": ""
+      },
+      "WX": {
+        "securityType": "",
+        "parameters": ""
+      },
+      "XF": {
+        "path": "The file path to load the label definition from. The default value is R:UNKNOWN.ZPL."
+      },
+      "XG": {
+        "path": "The path to the image graphics file. The default value is R:UNKNOWN.GRF.",
+        "magnificationX": "The horizontal magnification to apply to the image. Any number between 1 and 10 may be used. The default value is 1.",
+        "magnificationY": "The vertical magnification to apply to the image. Any number between 1 and 10 may be used. The default value is 1."
+      },
+      "XS": {
+        "length": "Whether or not to dynamically calibrate label length. Valid values are Y (enable dynamic label length calibration) and N (disable dynamic label length calibration). The default value is Y (enable dynamic label length calibration).",
+        "threshold": "Whether or not to dynamically calibrate label threshold. Valid values are Y (enable dynamic label threshold calibration) and N (disable dynamic label threshold calibration). The default value is Y (enable dynamic label threshold calibration).",
+        "gain": "Whether or not to dynamically calibrate label gain. Valid values are Y (enable dynamic label gain calibration) and N (disable dynamic label gain calibration). The default value is Y (enable dynamic label gain calibration)."
+      },
+      "ZZ": {
+        "seconds": "The number of seconds to wait until shutdown. Any number between 0 and 999,999 may be used. The default value is the previously configured value, or 0 if no value was previously configured.",
+        "immediate": "Whether or not to sleep immediately. Valid values are Y (sleep immediately, even if labels are still queued for printing) and N (wait until all pending labels have been printed before sleeping). The default value is N (wait until all pending labels have been printed)."
+      }
+    }
+  },
+  "settings": {
+    "nav": {
+      "general": "General",
+      "document": "Document",
+      "editor": "Editor & preview",
+      "print": "Printing",
+      "appearance": "Appearance & language",
+      "toolbar": "Toolbar",
+      "screen": "Screen",
+      "virtualPrinter": "Virtual printer",
+      "about": "About"
+    },
+    "general": {
+      "title": "General",
+      "subtitle": "General application behaviour.",
+      "cards": {
+        "confirmPrint": {
+          "title": "Confirm before printing",
+          "desc": "Ask for confirmation before sending a label to the printer."
+        },
+        "reopen": {
+          "title": "Reopen last file(s)",
+          "desc": "Reloads the files open in the last session at startup."
+        },
+        "showPath": {
+          "title": "Show path in the title",
+          "desc": "Shows the full file path in parentheses in the title bar."
+        },
+        "reset": {
+          "title": "Reset settings",
+          "desc": "Restores all settings to their default values."
+        },
+        "tabPath": {
+          "title": "Show path on tab hover",
+          "desc": "Shows the full path in parentheses in a tab's tooltip."
+        }
+      },
+      "lbl": {
+        "reset": "Reset",
+        "cancel": "Cancel",
+        "resetDlgTitle": "Reset settings",
+        "resetDlgBody": "Restore all settings to their default values?"
+      }
+    },
+    "document": {
+      "title": "Document",
+      "subtitle": "Units, density and automatic document sizing.",
+      "cards": {
+        "unit": {
+          "title": "Unit of measurement",
+          "desc": "Unit used for document dimensions."
+        },
+        "density": {
+          "title": "Default density",
+          "desc": "Resolution applied when creating and when opening a document."
+        },
+        "autoSize": {
+          "title": "Automatic size",
+          "desc": "Computes the document size from the ZPL code."
+        },
+        "newDocSize": {
+          "title": "New document size",
+          "desc": "How to set the size on “New file”."
+        }
+      },
+      "opt": {
+        "unit": [
+          "mm",
+          "cm",
+          "inches"
+        ],
+        "newDocMode": [
+          "Ask every time",
+          "Default size"
+        ]
+      },
+      "radio": {
+        "pwll": {
+          "label": "By ^PW / ^LL only",
+          "desc": "The document size follows the ^PW (width) and ^LL (length) commands in the ZPL code.\n\n• The size is redefined when ^PW or ^LL is added or its value changes.\n• Other code changes never affect the size: you remain free to set it manually."
+        },
+        "elems": {
+          "label": "By ^PW / ^LL, else by elements",
+          "desc": "Same as the previous option, with a fallback computation:\n\n• If ^PW or ^LL is missing, the missing dimension is computed from the extent of the document's elements, and recomputed on every code change.\n• ^PW and ^LL always take priority over the computation."
+        }
+      }
+    },
+    "editor": {
+      "title": "Editor & preview",
+      "subtitle": "Customise the code editor and the preview display.",
+      "sub": {
+        "editor": "Editor",
+        "coloring": "Syntax highlighting",
+        "preview": "Preview",
+        "rulers": "Rulers",
+        "layout": "Layout"
+      },
+      "cards": {
+        "fontSize": {
+          "title": "Font size",
+          "desc": "Editor text size."
+        },
+        "wordWrap": {
+          "title": "Word wrap",
+          "desc": "Wraps long lines."
+        },
+        "minimap": {
+          "title": "Minimap",
+          "desc": "Miniature overview on the right (when scrollable)."
+        },
+        "lineNumbers": {
+          "title": "Line numbers",
+          "desc": "Shows the line-number column."
+        },
+        "lowWarnings": {
+          "title": "Low warnings",
+          "desc": "Shows the low-priority clean-code hints."
+        },
+        "colorCmd": {
+          "title": "Commands",
+          "desc": "Colour of commands (^XA…)."
+        },
+        "colorParam": {
+          "title": "Parameters",
+          "desc": "Colour of parameters (the values following a command)."
+        },
+        "colorText": {
+          "title": "Text",
+          "desc": "Colour of data (^FD)."
+        },
+        "editScheme": {
+          "title": "Theme file",
+          "desc": "Manual editing (JSON).",
+          "tooltip": "Open the theme's JSON file"
+        },
+        "grid": {
+          "title": "Grid",
+          "desc": "Shows a background grid."
+        },
+        "gridSpacing": {
+          "title": "Grid spacing",
+          "desc": "Distance between lines."
+        },
+        "gridColor": {
+          "title": "Grid colour",
+          "desc": "Default (theme-based) or a custom colour."
+        },
+        "rotation": {
+          "title": "Default rotation",
+          "desc": "Rotation on open."
+        },
+        "defaultZoom": {
+          "title": "Default zoom",
+          "desc": "Zoom applied to the preview on open (0 % = fit to window)."
+        },
+        "swap": {
+          "title": "Swap editor and preview",
+          "desc": "Puts the ZPL editor on the right and the preview on the left."
+        },
+        "previewCaption": {
+          "title": "Preview info",
+          "desc": "Size, resolution and zoom, bottom-right."
+        },
+        "rulerH": {
+          "title": "Horizontal ruler",
+          "desc": "Shows a graduated ruler along the top of the preview."
+        },
+        "rulerV": {
+          "title": "Vertical ruler",
+          "desc": "Shows a graduated ruler along the left of the preview."
+        },
+        "rulerUnit": {
+          "title": "Ruler unit",
+          "desc": "Unit used for the ruler graduations."
+        },
+        "rulerSubs": {
+          "title": "Ruler precision",
+          "desc": "Number of sub-divisions between two major graduations."
+        },
+        "rulerSize": {
+          "title": "Ruler size",
+          "desc": "Thickness of the ruler bands."
+        }
+      },
+      "lbl": {
+        "fitWindow": "Fit to window"
+      },
+      "opt": {
+        "gridColor": [
+          "Default",
+          "Custom"
+        ],
+        "gridUnit": [
+          "px",
+          "mm",
+          "cm",
+          "inches"
+        ],
+        "rulerSize": [
+          "Thin",
+          "Normal",
+          "Large"
+        ]
+      }
+    },
+    "print": {
+      "title": "Printing",
+      "subtitle": "Default printer and print options.",
+      "cards": {
+        "printer": {
+          "title": "Default printer",
+          "desc": "Printer preselected when the application opens."
+        }
+      },
+      "lbl": {
+        "lastPrinter": "Last selected printer"
+      }
+    },
+    "appearance": {
+      "title": "Appearance & language",
+      "subtitle": "Theme, accent colour and interface language.",
+      "languageLabel": "Language",
+      "languageDesc": "Interface language. Drop a file in the languages folder to add one.",
+      "languageInfo": "A language file must contain \"language\" (the code) and \"displayName\" (the shown name) to appear here. The optional \"basedOn\" key lets you start from an existing language (give its \"language\") and override only the texts you want.",
+      "invalidLang": {
+        "title": "Invalid language file",
+        "body": "This language file contains invalid JSON. Please review and fix it, then try again.",
+        "check": "Check with JSONLint",
+        "ok": "Ok"
+      },
+      "cards": {
+        "theme": {
+          "title": "Theme",
+          "desc": "Light, dark or follow the system settings."
+        },
+        "accent": {
+          "title": "Accent colour",
+          "desc": "Colour of primary buttons and active elements."
+        }
+      },
+      "opt": {
+        "theme": [
+          "System",
+          "Light",
+          "Dark",
+          "Dark & light preview"
+        ],
+        "accent": [
+          "System",
+          "Custom"
+        ]
+      }
+    },
+    "toolbar": {
+      "title": "Toolbar",
+      "subtitle": "Drag and drop the items to rearrange them. You have three rows: drop an item on another row to move it there. Each row wraps automatically when the window is too narrow."
+    },
+    "screen": {
+      "title": "Screen",
+      "subtitle": "Enter your screen's physical size for a real-size document preview (100 % zoom).",
+      "cards": {
+        "selector": {
+          "title": "Screen to configure",
+          "desc": "Choose the relevant screen."
+        },
+        "size": {
+          "title": "Screen size (diagonal)",
+          "descEdid": "Detected automatically from the screen.",
+          "descManual": "Diagonal of the display area (excluding the frame)."
+        }
+      },
+      "opt": {
+        "unit": [
+          "inches",
+          "cm"
+        ]
+      },
+      "lbl": {
+        "noMonitor": "No screen detected.",
+        "identify": "Identify",
+        "info": "A laptop is often between 13\" and 17\".\nA desktop monitor is often between 21\" and 27\".\nYou can measure the diagonal of the visible part of your screen (the area showing the image, without the frame) to enter your screen size."
+      }
+    },
+    "virtualPrinter": {
+      "title": "Virtual printer",
+      "subtitle": "“Ultimate ZPL Viewer” printer: captures ZPL jobs sent to print.",
+      "cards": {
+        "status": {
+          "title": "Status",
+          "desc": "Printer installation status."
+        },
+        "manage": {
+          "title": "Printer management",
+          "desc": "Install, reinstall or uninstall the printer."
+        }
+      },
+      "lbl": {
+        "installed": "Installed",
+        "notInstalled": "Not installed",
+        "install": "Install",
+        "reinstall": "Reinstall",
+        "uninstall": "Uninstall",
+        "opFailed": "Operation failed.",
+        "dlgTitle": "Virtual printer"
+      }
+    },
+    "about": {
+      "title": "About",
+      "subtitle": "Application information.",
+      "cards": {
+        "version": {
+          "title": "Version"
+        },
+        "developer": {
+          "title": "Developer",
+          "desc": "Enzo Monchanin (NzoSifou)"
+        },
+        "tech": {
+          "title": "Technologies",
+          "desc": "WinUI 3 (Windows App SDK), .NET 8, Monaco Editor hosted in WebView2."
+        },
+        "privacy": {
+          "title": "Privacy",
+          "desc": "ZPL rendering is done entirely locally: no ZPL code is sent to an external service."
+        },
+        "thirdParty": {
+          "title": "Third-party components",
+          "desc": "Monaco Editor — © Microsoft, MIT license."
+        },
+        "copyright": {
+          "title": "Copyright"
+        }
+      },
+      "lbl": {
+        "copy": "Copy",
+        "unknownVersion": "unknown",
+        "copyrightText": "© {year} Enzo Monchanin. All rights reserved."
+      }
+    }
+  }
+}

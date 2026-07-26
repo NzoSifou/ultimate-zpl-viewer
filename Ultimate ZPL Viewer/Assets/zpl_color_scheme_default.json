@@ -1,0 +1,4539 @@
+{
+  "commandColor": "#FF4444",
+  "parameterColor": "#4488FF",
+  "textColor": "#FFFFFF",
+  "textParameters": [
+    "data",
+    "comment"
+  ],
+  "commands": [
+    {
+      "command": "^A",
+      "shortDescription": "lang.editor.shortDescription.A",
+      "description": "lang.editor.description.A",
+      "parameters": [
+        {
+          "name": "font",
+          "description": "lang.editor.parameters.A.font",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.A.height",
+          "type": "number"
+        },
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.A.width",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^A@",
+      "shortDescription": "lang.editor.shortDescription.A@",
+      "description": "lang.editor.description.A@",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.A@.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.A@.height",
+          "type": "number"
+        },
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.A@.width",
+          "type": "number"
+        },
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.A@.path",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^B0",
+      "shortDescription": "lang.editor.shortDescription.B0",
+      "description": "lang.editor.description.B0",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.B0.orientation",
+          "type": "string"
+        },
+        {
+          "name": "magnification",
+          "description": "lang.editor.parameters.B0.magnification",
+          "type": "number"
+        },
+        {
+          "name": "eci",
+          "description": "lang.editor.parameters.B0.eci",
+          "type": "string"
+        },
+        {
+          "name": "size",
+          "description": "lang.editor.parameters.B0.size",
+          "type": "number"
+        },
+        {
+          "name": "readerInit",
+          "description": "lang.editor.parameters.B0.readerInit",
+          "type": "string"
+        },
+        {
+          "name": "symbols",
+          "description": "lang.editor.parameters.B0.symbols",
+          "type": "number"
+        },
+        {
+          "name": "id",
+          "description": "lang.editor.parameters.B0.id",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^B1",
+      "shortDescription": "lang.editor.shortDescription.B1",
+      "description": "lang.editor.description.B1",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.B1.orientation",
+          "type": "string"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.B1.checkDigit",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.B1.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.B1.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.B1.lineAbove",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^B2",
+      "shortDescription": "lang.editor.shortDescription.B2",
+      "description": "lang.editor.description.B2",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.B2.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.B2.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.B2.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.B2.lineAbove",
+          "type": "string"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.B2.checkDigit",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^B3",
+      "shortDescription": "lang.editor.shortDescription.B3",
+      "description": "lang.editor.description.B3",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.B3.orientation",
+          "type": "string"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.B3.checkDigit",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.B3.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.B3.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.B3.lineAbove",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^B4",
+      "shortDescription": "lang.editor.shortDescription.B4",
+      "description": "lang.editor.description.B4",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.B4.orientation",
+          "type": "string"
+        },
+        {
+          "name": "heightMultiplier",
+          "description": "lang.editor.parameters.B4.heightMultiplier",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.B4.line",
+          "type": "string"
+        },
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.B4.mode",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^B5",
+      "shortDescription": "lang.editor.shortDescription.B5",
+      "description": "lang.editor.description.B5",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.B5.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.B5.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.B5.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.B5.lineAbove",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^B7",
+      "shortDescription": "lang.editor.shortDescription.B7",
+      "description": "lang.editor.description.B7",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.B7.orientation",
+          "type": "string"
+        },
+        {
+          "name": "rowHeight",
+          "description": "lang.editor.parameters.B7.rowHeight",
+          "type": "number"
+        },
+        {
+          "name": "security",
+          "description": "lang.editor.parameters.B7.security",
+          "type": "number"
+        },
+        {
+          "name": "columns",
+          "description": "lang.editor.parameters.B7.columns",
+          "type": "number"
+        },
+        {
+          "name": "rows",
+          "description": "lang.editor.parameters.B7.rows",
+          "type": "number"
+        },
+        {
+          "name": "truncate",
+          "description": "lang.editor.parameters.B7.truncate",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^B8",
+      "shortDescription": "lang.editor.shortDescription.B8",
+      "description": "lang.editor.description.B8",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.B8.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.B8.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.B8.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.B8.lineAbove",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^B9",
+      "shortDescription": "lang.editor.shortDescription.B9",
+      "description": "lang.editor.description.B9",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.B9.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.B9.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.B9.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.B9.lineAbove",
+          "type": "string"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.B9.checkDigit",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BA",
+      "shortDescription": "lang.editor.shortDescription.BA",
+      "description": "lang.editor.description.BA",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BA.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BA.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BA.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BA.lineAbove",
+          "type": "string"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.BA.checkDigit",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BB",
+      "shortDescription": "lang.editor.shortDescription.BB",
+      "description": "lang.editor.description.BB",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BB.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BB.height",
+          "type": "number"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.BB.checkDigit",
+          "type": "string"
+        },
+        {
+          "name": "columns",
+          "description": "lang.editor.parameters.BB.columns",
+          "type": "number"
+        },
+        {
+          "name": "rows",
+          "description": "lang.editor.parameters.BB.rows",
+          "type": "number"
+        },
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.BB.mode",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BC",
+      "shortDescription": "lang.editor.shortDescription.BC",
+      "description": "lang.editor.description.BC",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BC.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BC.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BC.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BC.lineAbove",
+          "type": "string"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.BC.checkDigit",
+          "type": "string"
+        },
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.BC.mode",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BD",
+      "shortDescription": "lang.editor.shortDescription.BD",
+      "description": "lang.editor.description.BD",
+      "parameters": [
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.BD.mode",
+          "type": "string"
+        },
+        {
+          "name": "position",
+          "description": "lang.editor.parameters.BD.position",
+          "type": "string"
+        },
+        {
+          "name": "total",
+          "description": "lang.editor.parameters.BD.total",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^BE",
+      "shortDescription": "lang.editor.shortDescription.BE",
+      "description": "lang.editor.description.BE",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BE.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BE.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BE.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BE.lineAbove",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BF",
+      "shortDescription": "lang.editor.shortDescription.BF",
+      "description": "lang.editor.description.BF",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BF.orientation",
+          "type": "string"
+        },
+        {
+          "name": "rowHeight",
+          "description": "lang.editor.parameters.BF.rowHeight",
+          "type": "number"
+        },
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.BF.mode",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BI",
+      "shortDescription": "lang.editor.shortDescription.BI",
+      "description": "lang.editor.description.BI",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BI.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BI.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BI.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BI.lineAbove",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BJ",
+      "shortDescription": "lang.editor.shortDescription.BJ",
+      "description": "lang.editor.description.BJ",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BJ.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BJ.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BJ.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BJ.lineAbove",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BK",
+      "shortDescription": "lang.editor.shortDescription.BK",
+      "description": "lang.editor.description.BK",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BK.orientation",
+          "type": "string"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.BK.checkDigit",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BK.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BK.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BK.lineAbove",
+          "type": "string"
+        },
+        {
+          "name": "startChar",
+          "description": "lang.editor.parameters.BK.startChar",
+          "type": "string"
+        },
+        {
+          "name": "stopChar",
+          "description": "lang.editor.parameters.BK.stopChar",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BL",
+      "shortDescription": "lang.editor.shortDescription.BL",
+      "description": "lang.editor.description.BL",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BL.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BL.height",
+          "type": "number"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BL.lineAbove",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BM",
+      "shortDescription": "lang.editor.shortDescription.BM",
+      "description": "lang.editor.description.BM",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BM.orientation",
+          "type": "string"
+        },
+        {
+          "name": "checkDigitType",
+          "description": "lang.editor.parameters.BM.checkDigitType",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BM.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BM.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BM.lineAbove",
+          "type": "string"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.BM.checkDigit",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BO",
+      "shortDescription": "lang.editor.shortDescription.BO",
+      "description": "lang.editor.description.BO",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BO.orientation",
+          "type": "string"
+        },
+        {
+          "name": "magnification",
+          "description": "lang.editor.parameters.BO.magnification",
+          "type": "number"
+        },
+        {
+          "name": "eci",
+          "description": "lang.editor.parameters.BO.eci",
+          "type": "number"
+        },
+        {
+          "name": "size",
+          "description": "lang.editor.parameters.BO.size",
+          "type": "number"
+        },
+        {
+          "name": "readerInit",
+          "description": "lang.editor.parameters.BO.readerInit",
+          "type": "string"
+        },
+        {
+          "name": "symbols",
+          "description": "lang.editor.parameters.BO.symbols",
+          "type": "number"
+        },
+        {
+          "name": "id",
+          "description": "lang.editor.parameters.BO.id",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^BP",
+      "shortDescription": "lang.editor.shortDescription.BP",
+      "description": "lang.editor.description.BP",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BP.orientation",
+          "type": "string"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.BP.checkDigit",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BP.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BP.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BP.lineAbove",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BQ",
+      "shortDescription": "lang.editor.shortDescription.BQ",
+      "description": "lang.editor.description.BQ",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BQ.orientation",
+          "type": "string"
+        },
+        {
+          "name": "model",
+          "description": "lang.editor.parameters.BQ.model",
+          "type": "number"
+        },
+        {
+          "name": "magnification",
+          "description": "lang.editor.parameters.BQ.magnification",
+          "type": "number"
+        },
+        {
+          "name": "errorCorrection",
+          "description": "lang.editor.parameters.BQ.errorCorrection",
+          "type": "string"
+        },
+        {
+          "name": "mask",
+          "description": "lang.editor.parameters.BQ.mask",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BR",
+      "shortDescription": "lang.editor.shortDescription.BR",
+      "description": "lang.editor.description.BR",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BR.orientation",
+          "type": "string"
+        },
+        {
+          "name": "type",
+          "description": "lang.editor.parameters.BR.type",
+          "type": "string"
+        },
+        {
+          "name": "magnification",
+          "description": "lang.editor.parameters.BR.magnification",
+          "type": "number"
+        },
+        {
+          "name": "sepHeight",
+          "description": "lang.editor.parameters.BR.sepHeight",
+          "type": "number"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BR.height",
+          "type": "number"
+        },
+        {
+          "name": "segWidth",
+          "description": "lang.editor.parameters.BR.segWidth",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^BS",
+      "shortDescription": "lang.editor.shortDescription.BS",
+      "description": "lang.editor.description.BS",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BS.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BS.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BS.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BS.lineAbove",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BT",
+      "shortDescription": "lang.editor.shortDescription.BT",
+      "description": "lang.editor.description.BT",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BT.orientation",
+          "type": "string"
+        },
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.BT.width",
+          "type": "number"
+        },
+        {
+          "name": "widthRatio",
+          "description": "lang.editor.parameters.BT.widthRatio",
+          "type": "number"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BT.height",
+          "type": "number"
+        },
+        {
+          "name": "pdfWidth",
+          "description": "lang.editor.parameters.BT.pdfWidth",
+          "type": "number"
+        },
+        {
+          "name": "pdfHeight",
+          "description": "lang.editor.parameters.BT.pdfHeight",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^BU",
+      "shortDescription": "lang.editor.shortDescription.BU",
+      "description": "lang.editor.description.BU",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BU.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BU.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BU.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BU.lineAbove",
+          "type": "string"
+        },
+        {
+          "name": "checkDigit",
+          "description": "lang.editor.parameters.BU.checkDigit",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^BX",
+      "shortDescription": "lang.editor.shortDescription.BX",
+      "description": "lang.editor.description.BX",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BX.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BX.height",
+          "type": "number"
+        },
+        {
+          "name": "quality",
+          "description": "lang.editor.parameters.BX.quality",
+          "type": "number"
+        },
+        {
+          "name": "columns",
+          "description": "lang.editor.parameters.BX.columns",
+          "type": "number"
+        },
+        {
+          "name": "rows",
+          "description": "lang.editor.parameters.BX.rows",
+          "type": "number"
+        },
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.BX.format",
+          "type": "string"
+        },
+        {
+          "name": "escape",
+          "description": "lang.editor.parameters.BX.escape",
+          "type": "string"
+        },
+        {
+          "name": "ratio",
+          "description": "lang.editor.parameters.BX.ratio",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^BY",
+      "shortDescription": "lang.editor.shortDescription.BY",
+      "description": "lang.editor.description.BY",
+      "parameters": [
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.BY.width",
+          "type": "number"
+        },
+        {
+          "name": "widthRatio",
+          "description": "lang.editor.parameters.BY.widthRatio",
+          "type": "number"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BY.height",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^BZ",
+      "shortDescription": "lang.editor.shortDescription.BZ",
+      "description": "lang.editor.description.BZ",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.BZ.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.BZ.height",
+          "type": "number"
+        },
+        {
+          "name": "line",
+          "description": "lang.editor.parameters.BZ.line",
+          "type": "string"
+        },
+        {
+          "name": "lineAbove",
+          "description": "lang.editor.parameters.BZ.lineAbove",
+          "type": "string"
+        },
+        {
+          "name": "type",
+          "description": "lang.editor.parameters.BZ.type",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^CC",
+      "alternativeCommand": "~CC",
+      "shortDescription": "lang.editor.shortDescription.CC",
+      "description": "lang.editor.description.CC",
+      "parameters": [
+        {
+          "name": "caret",
+          "description": "lang.editor.parameters.CC.caret",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^CD",
+      "alternativeCommand": "~CD",
+      "shortDescription": "lang.editor.shortDescription.CD",
+      "description": "lang.editor.description.CD",
+      "parameters": [
+        {
+          "name": "delim",
+          "description": "lang.editor.parameters.CD.delim",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^CF",
+      "shortDescription": "lang.editor.shortDescription.CF",
+      "description": "lang.editor.description.CF",
+      "parameters": [
+        {
+          "name": "fontName",
+          "description": "lang.editor.parameters.CF.fontName",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.CF.height",
+          "type": "number"
+        },
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.CF.width",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^CI",
+      "shortDescription": "lang.editor.shortDescription.CI",
+      "description": "lang.editor.description.CI",
+      "parameters": [
+        {
+          "name": "charset",
+          "description": "lang.editor.parameters.CI.charset",
+          "type": "string"
+        },
+        {
+          "name": "src1",
+          "description": "lang.editor.parameters.CI.src1",
+          "type": "string"
+        },
+        {
+          "name": "dest1",
+          "description": "lang.editor.parameters.CI.dest1",
+          "type": "string"
+        },
+        {
+          "name": "src2",
+          "description": "lang.editor.parameters.CI.src2",
+          "type": "string"
+        },
+        {
+          "name": "dest2",
+          "description": "lang.editor.parameters.CI.dest2",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^CM",
+      "shortDescription": "lang.editor.shortDescription.CM",
+      "description": "lang.editor.description.CM",
+      "parameters": [
+        {
+          "name": "bAlias",
+          "description": "lang.editor.parameters.CM.bAlias",
+          "type": "string"
+        },
+        {
+          "name": "eAlias",
+          "description": "lang.editor.parameters.CM.eAlias",
+          "type": "string"
+        },
+        {
+          "name": "rAlias",
+          "description": "lang.editor.parameters.CM.rAlias",
+          "type": "string"
+        },
+        {
+          "name": "aAlias",
+          "description": "lang.editor.parameters.CM.aAlias",
+          "type": "string"
+        },
+        {
+          "name": "multiple",
+          "description": "lang.editor.parameters.CM.multiple",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^CN",
+      "shortDescription": "lang.editor.shortDescription.CN",
+      "description": "lang.editor.description.CN",
+      "parameters": [
+        {
+          "name": "override",
+          "description": "lang.editor.parameters.CN.override",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^CO",
+      "shortDescription": "lang.editor.shortDescription.CO",
+      "description": "lang.editor.description.CO",
+      "parameters": [
+        {
+          "name": "on",
+          "description": "lang.editor.parameters.CO.on",
+          "type": "string"
+        },
+        {
+          "name": "kilobytes",
+          "description": "lang.editor.parameters.CO.kilobytes",
+          "type": "number"
+        },
+        {
+          "name": "type",
+          "description": "lang.editor.parameters.CO.type",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^CP",
+      "shortDescription": "lang.editor.shortDescription.CP",
+      "description": "lang.editor.description.CP",
+      "parameters": [
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.CP.mode",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^CT",
+      "alternativeCommand": "~CT",
+      "shortDescription": "lang.editor.shortDescription.CT",
+      "description": "lang.editor.description.CT",
+      "parameters": [
+        {
+          "name": "tilde",
+          "description": "lang.editor.parameters.CT.tilde",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^CV",
+      "shortDescription": "lang.editor.shortDescription.CV",
+      "description": "lang.editor.description.CV",
+      "parameters": [
+        {
+          "name": "validate",
+          "description": "lang.editor.parameters.CV.validate",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^CW",
+      "shortDescription": "lang.editor.shortDescription.CW",
+      "description": "lang.editor.description.CW",
+      "parameters": [
+        {
+          "name": "fontName",
+          "description": "lang.editor.parameters.CW.fontName",
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.CW.path",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~DB",
+      "shortDescription": "lang.editor.shortDescription.~DB",
+      "description": "lang.editor.description.~DB",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.~DB.path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "orient",
+          "description": "lang.editor.parameters.~DB.orient",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.~DB.height",
+          "type": "number"
+        },
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.~DB.width",
+          "type": "number"
+        },
+        {
+          "name": "ascent",
+          "description": "lang.editor.parameters.~DB.ascent",
+          "type": "string"
+        },
+        {
+          "name": "space",
+          "description": "lang.editor.parameters.~DB.space",
+          "type": "string"
+        },
+        {
+          "name": "glyphs",
+          "description": "lang.editor.parameters.~DB.glyphs",
+          "type": "string"
+        },
+        {
+          "name": "copyright",
+          "description": "lang.editor.parameters.~DB.copyright",
+          "type": "string"
+        },
+        {
+          "name": "data",
+          "description": "lang.editor.parameters.~DB.data",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "~DE",
+      "shortDescription": "lang.editor.shortDescription.~DE",
+      "description": "lang.editor.description.~DE",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.~DE.path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "size",
+          "description": "lang.editor.parameters.~DE.size",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "data",
+          "description": "lang.editor.parameters.~DE.data",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^DF",
+      "shortDescription": "lang.editor.shortDescription.DF",
+      "description": "lang.editor.description.DF",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.DF.path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "~DG",
+      "shortDescription": "lang.editor.shortDescription.~DG",
+      "description": "lang.editor.description.~DG",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.~DG.path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "totalBytes",
+          "description": "lang.editor.parameters.~DG.totalBytes",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "rowBytes",
+          "description": "lang.editor.parameters.~DG.rowBytes",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "data",
+          "description": "lang.editor.parameters.~DG.data",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "~DN",
+      "shortDescription": "lang.editor.shortDescription.~DN",
+      "description": "lang.editor.description.~DN"
+    },
+    {
+      "command": "~DS",
+      "shortDescription": "lang.editor.shortDescription.~DS",
+      "description": "lang.editor.description.~DS",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.~DS.path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "size",
+          "description": "lang.editor.parameters.~DS.size",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "data",
+          "description": "lang.editor.parameters.~DS.data",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "~DT",
+      "shortDescription": "lang.editor.shortDescription.~DT",
+      "description": "lang.editor.description.~DT",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.~DT.path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "size",
+          "description": "lang.editor.parameters.~DT.size",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "data",
+          "description": "lang.editor.parameters.~DT.data",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "~DU",
+      "shortDescription": "lang.editor.shortDescription.~DU",
+      "description": "lang.editor.description.~DU",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.~DU.path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "size",
+          "description": "lang.editor.parameters.~DU.size",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "data",
+          "description": "lang.editor.parameters.~DU.data",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "~DY",
+      "shortDescription": "lang.editor.shortDescription.~DY",
+      "description": "lang.editor.description.~DY",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.~DY.path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.~DY.format",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "extension",
+          "description": "lang.editor.parameters.~DY.extension",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "totalBytes",
+          "description": "lang.editor.parameters.~DY.totalBytes",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "rowBytes",
+          "description": "lang.editor.parameters.~DY.rowBytes",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "data",
+          "description": "lang.editor.parameters.~DY.data",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^EG",
+      "alternativeCommand": "~EG",
+      "shortDescription": "lang.editor.shortDescription.EG",
+      "description": "lang.editor.description.EG"
+    },
+    {
+      "command": "^FB",
+      "shortDescription": "lang.editor.shortDescription.FB",
+      "description": "lang.editor.description.FB",
+      "parameters": [
+        {
+          "name": "maxWidth",
+          "description": "lang.editor.parameters.FB.maxWidth",
+          "type": "number"
+        },
+        {
+          "name": "maxLines",
+          "description": "lang.editor.parameters.FB.maxLines",
+          "type": "number"
+        },
+        {
+          "name": "lineSpacing",
+          "description": "lang.editor.parameters.FB.lineSpacing",
+          "type": "number"
+        },
+        {
+          "name": "alignment",
+          "description": "lang.editor.parameters.FB.alignment",
+          "type": "string"
+        },
+        {
+          "name": "hangingIndent",
+          "description": "lang.editor.parameters.FB.hangingIndent",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^FC",
+      "shortDescription": "lang.editor.shortDescription.FC",
+      "description": "lang.editor.description.FC",
+      "parameters": [
+        {
+          "name": "indicator1",
+          "description": "lang.editor.parameters.FC.indicator1",
+          "type": "number"
+        },
+        {
+          "name": "indicator2",
+          "description": "lang.editor.parameters.FC.indicator2",
+          "type": "number"
+        },
+        {
+          "name": "indicator3",
+          "description": "lang.editor.parameters.FC.indicator3",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^FD",
+      "shortDescription": "lang.editor.shortDescription.FD",
+      "description": "lang.editor.description.FD",
+      "parameters": [
+        {
+          "name": "data",
+          "description": "lang.editor.parameters.FD.data",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^FE",
+      "shortDescription": "lang.editor.shortDescription.FE",
+      "description": "lang.editor.description.FE",
+      "parameters": [
+        {
+          "name": "embedChar",
+          "description": "lang.editor.parameters.FE.embedChar",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^FH",
+      "shortDescription": "lang.editor.shortDescription.FH",
+      "description": "lang.editor.description.FH",
+      "parameters": [
+        {
+          "name": "hexIndicator",
+          "description": "lang.editor.parameters.FH.hexIndicator",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^FL",
+      "shortDescription": "lang.editor.shortDescription.FL",
+      "description": "lang.editor.description.FL",
+      "parameters": [
+        {
+          "name": "extensionPath",
+          "description": "lang.editor.parameters.FL.extensionPath",
+          "type": "string"
+        },
+        {
+          "name": "basePath",
+          "description": "lang.editor.parameters.FL.basePath",
+          "type": "string"
+        },
+        {
+          "name": "link",
+          "description": "lang.editor.parameters.FL.link",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^FM",
+      "shortDescription": "lang.editor.shortDescription.FM",
+      "description": "lang.editor.description.FM",
+      "parameters": [
+        {
+          "name": "x1",
+          "description": "lang.editor.parameters.FM.x1",
+          "type": "number"
+        },
+        {
+          "name": "y1",
+          "description": "lang.editor.parameters.FM.y1",
+          "type": "number"
+        },
+        {
+          "name": "x2",
+          "description": "lang.editor.parameters.FM.x2",
+          "type": "number"
+        },
+        {
+          "name": "y2",
+          "description": "lang.editor.parameters.FM.y2",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^FN",
+      "shortDescription": "lang.editor.shortDescription.FN",
+      "description": "lang.editor.description.FN",
+      "parameters": [
+        {
+          "name": "fieldNumber",
+          "description": "lang.editor.parameters.FN.fieldNumber",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^FO",
+      "shortDescription": "lang.editor.shortDescription.FO",
+      "description": "lang.editor.description.FO",
+      "parameters": [
+        {
+          "name": "x",
+          "description": "lang.editor.parameters.FO.x",
+          "type": "number"
+        },
+        {
+          "name": "y",
+          "description": "lang.editor.parameters.FO.y",
+          "type": "number"
+        },
+        {
+          "name": "alignment",
+          "description": "lang.editor.parameters.FO.alignment",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^FP",
+      "shortDescription": "lang.editor.shortDescription.FP",
+      "description": "lang.editor.description.FP",
+      "parameters": [
+        {
+          "name": "direction",
+          "description": "lang.editor.parameters.FP.direction",
+          "type": "string"
+        },
+        {
+          "name": "characterSpacing",
+          "description": "lang.editor.parameters.FP.characterSpacing",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^FR",
+      "shortDescription": "lang.editor.shortDescription.FR",
+      "description": "lang.editor.description.FR"
+    },
+    {
+      "command": "^FS",
+      "shortDescription": "lang.editor.shortDescription.FS",
+      "description": "lang.editor.description.FS"
+    },
+    {
+      "command": "^FT",
+      "shortDescription": "lang.editor.shortDescription.FT",
+      "description": "lang.editor.description.FT",
+      "parameters": [
+        {
+          "name": "x",
+          "description": "lang.editor.parameters.FT.x",
+          "type": "number"
+        },
+        {
+          "name": "y",
+          "description": "lang.editor.parameters.FT.y",
+          "type": "number"
+        },
+        {
+          "name": "alignment",
+          "description": "lang.editor.parameters.FT.alignment",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^FV",
+      "shortDescription": "lang.editor.shortDescription.FV",
+      "description": "lang.editor.description.FV",
+      "parameters": [
+        {
+          "name": "data",
+          "description": "lang.editor.parameters.FV.data",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^FW",
+      "shortDescription": "lang.editor.shortDescription.FW",
+      "description": "lang.editor.description.FW",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.FW.orientation",
+          "type": "string"
+        },
+        {
+          "name": "alignment",
+          "description": "lang.editor.parameters.FW.alignment",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^FX",
+      "shortDescription": "lang.editor.shortDescription.FX",
+      "description": "lang.editor.description.FX",
+      "parameters": [
+        {
+          "name": "comment",
+          "description": "lang.editor.parameters.FX.comment",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^GB",
+      "shortDescription": "lang.editor.shortDescription.GB",
+      "description": "lang.editor.description.GB",
+      "parameters": [
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.GB.width",
+          "type": "number"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.GB.height",
+          "type": "number"
+        },
+        {
+          "name": "thickness",
+          "description": "lang.editor.parameters.GB.thickness",
+          "type": "number"
+        },
+        {
+          "name": "color",
+          "description": "lang.editor.parameters.GB.color",
+          "type": "string"
+        },
+        {
+          "name": "rounding",
+          "description": "lang.editor.parameters.GB.rounding",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^GC",
+      "shortDescription": "lang.editor.shortDescription.GC",
+      "description": "lang.editor.description.GC",
+      "parameters": [
+        {
+          "name": "diameter",
+          "description": "lang.editor.parameters.GC.diameter",
+          "type": "number"
+        },
+        {
+          "name": "thickness",
+          "description": "lang.editor.parameters.GC.thickness",
+          "type": "number"
+        },
+        {
+          "name": "color",
+          "description": "lang.editor.parameters.GC.color",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^GD",
+      "shortDescription": "lang.editor.shortDescription.GD",
+      "description": "lang.editor.description.GD",
+      "parameters": [
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.GD.width",
+          "type": "number"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.GD.height",
+          "type": "number"
+        },
+        {
+          "name": "thickness",
+          "description": "lang.editor.parameters.GD.thickness",
+          "type": "number"
+        },
+        {
+          "name": "color",
+          "description": "lang.editor.parameters.GD.color",
+          "type": "string"
+        },
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.GD.orientation",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^GE",
+      "shortDescription": "lang.editor.shortDescription.GE",
+      "description": "lang.editor.description.GE",
+      "parameters": [
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.GE.width",
+          "type": "number"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.GE.height",
+          "type": "number"
+        },
+        {
+          "name": "thickness",
+          "description": "lang.editor.parameters.GE.thickness",
+          "type": "number"
+        },
+        {
+          "name": "color",
+          "description": "lang.editor.parameters.GE.color",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^GF",
+      "shortDescription": "lang.editor.shortDescription.GF",
+      "description": "lang.editor.description.GF",
+      "parameters": [
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.GF.format",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "dataBytes",
+          "description": "lang.editor.parameters.GF.dataBytes",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "totalBytes",
+          "description": "lang.editor.parameters.GF.totalBytes",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "rowBytes",
+          "description": "lang.editor.parameters.GF.rowBytes",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "data",
+          "description": "lang.editor.parameters.GF.data",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^GS",
+      "shortDescription": "lang.editor.shortDescription.GS",
+      "description": "lang.editor.description.GS",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.GS.orientation",
+          "type": "string"
+        },
+        {
+          "name": "height",
+          "description": "lang.editor.parameters.GS.height",
+          "type": "number"
+        },
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.GS.width",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "~HB",
+      "shortDescription": "lang.editor.shortDescription.~HB",
+      "description": "lang.editor.description.~HB"
+    },
+    {
+      "command": "~HD",
+      "shortDescription": "lang.editor.shortDescription.~HD",
+      "description": "lang.editor.description.~HD"
+    },
+    {
+      "command": "^HF",
+      "shortDescription": "lang.editor.shortDescription.HF",
+      "description": "lang.editor.description.HF",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.HF.path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^HG",
+      "shortDescription": "lang.editor.shortDescription.HG",
+      "description": "lang.editor.description.HG",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.HG.path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^HH",
+      "shortDescription": "lang.editor.shortDescription.HH",
+      "description": "lang.editor.description.HH"
+    },
+    {
+      "command": "~HI",
+      "shortDescription": "lang.editor.shortDescription.~HI",
+      "description": "lang.editor.description.~HI"
+    },
+    {
+      "command": "^HL",
+      "alternativeCommand": "~HL",
+      "shortDescription": "lang.editor.shortDescription.HL",
+      "description": "lang.editor.description.HL"
+    },
+    {
+      "command": "~HM",
+      "shortDescription": "lang.editor.shortDescription.~HM",
+      "description": "lang.editor.description.~HM"
+    },
+    {
+      "command": "~HQ",
+      "shortDescription": "lang.editor.shortDescription.~HQ",
+      "description": "lang.editor.description.~HQ",
+      "parameters": [
+        {
+          "name": "query",
+          "description": "lang.editor.parameters.~HQ.query",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^HR",
+      "shortDescription": "lang.editor.shortDescription.HR",
+      "description": "lang.editor.description.HR",
+      "parameters": [
+        {
+          "name": "prefix",
+          "description": "lang.editor.parameters.HR.prefix",
+          "type": "string"
+        },
+        {
+          "name": "suffix",
+          "description": "lang.editor.parameters.HR.suffix",
+          "type": "string"
+        },
+        {
+          "name": "start",
+          "description": "lang.editor.parameters.HR.start",
+          "type": "string"
+        },
+        {
+          "name": "end",
+          "description": "lang.editor.parameters.HR.end",
+          "type": "string"
+        },
+        {
+          "name": "antennaSelection",
+          "description": "lang.editor.parameters.HR.antennaSelection",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "~HS",
+      "shortDescription": "lang.editor.shortDescription.~HS",
+      "description": "lang.editor.description.~HS"
+    },
+    {
+      "command": "^HT",
+      "shortDescription": "lang.editor.shortDescription.HT",
+      "description": "lang.editor.description.HT"
+    },
+    {
+      "command": "~HU",
+      "shortDescription": "lang.editor.shortDescription.~HU",
+      "description": "lang.editor.description.~HU"
+    },
+    {
+      "command": "^HV",
+      "shortDescription": "lang.editor.shortDescription.HV",
+      "description": "lang.editor.description.HV",
+      "parameters": [
+        {
+          "name": "fieldNumber",
+          "description": "lang.editor.parameters.HV.fieldNumber",
+          "type": "number"
+        },
+        {
+          "name": "bytes",
+          "description": "lang.editor.parameters.HV.bytes",
+          "type": "string"
+        },
+        {
+          "name": "prefix",
+          "description": "lang.editor.parameters.HV.prefix",
+          "type": "string"
+        },
+        {
+          "name": "suffix",
+          "description": "lang.editor.parameters.HV.suffix",
+          "type": "string"
+        },
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.HV.mode",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^HW",
+      "shortDescription": "lang.editor.shortDescription.HW",
+      "description": "lang.editor.description.HW",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.HW.path",
+          "type": "string"
+        },
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.HW.format",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^HY",
+      "shortDescription": "lang.editor.shortDescription.HY",
+      "description": "lang.editor.description.HY",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.HY.path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^HZ",
+      "shortDescription": "lang.editor.shortDescription.HZ",
+      "description": "lang.editor.description.HZ",
+      "parameters": [
+        {
+          "name": "selector",
+          "description": "lang.editor.parameters.HZ.selector",
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.HZ.path",
+          "type": "string"
+        },
+        {
+          "name": "longFilenames",
+          "description": "lang.editor.parameters.HZ.longFilenames",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^ID",
+      "shortDescription": "lang.editor.shortDescription.ID",
+      "description": "lang.editor.description.ID",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.ID.path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^IL",
+      "shortDescription": "lang.editor.shortDescription.IL",
+      "description": "lang.editor.description.IL",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.IL.path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^IM",
+      "shortDescription": "lang.editor.shortDescription.IM",
+      "description": "lang.editor.description.IM",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.IM.path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^IS",
+      "shortDescription": "lang.editor.shortDescription.IS",
+      "description": "lang.editor.description.IS",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.IS.path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "print",
+          "description": "lang.editor.parameters.IS.print",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~JA",
+      "shortDescription": "lang.editor.shortDescription.~JA",
+      "description": "lang.editor.description.~JA"
+    },
+    {
+      "command": "^JB",
+      "shortDescription": "lang.editor.shortDescription.JB",
+      "description": "lang.editor.description.JB",
+      "parameters": [
+        {
+          "name": "device",
+          "description": "lang.editor.parameters.JB.device",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~JB",
+      "shortDescription": "lang.editor.shortDescription.~JB",
+      "description": "lang.editor.description.~JB"
+    },
+    {
+      "command": "~JC",
+      "shortDescription": "lang.editor.shortDescription.~JC",
+      "description": "lang.editor.description.~JC"
+    },
+    {
+      "command": "~JD",
+      "shortDescription": "lang.editor.shortDescription.~JD",
+      "description": "lang.editor.description.~JD"
+    },
+    {
+      "command": "~JE",
+      "shortDescription": "lang.editor.shortDescription.~JE",
+      "description": "lang.editor.description.~JE"
+    },
+    {
+      "command": "~JF",
+      "shortDescription": "lang.editor.shortDescription.~JF",
+      "description": "lang.editor.description.~JF",
+      "parameters": [
+        {
+          "name": "pause",
+          "description": "lang.editor.parameters.~JF.pause",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~JG",
+      "shortDescription": "lang.editor.shortDescription.~JG",
+      "description": "lang.editor.description.~JG"
+    },
+    {
+      "command": "^JH",
+      "shortDescription": "lang.editor.shortDescription.JH",
+      "description": "lang.editor.description.JH",
+      "parameters": [
+        {
+          "name": "settings",
+          "description": "lang.editor.parameters.JH.settings",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^JI",
+      "alternativeCommand": "~JI",
+      "shortDescription": "lang.editor.shortDescription.JI",
+      "description": "lang.editor.description.JI",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.JI.path",
+          "type": "string"
+        },
+        {
+          "name": "console",
+          "description": "lang.editor.parameters.JI.console",
+          "type": "string"
+        },
+        {
+          "name": "echo",
+          "description": "lang.editor.parameters.JI.echo",
+          "type": "string"
+        },
+        {
+          "name": "memory",
+          "description": "lang.editor.parameters.JI.memory",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^JJ",
+      "shortDescription": "lang.editor.shortDescription.JJ",
+      "description": "lang.editor.description.JJ",
+      "parameters": [
+        {
+          "name": "opMode",
+          "description": "lang.editor.parameters.JJ.opMode",
+          "type": "string"
+        },
+        {
+          "name": "appMode",
+          "description": "lang.editor.parameters.JJ.appMode",
+          "type": "string"
+        },
+        {
+          "name": "signalMode",
+          "description": "lang.editor.parameters.JJ.signalMode",
+          "type": "string"
+        },
+        {
+          "name": "errMode",
+          "description": "lang.editor.parameters.JJ.errMode",
+          "type": "string"
+        },
+        {
+          "name": "reprintMode",
+          "description": "lang.editor.parameters.JJ.reprintMode",
+          "type": "string"
+        },
+        {
+          "name": "ribbonMode",
+          "description": "lang.editor.parameters.JJ.ribbonMode",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~JL",
+      "shortDescription": "lang.editor.shortDescription.~JL",
+      "description": "lang.editor.description.~JL"
+    },
+    {
+      "command": "^JM",
+      "shortDescription": "lang.editor.shortDescription.JM",
+      "description": "lang.editor.description.JM",
+      "parameters": [
+        {
+          "name": "adjustment",
+          "description": "lang.editor.parameters.JM.adjustment",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "~JN",
+      "shortDescription": "lang.editor.shortDescription.~JN",
+      "description": "lang.editor.description.~JN"
+    },
+    {
+      "command": "~JO",
+      "shortDescription": "lang.editor.shortDescription.~JO",
+      "description": "lang.editor.description.~JO"
+    },
+    {
+      "command": "~JP",
+      "shortDescription": "lang.editor.shortDescription.~JP",
+      "description": "lang.editor.description.~JP"
+    },
+    {
+      "command": "~JQ",
+      "shortDescription": "lang.editor.shortDescription.~JQ",
+      "description": "lang.editor.description.~JQ"
+    },
+    {
+      "command": "~JR",
+      "shortDescription": "lang.editor.shortDescription.~JR",
+      "description": "lang.editor.description.~JR"
+    },
+    {
+      "command": "^JS",
+      "shortDescription": "lang.editor.shortDescription.JS",
+      "description": "lang.editor.description.JS",
+      "parameters": [
+        {
+          "name": "sensor",
+          "description": "lang.editor.parameters.JS.sensor",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~JS",
+      "shortDescription": "lang.editor.shortDescription.~JS",
+      "description": "lang.editor.description.~JS",
+      "parameters": [
+        {
+          "name": "sequence",
+          "description": "lang.editor.parameters.~JS.sequence",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^JT",
+      "shortDescription": "lang.editor.shortDescription.JT",
+      "description": "lang.editor.description.JT",
+      "parameters": [
+        {
+          "name": "interval",
+          "description": "lang.editor.parameters.JT.interval",
+          "type": "number"
+        },
+        {
+          "name": "manual",
+          "description": "lang.editor.parameters.JT.manual",
+          "type": "string"
+        },
+        {
+          "name": "first",
+          "description": "lang.editor.parameters.JT.first",
+          "type": "number"
+        },
+        {
+          "name": "last",
+          "description": "lang.editor.parameters.JT.last",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^JU",
+      "shortDescription": "lang.editor.shortDescription.JU",
+      "description": "lang.editor.description.JU",
+      "parameters": [
+        {
+          "name": "configuration",
+          "description": "lang.editor.parameters.JU.configuration",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^JW",
+      "shortDescription": "lang.editor.shortDescription.JW",
+      "description": "lang.editor.description.JW",
+      "parameters": [
+        {
+          "name": "tension",
+          "description": "lang.editor.parameters.JW.tension",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "~JX",
+      "shortDescription": "lang.editor.shortDescription.~JX",
+      "description": "lang.editor.description.~JX"
+    },
+    {
+      "command": "^JZ",
+      "shortDescription": "lang.editor.shortDescription.JZ",
+      "description": "lang.editor.description.JZ",
+      "parameters": [
+        {
+          "name": "reprint",
+          "description": "lang.editor.parameters.JZ.reprint",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~KB",
+      "shortDescription": "lang.editor.shortDescription.~KB",
+      "description": "lang.editor.description.~KB"
+    },
+    {
+      "command": "^KC",
+      "shortDescription": "lang.editor.shortDescription.KC",
+      "description": "lang.editor.description.KC",
+      "parameters": [
+        {
+          "name": "enable",
+          "description": "lang.editor.parameters.KC.enable",
+          "type": "string"
+        },
+        {
+          "name": "device",
+          "description": "lang.editor.parameters.KC.device",
+          "type": "string"
+        },
+        {
+          "name": "prefix",
+          "description": "lang.editor.parameters.KC.prefix",
+          "type": "string"
+        },
+        {
+          "name": "identifier",
+          "description": "lang.editor.parameters.KC.identifier",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^KD",
+      "shortDescription": "lang.editor.shortDescription.KD",
+      "description": "lang.editor.description.KD",
+      "parameters": [
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.KD.format",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^KL",
+      "shortDescription": "lang.editor.shortDescription.KL",
+      "description": "lang.editor.description.KL",
+      "parameters": [
+        {
+          "name": "language",
+          "description": "lang.editor.parameters.KL.language",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^KN",
+      "shortDescription": "lang.editor.shortDescription.KN",
+      "description": "lang.editor.description.KN",
+      "parameters": [
+        {
+          "name": "name",
+          "description": "lang.editor.parameters.KN.name",
+          "type": "string"
+        },
+        {
+          "name": "shortDescription",
+          "description": "lang.editor.parameters.KN.shortDescription",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^KP",
+      "shortDescription": "lang.editor.shortDescription.KP",
+      "description": "lang.editor.description.KP",
+      "parameters": [
+        {
+          "name": "password",
+          "description": "lang.editor.parameters.KP.password",
+          "type": "string"
+        },
+        {
+          "name": "level",
+          "description": "lang.editor.parameters.KP.level",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^KV",
+      "shortDescription": "lang.editor.shortDescription.KV",
+      "description": "lang.editor.description.KV",
+      "parameters": [
+        {
+          "name": "cutAmount",
+          "description": "lang.editor.parameters.KV.cutAmount",
+          "type": "number"
+        },
+        {
+          "name": "cutMargin",
+          "description": "lang.editor.parameters.KV.cutMargin",
+          "type": "number"
+        },
+        {
+          "name": "presentType",
+          "description": "lang.editor.parameters.KV.presentType",
+          "type": "string"
+        },
+        {
+          "name": "presentTimeout",
+          "description": "lang.editor.parameters.KV.presentTimeout",
+          "type": "number"
+        },
+        {
+          "name": "loopLen",
+          "description": "lang.editor.parameters.KV.loopLen",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^LF",
+      "shortDescription": "lang.editor.shortDescription.LF",
+      "description": "lang.editor.description.LF"
+    },
+    {
+      "command": "^LH",
+      "shortDescription": "lang.editor.shortDescription.LH",
+      "description": "lang.editor.description.LH",
+      "parameters": [
+        {
+          "name": "x",
+          "description": "lang.editor.parameters.LH.x",
+          "type": "number"
+        },
+        {
+          "name": "y",
+          "description": "lang.editor.parameters.LH.y",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^LL",
+      "shortDescription": "lang.editor.shortDescription.LL",
+      "description": "lang.editor.description.LL",
+      "parameters": [
+        {
+          "name": "length",
+          "description": "lang.editor.parameters.LL.length",
+          "type": "number"
+        },
+        {
+          "name": "allMedia",
+          "description": "lang.editor.parameters.LL.allMedia",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^LR",
+      "shortDescription": "lang.editor.shortDescription.LR",
+      "description": "lang.editor.description.LR",
+      "parameters": [
+        {
+          "name": "reverse",
+          "description": "lang.editor.parameters.LR.reverse",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^LS",
+      "shortDescription": "lang.editor.shortDescription.LS",
+      "description": "lang.editor.description.LS",
+      "parameters": [
+        {
+          "name": "distance",
+          "description": "lang.editor.parameters.LS.distance",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^LT",
+      "shortDescription": "lang.editor.shortDescription.LT",
+      "description": "lang.editor.description.LT",
+      "parameters": [
+        {
+          "name": "distance",
+          "description": "lang.editor.parameters.LT.distance",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^MA",
+      "shortDescription": "lang.editor.shortDescription.MA",
+      "description": "lang.editor.description.MA",
+      "parameters": [
+        {
+          "name": "type",
+          "description": "lang.editor.parameters.MA.type",
+          "type": "string"
+        },
+        {
+          "name": "print",
+          "description": "lang.editor.parameters.MA.print",
+          "type": "string"
+        },
+        {
+          "name": "threshold",
+          "description": "lang.editor.parameters.MA.threshold",
+          "type": "number"
+        },
+        {
+          "name": "frequency",
+          "description": "lang.editor.parameters.MA.frequency",
+          "type": "number"
+        },
+        {
+          "name": "units",
+          "description": "lang.editor.parameters.MA.units",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^MC",
+      "shortDescription": "lang.editor.shortDescription.MC",
+      "description": "lang.editor.description.MC",
+      "parameters": [
+        {
+          "name": "clear",
+          "description": "lang.editor.parameters.MC.clear",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^MD",
+      "shortDescription": "lang.editor.shortDescription.MD",
+      "description": "lang.editor.description.MD",
+      "parameters": [
+        {
+          "name": "darknessModifier",
+          "description": "lang.editor.parameters.MD.darknessModifier",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^MF",
+      "shortDescription": "lang.editor.shortDescription.MF",
+      "description": "lang.editor.description.MF",
+      "parameters": [
+        {
+          "name": "powerupAction",
+          "description": "lang.editor.parameters.MF.powerupAction",
+          "type": "string"
+        },
+        {
+          "name": "closingAction",
+          "description": "lang.editor.parameters.MF.closingAction",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^MI",
+      "shortDescription": "lang.editor.shortDescription.MI",
+      "description": "lang.editor.description.MI",
+      "parameters": [
+        {
+          "name": "type",
+          "description": "lang.editor.parameters.MI.type",
+          "type": "string"
+        },
+        {
+          "name": "message",
+          "description": "lang.editor.parameters.MI.message",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^ML",
+      "shortDescription": "lang.editor.shortDescription.ML",
+      "description": "lang.editor.description.ML",
+      "parameters": [
+        {
+          "name": "maxLength",
+          "description": "lang.editor.parameters.ML.maxLength",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^MM",
+      "shortDescription": "lang.editor.shortDescription.MM",
+      "description": "lang.editor.description.MM",
+      "parameters": [
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.MM.mode",
+          "type": "string"
+        },
+        {
+          "name": "prepeel",
+          "description": "lang.editor.parameters.MM.prepeel",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^MN",
+      "shortDescription": "lang.editor.shortDescription.MN",
+      "description": "lang.editor.description.MN",
+      "parameters": [
+        {
+          "name": "media",
+          "description": "lang.editor.parameters.MN.media",
+          "type": "string"
+        },
+        {
+          "name": "offset",
+          "description": "lang.editor.parameters.MN.offset",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^MP",
+      "shortDescription": "lang.editor.shortDescription.MP",
+      "description": "lang.editor.description.MP",
+      "parameters": [
+        {
+          "name": "function",
+          "description": "lang.editor.parameters.MP.function",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^MT",
+      "shortDescription": "lang.editor.shortDescription.MT",
+      "description": "lang.editor.description.MT",
+      "parameters": [
+        {
+          "name": "mediaType",
+          "description": "lang.editor.parameters.MT.mediaType",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^MU",
+      "shortDescription": "lang.editor.shortDescription.MU",
+      "description": "lang.editor.description.MU",
+      "parameters": [
+        {
+          "name": "units",
+          "description": "lang.editor.parameters.MU.units",
+          "type": "string"
+        },
+        {
+          "name": "baseDpi",
+          "description": "lang.editor.parameters.MU.baseDpi",
+          "type": "string"
+        },
+        {
+          "name": "desiredDpi",
+          "description": "lang.editor.parameters.MU.desiredDpi",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^MW",
+      "shortDescription": "lang.editor.shortDescription.MW",
+      "description": "lang.editor.description.MW",
+      "parameters": [
+        {
+          "name": "enable",
+          "description": "lang.editor.parameters.MW.enable",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^NB",
+      "shortDescription": "lang.editor.shortDescription.NB",
+      "description": "lang.editor.description.NB",
+      "parameters": [
+        {
+          "name": "check",
+          "description": "lang.editor.parameters.NB.check",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^NC",
+      "shortDescription": "lang.editor.shortDescription.NC",
+      "description": "lang.editor.description.NC",
+      "parameters": [
+        {
+          "name": "device",
+          "description": "lang.editor.parameters.NC.device",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~NC",
+      "shortDescription": "lang.editor.shortDescription.~NC",
+      "description": "lang.editor.description.~NC",
+      "parameters": [
+        {
+          "name": "networkId",
+          "description": "lang.editor.parameters.~NC.networkId",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^ND",
+      "shortDescription": "lang.editor.shortDescription.ND",
+      "description": "lang.editor.description.ND",
+      "parameters": [
+        {
+          "name": "device",
+          "description": "lang.editor.parameters.ND.device",
+          "type": "string"
+        },
+        {
+          "name": "res",
+          "description": "lang.editor.parameters.ND.res",
+          "type": "string"
+        },
+        {
+          "name": "ip",
+          "description": "lang.editor.parameters.ND.ip",
+          "type": "string"
+        },
+        {
+          "name": "mask",
+          "description": "lang.editor.parameters.ND.mask",
+          "type": "string"
+        },
+        {
+          "name": "gateway",
+          "description": "lang.editor.parameters.ND.gateway",
+          "type": "string"
+        },
+        {
+          "name": "wins",
+          "description": "lang.editor.parameters.ND.wins",
+          "type": "string"
+        },
+        {
+          "name": "timeout",
+          "description": "lang.editor.parameters.ND.timeout",
+          "type": "number"
+        },
+        {
+          "name": "secs",
+          "description": "lang.editor.parameters.ND.secs",
+          "type": "number"
+        },
+        {
+          "name": "arp",
+          "description": "lang.editor.parameters.ND.arp",
+          "type": "string"
+        },
+        {
+          "name": "port",
+          "description": "lang.editor.parameters.ND.port",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^NI",
+      "shortDescription": "lang.editor.shortDescription.NI",
+      "description": "lang.editor.description.NI",
+      "parameters": [
+        {
+          "name": "networkId",
+          "description": "lang.editor.parameters.NI.networkId",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^NN",
+      "shortDescription": "lang.editor.shortDescription.NN",
+      "description": "lang.editor.description.NN",
+      "parameters": [
+        {
+          "name": "name",
+          "description": "lang.editor.parameters.NN.name",
+          "type": "string"
+        },
+        {
+          "name": "contact",
+          "description": "lang.editor.parameters.NN.contact",
+          "type": "string"
+        },
+        {
+          "name": "location",
+          "description": "lang.editor.parameters.NN.location",
+          "type": "string"
+        },
+        {
+          "name": "getCommunity",
+          "description": "lang.editor.parameters.NN.getCommunity",
+          "type": "string"
+        },
+        {
+          "name": "setCommunity",
+          "description": "lang.editor.parameters.NN.setCommunity",
+          "type": "string"
+        },
+        {
+          "name": "trapCommunity",
+          "description": "lang.editor.parameters.NN.trapCommunity",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^NP",
+      "shortDescription": "lang.editor.shortDescription.NP",
+      "description": "lang.editor.description.NP",
+      "parameters": [
+        {
+          "name": "device",
+          "description": "lang.editor.parameters.NP.device",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~NR",
+      "shortDescription": "lang.editor.shortDescription.~NR",
+      "description": "lang.editor.description.~NR"
+    },
+    {
+      "command": "^NS",
+      "shortDescription": "lang.editor.shortDescription.NS",
+      "description": "lang.editor.description.NS",
+      "parameters": [
+        {
+          "name": "res",
+          "description": "lang.editor.parameters.NS.res",
+          "type": "string"
+        },
+        {
+          "name": "ip",
+          "description": "lang.editor.parameters.NS.ip",
+          "type": "string"
+        },
+        {
+          "name": "mask",
+          "description": "lang.editor.parameters.NS.mask",
+          "type": "string"
+        },
+        {
+          "name": "gateway",
+          "description": "lang.editor.parameters.NS.gateway",
+          "type": "string"
+        },
+        {
+          "name": "wins",
+          "description": "lang.editor.parameters.NS.wins",
+          "type": "string"
+        },
+        {
+          "name": "timeout",
+          "description": "lang.editor.parameters.NS.timeout",
+          "type": "number"
+        },
+        {
+          "name": "secs",
+          "description": "lang.editor.parameters.NS.secs",
+          "type": "number"
+        },
+        {
+          "name": "arp",
+          "description": "lang.editor.parameters.NS.arp",
+          "type": "string"
+        },
+        {
+          "name": "port",
+          "description": "lang.editor.parameters.NS.port",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "~NT",
+      "shortDescription": "lang.editor.shortDescription.~NT",
+      "description": "lang.editor.description.~NT"
+    },
+    {
+      "command": "^NT",
+      "shortDescription": "lang.editor.shortDescription.NT",
+      "description": "lang.editor.description.NT",
+      "parameters": [
+        {
+          "name": "server",
+          "description": "lang.editor.parameters.NT.server",
+          "type": "string"
+        },
+        {
+          "name": "domain",
+          "description": "lang.editor.parameters.NT.domain",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^NW",
+      "shortDescription": "lang.editor.shortDescription.NW",
+      "description": "lang.editor.description.NW",
+      "parameters": [
+        {
+          "name": "timeout",
+          "description": "lang.editor.parameters.NW.timeout",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^PA",
+      "shortDescription": "lang.editor.shortDescription.PA",
+      "description": "lang.editor.description.PA",
+      "parameters": [
+        {
+          "name": "defaultGlyph",
+          "description": "lang.editor.parameters.PA.defaultGlyph",
+          "type": "string"
+        },
+        {
+          "name": "bidi",
+          "description": "lang.editor.parameters.PA.bidi",
+          "type": "string"
+        },
+        {
+          "name": "charShaping",
+          "description": "lang.editor.parameters.PA.charShaping",
+          "type": "string"
+        },
+        {
+          "name": "openTypeSupport",
+          "description": "lang.editor.parameters.PA.openTypeSupport",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^PF",
+      "shortDescription": "lang.editor.shortDescription.PF",
+      "description": "lang.editor.description.PF",
+      "parameters": [
+        {
+          "name": "rows",
+          "description": "lang.editor.parameters.PF.rows",
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^PH",
+      "alternativeCommand": "~PH",
+      "shortDescription": "lang.editor.shortDescription.PH",
+      "description": "lang.editor.description.PH"
+    },
+    {
+      "command": "~PL",
+      "shortDescription": "lang.editor.shortDescription.~PL",
+      "description": "lang.editor.description.~PL",
+      "parameters": [
+        {
+          "name": "length",
+          "description": "lang.editor.parameters.~PL.length",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^PM",
+      "shortDescription": "lang.editor.shortDescription.PM",
+      "description": "lang.editor.description.PM",
+      "parameters": [
+        {
+          "name": "mirror",
+          "description": "lang.editor.parameters.PM.mirror",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~PM",
+      "shortDescription": "lang.editor.shortDescription.~PM",
+      "description": "lang.editor.description.~PM",
+      "parameters": [
+        {
+          "name": "serialNumber",
+          "description": "lang.editor.parameters.~PM.serialNumber",
+          "type": "string"
+        },
+        {
+          "name": "wipeCount",
+          "description": "lang.editor.parameters.~PM.wipeCount",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^PN",
+      "shortDescription": "lang.editor.shortDescription.PN",
+      "description": "lang.editor.description.PN",
+      "parameters": [
+        {
+          "name": "length",
+          "description": "lang.editor.parameters.PN.length",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^PO",
+      "shortDescription": "lang.editor.shortDescription.PO",
+      "description": "lang.editor.description.PO",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.PO.orientation",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^PP",
+      "alternativeCommand": "~PP",
+      "shortDescription": "lang.editor.shortDescription.PP",
+      "description": "lang.editor.description.PP"
+    },
+    {
+      "command": "^PQ",
+      "shortDescription": "lang.editor.shortDescription.PQ",
+      "description": "lang.editor.description.PQ",
+      "parameters": [
+        {
+          "name": "labels",
+          "description": "lang.editor.parameters.PQ.labels",
+          "type": "number"
+        },
+        {
+          "name": "labelsBetweenPauses",
+          "description": "lang.editor.parameters.PQ.labelsBetweenPauses",
+          "type": "number"
+        },
+        {
+          "name": "replicates",
+          "description": "lang.editor.parameters.PQ.replicates",
+          "type": "number"
+        },
+        {
+          "name": "noPause",
+          "description": "lang.editor.parameters.PQ.noPause",
+          "type": "string"
+        },
+        {
+          "name": "cutOnError",
+          "description": "lang.editor.parameters.PQ.cutOnError",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^PR",
+      "shortDescription": "lang.editor.shortDescription.PR",
+      "description": "lang.editor.description.PR",
+      "parameters": [
+        {
+          "name": "printSpeed",
+          "description": "lang.editor.parameters.PR.printSpeed",
+          "type": "number"
+        },
+        {
+          "name": "slewSpeed",
+          "description": "lang.editor.parameters.PR.slewSpeed",
+          "type": "number"
+        },
+        {
+          "name": "backfeedSpeed",
+          "description": "lang.editor.parameters.PR.backfeedSpeed",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "~PR",
+      "shortDescription": "lang.editor.shortDescription.~PR",
+      "description": "lang.editor.description.~PR"
+    },
+    {
+      "command": "~PS",
+      "shortDescription": "lang.editor.shortDescription.~PS",
+      "description": "lang.editor.description.~PS"
+    },
+    {
+      "command": "^PW",
+      "shortDescription": "lang.editor.shortDescription.PW",
+      "description": "lang.editor.description.PW",
+      "parameters": [
+        {
+          "name": "width",
+          "description": "lang.editor.parameters.PW.width",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^RA",
+      "shortDescription": "lang.editor.shortDescription.RA",
+      "description": "lang.editor.description.RA",
+      "parameters": [
+        {
+          "name": "fieldNumber",
+          "description": "lang.editor.parameters.RA.fieldNumber",
+          "type": "number"
+        },
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.RA.format",
+          "type": "string"
+        },
+        {
+          "name": "retries",
+          "description": "lang.editor.parameters.RA.retries",
+          "type": "number"
+        },
+        {
+          "name": "motion",
+          "description": "lang.editor.parameters.RA.motion",
+          "type": "string"
+        },
+        {
+          "name": "byteType",
+          "description": "lang.editor.parameters.RA.byteType",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RB",
+      "shortDescription": "lang.editor.shortDescription.RB",
+      "description": "lang.editor.description.RB",
+      "parameters": [
+        {
+          "name": "totalBits",
+          "description": "lang.editor.parameters.RB.totalBits",
+          "type": "number"
+        },
+        {
+          "name": "partition1",
+          "description": "lang.editor.parameters.RB.partition1",
+          "type": "number"
+        },
+        {
+          "name": "partition2",
+          "description": "lang.editor.parameters.RB.partition2",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^RE",
+      "shortDescription": "lang.editor.shortDescription.RE",
+      "description": "lang.editor.description.RE",
+      "parameters": [
+        {
+          "name": "enable",
+          "description": "lang.editor.parameters.RE.enable",
+          "type": "string"
+        },
+        {
+          "name": "retries",
+          "description": "lang.editor.parameters.RE.retries",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^RF",
+      "shortDescription": "lang.editor.shortDescription.RF",
+      "description": "lang.editor.description.RF",
+      "parameters": [
+        {
+          "name": "operation",
+          "description": "lang.editor.parameters.RF.operation",
+          "type": "string"
+        },
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.RF.format",
+          "type": "string"
+        },
+        {
+          "name": "passwordOrBlock",
+          "description": "lang.editor.parameters.RF.passwordOrBlock",
+          "type": "string"
+        },
+        {
+          "name": "bytes",
+          "description": "lang.editor.parameters.RF.bytes",
+          "type": "string"
+        },
+        {
+          "name": "memoryBank",
+          "description": "lang.editor.parameters.RF.memoryBank",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RI",
+      "shortDescription": "lang.editor.shortDescription.RI",
+      "description": "lang.editor.description.RI",
+      "parameters": [
+        {
+          "name": "fieldNumber",
+          "description": "lang.editor.parameters.RI.fieldNumber",
+          "type": "number"
+        },
+        {
+          "name": "order",
+          "description": "lang.editor.parameters.RI.order",
+          "type": "string"
+        },
+        {
+          "name": "retries",
+          "description": "lang.editor.parameters.RI.retries",
+          "type": "number"
+        },
+        {
+          "name": "motion",
+          "description": "lang.editor.parameters.RI.motion",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RL",
+      "shortDescription": "lang.editor.shortDescription.RL",
+      "description": "lang.editor.description.RL",
+      "parameters": [
+        {
+          "name": "lockAction",
+          "description": "lang.editor.parameters.RL.lockAction",
+          "type": "string"
+        },
+        {
+          "name": "p1",
+          "description": "lang.editor.parameters.RL.p1",
+          "type": "number"
+        },
+        {
+          "name": "p2",
+          "description": "lang.editor.parameters.RL.p2",
+          "type": "number"
+        },
+        {
+          "name": "epcOp",
+          "description": "lang.editor.parameters.RL.epcOp",
+          "type": "string"
+        },
+        {
+          "name": "userOp",
+          "description": "lang.editor.parameters.RL.userOp",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RM",
+      "shortDescription": "lang.editor.shortDescription.RM",
+      "description": "lang.editor.description.RM",
+      "parameters": [
+        {
+          "name": "enable",
+          "description": "lang.editor.parameters.RM.enable",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RN",
+      "shortDescription": "lang.editor.shortDescription.RN",
+      "description": "lang.editor.description.RN",
+      "parameters": [
+        {
+          "name": "enable",
+          "description": "lang.editor.parameters.RN.enable",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~RO",
+      "shortDescription": "lang.editor.shortDescription.~RO",
+      "description": "lang.editor.description.~RO",
+      "parameters": [
+        {
+          "name": "counter",
+          "description": "lang.editor.parameters.~RO.counter",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RQ",
+      "shortDescription": "lang.editor.shortDescription.RQ",
+      "description": "lang.editor.description.RQ",
+      "parameters": [
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.RQ.format",
+          "type": "string"
+        },
+        {
+          "name": "chipType",
+          "description": "lang.editor.parameters.RQ.chipType",
+          "type": "string"
+        },
+        {
+          "name": "option",
+          "description": "lang.editor.parameters.RQ.option",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RR",
+      "shortDescription": "lang.editor.shortDescription.RR",
+      "description": "lang.editor.description.RR",
+      "parameters": [
+        {
+          "name": "retries",
+          "description": "lang.editor.parameters.RR.retries",
+          "type": "number"
+        },
+        {
+          "name": "adaptive",
+          "description": "lang.editor.parameters.RR.adaptive",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RS",
+      "shortDescription": "lang.editor.shortDescription.RS",
+      "description": "lang.editor.description.RS",
+      "parameters": [
+        {
+          "name": "type",
+          "description": "lang.editor.parameters.RS.type",
+          "type": "string"
+        },
+        {
+          "name": "pos",
+          "description": "lang.editor.parameters.RS.pos",
+          "type": "string"
+        },
+        {
+          "name": "voidLen",
+          "description": "lang.editor.parameters.RS.voidLen",
+          "type": "string"
+        },
+        {
+          "name": "labels",
+          "description": "lang.editor.parameters.RS.labels",
+          "type": "number"
+        },
+        {
+          "name": "onError",
+          "description": "lang.editor.parameters.RS.onError",
+          "type": "string"
+        },
+        {
+          "name": "signal",
+          "description": "lang.editor.parameters.RS.signal",
+          "type": "string"
+        },
+        {
+          "name": "deprecated",
+          "description": "lang.editor.parameters.RS.deprecated",
+          "type": "string"
+        },
+        {
+          "name": "voidSpeed",
+          "description": "lang.editor.parameters.RS.voidSpeed",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RT",
+      "shortDescription": "lang.editor.shortDescription.RT",
+      "description": "lang.editor.description.RT",
+      "parameters": [
+        {
+          "name": "fieldNumber",
+          "description": "lang.editor.parameters.RT.fieldNumber",
+          "type": "number"
+        },
+        {
+          "name": "startBlock",
+          "description": "lang.editor.parameters.RT.startBlock",
+          "type": "number"
+        },
+        {
+          "name": "blocks",
+          "description": "lang.editor.parameters.RT.blocks",
+          "type": "number"
+        },
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.RT.format",
+          "type": "string"
+        },
+        {
+          "name": "retries",
+          "description": "lang.editor.parameters.RT.retries",
+          "type": "number"
+        },
+        {
+          "name": "motion",
+          "description": "lang.editor.parameters.RT.motion",
+          "type": "string"
+        },
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.RT.mode",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RU",
+      "shortDescription": "lang.editor.shortDescription.RU",
+      "description": "lang.editor.description.RU",
+      "parameters": [
+        {
+          "name": "prefix",
+          "description": "lang.editor.parameters.RU.prefix",
+          "type": "string"
+        },
+        {
+          "name": "escapeChar",
+          "description": "lang.editor.parameters.RU.escapeChar",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~RV",
+      "shortDescription": "lang.editor.shortDescription.~RV",
+      "description": "lang.editor.description.~RV",
+      "parameters": [
+        {
+          "name": "enable",
+          "description": "lang.editor.parameters.~RV.enable",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^RW",
+      "shortDescription": "lang.editor.shortDescription.RW",
+      "description": "lang.editor.description.RW",
+      "parameters": [
+        {
+          "name": "readPower",
+          "description": "lang.editor.parameters.RW.readPower",
+          "type": "number"
+        },
+        {
+          "name": "writePower",
+          "description": "lang.editor.parameters.RW.writePower",
+          "type": "number"
+        },
+        {
+          "name": "antennaElement",
+          "description": "lang.editor.parameters.RW.antennaElement",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^RZ",
+      "shortDescription": "lang.editor.shortDescription.RZ",
+      "description": "lang.editor.description.RZ",
+      "parameters": [
+        {
+          "name": "password",
+          "description": "lang.editor.parameters.RZ.password",
+          "type": "string"
+        },
+        {
+          "name": "passwordType",
+          "description": "lang.editor.parameters.RZ.passwordType",
+          "type": "string"
+        },
+        {
+          "name": "lockType",
+          "description": "lang.editor.parameters.RZ.lockType",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^SC",
+      "shortDescription": "lang.editor.shortDescription.SC",
+      "description": "lang.editor.description.SC",
+      "parameters": [
+        {
+          "name": "baud",
+          "description": "lang.editor.parameters.SC.baud",
+          "type": "number"
+        },
+        {
+          "name": "wordBits",
+          "description": "lang.editor.parameters.SC.wordBits",
+          "type": "number"
+        },
+        {
+          "name": "parity",
+          "description": "lang.editor.parameters.SC.parity",
+          "type": "string"
+        },
+        {
+          "name": "stopBits",
+          "description": "lang.editor.parameters.SC.stopBits",
+          "type": "number"
+        },
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.SC.mode",
+          "type": "string"
+        },
+        {
+          "name": "protocol",
+          "description": "lang.editor.parameters.SC.protocol",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~SD",
+      "shortDescription": "lang.editor.shortDescription.~SD",
+      "description": "lang.editor.description.~SD",
+      "parameters": [
+        {
+          "name": "darkness",
+          "description": "lang.editor.parameters.~SD.darkness",
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^SE",
+      "shortDescription": "lang.editor.shortDescription.SE",
+      "description": "lang.editor.description.SE",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.SE.path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^SF",
+      "shortDescription": "lang.editor.shortDescription.SF",
+      "description": "lang.editor.description.SF",
+      "parameters": [
+        {
+          "name": "mask",
+          "description": "lang.editor.parameters.SF.mask",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "increment",
+          "description": "lang.editor.parameters.SF.increment",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^SI",
+      "shortDescription": "lang.editor.shortDescription.SI",
+      "description": "lang.editor.description.SI",
+      "parameters": [
+        {
+          "name": "setting",
+          "description": "lang.editor.parameters.SI.setting",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "description": "lang.editor.parameters.SI.value",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^SL",
+      "shortDescription": "lang.editor.shortDescription.SL",
+      "description": "lang.editor.description.SL",
+      "parameters": [
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.SL.mode",
+          "type": "string"
+        },
+        {
+          "name": "language",
+          "description": "lang.editor.parameters.SL.language",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^SN",
+      "shortDescription": "lang.editor.shortDescription.SN",
+      "description": "lang.editor.description.SN",
+      "parameters": [
+        {
+          "name": "start",
+          "description": "lang.editor.parameters.SN.start",
+          "type": "string"
+        },
+        {
+          "name": "increment",
+          "description": "lang.editor.parameters.SN.increment",
+          "type": "string"
+        },
+        {
+          "name": "pad",
+          "description": "lang.editor.parameters.SN.pad",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^SO",
+      "shortDescription": "lang.editor.shortDescription.SO",
+      "description": "lang.editor.description.SO",
+      "parameters": [
+        {
+          "name": "clock",
+          "description": "lang.editor.parameters.SO.clock",
+          "type": "string"
+        },
+        {
+          "name": "months",
+          "description": "lang.editor.parameters.SO.months",
+          "type": "number"
+        },
+        {
+          "name": "days",
+          "description": "lang.editor.parameters.SO.days",
+          "type": "number"
+        },
+        {
+          "name": "years",
+          "description": "lang.editor.parameters.SO.years",
+          "type": "number"
+        },
+        {
+          "name": "hours",
+          "description": "lang.editor.parameters.SO.hours",
+          "type": "number"
+        },
+        {
+          "name": "minutes",
+          "description": "lang.editor.parameters.SO.minutes",
+          "type": "number"
+        },
+        {
+          "name": "seconds",
+          "description": "lang.editor.parameters.SO.seconds",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^SP",
+      "shortDescription": "lang.editor.shortDescription.SP",
+      "description": "lang.editor.description.SP",
+      "parameters": [
+        {
+          "name": "row",
+          "description": "lang.editor.parameters.SP.row",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^SQ",
+      "shortDescription": "lang.editor.shortDescription.SQ",
+      "description": "lang.editor.description.SQ",
+      "parameters": [
+        {
+          "name": "condition",
+          "description": "lang.editor.parameters.SQ.condition",
+          "type": "string"
+        },
+        {
+          "name": "destination",
+          "description": "lang.editor.parameters.SQ.destination",
+          "type": "string"
+        },
+        {
+          "name": "stop",
+          "description": "lang.editor.parameters.SQ.stop",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^SR",
+      "shortDescription": "lang.editor.shortDescription.SR",
+      "description": "lang.editor.description.SR",
+      "parameters": [
+        {
+          "name": "resistance",
+          "description": "lang.editor.parameters.SR.resistance",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^SS",
+      "shortDescription": "lang.editor.shortDescription.SS",
+      "description": "lang.editor.description.SS",
+      "parameters": [
+        {
+          "name": "web",
+          "description": "lang.editor.parameters.SS.web",
+          "type": "string"
+        },
+        {
+          "name": "media",
+          "description": "lang.editor.parameters.SS.media",
+          "type": "string"
+        },
+        {
+          "name": "ribbon",
+          "description": "lang.editor.parameters.SS.ribbon",
+          "type": "string"
+        },
+        {
+          "name": "length",
+          "description": "lang.editor.parameters.SS.length",
+          "type": "number"
+        },
+        {
+          "name": "int1",
+          "description": "lang.editor.parameters.SS.int1",
+          "type": "string"
+        },
+        {
+          "name": "int2",
+          "description": "lang.editor.parameters.SS.int2",
+          "type": "string"
+        },
+        {
+          "name": "sense",
+          "description": "lang.editor.parameters.SS.sense",
+          "type": "string"
+        },
+        {
+          "name": "mediaSense",
+          "description": "lang.editor.parameters.SS.mediaSense",
+          "type": "string"
+        },
+        {
+          "name": "ledSense",
+          "description": "lang.editor.parameters.SS.ledSense",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^ST",
+      "shortDescription": "lang.editor.shortDescription.ST",
+      "description": "lang.editor.description.ST",
+      "parameters": [
+        {
+          "name": "month",
+          "description": "lang.editor.parameters.ST.month",
+          "type": "number"
+        },
+        {
+          "name": "day",
+          "description": "lang.editor.parameters.ST.day",
+          "type": "number"
+        },
+        {
+          "name": "year",
+          "description": "lang.editor.parameters.ST.year",
+          "type": "number"
+        },
+        {
+          "name": "hour",
+          "description": "lang.editor.parameters.ST.hour",
+          "type": "number"
+        },
+        {
+          "name": "minute",
+          "description": "lang.editor.parameters.ST.minute",
+          "type": "number"
+        },
+        {
+          "name": "second",
+          "description": "lang.editor.parameters.ST.second",
+          "type": "number"
+        },
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.ST.format",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^SX",
+      "shortDescription": "lang.editor.shortDescription.SX",
+      "description": "lang.editor.description.SX",
+      "parameters": [
+        {
+          "name": "condition",
+          "description": "lang.editor.parameters.SX.condition",
+          "type": "string"
+        },
+        {
+          "name": "destination",
+          "description": "lang.editor.parameters.SX.destination",
+          "type": "string"
+        },
+        {
+          "name": "set",
+          "description": "lang.editor.parameters.SX.set",
+          "type": "string"
+        },
+        {
+          "name": "clear",
+          "description": "lang.editor.parameters.SX.clear",
+          "type": "string"
+        },
+        {
+          "name": "setting",
+          "description": "lang.editor.parameters.SX.setting",
+          "type": "string"
+        },
+        {
+          "name": "port",
+          "description": "lang.editor.parameters.SX.port",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^SZ",
+      "shortDescription": "lang.editor.shortDescription.SZ",
+      "description": "lang.editor.description.SZ",
+      "parameters": [
+        {
+          "name": "version",
+          "description": "lang.editor.parameters.SZ.version",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "~TA",
+      "shortDescription": "lang.editor.shortDescription.~TA",
+      "description": "lang.editor.description.~TA",
+      "parameters": [
+        {
+          "name": "adjustment",
+          "description": "lang.editor.parameters.~TA.adjustment",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^TB",
+      "shortDescription": "lang.editor.shortDescription.TB",
+      "description": "lang.editor.description.TB",
+      "parameters": [
+        {
+          "name": "orientation",
+          "description": "lang.editor.parameters.TB.orientation",
+          "type": "string"
+        },
+        {
+          "name": "maxWidth",
+          "description": "lang.editor.parameters.TB.maxWidth",
+          "type": "number"
+        },
+        {
+          "name": "maxHeight",
+          "description": "lang.editor.parameters.TB.maxHeight",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^TO",
+      "shortDescription": "lang.editor.shortDescription.TO",
+      "description": "lang.editor.description.TO",
+      "parameters": [
+        {
+          "name": "from",
+          "description": "lang.editor.parameters.TO.from",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "to",
+          "description": "lang.editor.parameters.TO.to",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^WA",
+      "shortDescription": "lang.editor.shortDescription.WA",
+      "description": "lang.editor.description.WA",
+      "parameters": [
+        {
+          "name": "receive",
+          "description": "lang.editor.parameters.WA.receive",
+          "type": "string"
+        },
+        {
+          "name": "transmit",
+          "description": "lang.editor.parameters.WA.transmit",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~WC",
+      "shortDescription": "lang.editor.shortDescription.~WC",
+      "description": "lang.editor.description.~WC"
+    },
+    {
+      "command": "^WD",
+      "shortDescription": "lang.editor.shortDescription.WD",
+      "description": "lang.editor.description.WD",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.WD.path",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^WE",
+      "shortDescription": "lang.editor.shortDescription.WE",
+      "description": "lang.editor.description.WE",
+      "parameters": [
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.WE.mode",
+          "type": "string"
+        },
+        {
+          "name": "index",
+          "description": "lang.editor.parameters.WE.index",
+          "type": "number"
+        },
+        {
+          "name": "authType",
+          "description": "lang.editor.parameters.WE.authType",
+          "type": "string"
+        },
+        {
+          "name": "keyType",
+          "description": "lang.editor.parameters.WE.keyType",
+          "type": "string"
+        },
+        {
+          "name": "key1",
+          "description": "lang.editor.parameters.WE.key1",
+          "type": "string"
+        },
+        {
+          "name": "key2",
+          "description": "lang.editor.parameters.WE.key2",
+          "type": "string"
+        },
+        {
+          "name": "key3",
+          "description": "lang.editor.parameters.WE.key3",
+          "type": "string"
+        },
+        {
+          "name": "key4",
+          "description": "lang.editor.parameters.WE.key4",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^WF",
+      "shortDescription": "lang.editor.shortDescription.WF",
+      "description": "lang.editor.description.WF",
+      "parameters": [
+        {
+          "name": "retries",
+          "description": "lang.editor.parameters.WF.retries",
+          "type": "number"
+        },
+        {
+          "name": "motion",
+          "description": "lang.editor.parameters.WF.motion",
+          "type": "string"
+        },
+        {
+          "name": "protect",
+          "description": "lang.editor.parameters.WF.protect",
+          "type": "string"
+        },
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.WF.format",
+          "type": "string"
+        },
+        {
+          "name": "type",
+          "description": "lang.editor.parameters.WF.type",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^WI",
+      "shortDescription": "lang.editor.shortDescription.WI",
+      "description": "lang.editor.description.WI",
+      "parameters": [
+        {
+          "name": "res",
+          "description": "lang.editor.parameters.WI.res",
+          "type": "string"
+        },
+        {
+          "name": "ip",
+          "description": "lang.editor.parameters.WI.ip",
+          "type": "string"
+        },
+        {
+          "name": "mask",
+          "description": "lang.editor.parameters.WI.mask",
+          "type": "string"
+        },
+        {
+          "name": "gateway",
+          "description": "lang.editor.parameters.WI.gateway",
+          "type": "string"
+        },
+        {
+          "name": "wins",
+          "description": "lang.editor.parameters.WI.wins",
+          "type": "string"
+        },
+        {
+          "name": "timeout",
+          "description": "lang.editor.parameters.WI.timeout",
+          "type": "number"
+        },
+        {
+          "name": "secs",
+          "description": "lang.editor.parameters.WI.secs",
+          "type": "number"
+        },
+        {
+          "name": "arp",
+          "description": "lang.editor.parameters.WI.arp",
+          "type": "string"
+        },
+        {
+          "name": "port",
+          "description": "lang.editor.parameters.WI.port",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^WL",
+      "shortDescription": "lang.editor.shortDescription.WL",
+      "description": "lang.editor.description.WL",
+      "parameters": [
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.WL.mode",
+          "type": "string"
+        },
+        {
+          "name": "username",
+          "description": "lang.editor.parameters.WL.username",
+          "type": "string"
+        },
+        {
+          "name": "password",
+          "description": "lang.editor.parameters.WL.password",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~WL",
+      "shortDescription": "lang.editor.shortDescription.~WL",
+      "description": "lang.editor.description.~WL"
+    },
+    {
+      "command": "^WP",
+      "shortDescription": "lang.editor.shortDescription.WP",
+      "description": "lang.editor.description.WP",
+      "parameters": [
+        {
+          "name": "oldPassword",
+          "description": "lang.editor.parameters.WP.oldPassword",
+          "type": "string"
+        },
+        {
+          "name": "newPassword",
+          "description": "lang.editor.parameters.WP.newPassword",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "~WQ",
+      "shortDescription": "lang.editor.shortDescription.~WQ",
+      "description": "lang.editor.description.~WQ",
+      "parameters": [
+        {
+          "name": "query",
+          "description": "lang.editor.parameters.~WQ.query",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^WR",
+      "shortDescription": "lang.editor.shortDescription.WR",
+      "description": "lang.editor.description.WR",
+      "parameters": [
+        {
+          "name": "rate1",
+          "description": "lang.editor.parameters.WR.rate1",
+          "type": "number"
+        },
+        {
+          "name": "rate2",
+          "description": "lang.editor.parameters.WR.rate2",
+          "type": "number"
+        },
+        {
+          "name": "rate55",
+          "description": "lang.editor.parameters.WR.rate55",
+          "type": "number"
+        },
+        {
+          "name": "rate11",
+          "description": "lang.editor.parameters.WR.rate11",
+          "type": "number"
+        },
+        {
+          "name": "power",
+          "description": "lang.editor.parameters.WR.power",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "~WR",
+      "shortDescription": "lang.editor.shortDescription.~WR",
+      "description": "lang.editor.description.~WR"
+    },
+    {
+      "command": "^WS",
+      "shortDescription": "lang.editor.shortDescription.WS",
+      "description": "lang.editor.description.WS",
+      "parameters": [
+        {
+          "name": "essid",
+          "description": "lang.editor.parameters.WS.essid",
+          "type": "string"
+        },
+        {
+          "name": "mode",
+          "description": "lang.editor.parameters.WS.mode",
+          "type": "string"
+        },
+        {
+          "name": "preamble",
+          "description": "lang.editor.parameters.WS.preamble",
+          "type": "number"
+        },
+        {
+          "name": "pulse",
+          "description": "lang.editor.parameters.WS.pulse",
+          "type": "number"
+        },
+        {
+          "name": "interval",
+          "description": "lang.editor.parameters.WS.interval",
+          "type": "number"
+        },
+        {
+          "name": "mask",
+          "description": "lang.editor.parameters.WS.mask",
+          "type": "string"
+        },
+        {
+          "name": "international",
+          "description": "lang.editor.parameters.WS.international",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^WT",
+      "shortDescription": "lang.editor.shortDescription.WT",
+      "description": "lang.editor.description.WT",
+      "parameters": [
+        {
+          "name": "block",
+          "description": "lang.editor.parameters.WT.block",
+          "type": "string"
+        },
+        {
+          "name": "retries",
+          "description": "lang.editor.parameters.WT.retries",
+          "type": "number"
+        },
+        {
+          "name": "motion",
+          "description": "lang.editor.parameters.WT.motion",
+          "type": "string"
+        },
+        {
+          "name": "protect",
+          "description": "lang.editor.parameters.WT.protect",
+          "type": "string"
+        },
+        {
+          "name": "format",
+          "description": "lang.editor.parameters.WT.format",
+          "type": "string"
+        },
+        {
+          "name": "verify",
+          "description": "lang.editor.parameters.WT.verify",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^WV",
+      "shortDescription": "lang.editor.shortDescription.WV",
+      "description": "lang.editor.description.WV",
+      "parameters": [
+        {
+          "name": "enable",
+          "description": "lang.editor.parameters.WV.enable",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^WX",
+      "shortDescription": "lang.editor.shortDescription.WX",
+      "description": "lang.editor.description.WX",
+      "parameters": [
+        {
+          "name": "securityType",
+          "description": "lang.editor.parameters.WX.securityType",
+          "type": "string"
+        },
+        {
+          "name": "parameters",
+          "description": "lang.editor.parameters.WX.parameters",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "command": "^XA",
+      "shortDescription": "lang.editor.shortDescription.XA",
+      "description": "lang.editor.description.XA"
+    },
+    {
+      "command": "^XB",
+      "shortDescription": "lang.editor.shortDescription.XB",
+      "description": "lang.editor.description.XB"
+    },
+    {
+      "command": "^XF",
+      "shortDescription": "lang.editor.shortDescription.XF",
+      "description": "lang.editor.description.XF",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.XF.path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "command": "^XG",
+      "shortDescription": "lang.editor.shortDescription.XG",
+      "description": "lang.editor.description.XG",
+      "parameters": [
+        {
+          "name": "path",
+          "description": "lang.editor.parameters.XG.path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "magnificationX",
+          "description": "lang.editor.parameters.XG.magnificationX",
+          "type": "number"
+        },
+        {
+          "name": "magnificationY",
+          "description": "lang.editor.parameters.XG.magnificationY",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^XS",
+      "shortDescription": "lang.editor.shortDescription.XS",
+      "description": "lang.editor.description.XS",
+      "parameters": [
+        {
+          "name": "length",
+          "description": "lang.editor.parameters.XS.length",
+          "type": "number"
+        },
+        {
+          "name": "threshold",
+          "description": "lang.editor.parameters.XS.threshold",
+          "type": "number"
+        },
+        {
+          "name": "gain",
+          "description": "lang.editor.parameters.XS.gain",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "command": "^XZ",
+      "shortDescription": "lang.editor.shortDescription.XZ",
+      "description": "lang.editor.description.XZ"
+    },
+    {
+      "command": "^ZZ",
+      "shortDescription": "lang.editor.shortDescription.ZZ",
+      "description": "lang.editor.description.ZZ",
+      "parameters": [
+        {
+          "name": "seconds",
+          "description": "lang.editor.parameters.ZZ.seconds",
+          "type": "number"
+        },
+        {
+          "name": "immediate",
+          "description": "lang.editor.parameters.ZZ.immediate",
+          "type": "string"
+        }
+      ]
+    }
+  ]
+}

@@ -48,6 +48,21 @@ namespace Ultimate_ZPL_Viewer
             }
             catch { /* icon is cosmetic; never block startup */ }
 
+            // Title-bar icon (both the normal and the fullscreen bars). A relative
+            // "Assets/..." XAML source resolves via ms-appx, which is unreliable
+            // unpackaged — load the PNG from the output folder by file path instead.
+            try
+            {
+                var pngPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.png");
+                if (System.IO.File.Exists(pngPath))
+                {
+                    var src = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(pngPath));
+                    TitleBarIcon.Source = src;
+                    FullScreenIcon.Source = src;
+                }
+            }
+            catch { /* icon is cosmetic; never block startup */ }
+
             AppWindow.Closing += OnAppWindowClosing;
 
             LocalizeTitleBar();

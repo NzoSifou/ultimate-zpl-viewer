@@ -27,7 +27,10 @@
          helper runs. Packaged launches get the runtime from the package graph, so the
          auto-initializers aren't needed. -->
     <WindowsAppSdkAutoInitialize>false</WindowsAppSdkAutoInitialize>
-    <EnableMsixTooling>true</EnableMsixTooling>
+    <!-- App unpackaged : PAS de tooling MSIX. À true, Visual Studio ajoute la
+         capacité "Msix" et exige un déploiement au lancement ("The project needs
+         to be deployed…"). À false, le projet se lance comme un simple .exe. -->
+    <EnableMsixTooling>false</EnableMsixTooling>
     <Nullable>enable</Nullable>
     <Version>1.0.0</Version>
     <FileVersion>1.0.0.0</FileVersion>
@@ -71,6 +74,10 @@
     <!-- Copied to the output so AppWindow.SetIcon can point at it at runtime
          (window / Alt-Tab / taskbar icon). -->
     <Content Include="Assets\AppIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- Title-bar icon (unpackaged: loaded by file path from the output). -->
+    <Content Include="Assets\AppIcon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <!-- Resource-only native DLL carrying the pan hand cursors (open: 100,

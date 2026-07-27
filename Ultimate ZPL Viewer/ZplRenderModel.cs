@@ -1000,10 +1000,50 @@ public static partial class ZplRenderer
         if (!int.TryParse(parts[2].Trim(), out int total) || total <= 0) return null;
         if (!int.TryParse(parts[3].Trim(), out int bytesPerRow) || bytesPerRow <= 0) return null;
 
-        var bytes = DecodeAcsHex(parts[4], total, bytesPerRow);
+        var data = parts[4].TrimStart();
+        // :Z64:/:B64: — base64-encoded data (Z64 = additionally zlib-deflated), with a
+        // trailing ":CRC". Used by e.g. the Colissimo logo. Anything else is ASCII-hex
+        // (optionally ACS-compressed).
+        byte[]? bytes =
+            data.StartsWith(":Z64:", StringComparison.OrdinalIgnoreCase) ||
+            data.StartsWith(":B64:", StringComparison.OrdinalIgnoreCase)
+                ? DecodeBase64Graphic(data, total)
+                : DecodeAcsHex(parts[4], total, bytesPerRow);
+        if (bytes is null) return null;
+
         int rows = total / bytesPerRow;
         if (rows <= 0) return null;
         return (bytesPerRow * 8, rows, bytes);
+    }
+
+    // Decodes a ZPL :Z64:/:B64: graphic body. The base64 payload sits between the
+    // ":Z64:" (or ":B64:") tag and the final ":CRC"; Z64 is additionally zlib-deflated.
+    // Returns exactly `total` bytes (padded / truncated).
+    private static byte[]? DecodeBase64Graphic(string data, int total)
+    {
+        bool deflated = data.StartsWith(":Z64:", StringComparison.OrdinalIgnoreCase);
+        string body = data.Substring(5);
+        int crc = body.LastIndexOf(':');            // strip the trailing ":CRC"
+        if (crc >= 0) body = body.Substring(0, crc);
+        var sb = new StringBuilder(body.Length);
+        foreach (char c in body) if (!char.IsWhiteSpace(c)) sb.Append(c); // may be line-wrapped
+        try
+        {
+            var raw = Convert.FromBase64String(sb.ToString());
+            if (deflated)
+            {
+                using var input = new MemoryStream(raw);
+                using var z = new System.IO.Compression.ZLibStream(input, System.IO.Compression.CompressionMode.Decompress);
+                using var outp = new MemoryStream(total);
+                z.CopyTo(outp);
+                raw = outp.ToArray();
+            }
+            if (raw.Length == total) return raw;
+            var fixedBytes = new byte[total];
+            Array.Copy(raw, fixedBytes, Math.Min(raw.Length, total));
+            return fixedBytes;
+        }
+        catch { return null; }
     }
 
     // ZPL "Alternative Compression Scheme" (ACS) for ^GFA hex data:
@@ -1997,7 +2037,8 @@ public static partial class ZplRenderer
     private static bool HasCode128Invocation(string data)
     {
         int j = data.IndexOf('>');
-        return j >= 0 && j + 1 < data.Length && "9:;".IndexOf(data[j + 1]) >= 0;
+        // Start codes >9/>:/>; and mid-stream switches >5(→C) >6(→B) >7(→A) >8(FNC1).
+        return j >= 0 && j + 1 < data.Length && "56789:;".IndexOf(data[j + 1]) >= 0;
     }
 
     // `autoMode` = ^BC mode A (automatic subset optimization). Without it, Labelary
@@ -2042,9 +2083,11 @@ public static partial class ZplRenderer
             if (data[i] == '>' && i + 1 < data.Length)
             {
                 char c = data[i + 1];
-                if (c == '9') Ensure('A');
-                else if (c == ':') Ensure('B');
-                else if (c == ';') Ensure('C');
+                // Start codes (>9/>:/>;) and mid-stream subset switches (>5/>6/>7)
+                // are the same operation here — Ensure() emits a start or a switch.
+                if (c == '9' || c == '7') Ensure('A');
+                else if (c == ':' || c == '6') Ensure('B');
+                else if (c == ';' || c == '5') Ensure('C');
                 else if (c == '8') { if (!started) Ensure('C'); codes.Add(102); } // FNC1 (GS1-128)
                 // other >x codes are skipped
                 i += 2;

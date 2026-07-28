@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace Ultimate_ZPL_Viewer;
@@ -277,7 +278,10 @@ public static class LocalizationService
         }
     }
 
-    // Copies any missing bundled language file into the user languages folder.
+    // Ensures the bundled languages are present in the user folder. On first run the
+    // bundled file is copied; on later runs any NEW keys added by an app update are
+    // merged in (missing keys only — the user's own edits are never overwritten), so
+    // strings shipped with an update actually appear instead of showing raw keys.
     public static void EnsureFiles()
     {
         try { Directory.CreateDirectory(LanguagesDir); } catch { return; }
@@ -290,12 +294,49 @@ public static class LocalizationService
         foreach (var code in Bundled)
         {
             var dest = Path.Combine(LanguagesDir, code + ".json");
-            if (File.Exists(dest)) continue;
-            foreach (var b in bases)
+            string? src = bases.Select(b => Path.Combine(b, "Assets", "lang_" + code + ".json"))
+                               .FirstOrDefault(File.Exists);
+            if (src is null) continue;
+
+            if (!File.Exists(dest)) { try { File.Copy(src, dest); } catch { } }
+            else MergeMissingKeys(src, dest);
+        }
+    }
+
+    // Adds keys present in the bundled file but missing from the user file, then
+    // rewrites the user file if anything was added. Never touches existing values.
+    private static void MergeMissingKeys(string bundledPath, string destPath)
+    {
+        try
+        {
+            if (JsonNode.Parse(File.ReadAllText(bundledPath)) is not JsonObject bundled) return;
+            if (JsonNode.Parse(File.ReadAllText(destPath))    is not JsonObject user)    return;
+            if (!MergeInto(user, bundled)) return;
+            File.WriteAllText(destPath, user.ToJsonString(new JsonSerializerOptions
             {
-                var src = Path.Combine(b, "Assets", "lang_" + code + ".json");
-                if (File.Exists(src)) { try { File.Copy(src, dest); } catch { } break; }
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            }));
+        }
+        catch { /* merge is best-effort; a bad user file just keeps its old keys */ }
+    }
+
+    // Deep-adds keys from src missing in dst. Returns true if dst changed.
+    private static bool MergeInto(JsonObject dst, JsonObject src)
+    {
+        bool changed = false;
+        foreach (var kv in src)
+        {
+            if (!dst.ContainsKey(kv.Key))
+            {
+                dst[kv.Key] = kv.Value?.DeepClone();
+                changed = true;
+            }
+            else if (dst[kv.Key] is JsonObject dChild && kv.Value is JsonObject sChild)
+            {
+                changed |= MergeInto(dChild, sChild);
             }
         }
+        return changed;
     }
 }

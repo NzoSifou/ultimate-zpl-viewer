@@ -45,6 +45,15 @@ public sealed class AppSettings
     public string CustomGridColor { get; set; } = "#40808080";
     public bool SkipPrinterInstallPrompt { get; set; }
 
+    // PNG export quality. Mode "ask" (default) pops the quality dialog on each
+    // export; "default" silently uses PngQualityStep. Step 1..5 maps to a linear
+    // resolution factor: 1=÷2, 2=÷1.5, 3=original (default), 4=×1.5, 5=×2.
+    public string PngExportMode { get; set; } = "ask";   // "ask" | "default"
+    public int PngQualityStep { get; set; } = 3;
+
+    // Offer, at startup, to make Ultimate ZPL Viewer the default handler for .zpl.
+    public bool AskZplAssociation { get; set; } = true;
+
     // Static analysis: show the low-priority warnings (clean-code hints) too.
     public bool ShowLowWarnings { get; set; } = true;
 

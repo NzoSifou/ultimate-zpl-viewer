@@ -6,8 +6,8 @@
 
 **Visualisez, éditez et imprimez vos étiquettes ZPL — 100 % en local, sans aucune API externe.** 🏷️
 
-[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D6?logo=windows&logoColor=white?style=for-the-badge)](#-installation)
-[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white?style=for-the-badge)](#-technologies)
+[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D6?logo=windows&logoColor=white&style=for-the-badge)](#-installation)
+[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white&style=for-the-badge)](#-technologies)
 [![WinUI 3](https://img.shields.io/badge/WinUI-3-0067B8?style=for-the-badge)](#-technologies)
 [![Licence MIT](https://img.shields.io/badge/Licence-MIT-green.svg?style=for-the-badge)](LICENSE)
 
@@ -66,17 +66,13 @@ Depuis les **Paramètres → Imprimante virtuelle**, installez l'imprimante « U
 dotnet run --project "Ultimate ZPL Viewer/Ultimate ZPL Viewer.csproj" -p:Platform=x64
 ```
 
-Créer le paquet redistribuable (application autonome) puis l'installateur :
+Créer l'installateur redistribuable (application autonome + `Setup.exe`) en une commande — nécessite [Inno Setup 6](https://jrsoftware.org/isinfo.php) :
 
 ```bash
-# 1) Publier (self-contained, non packagé)
-dotnet publish "Ultimate ZPL Viewer/Ultimate ZPL Viewer.csproj" -c Release -r win-x64 --self-contained -p:Platform=x64 -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true
+powershell -ExecutionPolicy Bypass -File "Ultimate ZPL Viewer/installer/build-installer.ps1"
 ```
 
-```bash
-# 2) Générer le Setup.exe (nécessite Inno Setup 6)
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "Ultimate ZPL Viewer/installer/UltimateZplViewer.iss"
-```
+Le `Setup.exe` est généré dans `Ultimate ZPL Viewer/installer/Output/`.
 
 ## 🧩 Technologies
 

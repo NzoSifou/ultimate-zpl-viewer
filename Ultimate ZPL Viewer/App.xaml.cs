@@ -65,6 +65,9 @@ namespace Ultimate_ZPL_Viewer
                 return;
             }
 
+            // Register as a .zpl handler (HKCU) so the app appears in "Open with".
+            FileAssociationService.EnsureRegistered();
+
             AccentColorService.ApplyAtStartup(this);
 
             // Load the active language before the window so the title bar localizes.

@@ -32,9 +32,9 @@
          to be deployed…"). À false, le projet se lance comme un simple .exe. -->
     <EnableMsixTooling>false</EnableMsixTooling>
     <Nullable>enable</Nullable>
-    <Version>1.0.0</Version>
-    <FileVersion>1.0.0.0</FileVersion>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Version>1.1.0</Version>
+    <FileVersion>1.1.0.0</FileVersion>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
     <!-- Editeur / auteur, visible dans les proprietes du fichier .exe. -->
     <Authors>Enzo Monchanin (NzoSifou)</Authors>
     <Company>Enzo Monchanin (NzoSifou)</Company>
@@ -122,8 +122,10 @@
 
   <!-- Publish Properties -->
   <PropertyGroup>
-    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
-    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <!-- ReadyToRun désactivé : en Release, R2R casse le câblage XAML des éléments
+         nommés (x:Name) — plantage au démarrage « Unable to cast … to Image »
+         (icône de la barre de titre). R2R n'est qu'une optimisation de démarrage. -->
+    <PublishReadyToRun>false</PublishReadyToRun>
     <!-- Never trim: the app serialises AppSettings via reflection and pulls in
          WinUI/Win2D/PDFtoImage native bits that the trimmer would strip. -->
     <PublishTrimmed>false</PublishTrimmed>

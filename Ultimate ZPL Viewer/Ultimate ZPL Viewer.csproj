@@ -122,8 +122,10 @@
 
   <!-- Publish Properties -->
   <PropertyGroup>
-    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
-    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <!-- ReadyToRun désactivé : en Release, R2R casse le câblage XAML des éléments
+         nommés (x:Name) — plantage au démarrage « Unable to cast … to Image »
+         (icône de la barre de titre). R2R n'est qu'une optimisation de démarrage. -->
+    <PublishReadyToRun>false</PublishReadyToRun>
     <!-- Never trim: the app serialises AppSettings via reflection and pulls in
          WinUI/Win2D/PDFtoImage native bits that the trimmer would strip. -->
     <PublishTrimmed>false</PublishTrimmed>

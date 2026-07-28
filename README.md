@@ -66,17 +66,13 @@ Depuis les **Paramètres → Imprimante virtuelle**, installez l'imprimante « U
 dotnet run --project "Ultimate ZPL Viewer/Ultimate ZPL Viewer.csproj" -p:Platform=x64
 ```
 
-Créer le paquet redistribuable (application autonome) puis l'installateur :
+Créer l'installateur redistribuable (application autonome + `Setup.exe`) en une commande — nécessite [Inno Setup 6](https://jrsoftware.org/isinfo.php) :
 
 ```bash
-# 1) Publier (self-contained, non packagé)
-dotnet publish "Ultimate ZPL Viewer/Ultimate ZPL Viewer.csproj" -c Release -r win-x64 --self-contained -p:Platform=x64 -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true
+powershell -ExecutionPolicy Bypass -File "Ultimate ZPL Viewer/installer/build-installer.ps1"
 ```
 
-```bash
-# 2) Générer le Setup.exe (nécessite Inno Setup 6)
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "Ultimate ZPL Viewer/installer/UltimateZplViewer.iss"
-```
+Le `Setup.exe` est généré dans `Ultimate ZPL Viewer/installer/Output/`.
 
 ## 🧩 Technologies
 

@@ -1500,13 +1500,38 @@
         "tabPath": {
           "title": "Show path on tab hover",
           "desc": "Shows the full path in parentheses in a tab's tooltip."
+        },
+        "pngQuality": {
+          "title": "PNG export quality",
+          "desc": "Choose the image resolution when exporting to PNG."
+        },
+        "zplAssoc": {
+          "title": "Default .zpl files",
+          "desc": "Open .zpl files with Ultimate ZPL Viewer by default."
         }
       },
       "lbl": {
         "reset": "Reset",
         "cancel": "Cancel",
         "resetDlgTitle": "Reset settings",
-        "resetDlgBody": "Restore all settings to their default values?"
+        "resetDlgBody": "Restore all settings to their default values?",
+        "setDefault": "Set as default",
+        "alreadyDefault": "Already default",
+        "setDefaultFailed": "Couldn't set the default app automatically. You can do it from Windows Settings (Default apps)."
+      },
+      "opt": {
+        "pngMode": [
+          "Ask every time",
+          "Default quality"
+        ]
+      },
+      "zplPrompt": {
+        "title": "Open .zpl files with Ultimate ZPL Viewer?",
+        "body": "Would you like to set Ultimate ZPL Viewer as the default app for .zpl files?",
+        "desc": ".zpl files will then open directly in the app with a double-click.",
+        "setDefault": "Set as default",
+        "no": "No",
+        "dontAsk": "Don't ask again"
       }
     },
     "document": {
@@ -1802,6 +1827,20 @@
         "copy": "Copy",
         "unknownVersion": "unknown",
         "copyrightText": "© {year} Enzo Monchanin. All rights reserved."
+      }
+    },
+    "png": {
+      "quality": {
+        "dlgTitle": "PNG export quality",
+        "export": "Export",
+        "cancel": "Cancel",
+        "lighter": "Lighter",
+        "heavier": "Heavier",
+        "step1": "Lower quality — Lighter",
+        "step2": "Reduced quality",
+        "step3": "Original quality — Default",
+        "step4": "Improved quality",
+        "step5": "Higher quality — Heavier"
       }
     }
   }

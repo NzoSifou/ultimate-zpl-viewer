@@ -14,7 +14,7 @@
 ; ============================================================================
 
 #define MyAppName "Ultimate ZPL Viewer"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Enzo Monchanin (NzoSifou)"
 #define MyAppExeName "Ultimate ZPL Viewer.exe"
 ; Dossier de publication (relatif a ce .iss). Genere par :
@@ -64,6 +64,19 @@ Source: "{#MyPublishDir}\*"; DestDir: "{app}"; Excludes: "*.WebView2\*,*.WebView
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Registry]
+; Association .zpl : ProgID + entree "Ouvrir avec" (par-utilisateur, HKCU, retire
+; a la desinstallation). L'app rafraichit aussi ces cles au demarrage
+; (FileAssociationService) pour garder le chemin de l'exe a jour.
+Root: HKCU; Subkey: "Software\Classes\UltimateZplViewer.zpl"; ValueType: string; ValueData: "Fichier ZPL"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\UltimateZplViewer.zpl"; ValueType: string; ValueName: "FriendlyTypeName"; ValueData: "Fichier ZPL"
+Root: HKCU; Subkey: "Software\Classes\UltimateZplViewer.zpl\DefaultIcon"; ValueType: string; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\UltimateZplViewer.zpl\shell\open\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKCU; Subkey: "Software\Classes\.zpl\OpenWithProgids"; ValueType: string; ValueName: "UltimateZplViewer.zpl"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#MyAppName}"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\shell\open\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".zpl"; ValueData: ""
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent

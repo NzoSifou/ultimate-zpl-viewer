@@ -238,7 +238,52 @@ public sealed partial class PreviewPage : Page
             await ShowMissingFontsDialogAsync(missing);
 
         await MaybePromptPrinterInstallAsync();
+        await MaybePromptZplAssociationAsync();
         await MaybePromptScreenSizeAsync();
+    }
+
+    // Offers, once, to make Ultimate ZPL Viewer the default app for .zpl files.
+    // Skipped if already default or if the user ticked "don't ask again".
+    private async Task MaybePromptZplAssociationAsync()
+    {
+        if (!_settings.AskZplAssociation) return;
+        if (FileAssociationService.IsDefault()) return;
+
+        var body = new StackPanel { Spacing = 10, MinWidth = 440 };
+        body.Children.Add(new TextBlock
+        {
+            Text = SL("general.zplPrompt.body"),
+            TextWrapping = TextWrapping.Wrap,
+            FontWeight = FontWeights.SemiBold,
+        });
+        body.Children.Add(new TextBlock
+        {
+            Text = SL("general.zplPrompt.desc"),
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.85,
+        });
+        var dontAsk = new CheckBox { Content = SL("general.zplPrompt.dontAsk"), Margin = new Thickness(0, 4, 0, 0) };
+        body.Children.Add(dontAsk);
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot          = XamlRoot,
+            RequestedTheme    = _settings.ToElementTheme(),
+            Title             = SL("general.zplPrompt.title"),
+            Content           = body,
+            PrimaryButtonText = SL("general.zplPrompt.setDefault"),
+            CloseButtonText   = SL("general.zplPrompt.no"),
+            DefaultButton     = ContentDialogButton.Primary,
+        };
+
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary)
+            FileAssociationService.SetAsDefault();
+        if (dontAsk.IsChecked == true)
+        {
+            _settings.AskZplAssociation = false;
+            _settings.Save();
+        }
     }
 
     // Validates the user color-scheme JSON against the schema. On success returns
@@ -2680,8 +2725,22 @@ public sealed partial class PreviewPage : Page
 
     private async void PngButton_Click(object sender, RoutedEventArgs e)
     {
+        // Resolution factor: "ask" pops the quality dialog, "default" uses the
+        // saved step silently. 1=÷2, 2=÷1.5, 3=original, 4=×1.5, 5=×2.
+        int step;
+        if (_settings.PngExportMode == "default")
+        {
+            step = _settings.PngQualityStep;
+        }
+        else
+        {
+            var chosen = await AskPngQualityAsync();
+            if (chosen is null) return; // cancelled
+            step = chosen.Value;
+        }
+
         var snapshot = await RenderSnapshotAsync();
-        var bytes = await EncodePngAsync(snapshot);
+        var bytes = await EncodePngAsync(snapshot, PngScaleForStep(step));
         var picker = new FileSavePicker();
         InitializeWithWindow.Initialize(picker, GetWindowHandle());
         picker.SuggestedFileName = _currentFilePath is null ? "label" : Path.GetFileNameWithoutExtension(_currentFilePath);
@@ -2691,6 +2750,64 @@ public sealed partial class PreviewPage : Page
         {
             await FileIO.WriteBytesAsync(file, bytes);
         }
+    }
+
+    // Linear resolution factor for a quality step (both dimensions).
+    private static double PngScaleForStep(int step) => step switch
+    {
+        1 => 0.5,
+        2 => 1.0 / 1.5,
+        4 => 1.5,
+        5 => 2.0,
+        _ => 1.0, // 3 = original
+    };
+
+    // PNG export quality picker: a 5-notch slider (light↔heavy), middle = original.
+    // Returns the chosen step, or null if cancelled.
+    private async Task<int?> AskPngQualityAsync()
+    {
+        double sc = XamlRoot?.RasterizationScale ?? 1.0;
+        double cw = double.IsNaN(PreviewCanvas.Width) ? 0 : PreviewCanvas.Width;
+        double ch = double.IsNaN(PreviewCanvas.Height) ? 0 : PreviewCanvas.Height;
+        int baseW = Math.Max(1, (int)Math.Round(cw * sc));
+        int baseH = Math.Max(1, (int)Math.Round(ch * sc));
+
+        var slider = new Slider
+        {
+            Minimum = 1, Maximum = 5, StepFrequency = 1, TickFrequency = 1,
+            TickPlacement = Microsoft.UI.Xaml.Controls.Primitives.TickPlacement.Outside,
+            Value = 3, IsThumbToolTipEnabled = false, Margin = new Thickness(0, 4, 0, 0),
+        };
+        var desc = new TextBlock { HorizontalAlignment = HorizontalAlignment.Center, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center };
+        var dim  = new TextBlock { HorizontalAlignment = HorizontalAlignment.Center, Opacity = 0.65, FontSize = 12 };
+
+        var ends = new Grid();
+        ends.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        ends.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var left  = new TextBlock { Text = SL("png.quality.lighter"), Opacity = 0.7, FontSize = 12, TextWrapping = TextWrapping.Wrap };
+        var right = new TextBlock { Text = SL("png.quality.heavier"), Opacity = 0.7, FontSize = 12, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Right };
+        Grid.SetColumn(right, 1);
+        ends.Children.Add(left); ends.Children.Add(right);
+
+        void Upd()
+        {
+            int s = (int)Math.Round(slider.Value);
+            desc.Text = SL($"png.quality.step{s}");
+            double f = PngScaleForStep(s);
+            dim.Text = $"≈ {(int)Math.Round(baseW * f)} × {(int)Math.Round(baseH * f)} px";
+        }
+        slider.ValueChanged += (_, _) => Upd();
+        Upd();
+
+        var content = new StackPanel { Spacing = 8, MinWidth = 400 };
+        content.Children.Add(desc);
+        content.Children.Add(dim);
+        content.Children.Add(slider);
+        content.Children.Add(ends);
+
+        var dialog = CreateDialog(SL("png.quality.dlgTitle"), content, SL("png.quality.export"), SL("png.quality.cancel"));
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return null;
+        return (int)Math.Round(slider.Value);
     }
 
     private async void PdfButton_Click(object sender, RoutedEventArgs e)
@@ -4120,6 +4237,64 @@ public sealed partial class PreviewPage : Page
         panel.Children.Add(MakeCard("\uE8A1", SL("general.cards.tabPath.title"),
             SL("general.cards.tabPath.desc"), tabPath));
 
+        // PNG export quality: ask each time, or use a fixed default (reveals a slider).
+        var pngMode = new ComboBox { MinWidth = 200,
+            ItemsSource = SA("general.opt.pngMode"),
+            SelectedIndex = _settings.PngExportMode == "default" ? 1 : 0 };
+        var pngSlider = new Slider
+        {
+            Minimum = 1, Maximum = 5, StepFrequency = 1, TickFrequency = 1,
+            TickPlacement = Microsoft.UI.Xaml.Controls.Primitives.TickPlacement.Outside,
+            Value = Math.Clamp(_settings.PngQualityStep, 1, 5),
+            IsThumbToolTipEnabled = false, Width = 260,
+        };
+        var pngQualLabel = new TextBlock { Opacity = 0.7, FontSize = 12 };
+        void UpdPngQualLabel() => pngQualLabel.Text = SL($"png.quality.step{(int)Math.Round(pngSlider.Value)}");
+        var pngRow = new StackPanel
+        {
+            Spacing = 4,
+            Visibility = _settings.PngExportMode == "default" ? Visibility.Visible : Visibility.Collapsed,
+        };
+        pngRow.Children.Add(pngSlider);
+        pngRow.Children.Add(pngQualLabel);
+        pngSlider.ValueChanged += (_, _) =>
+        {
+            _settings.PngQualityStep = (int)Math.Round(pngSlider.Value); _settings.Save(); UpdPngQualLabel();
+        };
+        pngMode.SelectionChanged += (_, _) =>
+        {
+            _settings.PngExportMode = pngMode.SelectedIndex == 1 ? "default" : "ask"; _settings.Save();
+            pngRow.Visibility = pngMode.SelectedIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
+        };
+        UpdPngQualLabel();
+        panel.Children.Add(MakeCard("\uE91B", SL("general.cards.pngQuality.title"),
+            SL("general.cards.pngQuality.desc"), pngMode, expanded: pngRow));
+
+        // Default .zpl file association. Greyed out when already the default.
+        var zplBtn = new Button();
+        void RefreshZplBtn()
+        {
+            bool isDef = FileAssociationService.IsDefault();
+            zplBtn.IsEnabled = !isDef;
+            zplBtn.Content = isDef ? SL("general.lbl.alreadyDefault") : SL("general.lbl.setDefault");
+        }
+        RefreshZplBtn();
+        zplBtn.Click += async (_, _) =>
+        {
+            // Fails only when a Windows "UserChoice" already claims .zpl (Win10/11
+            // won't let an app override it silently) — send the user to the OS
+            // Default-apps page to finish the change.
+            if (!FileAssociationService.SetAsDefault())
+            {
+                await ShowMessageAsync(SL("general.cards.zplAssoc.title"), SL("general.lbl.setDefaultFailed"));
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("ms-settings:defaultapps") { UseShellExecute = true }); }
+                catch { }
+            }
+            RefreshZplBtn();
+        };
+        panel.Children.Add(MakeCard("\uE8A5", SL("general.cards.zplAssoc.title"),
+            SL("general.cards.zplAssoc.desc"), zplBtn));
+
         var resetBtn = new Button { Content = SL("general.lbl.reset") };
         resetBtn.Click += async (_, _) =>
         {
@@ -4293,11 +4468,20 @@ public sealed partial class PreviewPage : Page
         return new RenderSnapshot(docW, docH, cropped);
     }
 
-    private static async Task<byte[]> EncodePngAsync(RenderSnapshot snapshot)
+    private static async Task<byte[]> EncodePngAsync(RenderSnapshot snapshot, double scale = 1.0)
     {
         using var stream = new InMemoryRandomAccessStream();
         var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
         encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, (uint)snapshot.Width, (uint)snapshot.Height, 96, 96, snapshot.BgraPixels);
+        // Quality scaling: resample the encoded frame to a lower/higher resolution.
+        if (Math.Abs(scale - 1.0) > 0.001)
+        {
+            int w = Math.Max(1, (int)Math.Round(snapshot.Width * scale));
+            int h = Math.Max(1, (int)Math.Round(snapshot.Height * scale));
+            encoder.BitmapTransform.ScaledWidth = (uint)w;
+            encoder.BitmapTransform.ScaledHeight = (uint)h;
+            encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant; // high quality
+        }
         await encoder.FlushAsync();
         using var read = stream.AsStreamForRead();
         using var memory = new MemoryStream();

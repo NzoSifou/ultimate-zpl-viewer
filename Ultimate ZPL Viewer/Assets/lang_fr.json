@@ -1500,13 +1500,38 @@
         "tabPath": {
           "title": "Afficher le chemin lors du survol d'un onglet",
           "desc": "Affiche le chemin complet entre parenthèses dans l'info-bulle d'un onglet."
+        },
+        "pngQuality": {
+          "title": "Qualité de l'export PNG",
+          "desc": "Choisir la résolution de l'image lors de l'export en PNG."
+        },
+        "zplAssoc": {
+          "title": "Fichiers .zpl par défaut",
+          "desc": "Ouvrir les fichiers .zpl avec Ultimate ZPL Viewer par défaut."
         }
       },
       "lbl": {
         "reset": "Réinitialiser",
         "cancel": "Annuler",
         "resetDlgTitle": "Réinitialiser les paramètres",
-        "resetDlgBody": "Rétablir tous les paramètres à leurs valeurs par défaut ?"
+        "resetDlgBody": "Rétablir tous les paramètres à leurs valeurs par défaut ?",
+        "setDefault": "Définir par défaut",
+        "alreadyDefault": "Déjà par défaut",
+        "setDefaultFailed": "Impossible de définir l'application par défaut automatiquement. Vous pouvez le faire depuis les paramètres Windows (Applications par défaut)."
+      },
+      "opt": {
+        "pngMode": [
+          "Demander à chaque fois",
+          "Qualité par défaut"
+        ]
+      },
+      "zplPrompt": {
+        "title": "Ouvrir les fichiers .zpl avec Ultimate ZPL Viewer ?",
+        "body": "Souhaitez-vous définir Ultimate ZPL Viewer comme application par défaut pour les fichiers .zpl ?",
+        "desc": "Les fichiers .zpl s'ouvriront alors directement dans l'application d'un simple double-clic.",
+        "setDefault": "Définir par défaut",
+        "no": "Non",
+        "dontAsk": "Ne plus me demander"
       }
     },
     "document": {
@@ -1802,6 +1827,20 @@
         "copy": "Copier",
         "unknownVersion": "inconnue",
         "copyrightText": "© {year} Enzo Monchanin. Tous droits réservés."
+      }
+    },
+    "png": {
+      "quality": {
+        "dlgTitle": "Qualité de l'export PNG",
+        "export": "Exporter",
+        "cancel": "Annuler",
+        "lighter": "Plus légère",
+        "heavier": "Plus lourde",
+        "step1": "Moins bonne qualité — Plus légère",
+        "step2": "Qualité réduite",
+        "step3": "Qualité originale — Par défaut",
+        "step4": "Qualité améliorée",
+        "step5": "Meilleure qualité — Plus lourde"
       }
     }
   }

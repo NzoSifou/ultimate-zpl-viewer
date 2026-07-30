@@ -177,6 +177,11 @@ public static partial class ZplRenderer
             if (string.IsNullOrEmpty(data)) return;
             double fx = x + lhX + lsX, fy = y + lhY + ltY;
 
+            // ^FO anchors the top of the character CELL, and the bitmap faces leave a
+            // blank band above their capitals inside it, so the ink starts lower. A
+            // ^FB block anchors its first line directly (measured: no band).
+            if (!typeset && !fbActive) fy += font.TopGap;
+
             // The Zebra bitmap font B only has uppercase glyphs on real printers.
             if (font.Name.Equals("B", StringComparison.OrdinalIgnoreCase))
                 data = data.ToUpperInvariant();
@@ -200,21 +205,29 @@ public static partial class ZplRenderer
                     while (lead < data.Length && data[lead] == ' ') lead++;
                     if (lead > 0) { fx += lead * ZebraSpaceEmRatio * font.Height; data = data[lead..]; }
                 }
+            }
 
-                // The Zebra "0" hyphen is a long, thick, vertically-centred dash; a font
-                // glyph is too short and light. For horizontal fields, draw each '-' as a
-                // solid bar between text segments (matches Labelary's "F — 52200"). Rotated
-                // or block text keeps the spaced-hyphen approximation.
+            // Font 0 and the P–V faces are the same Zebra typeface (CG Triumvirate Bold
+            // Condensed), whose hyphen is a long, thick, vertically-centred dash; a font
+            // glyph is too short and light.
+            if (font.Name == "0" || ZplFont.IsTriumvirate(font.Name))
+            {
+                // For horizontal fields, draw each '-' as a solid bar between text
+                // segments (matches Labelary's "F — 52200" and Chronopost's
+                // "FR — CHR — 0437 — JAG1"). Rotated or block text keeps the
+                // spaced-hyphen approximation.
                 if (!fbActive && orientation == 0 && data.IndexOf('-') >= 0)
                 {
                     double h = font.Height;
                     // Labelary metrics (h=62 ref): bar 36 wide (0.58h), 7 thick (0.11h),
-                    // centred 0.31h above the baseline, 13-14 dot gaps. The gap is set
-                    // slightly under the measured 0.21h because our text advances run
-                    // ~3 % wider than Labelary's: 0.15h keeps the LAST dash aligned
-                    // (DPD "FR-DPD-1021-" must not enter the black "021" box at x564).
+                    // 13-14 dot gaps. The gap is set slightly under the measured 0.21h
+                    // because our text advances run ~3 % wider than Labelary's: 0.15h
+                    // keeps the LAST dash aligned (DPD "FR-DPD-1021-" must not enter the
+                    // black "021" box at x564). Vertically the bar sits 0.31h above the
+                    // baseline (^FT anchor) — i.e. 0.42h under the ^FO cap-line anchor
+                    // (measured on both faces: font 0 at h30/h62, fonts Q and V).
                     double dGap = 0.15 * h, barW = 0.58 * h, barThick = Math.Max(2, 0.11 * h);
-                    double barCenter = typeset ? fy - 0.31 * h : fy + 0.31 * h;
+                    double barCenter = typeset ? fy - 0.31 * h : fy + 0.42 * h;
                     double barTop = barCenter - barThick / 2;
                     var segs = data.Split('-');
                     double cx = fx;
@@ -1274,6 +1287,17 @@ public static partial class ZplRenderer
         // ^A0 width parameter: w<h condenses glyphs horizontally (glyph space, pre-rotation).
         double condense = text.Height > 0 && text.Width > 0 ? text.Width / text.Height : 1.0;
 
+        // DirectWrite's BOLD Bitstream Vera Sans Mono does not survive a squeezed cell:
+        // Zebra's font B at ^ABN,30,15 is 3x tall but only 2x wide, and the compressed
+        // "2" — the one digit with no vertical stem for the hinter to snap onto — came
+        // out as a bar that moved with the preview zoom. The regular face compresses
+        // cleanly, so draw that and rebuild the weight with the sub-pixel passes below
+        // (measured: they put the ink back where the bold face had it). Only the XAML
+        // preview is affected — the vector PDF/PNG export keeps the real bold face.
+        bool restoreWeight = text.Bold && condense < 0.9
+            && text.Font.StartsWith("Bitstream Vera", StringComparison.OrdinalIgnoreCase);
+        var weight = text.Bold && !restoreWeight ? FontWeights.Bold : FontWeights.Normal;
+
         // For rotated ^FO fields the (x,y) is the top-left of the ROTATED bounding
         // box (Labelary's rule), so the translation depends on the rendered size.
         double textW = 0;
@@ -1284,7 +1308,7 @@ public static partial class ZplRenderer
                 Text = text.Text,
                 FontFamily = new FontFamily(text.Font),
                 FontSize = renderFontSize,
-                FontWeight = text.Bold ? FontWeights.Bold : FontWeights.Normal,
+                FontWeight = weight,
                 TextWrapping = TextWrapping.NoWrap,
             };
             probe.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -1299,7 +1323,7 @@ public static partial class ZplRenderer
                 Foreground = new SolidColorBrush(text.Reverse ? Colors.White : Colors.Black),
                 FontFamily = new FontFamily(text.Font),
                 FontSize = renderFontSize,
-                FontWeight = text.Bold ? FontWeights.Bold : FontWeights.Normal,
+                FontWeight = weight,
                 TextWrapping = TextWrapping.NoWrap,
                 LineHeight = fontSize,
                 LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
@@ -1348,6 +1372,14 @@ public static partial class ZplRenderer
         // block…) which came out visibly heavier than Labelary — quarter it there.
         if (text.Bold && condense > 0.95 && text.Height >= 28)
             canvas.Children.Add(MakeBlock(0.5));
+        // Squeezed Vera Mono lost its real bold face above: put the weight back with
+        // overlapping passes across the width the bold stems would have covered.
+        if (restoreWeight)
+        {
+            double spread = 0.05 * renderFontSize * condense; // bold-vs-regular stem gain
+            for (double dx = 0.5; dx <= spread + 0.01; dx += 0.5)
+                canvas.Children.Add(MakeBlock(dx));
+        }
     }
 
     // Renders a pre-built 1D barcode (bars + labels) with the ^FO rotation rule:
@@ -1774,6 +1806,15 @@ public static partial class ZplRenderer
         return height * (cellW / cellH);
     }
 
+    // Builds the font actually used to draw: bitmap faces snap to an integer
+    // magnification of their cell, then the cell is converted to a render size.
+    private static ZplFont MakeFont(string name, double height, double width)
+    {
+        var (cellH, cellW) = ZplFont.Quantize(name, height, width);
+        var em = ZplFont.EmRatio(name);
+        return new ZplFont(name, Math.Max(8, cellH * em), Math.Max(4, cellW * em * ZplFont.WidthRatio(name)));
+    }
+
     private static ZplFont ParseDefaultFont(string args, ZplFont current)
     {
         var parts = args.Split(',', StringSplitOptions.None);
@@ -1781,7 +1822,7 @@ public static partial class ZplRenderer
         var height = parts.Length > 1 && TryParseNumber(parts[1], out var parsedHeight) ? parsedHeight : current.Height;
         var width = parts.Length > 2 && TryParseNumber(parts[2], out var parsedWidth) && parsedWidth > 0
             ? parsedWidth : DefaultFontWidth(name, height);
-        return new ZplFont(name, Math.Max(8, height), Math.Max(4, width));
+        return MakeFont(name, height, width);
     }
 
     private static (ZplFont Font, int Orientation) ParseFieldFont(string command, string args, ZplFont current)
@@ -1797,7 +1838,7 @@ public static partial class ZplRenderer
         // ^A width must be 1..32000; 0 (or omitted) means "use the default" = the
         // height scaled by the font's natural aspect (NOT a literal zero width).
         var width = numbers.Length > 1 && numbers[1] > 0 ? numbers[1] : DefaultFontWidth(name, height);
-        return (new ZplFont(name, Math.Max(8, height), Math.Max(4, width)), orient);
+        return (MakeFont(name, height, width), orient);
     }
 
     private static bool TryParseNumber(string text, out double value)
@@ -2226,7 +2267,16 @@ public static partial class ZplRenderer
             }
             if (t.Command == "FN")
             {
-                if (i + 1 < main.Count && main[i + 1].Command == "FD") i++; // skip the paired ^FD
+                if (i + 1 < main.Count && main[i + 1].Command == "FD")
+                {
+                    i++;        // ^FNn^FDdata: a fill pair, its data was collected above
+                    continue;
+                }
+                // A bare ^FNn inside the label body (no ^DF/^XF at all — e.g. the Geodis
+                // labels, whose barcodes are ^BC…^FN1^FS with the data supplied by a
+                // later ^FN1^FD… pair): substitute the data in place.
+                if (int.TryParse(t.Args.Trim(), out int placeholder))
+                    output.Add(new ZplToken("FD", fieldData.TryGetValue(placeholder, out var pd) ? pd : ""));
                 continue;
             }
             output.Add(t);
@@ -2297,7 +2347,9 @@ public sealed record ZplFont(string Name, double Height, double Width)
     // Others → Helvetica (resolved to Arial by the Windows font substitution table).
     public string Family => Name.ToUpperInvariant() switch
     {
-        "0" => "Swiss 721 Condensed",
+        // Font 0 and the P–V faces are all Zebra's CG Triumvirate Bold Condensed;
+        // Swiss 721 Condensed is our substitute for it.
+        "0" or "P" or "Q" or "R" or "S" or "T" or "U" or "V" => "Swiss 721 Condensed",
         "A" or "B" or "C" or "D" or "E" or "F" or "G" or "H" => "Bitstream Vera Sans Mono",
         _   => "Helvetica",
     };
@@ -2321,8 +2373,74 @@ public sealed record ZplFont(string Name, double Height, double Width)
         "F" => (26, 13),
         "G" => (60, 40),
         "H" => (21, 13),
+        "GS" => (24, 24),
+        "P" => (20, 18),
+        "Q" => (28, 24),
+        "R" => (35, 31),
+        "S" => (40, 35),
+        "T" => (48, 42),
+        "U" => (59, 53),
+        "V" => (80, 71),
         _   => (15, 15), // scalable font 0: proportional (ratio 1)
     };
+
+    // Every font except "0" is a BITMAP face: it can only be drawn at INTEGER
+    // magnifications of its base cell. Asking for a size that is not a multiple
+    // snaps to the nearest one, and anything under the base cell still prints at
+    // the base cell (verified against Labelary: ^ABN,30,15 → 3×11 by 2×7,
+    // ^AQN,10,10 → the plain 28×24 cell, ^ADN,70,70 → 4×18 by 7×10).
+    public static bool IsBitmap(string name) => !name.Equals("0", StringComparison.Ordinal);
+
+    public static (double H, double W) Quantize(string name, double height, double width)
+    {
+        if (!IsBitmap(name)) return (height, width);
+        var (cellH, cellW) = BaseCell(name);
+        double h = cellH * Math.Max(1, Math.Round(height / cellH, MidpointRounding.AwayFromZero));
+        double w = cellW * Math.Max(1, Math.Round(width / cellW, MidpointRounding.AwayFromZero));
+        return (h, w);
+    }
+
+    // Each Zebra bitmap face fills its cell differently (font B and H are all-caps
+    // faces whose ink IS the whole cell; A/D/F/G leave ~20 % of it blank; the P–V
+    // face only ~37 %), and our substitute faces have their own cap-height ratio.
+    // These two per-font corrections were measured against Labelary with a row of
+    // capital 'H' at the base cell size (see the probe in the render notes):
+    //   Em  — the cell height is scaled by this to get the render height that
+    //         reproduces Labelary's ink height;
+    //   Top  — blank band above the ink inside the cell, as a fraction of the cell.
+    //          ^FO anchors the CELL top, so the ink starts that far below it;
+    //   Wide — horizontal correction applied on top of Em, so the character advance
+    //          matches too (our substitute faces are not exactly as wide as Zebra's).
+    private static (double Em, double Top, double Wide) InkMetrics(string name) => name.ToUpperInvariant() switch
+    {
+        "A" => (0.92, 0.13, 1.035),
+        "B" => (1.18, 0.13, 1.000),
+        "C" or "D" => (0.92, 0.13, 1.035),
+        "E" => (0.84, 0.13, 1.200),
+        "F" => (0.95, 0.13, 0.945),
+        "G" => (0.94, 0.13, 1.210),
+        "H" => (1.18, 0.13, 1.095),
+        "P" or "Q" or "R" or "S" or "T" or "U" or "V" => (0.833, 0.165, 1.010),
+        _   => (1.0, 0.0, 1.0),  // scalable font 0: already matches
+    };
+
+    /// <summary>True for the P–V faces, which share font 0's typeface.</summary>
+    public static bool IsTriumvirate(string name) =>
+        name.ToUpperInvariant() is "P" or "Q" or "R" or "S" or "T" or "U" or "V";
+
+    public static double EmRatio(string name) => InkMetrics(name).Em;
+
+    public static double WidthRatio(string name) => InkMetrics(name).Wide;
+
+    /// <summary>Blank band above the capital ink inside the cell, in dots.</summary>
+    public double TopGap
+    {
+        get
+        {
+            var (em, top, _) = InkMetrics(Name);
+            return Height / em * top;
+        }
+    }
 }
 
 // ── Vector PDF export ────────────────────────────────────────────────────────

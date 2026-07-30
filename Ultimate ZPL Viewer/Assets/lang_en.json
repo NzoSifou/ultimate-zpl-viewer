@@ -1532,6 +1532,12 @@
         "setDefault": "Set as default",
         "no": "No",
         "dontAsk": "Don't ask again"
+      },
+      "zplAssoc": {
+        "successTitle": "Default app set",
+        "successBody": "Done! Ultimate ZPL Viewer is now the default app for .zpl files.",
+        "manualTitle": "Manual step required",
+        "manualBody": "Windows didn't allow setting the default automatically (another app is already registered for .zpl files).\n\nTo do it manually:\n1. Right-click a .zpl file.\n2. Choose \"Open with\" then \"Choose another app\".\n3. Select \"Ultimate ZPL Viewer\".\n4. Check \"Always use this app\", then confirm."
       }
     },
     "document": {

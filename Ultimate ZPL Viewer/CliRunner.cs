@@ -28,6 +28,59 @@ internal static class CliRunner
         public string Unit = "mm";   // mm | cm | in
     }
 
+    // True when the command line asks for the help/usage screen (-h, --help, /?).
+    public static bool IsHelpRequested(string[] args)
+    {
+        for (int i = 1; i < args.Length; i++)
+        {
+            var a = args[i].ToLowerInvariant();
+            if (a is "-h" or "--help" or "/?" or "/h" or "-help") return true;
+        }
+        return false;
+    }
+
+    // Prints the usage screen to the parent console (the app is a GUI subsystem
+    // exe, so it attaches to whatever terminal launched it) and returns. The text
+    // is ASCII-only so it renders on every console codepage.
+    public static void PrintHelp()
+    {
+        EnsureConsole();
+        try { Console.OutputEncoding = System.Text.Encoding.UTF8; } catch { }
+        Console.Out.WriteLine(HelpText);
+        Console.Out.Flush();
+    }
+
+    private const string HelpText = @"
+Ultimate ZPL Viewer - visualiseur / editeur d'etiquettes ZPL (rendu 100% local)
+
+UTILISATION
+  ""Ultimate ZPL Viewer.exe"" [fichier.zpl] [options]
+
+OUVERTURE
+  <fichier.zpl>           Ouvre le fichier ZPL dans l'application.
+  --hide <zones>          Masque des zones au demarrage : ""editor"" et/ou
+                          ""toolbar"" (separees par une virgule).
+                          Ex. : --hide editor,toolbar
+
+CONVERSION SANS INTERFACE (aucune fenetre ne s'ouvre)
+  --pdf <sortie.pdf>      Convertit le ZPL en PDF vectoriel.
+  --png <sortie.png>      Convertit le ZPL en PNG matriciel.
+  --dpmm <n>              Densite en points/mm (defaut : 8, soit 203 dpi).
+  --rotate <degres>       Rotation appliquee en degres (defaut : 0).
+  --margin <n>            Marge ajoutee sur tous les cotes (defaut : 0).
+  --unit <mm|cm|in>       Unite de la marge (defaut : mm).
+  -o, --output            Accepte par commodite (la cible reelle est --pdf/--png).
+
+AUTRE
+  -h, --help              Affiche cette aide.
+
+EXEMPLES
+  ""Ultimate ZPL Viewer.exe"" etiquette.zpl
+  ""Ultimate ZPL Viewer.exe"" etiquette.zpl --hide editor
+  ""Ultimate ZPL Viewer.exe"" etiquette.zpl -o --pdf sortie.pdf
+  ""Ultimate ZPL Viewer.exe"" etiquette.zpl -o --png sortie.png --dpmm 12
+";
+
     // Returns a Job when the command line requests a conversion, else null (the
     // app then starts normally). args come from Environment.GetCommandLineArgs()
     // (args[0] is the executable path).

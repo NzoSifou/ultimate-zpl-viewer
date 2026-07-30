@@ -1532,6 +1532,12 @@
         "setDefault": "Définir par défaut",
         "no": "Non",
         "dontAsk": "Ne plus me demander"
+      },
+      "zplAssoc": {
+        "successTitle": "Application par défaut définie",
+        "successBody": "C'est fait ! Ultimate ZPL Viewer est désormais l'application par défaut pour les fichiers .zpl.",
+        "manualTitle": "Définition manuelle nécessaire",
+        "manualBody": "Windows n'a pas autorisé la définition automatique (un autre choix est déjà enregistré pour les fichiers .zpl).\n\nPour le faire manuellement :\n1. Faites un clic droit sur un fichier .zpl.\n2. Choisissez « Ouvrir avec » puis « Choisir une autre application ».\n3. Sélectionnez « Ultimate ZPL Viewer ».\n4. Cochez « Toujours utiliser cette application » (ou « Toujours »), puis validez."
       }
     },
     "document": {

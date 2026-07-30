@@ -276,10 +276,25 @@ public sealed partial class PreviewPage : Page
             DefaultButton     = ContentDialogButton.Primary,
         };
 
-        var result = await dialog.ShowAsync();
+        var result = await ShowDialogAsync(dialog);
+        bool stopAsking = dontAsk.IsChecked == true;
         if (result == ContentDialogResult.Primary)
-            FileAssociationService.SetAsDefault();
-        if (dontAsk.IsChecked == true)
+        {
+            if (FileAssociationService.SetAsDefault())
+            {
+                // Confirm success to the user.
+                await ShowMessageAsync(SL("general.zplAssoc.successTitle"), SL("general.zplAssoc.successBody"));
+            }
+            else
+            {
+                // Windows blocked it (an existing UserChoice). Give the manual steps
+                // and stop prompting at startup — it won't succeed automatically next
+                // time either.
+                await ShowMessageAsync(SL("general.zplAssoc.manualTitle"), SL("general.zplAssoc.manualBody"));
+                stopAsking = true;
+            }
+        }
+        if (stopAsking)
         {
             _settings.AskZplAssociation = false;
             _settings.Save();
@@ -424,7 +439,7 @@ public sealed partial class PreviewPage : Page
             DefaultButton       = ContentDialogButton.Primary,
         };
 
-        var result = await dialog.ShowAsync();
+        var result = await ShowDialogAsync(dialog);
 
         if (result != ContentDialogResult.Primary)
         {
@@ -4281,15 +4296,12 @@ public sealed partial class PreviewPage : Page
         RefreshZplBtn();
         zplBtn.Click += async (_, _) =>
         {
-            // Fails only when a Windows "UserChoice" already claims .zpl (Win10/11
-            // won't let an app override it silently) — send the user to the OS
-            // Default-apps page to finish the change.
-            if (!FileAssociationService.SetAsDefault())
-            {
-                await ShowMessageAsync(SL("general.cards.zplAssoc.title"), SL("general.lbl.setDefaultFailed"));
-                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("ms-settings:defaultapps") { UseShellExecute = true }); }
-                catch { }
-            }
+            if (FileAssociationService.SetAsDefault())
+                await ShowMessageAsync(SL("general.zplAssoc.successTitle"), SL("general.zplAssoc.successBody"));
+            else
+                // Windows blocked it (an existing UserChoice can't be overridden
+                // silently on Win10/11) — show the manual "Open with → Always" steps.
+                await ShowMessageAsync(SL("general.zplAssoc.manualTitle"), SL("general.zplAssoc.manualBody"));
             RefreshZplBtn();
         };
         panel.Children.Add(MakeCard("\uE8A5", SL("general.cards.zplAssoc.title"),
@@ -4423,7 +4435,24 @@ public sealed partial class PreviewPage : Page
 
     private async Task ShowMessageAsync(string title, string message)
     {
-        await CreateDialog(title, new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap }, "Ok", string.Empty).ShowAsync();
+        await ShowDialogAsync(CreateDialog(title, new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap }, "Ok", string.Empty));
+    }
+
+    // Shows a ContentDialog, retrying briefly while another one is still closing.
+    // WinUI throws "Only a single ContentDialog can be open at any time" if a new
+    // dialog is shown before the previous one's close transition finishes — which
+    // is exactly what happens for the back-to-back startup prompts (printer install
+    // confirmation → .zpl default). Retrying serialises them so each one is seen.
+    private static async Task<ContentDialogResult> ShowDialogAsync(ContentDialog dialog)
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            try { return await dialog.ShowAsync(); }
+            catch (Exception) when (attempt < 25)
+            {
+                await Task.Delay(80);
+            }
+        }
     }
 
     private static IEnumerable<string> GetInstalledPrinters()

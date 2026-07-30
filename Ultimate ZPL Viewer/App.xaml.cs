@@ -39,6 +39,15 @@ namespace Ultimate_ZPL_Viewer
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
+            // --help / -h : print the usage screen to the parent console and exit,
+            // instead of opening the window.
+            if (CliRunner.IsHelpRequested(Environment.GetCommandLineArgs()))
+            {
+                CliRunner.PrintHelp();
+                Environment.Exit(0);
+                return;
+            }
+
             // Headless command-line conversion (ultimatezplviewer.exe in.zpl --pdf/--png out):
             // convert and exit without ever creating a window. Runs here so the UI
             // thread + XAML are initialised (ZPL text measurement needs them).

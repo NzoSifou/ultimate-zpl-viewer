@@ -6,6 +6,66 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.2.0] — 2026-07-31 — couverture des commandes ZPL
+
+Passe de fond sur le moteur : l'objectif est qu'une étiquette **jamais vue** s'affiche
+juste du premier coup, plutôt que de corriger commande par commande à chaque nouveau
+transporteur.
+
+### 🧱 Nouveaux codes-barres
+
+| Commande | Symbologie | Vérification |
+| :-- | :-- | :-- |
+| `^BA` | Code 93 (+ 2 caractères de contrôle) | largeur identique à la référence |
+| `^BK` | Codabar (start/stop A–D) | à 1 point près |
+| `^B1` | Code 11 (1 ou 2 caractères de contrôle) | à 1 point près |
+| `^BM` | MSI (schémas de contrôle A/B/C/D) | à 1 point près |
+| `^BP` | Plessey (+ CRC) | à 3 points près |
+| `^BI` / `^BJ` | 2 of 5 industriel / standard | motifs relevés sur la référence |
+| `^BL` | LOGMARS | identique, ligne d'interprétation **au-dessus** |
+| `^B9` | UPC-E | identique |
+| `^BS` | Supplément UPC/EAN 2 ou 5 chiffres | identique |
+| `^BZ` / `^B5` | POSTNET / PLANET (barres à hauteur variable) | identique |
+
+- **`^B4`, `^BB`, `^BT`** (Code 49, CODABLOCK, TLC39) suivent désormais la référence,
+  qui n'imprime que la donnée en texte.
+- **`^BF`** (MicroPDF417) et **`^BR`** (GS1 DataBar) ne sont pas encodés : `^BF` réserve
+  sa zone, `^BR` n'affiche rien — comme la référence — au lieu de recracher la donnée.
+- **UPC-A / EAN-13** : le premier chiffre s'imprime bien **à gauche** du symbole et le
+  chiffre de contrôle **à droite**, en dehors des barres, au lieu de décaler tout le
+  code. Un chiffre débordant du symbole n'est plus rogné par le bord de l'étiquette.
+
+### ✨ Nouvelles commandes de mise en page
+
+- **`^FW`** — orientation par défaut des champs (textes et codes-barres suivent).
+- **`^LR`** — impression inversée sur toute l'étiquette.
+- **`^PM`** — impression en miroir.
+- **`^MU`** — coordonnées en pouces ou en millimètres au lieu des points.
+- **`^FV`** — variable de champ (y compris en remplissage d'un `^FN`).
+- **`^FP`** — impression directionnelle : caractères empilés verticalement.
+- **`^CW`** — alias de police : la lettre désigne une police téléchargée, qui n'est donc
+  plus arrondie à une cellule bitmap.
+- **`~DY` + `^IM` / `^IL`** — téléchargement et rappel d'images stockées (logos), en plus
+  de `~DG` / `^XG`.
+- **`^SF`, `^ID`, `^IS`** reconnues explicitement.
+
+### 🐛 Corrigé
+
+- **Portée de `^A` et de `^CF`** 🔤
+  `^A` habille **son seul champ** : après le `^FS`, la police revient à celle définie
+  par `^CF` (ou à la police par défaut). Elle restait auparavant active pour tous les
+  champs suivants, ce qui grossissait tout un bloc dès qu'un champ isolé changeait de
+  taille. Idem pour l'orientation, qui retombe sur `^FW`.
+- **Police par défaut** — un `^FD` sans `^A` ni `^CF` s'imprimait beaucoup trop gros :
+  c'est désormais la police **A en 9 × 5**, celle qu'utilise une imprimante au démarrage.
+- **Lettres de police inconnues** — elles ne sont plus arrondies à une cellule bitmap
+  qui ne les concerne pas.
+- **Ligne d'interprétation** — les chiffres qui s'impriment **hors** du symbole (premier
+  chiffre et clé d'un UPC-A / UPC-E) ne sont plus rognés par le bord d'une étiquette
+  dimensionnée automatiquement.
+
+---
+
 ## [1.1.1] — 2026-07-28
 
 ### 🧱 Moteur de rendu ZPL

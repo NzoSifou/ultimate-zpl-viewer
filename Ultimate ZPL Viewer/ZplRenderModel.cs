@@ -1,4 +1,4 @@
-using Microsoft.UI;
+﻿using Microsoft.UI;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -75,6 +75,9 @@ public sealed class ZplRenderModel
     // ^POI: the whole label prints upside-down (180° rotation of the content).
     public bool InvertOrientation { get; init; }
 
+    // ^PMY: the whole label prints mirrored (flipped left ↔ right).
+    public bool MirrorImage { get; init; }
+
     // ^PW / ^LL values found in the ZPL (null when the command is absent).
     public double? DeclaredWidthDots { get; init; }
     public double? DeclaredHeightDots { get; init; }
@@ -93,7 +96,12 @@ public static partial class ZplRenderer
     {
         var x = 0d;
         var y = 0d;
-        var font = new ZplFont("0", 30, 30);
+        // Power-on default: font A at its 9x5 cell, exactly what a printer (and the
+        // reference renderer) uses for a ^FD that never selected a font. ^CF moves this
+        // default; ^A only dresses the field it belongs to, so `font` falls back here at
+        // every ^FS.
+        var defaultFont = MakeFont("A", 9, 5);
+        var font = defaultFont;
         var orientation = 0;        // current font rotation, degrees
         var typeset = false;        // ^FT (baseline origin) vs ^FO (top-left origin)
         var lhX = 0d;
@@ -117,6 +125,11 @@ public static partial class ZplRenderer
         var pendingSym = "";        // 1D symbology awaiting ^FD: "39", "2of5", "E13", "UPA", "E8"
         var wideRatio = 3d;         // ^BY wide:narrow ratio (Code39 / I2of5)
         var symCheck = false;       // Code39 mod-43 / I2of5 mod-10 check digit
+        var cbStart = 'A';          // ^BK Codabar start/stop characters
+        var cbStop = 'A';
+        var msiCheck = 'B';         // ^BM check digit scheme (A none, B/C/D)
+        var hrtAbove = false;       // ^Bx parameter g: interpretation line above the symbol
+        var pendingMaxiCode = false; // ^BD awaiting ^FD
         var pendingGs = false;      // ^GS symbol awaiting ^FD
         var gsH = 0d; var gsW = 0d;
         var swallowFd = false;      // ^RF / ^BD: the next ^FD is data, not content
@@ -137,6 +150,15 @@ public static partial class ZplRenderer
         var ltY = 0d;               // ^LT label top shift (can be negative)
         var lsX = 0d;               // ^LS label shift (horizontal)
         var poi = false;            // ^POI inverted orientation
+        var mirror = false;         // ^PMY mirror image (whole label flipped left/right)
+        var labelReverse = false;   // ^LRY reverse print: every field behaves like ^FR
+        var fwOrient = 0;           // ^FW default field orientation (fields may override)
+        var unitScale = 1d;         // ^MU: dots per unit of the coordinates that follow
+        var fpVertical = false;     // ^FPV: characters stacked downwards instead of a line
+        var fpGap = 0d;             // ^FP additional space between characters
+        // ^CW font aliases (^CWZ,E:FONT.TTF): the letter names a downloaded scalable
+        // font, so it must NOT be quantised like a built-in bitmap cell.
+        var fontAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         double? dpmm = null;
         var drawables = new List<ZplDrawable>();
         var blackBoxes = new List<ZplRect>(); // filled black ^GB boxes, for ^FR text color
@@ -292,6 +314,22 @@ public static partial class ZplRenderer
                 return;
             }
 
+            // ^FPV: the characters are printed one under the other instead of on a line.
+            if (fpVertical && orientation == 0 && !fbActive)
+            {
+                double step = font.Height + fpGap;
+                double cy = fy;
+                foreach (var ch in data)
+                {
+                    if (ch != ' ')
+                        fieldBuf.Add(new ZplText(fx, cy, ch.ToString(), font.Height, effWidth,
+                            font.Family, font.Bold, reverse, 0, typeset));
+                    cy += step;
+                }
+                Grow(fx + MeasureTextWidth("W", font) * condenseW, cy);
+                return;
+            }
+
             double txX = fx, txY = fy;
             if (fbActive && fbWidth > 0 && orientation != 0)
             {
@@ -321,6 +359,11 @@ public static partial class ZplRenderer
         // Emits a 1D barcode (bars + human-readable text) as a ZplBars drawable.
         void Emit1DBarcode(string sym, string data, double fx, double fy)
         {
+            // Interpretation line height. Calibrated on the reference by WIDTH, which is
+            // what matters for the layout: at ^BY3 an 8-character line is 137 dots wide
+            // there and 139 here. The reference's own face is more condensed, so it also
+            // stands ~5 dots taller — enlarging ours to match that would blow the width
+            // out by half, so the width wins.
             double hrtH = Math.Max(20, moduleWidth * 10);
             List<BarSeg> segs = new();
             List<BarLabel> labels = new();
@@ -346,10 +389,12 @@ public static partial class ZplRenderer
                     hrt = StripCode128Invocations(data);
                     break;
                 case "39":
+                case "logmars":
                 {
                     var (runs, text) = BuildCode39(data, symCheck, wideRatio);
                     SegsFromRuns(runs);
-                    hrt = text;
+                    // LOGMARS leaves the '*' delimiters out of the printed line.
+                    hrt = sym == "logmars" ? text.Trim('*') : text;
                     break;
                 }
                 case "2of5":
@@ -362,13 +407,69 @@ public static partial class ZplRenderer
                 case "E13":
                 case "UPA":
                 case "E8":
+                case "UPE":
+                case "addon":
                     BuildEanUpc(sym, data, moduleWidth, barcodeHeight, hrtH, showBarcodeText, segs, labels, out W);
+                    break;
+                case "93":
+                {
+                    var (runs, text) = Barcode1D.BuildCode93(data);
+                    SegsFromRuns(runs);
+                    hrt = text;
+                    break;
+                }
+                case "codabar":
+                {
+                    var (runs, text) = Barcode1D.BuildCodabar(data, cbStart, cbStop, wideRatio);
+                    SegsFromRuns(runs);
+                    hrt = text;
+                    break;
+                }
+                case "11":
+                {
+                    var (runs, text) = Barcode1D.BuildCode11(data, symCheck, wideRatio);
+                    SegsFromRuns(runs);
+                    hrt = text;
+                    break;
+                }
+                case "msi":
+                {
+                    var (runs, text) = Barcode1D.BuildMsi(data, msiCheck, wideRatio);
+                    SegsFromRuns(runs);
+                    hrt = text;
+                    break;
+                }
+                case "plessey":
+                {
+                    var (runs, text) = Barcode1D.BuildPlessey(data);
+                    SegsFromRuns(runs);
+                    hrt = text;
+                    break;
+                }
+                case "ind25":
+                case "std25":
+                {
+                    var (runs, text) = Barcode1D.Build2of5(data, sym == "ind25", wideRatio);
+                    SegsFromRuns(runs);
+                    hrt = text;
+                    break;
+                }
+                case "postnet":
+                case "planet":
+                    segs.AddRange(Barcode1D.BuildPostnet(data, sym == "planet", moduleWidth, barcodeHeight, out W));
                     break;
             }
 
-            bool centeredHrt = sym is "128" or "39" or "2of5";
+            bool centeredHrt = sym is "128" or "39" or "logmars" or "2of5" or "93" or "codabar"
+                or "11" or "msi" or "plessey" or "ind25" or "std25" or "postnet" or "planet";
+            if (sym is "postnet" or "planet") hrt = new string(data.Where(char.IsDigit).ToArray());
             if (showBarcodeText && centeredHrt && hrt.Length > 0)
-                labels.Add(new BarLabel(0, barcodeHeight - moduleWidth, hrt, hrtH, W));
+            {
+                // ^Bx parameter g puts the interpretation line ABOVE the symbol
+                // (always the case for LOGMARS), otherwise it hangs underneath.
+                double labelY = hrtAbove ? -hrtH : barcodeHeight - moduleWidth;
+                labels.Add(new BarLabel(0, labelY, hrt, hrtH, W));
+            }
 
             H = barcodeHeight + (showBarcodeText ? hrtH + 2 : 0);
             double bw = barcodeRotation is 90 or 270 ? H : W;
@@ -380,6 +481,14 @@ public static partial class ZplRenderer
             double anchorH = barcodeRotation is 90 or 270 ? W : barcodeHeight;
             double topY = typeset ? fy - anchorH : fy;
             fieldBuf.Add(new ZplBars(fx, topY, W, H, segs, labels, barcodeRotation));
+            // Some interpretation digits sit OUTSIDE the symbol (the UPC-A/UPC-E number
+            // system and check digits): without them the auto-sized label ends at the
+            // last bar and clips the trailing digit away.
+            foreach (var l in labels)
+            {
+                double right = l.X + (l.CenterWidth > 0 ? l.CenterWidth : l.Text.Length * 0.6 * l.FontHeight);
+                if (barcodeRotation == 0 && right > bw) bw = right;
+            }
             Grow(fx + bw, topY + bh);
         }
 
@@ -392,7 +501,7 @@ public static partial class ZplRenderer
             // Any two-letter ^Ax command is a font selection (^AA…^AH, ^A0…).
             if (command.Length == 2 && command[0] == 'A')
             {
-                (font, orientation) = ParseFieldFont(command, args, font);
+                (font, orientation) = ParseFieldFont(command, args, font, fwOrient, fontAliases, unitScale);
                 continue;
             }
 
@@ -402,22 +511,22 @@ public static partial class ZplRenderer
                     dpmm = ParseDpmm(args);
                     break;
                 case "PW":
-                    width = Positive(ParseFirstNumber(args), width);
+                    width = Positive(ParseFirstNumber(args) * unitScale, width);
                     break;
                 case "LL":
-                    height = Positive(ParseFirstNumber(args), height);
+                    height = Positive(ParseFirstNumber(args) * unitScale, height);
                     break;
                 case "LH":
                     var lh = ParseNumbers(args).ToArray();
-                    if (lh.Length > 0) lhX = lh[0];
-                    if (lh.Length > 1) lhY = lh[1];
+                    if (lh.Length > 0) lhX = lh[0] * unitScale;
+                    if (lh.Length > 1) lhY = lh[1] * unitScale;
                     break;
                 case "FO":
                 {
                     AbandonField(); // an unterminated previous field never prints
                     var o = ParseNumbers(args).ToArray();
-                    if (o.Length > 0) x = o[0];
-                    if (o.Length > 1) y = o[1];
+                    if (o.Length > 0) x = o[0] * unitScale;
+                    if (o.Length > 1) y = o[1] * unitScale;
                     typeset = false;
                     break;
                 }
@@ -425,16 +534,62 @@ public static partial class ZplRenderer
                 {
                     AbandonField();
                     var o = ParseNumbers(args).ToArray();
-                    if (o.Length > 0) x = o[0];
-                    if (o.Length > 1) y = o[1];
+                    if (o.Length > 0) x = o[0] * unitScale;
+                    if (o.Length > 1) y = o[1] * unitScale;
                     typeset = true;
                     break;
                 }
                 case "CF":
-                    font = ParseDefaultFont(args, font);
+                    defaultFont = ParseDefaultFont(args, defaultFont, fontAliases, unitScale);
+                    font = defaultFont;
                     break;
                 case "A":
-                    (font, orientation) = ParseFieldFont(command, args, font);
+                    (font, orientation) = ParseFieldFont(command, args, font, fwOrient, fontAliases, unitScale);
+                    break;
+                case "FW":
+                    // Default field orientation for the ^A / ^B / ^GB that follow; a
+                    // field that states its own orientation still wins.
+                    fwOrient = args.Length > 0 ? OrientationDegrees(args[0]) : 0;
+                    orientation = fwOrient;
+                    break;
+                case "LR":
+                    // ^LRY: every field prints in reverse — exactly the ^FR rule, but
+                    // as the default rather than per field.
+                    labelReverse = args.StartsWith("Y", StringComparison.OrdinalIgnoreCase);
+                    reverse = labelReverse;
+                    break;
+                case "PM":
+                    mirror = args.StartsWith("Y", StringComparison.OrdinalIgnoreCase);
+                    break;
+                case "MU":
+                {
+                    // ^MUa,b,c — a = U (dots), I (inches) or M (millimetres): the unit
+                    // every coordinate that follows is expressed in.
+                    var mu = args.Length > 0 ? char.ToUpperInvariant(args[0]) : 'U';
+                    var dots = dpmm ?? fallbackDpmm;
+                    unitScale = mu switch { 'I' => dots * 25.4, 'M' => dots, _ => 1d };
+                    break;
+                }
+                case "FP":
+                {
+                    // ^FPd,g — d = H (a line, default) or V (characters stacked down);
+                    // g = extra space between characters.
+                    var fp = args.Split(',');
+                    fpVertical = fp.Length > 0 && fp[0].Trim().StartsWith("V", StringComparison.OrdinalIgnoreCase);
+                    fpGap = fp.Length > 1 && double.TryParse(fp[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var fpg) ? fpg : 0;
+                    break;
+                }
+                case "CW":
+                {
+                    // ^CWa,device:font.ttf — the letter now names a downloaded scalable
+                    // font, so ^Aa must not be quantised to a built-in bitmap cell.
+                    var cw = args.Split(',');
+                    if (cw.Length > 0 && cw[0].Trim().Length > 0) fontAliases.Add(cw[0].Trim());
+                    break;
+                }
+                case "SF":
+                    // Serialization: the ^FD value already emitted is the first in the
+                    // series, which is exactly what a preview shows.
                     break;
                 case "LT":
                     ltY = ParseNumbers(args).FirstOrDefault();
@@ -447,7 +602,13 @@ public static partial class ZplRenderer
                     poi = args.StartsWith("I", StringComparison.OrdinalIgnoreCase);
                     break;
                 case "RF": // RFID write: the following ^FD is tag data, not visual content
-                case "BD": // MaxiCode: not rendered by Labelary → swallow the data
+                    swallowFd = true;
+                    break;
+                case "BD":
+                    // MaxiCode. Its module placement is a normative table we do not have,
+                    // so no scannable symbol can be produced; the reference itself only
+                    // draws one when the mode parameter is valid. Swallow the data rather
+                    // than print it as text.
                     swallowFd = true;
                     break;
                 case "XZ":
@@ -469,6 +630,44 @@ public static partial class ZplRenderer
                     }
                     break;
                 }
+                case "DY":
+                {
+                    // ~DYd:f,b,x,t,w,data — download an object. Only the bitmap forms
+                    // are visual: .GRF carries the same 1bpp rows as ~DG (hex, or the
+                    // :Z64:/:B64: wrappers ^GFA also accepts).
+                    var dy = args.Split(new[] { ',' }, 6);
+                    if (dy.Length == 6
+                        && int.TryParse(dy[3].Trim(), out int dyTotal) && dyTotal > 0
+                        && int.TryParse(dy[4].Trim(), out int dyRow) && dyRow > 0)
+                    {
+                        var payload = dy[5];
+                        var bits = payload.Contains(":Z64:", StringComparison.OrdinalIgnoreCase)
+                                || payload.Contains(":B64:", StringComparison.OrdinalIgnoreCase)
+                            ? DecodeBase64Graphic(payload, dyTotal)
+                            : DecodeAcsHex(payload, dyTotal, dyRow);
+                        if (bits is not null)
+                            storedGraphics[FormatName(dy[0])] = (dyRow * 8, dyTotal / dyRow, bits);
+                    }
+                    break;
+                }
+                case "IM": // ^IMd:f.x — recall a stored image at the field origin
+                case "IL": // ^ILd:f.x — same, as the label background
+                {
+                    if (storedGraphics.TryGetValue(FormatName(args), out var img))
+                    {
+                        double fx = x + lhX + lsX, fy = y + lhY + ltY;
+                        double topY = typeset ? fy - img.H : fy;
+                        // ^IL paints the background: it always starts at the origin.
+                        if (command == "IL") { fx = lhX + lsX; topY = lhY + ltY; }
+                        fieldBuf.Add(new ZplImage(fx, topY, img.W, img.H, img.Bits));
+                        Grow(fx + img.W, topY + img.H);
+                        CommitField(); // self-contained, like ^GF
+                    }
+                    break;
+                }
+                case "ID": // delete an object from storage — nothing to draw
+                case "IS": // save the label format/image — nothing to draw
+                    break;
                 case "XG":
                 {
                     // ^XGd:name.ext,mx,my — recall a stored graphic magnified mx×my.
@@ -490,9 +689,9 @@ public static partial class ZplRenderer
                     // Split on ',' by POSITION (not ParseNumbers) so an empty ratio field
                     // doesn't shift the height: ^BY3,,150 = width 3, default ratio, height 150.
                     var by = args.Split(',');
-                    if (by.Length > 0 && double.TryParse(by[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var byw)) moduleWidth = Math.Max(1, byw);
+                    if (by.Length > 0 && double.TryParse(by[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var byw)) moduleWidth = Math.Max(1, byw * unitScale);
                     if (by.Length > 1 && double.TryParse(by[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var byr) && byr >= 2) wideRatio = Math.Min(3, byr);
-                    if (by.Length > 2 && double.TryParse(by[2].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var byh)) barcodeHeight = Math.Max(20, byh);
+                    if (by.Length > 2 && double.TryParse(by[2].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var byh)) barcodeHeight = Math.Max(20, byh * unitScale);
                     break;
                 }
                 case "BC":
@@ -501,8 +700,9 @@ public static partial class ZplRenderer
                     var bc = ParseNumbers(args).ToArray();
                     if (bc.Length > 0) barcodeHeight = Math.Max(20, bc[0]);
                     showBarcodeText = ParseBarcodeTextFlag(args);
-                    barcodeRotation = BarcodeOrientation(args);
+                    barcodeRotation = BarcodeOrientation(args, fwOrient);
                     var bcParts = args.Split(',');
+                    hrtAbove = bcParts.Length > 3 && string.Equals(bcParts[3].Trim(), "Y", StringComparison.OrdinalIgnoreCase);
                     bcMode = bcParts.Length > 5 && bcParts[5].Trim().Length > 0
                         ? char.ToUpperInvariant(bcParts[5].Trim()[0]) : 'N';
                     pendingBarcode = true;
@@ -511,17 +711,18 @@ public static partial class ZplRenderer
                 case "B3": // Code 39: ^B3o,e(mod43),h,f,g
                 {
                     var b3 = args.Split(',');
-                    barcodeRotation = BarcodeOrientation(args);
+                    barcodeRotation = BarcodeOrientation(args, fwOrient);
                     symCheck = b3.Length > 1 && b3[1].Trim().ToUpperInvariant() == "Y";
                     if (b3.Length > 2 && double.TryParse(b3[2].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var b3h)) barcodeHeight = Math.Max(20, b3h);
                     showBarcodeText = b3.Length < 4 || !string.Equals(b3[3].Trim(), "N", StringComparison.OrdinalIgnoreCase);
+                    hrtAbove = b3.Length > 4 && string.Equals(b3[4].Trim(), "Y", StringComparison.OrdinalIgnoreCase);
                     pendingSym = "39";
                     break;
                 }
                 case "B2": // Interleaved 2 of 5: ^B2o,h,f,g,e(mod10)
                 {
                     var b2 = args.Split(',');
-                    barcodeRotation = BarcodeOrientation(args);
+                    barcodeRotation = BarcodeOrientation(args, fwOrient);
                     if (b2.Length > 1 && double.TryParse(b2[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var b2h)) barcodeHeight = Math.Max(20, b2h);
                     showBarcodeText = b2.Length < 3 || !string.Equals(b2[2].Trim(), "N", StringComparison.OrdinalIgnoreCase);
                     symCheck = b2.Length > 4 && b2[4].Trim().ToUpperInvariant() == "Y";
@@ -533,7 +734,7 @@ public static partial class ZplRenderer
                 case "B8": // EAN-8
                 {
                     var be = args.Split(',');
-                    barcodeRotation = BarcodeOrientation(args);
+                    barcodeRotation = BarcodeOrientation(args, fwOrient);
                     if (be.Length > 1 && double.TryParse(be[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var beh)) barcodeHeight = Math.Max(20, beh);
                     showBarcodeText = be.Length < 3 || !string.Equals(be[2].Trim(), "N", StringComparison.OrdinalIgnoreCase);
                     pendingSym = command == "BE" ? "E13" : command == "BU" ? "UPA" : "E8";
@@ -565,8 +766,83 @@ public static partial class ZplRenderer
                     pendingPdf417 = true;
                     break;
                 }
-                case "BZ": // POSTNET/other → placeholder
+                case "BA": // Code 93: ^BAo,h,f,g,e
+                case "B1": // Code 11: ^B1o,e(1 check digit),h,f,g
+                case "BK": // Codabar: ^BKo,e,h,f,g,k(start),l(stop)
+                case "BM": // MSI: ^BMo,e(check type),h,f,g,e2
+                case "BP": // Plessey: ^BPo,e,h,f,g
+                case "BI": // Industrial 2 of 5: ^BIo,h,f,g
+                case "BJ": // Standard 2 of 5: ^BJo,h,f,g
+                case "BL": // LOGMARS: ^BLo,h,g — Code 39 with a mandatory check digit
+                case "BZ": // POSTNET: ^BZo,h,f,g
+                case "B5": // PLANET: ^B5o,h,f,g
+                {
+                    var b = args.Split(',');
+                    barcodeRotation = BarcodeOrientation(args, fwOrient);
+                    string P(int i) => b.Length > i ? b[i].Trim() : "";
+                    bool Flag(int i) => !string.Equals(P(i), "N", StringComparison.OrdinalIgnoreCase);
+                    void Above(int i) => hrtAbove = string.Equals(P(i), "Y", StringComparison.OrdinalIgnoreCase);
+                    void Height(int i)
+                    {
+                        if (double.TryParse(P(i), NumberStyles.Float, CultureInfo.InvariantCulture, out var v))
+                            barcodeHeight = Math.Max(20, v);
+                    }
+                    // The height and the "print the interpretation line" flag sit at a
+                    // different index depending on how many switches come before them.
+                    switch (command)
+                    {
+                        case "BA": Height(1); showBarcodeText = Flag(2); Above(3); pendingSym = "93"; break;
+                        case "BI": Height(1); showBarcodeText = Flag(2); Above(3); pendingSym = "ind25"; break;
+                        case "BJ": Height(1); showBarcodeText = Flag(2); Above(3); pendingSym = "std25"; break;
+                        case "BZ": Height(1); showBarcodeText = Flag(2); Above(3); pendingSym = "postnet"; break;
+                        case "B5": Height(1); showBarcodeText = Flag(2); Above(3); pendingSym = "planet"; break;
+                        case "BL": Height(1); showBarcodeText = true; symCheck = true; Above(2); pendingSym = "logmars"; break;
+                        case "B1":
+                            symCheck = string.Equals(P(1), "Y", StringComparison.OrdinalIgnoreCase);
+                            Height(2); showBarcodeText = Flag(3); Above(4); pendingSym = "11";
+                            break;
+                        case "BP":
+                            Height(2); showBarcodeText = Flag(3); Above(4); pendingSym = "plessey";
+                            break;
+                        case "BK":
+                            Height(2); showBarcodeText = Flag(3); Above(4);
+                            cbStart = P(5).Length > 0 ? char.ToUpperInvariant(P(5)[0]) : 'A';
+                            cbStop  = P(6).Length > 0 ? char.ToUpperInvariant(P(6)[0]) : 'A';
+                            pendingSym = "codabar";
+                            break;
+                        case "BM":
+                            msiCheck = P(1).Length > 0 ? char.ToUpperInvariant(P(1)[0]) : 'B';
+                            Height(2); showBarcodeText = Flag(3); Above(4); pendingSym = "msi";
+                            break;
+                    }
+                    break;
+                }
+                case "B9": // UPC-E: ^B9o,h,f,g,e
+                case "BS": // UPC/EAN 2- or 5-digit supplement: ^BSo,h,f,g
+                {
+                    var b9 = args.Split(',');
+                    barcodeRotation = BarcodeOrientation(args, fwOrient);
+                    if (b9.Length > 1 && double.TryParse(b9[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var b9h))
+                        barcodeHeight = Math.Max(20, b9h);
+                    showBarcodeText = b9.Length < 3 || !string.Equals(b9[2].Trim(), "N", StringComparison.OrdinalIgnoreCase);
+                    pendingSym = command == "B9" ? "UPE" : "addon";
+                    break;
+                }
+                case "BR": // GS1 DataBar — the reference renders nothing, so neither do
+                           // we (printing the raw data would look like a bug).
+                    swallowFd = true;
+                    break;
+                case "BF": // MicroPDF417 — a real symbol we do not encode yet: reserve
+                           // the area with the 2D placeholder rather than dumping text.
                     pending2D = true;
+                    break;
+                case "B4": // Code 49
+                case "BB": // CODABLOCK
+                case "BT": // TLC39
+                    // The reference renderer prints the data as plain text for these
+                    // stacked symbologies rather than drawing a symbol — match it
+                    // instead of showing a meaningless placeholder.
+                    pendingSym = "astext";
                     break;
                 case "BO": // Aztec (magnification is the first numeric arg)
                 case "B0":
@@ -630,7 +906,7 @@ public static partial class ZplRenderer
                     break;
                 case "GB":
                 {
-                    var b = ParseNumbers(args).ToArray();
+                    var b = ParseNumbers(args).Select(v => v * unitScale).ToArray();
                     if (b.Length >= 1)
                     {
                         double gw = b.Length > 0 ? b[0] : 0;
@@ -660,7 +936,7 @@ public static partial class ZplRenderer
                         if (!overBlack && !white && gt >= Math.Min(gw, gh) / 2.0 && Math.Min(gw, gh) >= 8)
                             fieldBlackBoxes.Add(boxRect);
                         Grow(fx + gw, topY + gh);
-                        reverse = false;
+                        reverse = labelReverse;
                     }
                     break;
                 }
@@ -702,9 +978,10 @@ public static partial class ZplRenderer
                 }
                 case "SN": // serial number field: render the initial value as text
                     EmitTextField(args.Split(',')[0]);
-                    reverse = false;
+                    reverse = labelReverse;
                     break;
                 case "FD":
+                case "FV": // field variable: same payload as ^FD, just cleared per label
                 {
                     // Use the RAW args (not the trimmed `args`): ^FD data can carry
                     // significant leading/trailing spaces used for alignment, e.g.
@@ -722,6 +999,24 @@ public static partial class ZplRenderer
                     if (swallowFd)
                     {
                         swallowFd = false; // RFID / MaxiCode data: nothing to draw
+                    }
+                    else if (pendingMaxiCode)
+                    {
+                        // Fixed physical size: 1.11 x 1.054 inches whatever the data.
+                        double dots = (dpmm ?? fallbackDpmm) * 25.4;   // dots per inch
+                        double mw = 0.985 * dots, mh = 0.950 * dots;
+                        double topY = typeset ? fy - mh : fy;
+                        double cx = fx + mw / 2, cy = topY + mh / 2;
+                        // The bullseye: three black rings, the outer one 0.28 in across.
+                        for (int ring = 0; ring < 3; ring++)
+                        {
+                            double d = (0.28 - ring * 0.075) * dots;
+                            double t = 0.02 * dots;
+                            fieldBuf.Add(new ZplEllipse(cx - d / 2, cy - d / 2, d, d, t));
+                        }
+                        fieldBuf.Add(new ZplBox(fx, topY, mw, mh, 1, false, false));
+                        Grow(fx + mw, topY + mh);
+                        pendingMaxiCode = false;
                     }
                     else if (pendingGs)
                     {
@@ -803,7 +1098,11 @@ public static partial class ZplRenderer
                     else if (pendingSym.Length > 0)
                     {
                         if (!string.IsNullOrEmpty(data))
-                            Emit1DBarcode(pendingSym, data, fx, fy);
+                        {
+                            // ^B4 / ^BB / ^BT: the reference prints the data, not a symbol.
+                            if (pendingSym == "astext") EmitTextField(data);
+                            else Emit1DBarcode(pendingSym, data, fx, fy);
+                        }
                         pendingSym = "";
                     }
                     else if (pendingBarcode)
@@ -816,7 +1115,7 @@ public static partial class ZplRenderer
                     {
                         EmitTextField(data);
                     }
-                    reverse = false;
+                    reverse = labelReverse;
                     break;
                 }
                 case "FS":
@@ -828,9 +1127,14 @@ public static partial class ZplRenderer
                     pendingQr = false;
                     pendingPdf417 = false;
                     pendingSym = "";
+                    font = defaultFont;     // ^A dressed this field only
+                    orientation = fwOrient;
+                    hrtAbove = false;
+                    fpVertical = false;
+                    pendingMaxiCode = false;
                     pendingGs = false;
                     swallowFd = false;
-                    reverse = false;
+                    reverse = labelReverse;
                     fieldHex = false;
                     fbActive = false;
                     break;
@@ -855,14 +1159,17 @@ public static partial class ZplRenderer
             Size = new LabelSize(width > 0 ? width : contentWidth, height > 0 ? height : contentHeight),
             Drawables = drawables,
             InvertOrientation = poi,
+            MirrorImage = mirror,
         };
     }
 
     // Orientation char of a ^Bx command's first parameter (N/R/I/B → degrees).
-    private static int BarcodeOrientation(string args)
+    // Omitted → the ^FW default orientation applies.
+    private static int BarcodeOrientation(string args, int fallback = 0)
     {
         var first = args.Split(',')[0].Trim();
-        return first.Length > 0 ? OrientationDegrees(first[0]) : 0;
+        return first.Length > 0 && "NRIB".IndexOf(char.ToUpperInvariant(first[0])) >= 0
+            ? OrientationDegrees(first[0]) : fallback;
     }
 
     // Nearest-neighbour scaling of a 1bpp row-padded bitmap (for ^XG magnification).
@@ -1168,14 +1475,16 @@ public static partial class ZplRenderer
         // transform is captured by RenderTargetBitmap; the root canvas' own
         // RenderTransform would be lost in PNG snapshots).
         Canvas target = canvas;
-        if (model.InvertOrientation)
+        if (model.InvertOrientation || model.MirrorImage)
         {
-            target = new Canvas
-            {
-                Width = w,
-                Height = h,
-                RenderTransform = new RotateTransform { Angle = 180, CenterX = w / 2, CenterY = h / 2 },
-            };
+            // ^PMY mirrors left/right; ^POI turns the label upside-down. Both together
+            // is a vertical flip, which the two scales below produce naturally.
+            var flip = new TransformGroup();
+            if (model.MirrorImage)
+                flip.Children.Add(new ScaleTransform { ScaleX = -1, ScaleY = 1, CenterX = w / 2, CenterY = h / 2 });
+            if (model.InvertOrientation)
+                flip.Children.Add(new RotateTransform { Angle = 180, CenterX = w / 2, CenterY = h / 2 });
+            target = new Canvas { Width = w, Height = h, RenderTransform = flip };
             Canvas.SetLeft(target, 0);
             Canvas.SetTop(target, 0);
             canvas.Children.Add(target);
@@ -1808,37 +2117,43 @@ public static partial class ZplRenderer
 
     // Builds the font actually used to draw: bitmap faces snap to an integer
     // magnification of their cell, then the cell is converted to a render size.
-    private static ZplFont MakeFont(string name, double height, double width)
+    // A ^CW alias names a downloaded scalable font, so it skips the quantisation.
+    private static ZplFont MakeFont(string name, double height, double width, ICollection<string>? aliases = null)
     {
+        if (aliases is not null && aliases.Contains(name))
+            return new ZplFont(name, Math.Max(8, height), Math.Max(4, width));
         var (cellH, cellW) = ZplFont.Quantize(name, height, width);
         var em = ZplFont.EmRatio(name);
         return new ZplFont(name, Math.Max(8, cellH * em), Math.Max(4, cellW * em * ZplFont.WidthRatio(name)));
     }
 
-    private static ZplFont ParseDefaultFont(string args, ZplFont current)
+    private static ZplFont ParseDefaultFont(string args, ZplFont current,
+        ICollection<string>? aliases = null, double unitScale = 1)
     {
         var parts = args.Split(',', StringSplitOptions.None);
         var name = parts.Length > 0 && !string.IsNullOrWhiteSpace(parts[0]) ? parts[0].Trim() : current.Name;
-        var height = parts.Length > 1 && TryParseNumber(parts[1], out var parsedHeight) ? parsedHeight : current.Height;
+        var height = parts.Length > 1 && TryParseNumber(parts[1], out var parsedHeight) ? parsedHeight * unitScale : current.Height;
         var width = parts.Length > 2 && TryParseNumber(parts[2], out var parsedWidth) && parsedWidth > 0
-            ? parsedWidth : DefaultFontWidth(name, height);
-        return MakeFont(name, height, width);
+            ? parsedWidth * unitScale : DefaultFontWidth(name, height);
+        return MakeFont(name, height, width, aliases);
     }
 
-    private static (ZplFont Font, int Orientation) ParseFieldFont(string command, string args, ZplFont current)
+    private static (ZplFont Font, int Orientation) ParseFieldFont(string command, string args, ZplFont current,
+        int fallbackOrientation = 0, ICollection<string>? aliases = null, double unitScale = 1)
     {
         var parts = args.Split(',', StringSplitOptions.None);
         var name = command.Length > 1 ? command[1].ToString(CultureInfo.InvariantCulture) : current.Name;
-        int orient = 0;
+        // No orientation of its own → the ^FW default applies.
+        int orient = fallbackOrientation;
         var first = parts.Length > 0 ? parts[0].Trim() : "";
         if (first.Length > 0 && "NRIB".IndexOf(char.ToUpperInvariant(first[0])) >= 0)
             orient = OrientationDegrees(first[0]);
         var numbers = ParseNumbers(args).ToArray();
-        var height = numbers.Length > 0 ? numbers[0] : current.Height;
+        var height = numbers.Length > 0 ? numbers[0] * unitScale : current.Height;
         // ^A width must be 1..32000; 0 (or omitted) means "use the default" = the
         // height scaled by the font's natural aspect (NOT a literal zero width).
-        var width = numbers.Length > 1 && numbers[1] > 0 ? numbers[1] : DefaultFontWidth(name, height);
-        return (MakeFont(name, height, width), orient);
+        var width = numbers.Length > 1 && numbers[1] > 0 ? numbers[1] * unitScale : DefaultFontWidth(name, height);
+        return (MakeFont(name, height, width, aliases), orient);
     }
 
     private static bool TryParseNumber(string text, out double value)
@@ -1983,9 +2298,137 @@ public static partial class ZplRenderer
     // Builds the segments/labels of an EAN-13, UPC-A or EAN-8 barcode: guard bars
     // extend below the data bars by half the text height, and the digits sit in the
     // guard gaps (leading digit outside the symbol for EAN-13/UPC-A).
+    // UPC-E parity of the six data digits, indexed by the number system (0 or 1)
+    // and the check digit. 'E' uses the even (G) table, 'O' the odd (L) one.
+    private static readonly string[] UpcEParity =
+    {
+        "EEEOOO", "EEOEOO", "EEOOEO", "EEOOOE", "EOEEOO",
+        "EOOEEO", "EOOOEE", "EOEOEO", "EOEOOE", "EOOEOE",
+    };
+
+    /// <summary>
+    /// UPC-E: six data digits between a 101 guard and a 010101 terminator, with the
+    /// number system on the left and the check digit on the right of the symbol.
+    /// </summary>
+    private static void BuildUpcE(string data, double module, double barH, double hrtH,
+        bool showText, List<BarSeg> segs, List<BarLabel> labels, out double totalW)
+    {
+        var digits = new string(data.Where(char.IsDigit).ToArray());
+        digits = digits.Length >= 6 ? digits[^6..] : digits.PadLeft(6, '0');
+        int system = data.TrimStart().StartsWith("1") && data.Length > 6 ? 1 : 0;
+
+        // The check digit comes from the UPC-A the short form expands to.
+        var expanded = ExpandUpcE(system, digits);
+        int check = EanCheckDigit(expanded);
+        var parity = UpcEParity[check];
+        if (system == 1) parity = new string(parity.Select(p => p == 'E' ? 'O' : 'E').ToArray());
+
+        var modules = new System.Text.StringBuilder();
+        var guard = new List<(int Start, int Len)>();
+        void AddGuard(string bits) { guard.Add((modules.Length, bits.Length)); modules.Append(bits); }
+
+        AddGuard("101");
+        for (int i = 0; i < 6; i++)
+            modules.Append(parity[i] == 'O' ? EanL[digits[i] - '0'] : EanG[digits[i] - '0']);
+        AddGuard("010101");
+
+        // Unlike EAN-13, the symbol itself starts at the field origin: the number
+        // system digit prints OUTSIDE it on the left and the check digit on the right
+        // (measured on the reference: bars 40…193 for a ^FO40 field, digits either side).
+        double guardExtra = showText ? hrtH * 0.5 : 0;
+        double sideW = hrtH * 1.1;
+        bool IsGuard(int idx) => guard.Any(g => idx >= g.Start && idx < g.Start + g.Len);
+
+        var mstr = modules.ToString();
+        for (int i = 0; i < mstr.Length;)
+        {
+            if (mstr[i] == '0') { i++; continue; }
+            int j = i;
+            bool tall = false;
+            while (j < mstr.Length && mstr[j] == '1' && IsGuard(j) == IsGuard(i)) { tall |= IsGuard(j); j++; }
+            segs.Add(new BarSeg(i * module, 0, (j - i) * module, barH + (tall ? guardExtra : 0)));
+            i = j;
+        }
+        totalW = mstr.Length * module;
+
+        if (showText)
+        {
+            double ty = barH - module;
+            labels.Add(new BarLabel(-sideW, ty, system.ToString(CultureInfo.InvariantCulture), hrtH, 0));
+            labels.Add(new BarLabel(3 * module, ty, digits, hrtH, 42 * module));
+            labels.Add(new BarLabel(totalW + module, ty,
+                check.ToString(CultureInfo.InvariantCulture), hrtH, 0));
+        }
+    }
+
+    // UPC-E → the 11-digit UPC-A body it stands for (needed for the check digit).
+    private static string ExpandUpcE(int system, string d)
+    {
+        var s = system.ToString(CultureInfo.InvariantCulture);
+        return d[5] switch
+        {
+            '0' or '1' or '2' => s + d[..2] + d[5] + "0000" + d[2..5],
+            '3'               => s + d[..3] + "00000" + d[3..5],
+            '4'               => s + d[..4] + "00000" + d[4],
+            _                 => s + d[..5] + "0000" + d[5],
+        };
+    }
+
+    /// <summary>
+    /// The 2- or 5-digit UPC/EAN supplement (^BS): a "1011" start, then the digits
+    /// separated by "01", the parity chosen by a checksum of the digits themselves.
+    /// </summary>
+    private static void BuildEanAddOn(string data, double module, double barH, double hrtH,
+        bool showText, List<BarSeg> segs, List<BarLabel> labels, out double totalW)
+    {
+        var digits = new string(data.Where(char.IsDigit).ToArray());
+        if (digits.Length >= 5) digits = digits[..5];
+        else if (digits.Length >= 2) digits = digits[..2];
+        else digits = digits.PadLeft(2, '0');
+
+        string parity;
+        if (digits.Length == 2)
+        {
+            parity = (int.Parse(digits, CultureInfo.InvariantCulture) % 4) switch
+            {
+                0 => "LL", 1 => "LG", 2 => "GL", _ => "GG",
+            };
+        }
+        else
+        {
+            int sum = 0;
+            for (int i = 0; i < 5; i++) sum += (digits[i] - '0') * (i % 2 == 0 ? 3 : 9);
+            parity = new[] { "GGLLL", "GLGLL", "GLLGL", "GLLLG", "LGGLL",
+                             "LLGGL", "LLLGG", "LGLGL", "LGLLG", "LLGLG" }[sum % 10];
+        }
+
+        var modules = new System.Text.StringBuilder("1011");
+        for (int i = 0; i < digits.Length; i++)
+        {
+            if (i > 0) modules.Append("01");
+            modules.Append(parity[i] == 'L' ? EanL[digits[i] - '0'] : EanG[digits[i] - '0']);
+        }
+
+        double top = 0;
+        var mstr = modules.ToString();
+        for (int i = 0; i < mstr.Length;)
+        {
+            if (mstr[i] == '0') { i++; continue; }
+            int j = i;
+            while (j < mstr.Length && mstr[j] == '1') j++;
+            segs.Add(new BarSeg(i * module, top, (j - i) * module, barH));
+            i = j;
+        }
+        totalW = mstr.Length * module;
+        if (showText) labels.Add(new BarLabel(0, barH - module, digits, hrtH, totalW));
+    }
+
     private static void BuildEanUpc(string sym, string data, double module, double barH, double hrtH,
         bool showText, List<BarSeg> segs, List<BarLabel> labels, out double totalW)
     {
+        if (sym == "UPE") { BuildUpcE(data, module, barH, hrtH, showText, segs, labels, out totalW); return; }
+        if (sym == "addon") { BuildEanAddOn(data, module, barH, hrtH, showText, segs, labels, out totalW); return; }
+
         var digits = new string(data.Where(char.IsDigit).ToArray());
         int bodyLen = sym == "E8" ? 7 : sym == "UPA" ? 11 : 12;
         digits = digits.Length >= bodyLen ? digits[..bodyLen] : digits.PadLeft(bodyLen, '0');
@@ -2028,8 +2471,10 @@ public static partial class ZplRenderer
         }
 
         double guardExtra = showText ? hrtH * 0.5 : 0;
-        // Leading digit (EAN-13/UPC-A) sits left of the symbol → offset the bars.
-        double leadW = sym == "E8" ? 0 : hrtH * 0.75;
+        // The leading digit of an EAN-13/UPC-A prints to the LEFT of the symbol, outside
+        // the field: the bars themselves still start on the field origin.
+        double leadW = 0;
+        double sideW = sym == "E8" ? 0 : hrtH * 1.1;
         bool IsGuardModule(int idx) => guard.Any(g => idx >= g.Start && idx < g.Start + g.Len);
 
         var mstr = modules.ToString();
@@ -2054,9 +2499,19 @@ public static partial class ZplRenderer
             }
             else
             {
-                labels.Add(new BarLabel(0, ty, digits[..1], hrtH, 0));
-                labels.Add(new BarLabel(leadW + 3 * module, ty, digits[1..7], hrtH, 42 * module));
-                labels.Add(new BarLabel(leadW + 50 * module, ty, digits[7..13], hrtH, 42 * module));
+                if (sym == "UPA")
+                {
+                    labels.Add(new BarLabel(-sideW, ty, digits[1..2], hrtH, 0));
+                    labels.Add(new BarLabel(10 * module, ty, digits[2..7], hrtH, 35 * module));
+                    labels.Add(new BarLabel(50 * module, ty, digits[7..12], hrtH, 35 * module));
+                    labels.Add(new BarLabel(95 * module + module, ty, digits[12..13], hrtH, 0));
+                }
+                else
+                {
+                    labels.Add(new BarLabel(-sideW, ty, digits[..1], hrtH, 0));
+                    labels.Add(new BarLabel(leadW + 3 * module, ty, digits[1..7], hrtH, 42 * module));
+                    labels.Add(new BarLabel(leadW + 50 * module, ty, digits[7..13], hrtH, 42 * module));
+                }
             }
         }
     }
@@ -2244,11 +2699,11 @@ public static partial class ZplRenderer
         bool usesFormat = formats.Count > 0 || main.Any(t => t.Command is "XF" or "FN");
         if (!usesFormat) return main;
 
-        // 2) Collect field data from ^FNn ^FD… pairs.
+        // 2) Collect field data from ^FNn ^FD… (or ^FV…) pairs.
         var fieldData = new Dictionary<int, string>();
         for (int i = 0; i + 1 < main.Count; i++)
             if (main[i].Command == "FN" && int.TryParse(main[i].Args.Trim(), out int fn)
-                && main[i + 1].Command == "FD")
+                && main[i + 1].Command is "FD" or "FV")
                 fieldData[fn] = main[i + 1].Args;
 
         // 3) Emit: expand ^XF (with substitution), drop the ^FN/^FD fill pairs, keep the rest.
@@ -2267,7 +2722,7 @@ public static partial class ZplRenderer
             }
             if (t.Command == "FN")
             {
-                if (i + 1 < main.Count && main[i + 1].Command == "FD")
+                if (i + 1 < main.Count && main[i + 1].Command is "FD" or "FV")
                 {
                     i++;        // ^FNn^FDdata: a fill pair, its data was collected above
                     continue;
@@ -2389,7 +2844,9 @@ public sealed record ZplFont(string Name, double Height, double Width)
     // snaps to the nearest one, and anything under the base cell still prints at
     // the base cell (verified against Labelary: ^ABN,30,15 → 3×11 by 2×7,
     // ^AQN,10,10 → the plain 28×24 cell, ^ADN,70,70 → 4×18 by 7×10).
-    public static bool IsBitmap(string name) => !name.Equals("0", StringComparison.Ordinal);
+    public static bool IsBitmap(string name) => name.ToUpperInvariant() is
+        "A" or "B" or "C" or "D" or "E" or "F" or "G" or "H" or "GS"
+        or "P" or "Q" or "R" or "S" or "T" or "U" or "V";
 
     public static (double H, double W) Quantize(string name, double height, double width)
     {
@@ -2485,6 +2942,14 @@ public static partial class ZplRenderer
         }
 
         var (ra, rb, rc, rd, re, rf) = PdfRotationMatrix(angle, w, h, bw, bh);
+        if (model.MirrorImage)
+        {
+            // ^PMY: flip label space about the vertical centre line (x → w − x) BEFORE
+            // the page rotation, folded into the page matrix so every drawable — text
+            // included, which a real printer also mirrors — follows without extra work.
+            (re, rf) = (re + ra * w, rf + rb * w);
+            (ra, rb) = (-ra, -rb);
+        }
 
         double dp = dpmm > 0 ? dpmm : 8;
         double s = 72.0 / (dp * 25.4);        // dots → points

@@ -141,10 +141,16 @@
                  VerticalAlignment="Top"
                  Margin="6,5,6,7"
                  CanReorderTabs="True"
+                 CanDragTabs="True"
+                 AllowDrop="True"
                  IsAddTabButtonVisible="True"
                  AddTabButtonClick="DocTabs_AddTabButtonClick"
                  TabCloseRequested="DocTabs_TabCloseRequested"
-                 SelectionChanged="DocTabs_SelectionChanged">
+                 SelectionChanged="DocTabs_SelectionChanged"
+                 TabDragStarting="DocTabs_TabDragStarting"
+                 TabDroppedOutside="DocTabs_TabDroppedOutside"
+                 TabStripDragOver="DocTabs_TabStripDragOver"
+                 TabStripDrop="DocTabs_TabStripDrop">
             <TabView.Resources>
                 <!-- Stock "+" button is 32x24 pushed down by a 3px bottom padding;
                      sized to the pill height (34) and centered instead. -->

@@ -713,6 +713,9 @@ public sealed partial class PreviewPage : Page
         }
     }
 
+    // Unsaved state of a document handed over from another window, applied once.
+    private bool? _adoptedDirty;
+
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         var options = e.Parameter as LaunchOptions ?? new LaunchOptions(null, false, false, false);
@@ -731,14 +734,24 @@ public sealed partial class PreviewPage : Page
         string text;
         bool openedFromFile = false;
         var extraTabs = new List<(string Path, string Text)>(); // session tabs beyond the first
-        if (!string.IsNullOrWhiteSpace(options.FilePath) && File.Exists(options.FilePath))
+        if (options.Adopt is { } handedOver)
+        {
+            // A document moved here from another window: keep its text, its path and
+            // its unsaved state exactly as they were.
+            text = handedOver.Text;
+            _currentFilePath = handedOver.FilePath;
+            openedFromFile = handedOver.FilePath is not null;
+            _adoptedDirty = handedOver.IsDirty;
+        }
+        else if (!string.IsNullOrWhiteSpace(options.FilePath) && File.Exists(options.FilePath))
         {
             text = await File.ReadAllTextAsync(options.FilePath);
             _currentFilePath = options.FilePath;
             openedFromFile = true;
             AddRecentFile(options.FilePath);
         }
-        else if (_settings.ReopenLastFile && await LoadPreviousSessionAsync(extraTabs) is { } firstDoc)
+        else if (options.RestoreSession && _settings.ReopenLastFile
+                 && await LoadPreviousSessionAsync(extraTabs) is { } firstDoc)
         {
             text = firstDoc.Text;
             _currentFilePath = firstDoc.Path;
@@ -754,7 +767,8 @@ public sealed partial class PreviewPage : Page
         if (openedFromFile) ApplyOpenDensity();
         // A never-saved document counts as unsaved from the start, so closing its
         // tab (or the app) asks the save question like for any other document.
-        _isDirty = _currentFilePath is null;
+        _isDirty = _adoptedDirty ?? _currentFilePath is null;
+        _adoptedDirty = null;
 
         // Normalise to LF — Monaco always outputs LF from getValue(), so _currentText must match.
         _currentText = text.Replace("\r\n", "\n").Replace('\r', '\n');
@@ -768,7 +782,30 @@ public sealed partial class PreviewPage : Page
         UpdateTabBar();
         UpdateDocumentTitle();
         RefreshPreview(SizeUpdate.DocumentLoaded);
+        RestoreRemainingWindows();
         // WebView2 is not ready yet; OnEditorReady() will push _currentText to Monaco when it fires.
+    }
+
+    // The other windows of the saved arrangement. Filled while this (first) window
+    // restores its own documents, then reopened once it is on screen.
+    private List<List<string>> _pendingWindowLayout = new();
+
+    private void RestoreRemainingWindows()
+    {
+        if (_pendingWindowLayout.Count == 0) return;
+        var layout = _pendingWindowLayout;
+        _pendingWindowLayout = new List<List<string>>();
+        // Deferred: this window is still being navigated into.
+        DispatcherQueue.TryEnqueue(async () =>
+        {
+            foreach (var files in layout)
+            {
+                var window = WindowManager.Open(
+                    new LaunchOptions(files[0], false, false, false, RestoreSession: false));
+                foreach (var extra in files.Skip(1))
+                    if (window.Page is { } page) await page.OpenFileFromAnotherLaunchAsync(extra);
+            }
+        });
     }
 
     // Restores the documents open at the last exit: returns the first one (the
@@ -776,7 +813,16 @@ public sealed partial class PreviewPage : Page
     // nothing can be restored (falls back to the sample document).
     private async Task<(string Path, string Text)?> LoadPreviousSessionAsync(List<(string Path, string Text)> extraTabs)
     {
-        var files = _settings.OpenFiles.Where(File.Exists).Distinct().ToList();
+        // With several windows saved, this one takes the first arrangement and the
+        // others are reopened as their own windows once this page is up.
+        var layout = _settings.WindowSessions
+            .Select(w => w.Where(File.Exists).Distinct().ToList())
+            .Where(w => w.Count > 0)
+            .ToList();
+        var files = layout.Count > 0
+            ? layout[0]
+            : _settings.OpenFiles.Where(File.Exists).Distinct().ToList();
+        _pendingWindowLayout = layout.Skip(1).ToList();
         if (files.Count == 0
             && !string.IsNullOrWhiteSpace(_settings.LastFilePath) && File.Exists(_settings.LastFilePath))
             files.Add(_settings.LastFilePath); // pre-tabs versions only stored this
@@ -2105,8 +2151,20 @@ public sealed partial class PreviewPage : Page
         picker.FileTypeFilter.Add(".zpl");
         picker.FileTypeFilter.Add(".txt");
         var file = await picker.PickSingleFileAsync();
-        if (file is not null) await OpenPathAsync(file.Path);
+        if (file is null) return;
+        // The toolbar has its own "new tab / new window" preference.
+        if (_settings.OpenFromToolbar == "window")
+        {
+            AddRecentFile(file.Path);
+            _settings.Save();
+            WindowManager.Open(new LaunchOptions(file.Path, false, false, false, RestoreSession: false));
+            return;
+        }
+        await OpenPathAsync(file.Path);
     }
+
+    /// <summary>Opens a file as a new tab here — used when another launch hands one over.</summary>
+    public Task OpenFileFromAnotherLaunchAsync(string path) => OpenPathAsync(path);
 
     // Opens a file by path in its own tab, at the "open" default density, and
     // records it in the recent-files list. Shared by the picker and the recent menu.
@@ -2445,6 +2503,9 @@ public sealed partial class PreviewPage : Page
     private const string GlyphTabCloseRight = "\uE89F";  // arrow into the right pane
     private const string GlyphTabDuplicate = "\uF413";   // copy + add
     private const string GlyphTabCopyPath = "\uE8C8";    // copy
+    // OpenInNewWindow: the classic square with an arrow leaving through its
+    // top-right corner.
+    private const string GlyphTabNewWindow = "\uE8A7";
 
     // Rebuilt each time it opens: "Copier le chemin" only exists once the file
     // has been saved somewhere, and the close entries follow the tab layout.
@@ -2474,6 +2535,8 @@ public sealed partial class PreviewPage : Page
             () => _ = CloseManyAsync(TabsRightOf(item), item),
             enabled: index >= 0 && index < DocTabs.TabItems.Count - 1));
         menu.Items.Add(new MenuFlyoutSeparator());
+        menu.Items.Add(Mk("Ouvrir dans une nouvelle fenêtre", GlyphTabNewWindow,
+            () => MoveTabToNewWindow(item, tab)));
         menu.Items.Add(Mk("Dupliquer l'onglet", GlyphTabDuplicate,
             () => DuplicateTab(tab)));
 
@@ -2523,6 +2586,189 @@ public sealed partial class PreviewPage : Page
         // Land back on the tab the menu was opened on.
         if (DocTabs.TabItems.Contains(clicked))
             DocTabs.SelectedItem = clicked;
+    }
+
+    // ── Dragging a tab between windows ───────────────────────────────────────
+
+    // A tab dragged out of its strip: dropped on another window's strip it moves
+    // there, dropped anywhere else it becomes a window of its own — the behaviour
+    // every browser has. All the windows share one process, so the document itself
+    // is handed over through TabDragState instead of being serialised.
+    private void DocTabs_TabDragStarting(TabView sender, TabViewTabDragStartingEventArgs args)
+    {
+        if (args.Tab is not TabViewItem item || item.Tag is not DocTab tab) return;
+        TabDragState.Begin(this, item, tab);
+        args.Data.Properties.Add(TabDragState.Key, tab.Id);
+        args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+    }
+
+    private void DocTabs_TabStripDragOver(object sender, DragEventArgs e)
+    {
+        if (e.DataView.Properties.ContainsKey(TabDragState.Key))
+            e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+    }
+
+    private void DocTabs_TabStripDrop(object sender, DragEventArgs e)
+    {
+        if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return;
+        if (TabDragState.SourcePage is not { } source || TabDragState.Item is null
+            || TabDragState.Tab is null) return;
+        // Reordering inside the same strip is the TabView's own business.
+        if (ReferenceEquals(source, this)) { TabDragState.Clear(); return; }
+
+        var carried = source.GiveAwayTab(TabDragState.Item, TabDragState.Tab);
+        TabDragState.Clear();
+        AdoptTab(carried);
+    }
+
+    private void DocTabs_TabDroppedOutside(TabView sender, TabViewTabDroppedOutsideEventArgs args)
+    {
+        // Landing on another window's strip is handled by that window's Drop, which
+        // already took the tab away — nothing left to do here.
+        if (TabDragState.Tab is null) return;
+        if (args.Tab is TabViewItem item && item.Tag is DocTab tab)
+        {
+            var (cx, cy) = CursorPosition();
+            MoveTabToNewWindow(item, tab, cx, cy);
+        }
+        TabDragState.Clear();
+    }
+
+    /// <summary>
+    /// Hands a document to another window: snapshots it, then drops it from here
+    /// (closing this window when it was the only one left).
+    /// </summary>
+    internal DocTab GiveAwayTab(TabViewItem item, DocTab tab)
+    {
+        var carried = Snapshot(tab);
+        if (DocTabs.TabItems.Count <= 1) CloseOwnWindow();
+        else CloseTab(item, tab);
+        return carried;
+    }
+
+    /// <summary>
+    /// True when a screen point falls on this window's tab strip — or, while a
+    /// single document leaves the strip hidden, on its title bar, which is what the
+    /// user grabs to drag that lone document around.
+    /// </summary>
+    internal bool IsOverTabDropZone(int screenX, int screenY)
+    {
+        if (XamlRoot is null) return false;
+        var window = AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow;
+        if (window is null) return false;
+        var pos = window.AppWindow.Position;
+        var size = window.AppWindow.Size;
+        if (screenX < pos.X || screenX > pos.X + size.Width) return false;
+        if (screenY < pos.Y || screenY > pos.Y + size.Height) return false;
+
+        double scale = XamlRoot.RasterizationScale;
+        double localY = (screenY - pos.Y) / scale;
+        if (DocTabs.Visibility == Visibility.Visible)
+        {
+            var origin = DocTabs.TransformToVisual(null).TransformPoint(new Windows.Foundation.Point(0, 0));
+            return localY >= origin.Y - 8 && localY <= origin.Y + DocTabs.ActualHeight + 8;
+        }
+        return localY <= TitleBarDropHeight;
+    }
+
+    // Height of the custom title bar, which doubles as the drop zone of a window
+    // showing a single document (it has no tab strip then).
+    private const double TitleBarDropHeight = 44;
+
+    /// <summary>Moves a document from another window into this one, then raises it.</summary>
+    internal void TakeOverDocument(DocTab carried)
+    {
+        AdoptTab(carried);
+        (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.BringToFront();
+    }
+
+    /// <summary>The lone document of this window, or null when it holds several.</summary>
+    internal (TabViewItem Item, DocTab Tab)? SingleDocument()
+    {
+        if (DocTabs.TabItems.Count != 1) return null;
+        return DocTabs.TabItems[0] is TabViewItem item && item.Tag is DocTab tab ? (item, tab) : null;
+    }
+
+    private static (int X, int Y) CursorPosition()
+    {
+        return GetCursorPos(out var p) ? (p.X, p.Y) : (0, 0);
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct POINT { public int X, Y; }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out POINT lpPoint);
+
+    // ── Moving documents between windows ─────────────────────────────────────
+
+    // A document leaving this window: snapshot it (the live text lives in the
+    // editor while the tab is active) into a fresh DocTab for the other window,
+    // which gives it its own id and therefore its own Monaco model.
+    private DocTab Snapshot(DocTab tab)
+    {
+        if (ReferenceEquals(tab, _activeTab)) CaptureActiveTab();
+        return new DocTab { FilePath = tab.FilePath, Text = tab.Text, IsDirty = tab.IsDirty };
+    }
+
+    /// <summary>
+    /// Moves a document out of this window and into a brand-new one. When it was
+    /// the last document here, this window goes away with it — like a browser.
+    /// </summary>
+    public void MoveTabToNewWindow(TabViewItem item, DocTab tab, int? screenX = null, int? screenY = null)
+    {
+        var carried = Snapshot(tab);
+        bool wasLast = DocTabs.TabItems.Count <= 1;
+
+        var window = WindowManager.Open(
+            new LaunchOptions(null, false, false, false, carried, RestoreSession: false));
+        // Drop point = roughly where the pointer grabbed the tab, so the new window
+        // appears under the hand instead of jumping to a corner.
+        if (screenX is int sx && screenY is int sy) window.MoveTo(sx - 120, sy - 24);
+
+        if (wasLast) CloseOwnWindow();
+        else CloseTab(item, tab);
+    }
+
+    /// <summary>Takes a document handed over by another window as a new tab here.</summary>
+    public void AdoptTab(DocTab incoming)
+    {
+        AddTabAndActivate(incoming.FilePath);
+        SetEditorText(incoming.Text);
+        _isDirty = incoming.IsDirty;
+        UpdateDocumentTitle();
+        RefreshPreview(SizeUpdate.DocumentLoaded);
+        if (_activeTab is not null) RefreshTabHeader(_activeTab);
+    }
+
+    /// <summary>
+    /// Mirrors the arrangement into this page's own settings copy, so closing this
+    /// window saves the current layout instead of the one it started with.
+    /// </summary>
+    internal void SyncSessionLayout(List<List<string>> layout, List<string> flat)
+    {
+        _settings.WindowSessions = layout;
+        _settings.OpenFiles = flat;
+    }
+
+    /// <summary>The documents of this window, in tab order (for session saving).</summary>
+    public List<string> OpenFilePaths()
+    {
+        CaptureActiveTab();
+        return DocTabs.TabItems.OfType<TabViewItem>()
+            .Select(t => ((DocTab)t.Tag).FilePath)
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Select(p => p!)
+            .ToList();
+    }
+
+    // Deferred: this runs from a drag handler of a control INSIDE the window being
+    // closed, so let the current event finish before the window goes away.
+    private void CloseOwnWindow()
+    {
+        _suppressLayoutPersist = true;   // a window leaving is not a preference change
+        var window = AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow;
+        DispatcherQueue.TryEnqueue(() => window?.CloseWithoutPrompt());
     }
 
     // Duplicates the document into a new never-saved tab (own undo history).
@@ -2596,11 +2842,15 @@ public sealed partial class PreviewPage : Page
         }
 
         CaptureActiveTab();
-        _settings.OpenFiles = DocTabs.TabItems.OfType<TabViewItem>()
-            .Select(t => ((DocTab)t.Tag).FilePath)
-            .Where(p => p is not null)
-            .Distinct()
-            .ToList()!;
+        // Only this window's own list: the multi-window arrangement is kept up to
+        // date live by WindowManager and must NOT be rewritten while the windows are
+        // being closed one after another — the last one would shrink it to itself.
+        if (WindowManager.Windows.Count <= 1)
+            _settings.OpenFiles = DocTabs.TabItems.OfType<TabViewItem>()
+                .Select(t => ((DocTab)t.Tag).FilePath)
+                .Where(p => p is not null)
+                .Distinct()
+                .ToList()!;
         _settings.Save();
         return true;
     }
@@ -2625,9 +2875,13 @@ public sealed partial class PreviewPage : Page
     }
 
     // The tab bar only exists with two documents or more; with a single one the
-    // document name lives in the window title bar instead.
+    // document name lives in the window title bar instead. Every change to the tab
+    // set is also a change to the arrangement worth remembering for the next launch.
     private void UpdateTabBar()
-        => DocTabs.Visibility = DocTabs.TabItems.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+    {
+        DocTabs.Visibility = DocTabs.TabItems.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+        WindowManager.SaveSessionLayout();
+    }
 
     private static string BuildSwitchDocMessage(string id, string text)
         => $"{{\"type\":\"switchDoc\",\"id\":\"{id}\",\"text\":{JsonSerializer.Serialize(text)}}}";
@@ -4252,6 +4506,43 @@ public sealed partial class PreviewPage : Page
         panel.Children.Add(MakeCard("\uE8A1", SL("general.cards.tabPath.title"),
             SL("general.cards.tabPath.desc"), tabPath));
 
+        // Where a document lands when the app is already running: the two sources
+        // are set independently, so opening from Explorer and from the toolbar can
+        // behave differently.
+        ComboBox WhereCombo(string current, Action<string> apply)
+        {
+            var cb = new ComboBox
+            {
+                MinWidth = 220,
+                ItemsSource = SA("general.opt.openWhere"),
+                SelectedIndex = current == "window" ? 1 : 0,
+            };
+            cb.SelectionChanged += (_, _) => { apply(cb.SelectedIndex == 1 ? "window" : "tab"); _settings.Save(); };
+            return cb;
+        }
+
+        panel.Children.Add(MakeCard("\uE8DA", SL("general.cards.openExplorer.title"),
+            SL("general.cards.openExplorer.desc"),
+            WhereCombo(_settings.OpenFromExplorer, v => _settings.OpenFromExplorer = v)));
+
+        panel.Children.Add(MakeCard("\uE8E5", SL("general.cards.openToolbar.title"),
+            SL("general.cards.openToolbar.desc"),
+            WhereCombo(_settings.OpenFromToolbar, v => _settings.OpenFromToolbar = v)));
+
+        var launchAlone = new ComboBox
+        {
+            MinWidth = 260,
+            ItemsSource = SA("general.opt.launchAlone"),
+            SelectedIndex = _settings.LaunchWithoutFile == "focus" ? 1 : 0,
+        };
+        launchAlone.SelectionChanged += (_, _) =>
+        {
+            _settings.LaunchWithoutFile = launchAlone.SelectedIndex == 1 ? "focus" : "window";
+            _settings.Save();
+        };
+        panel.Children.Add(MakeCard("\uE7C4", SL("general.cards.launchAlone.title"),
+            SL("general.cards.launchAlone.desc"), launchAlone));
+
         // PNG export quality: ask each time, or use a fixed default (reveals a slider).
         var pngMode = new ComboBox { MinWidth = 200,
             ItemsSource = SA("general.opt.pngMode"),
@@ -4921,7 +5212,7 @@ public static class AppWindowLookup
 {
     public static Window? MainWindowForXamlRoot(XamlRoot root)
     {
-        return (Application.Current as App)?.MainWindow;
+        return WindowManager.ForXamlRoot(root) ?? (Application.Current as App)?.MainWindow;
     }
 }
 

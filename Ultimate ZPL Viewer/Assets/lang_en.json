@@ -1508,6 +1508,18 @@
         "zplAssoc": {
           "title": "Default .zpl files",
           "desc": "Open .zpl files with Ultimate ZPL Viewer by default."
+        },
+        "openExplorer": {
+          "title": "Files opened from File Explorer",
+          "desc": "When the app is already running, a file opened by double-click or “Open with” lands in a new tab or in a new window."
+        },
+        "openToolbar": {
+          "title": "“Open a file” button",
+          "desc": "Same choice for the toolbar button and the Ctrl+O shortcut."
+        },
+        "launchAlone": {
+          "title": "Starting the app with no file",
+          "desc": "What clicking the shortcut or the Start menu icon does while a window is already open."
         }
       },
       "lbl": {
@@ -1523,6 +1535,14 @@
         "pngMode": [
           "Ask every time",
           "Default quality"
+        ],
+        "openWhere": [
+          "In a new tab",
+          "In a new window"
+        ],
+        "launchAlone": [
+          "Open a new empty window",
+          "Go back to the window already open"
         ]
       },
       "zplPrompt": {

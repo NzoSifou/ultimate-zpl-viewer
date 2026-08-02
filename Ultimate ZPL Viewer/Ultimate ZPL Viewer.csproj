@@ -32,9 +32,9 @@
          to be deployed…"). À false, le projet se lance comme un simple .exe. -->
     <EnableMsixTooling>false</EnableMsixTooling>
     <Nullable>enable</Nullable>
-    <Version>1.2.0</Version>
-    <FileVersion>1.2.0.0</FileVersion>
-    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <Version>1.3.0</Version>
+    <FileVersion>1.3.0.0</FileVersion>
+    <AssemblyVersion>1.3.0.0</AssemblyVersion>
     <!-- Editeur / auteur, visible dans les proprietes du fichier .exe. -->
     <Authors>Enzo Monchanin (NzoSifou)</Authors>
     <Company>Enzo Monchanin (NzoSifou)</Company>

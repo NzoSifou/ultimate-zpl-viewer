@@ -68,10 +68,19 @@ namespace Ultimate_ZPL_Viewer
             // already handles the spool file, so this launch just exits. A normal
             // launch (or a capture launch while closed) runs.
             _singleInstanceMutex = new Mutex(initiallyOwned: true, "UltimateZplViewer.SingleInstance", out bool isNew);
-            if (!isNew && launchedFromCapture)
+            if (!isNew)
             {
-                Exit();
-                return;
+                // A copy is already running. A capture relaunch has nothing to do (the
+                // running watcher handles the spool). Anything else — a document opened
+                // from Explorer, a click on the shortcut — is handed over so it lands in
+                // the window already on screen, as a tab or a window of its own
+                // depending on the settings. If the hand-off fails, fall through and
+                // open normally rather than lose the file.
+                if (launchedFromCapture || InstanceRouter.HandOff(Environment.GetCommandLineArgs()))
+                {
+                    Exit();
+                    return;
+                }
             }
 
             // Register as a .zpl handler (HKCU) so the app appears in "Open with".
@@ -83,6 +92,10 @@ namespace Ultimate_ZPL_Viewer
             LocalizationService.SetLanguage(AppSettings.Load().Language);
             _window = new MainWindow(LaunchOptions.Parse(Environment.GetCommandLineArgs()));
             _window.Activate();
+
+            // From here on, later launches talk to this instance instead of starting
+            // their own (see InstanceRouter).
+            InstanceRouter.Listen(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
 
             // Watch the spool folder and process anything already pending. The
             // printer install itself is offered to the user by PreviewPage.

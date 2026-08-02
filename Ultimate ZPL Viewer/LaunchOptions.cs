@@ -7,7 +7,11 @@ namespace Ultimate_ZPL_Viewer;
 // force those panes hidden at startup (`--hide editor,toolbar`). Forced is true
 // whenever a --hide flag was given: while set, the editor/toolbar visibility is
 // NOT persisted on exit (the override is a one-off, not a saved preference).
-public sealed record LaunchOptions(string? FilePath, bool HideEditor, bool HideToolbar, bool Forced)
+// Adopt carries a document handed over by another window (a tab dragged out, or
+// "open in a new window"); RestoreSession is false for every window but the first,
+// so only one of them reopens the previous session.
+public sealed record LaunchOptions(string? FilePath, bool HideEditor, bool HideToolbar, bool Forced,
+    DocTab? Adopt = null, bool RestoreSession = true)
 {
     // args come from Environment.GetCommandLineArgs() (args[0] = executable path).
     public static LaunchOptions Parse(string[] args)

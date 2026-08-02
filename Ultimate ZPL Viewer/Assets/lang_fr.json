@@ -1508,6 +1508,18 @@
         "zplAssoc": {
           "title": "Fichiers .zpl par défaut",
           "desc": "Ouvrir les fichiers .zpl avec Ultimate ZPL Viewer par défaut."
+        },
+        "openExplorer": {
+          "title": "Fichiers ouverts depuis l'Explorateur",
+          "desc": "Quand l'application tourne déjà, un fichier ouvert par double-clic ou par « Ouvrir avec » arrive dans un nouvel onglet ou dans une nouvelle fenêtre."
+        },
+        "openToolbar": {
+          "title": "Bouton « Ouvrir un fichier »",
+          "desc": "Même choix pour le bouton de la barre d'outils et le raccourci Ctrl+O."
+        },
+        "launchAlone": {
+          "title": "Lancer l'application sans fichier",
+          "desc": "Ce que fait un clic sur le raccourci ou l'icône du menu Démarrer quand une fenêtre est déjà ouverte."
         }
       },
       "lbl": {
@@ -1523,6 +1535,14 @@
         "pngMode": [
           "Demander à chaque fois",
           "Qualité par défaut"
+        ],
+        "openWhere": [
+          "Dans un nouvel onglet",
+          "Dans une nouvelle fenêtre"
+        ],
+        "launchAlone": [
+          "Ouvrir une nouvelle fenêtre vide",
+          "Revenir à la fenêtre déjà ouverte"
         ]
       },
       "zplPrompt": {

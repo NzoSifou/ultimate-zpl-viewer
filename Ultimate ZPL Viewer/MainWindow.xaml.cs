@@ -1,4 +1,4 @@
-using Microsoft.UI;
+﻿using Microsoft.UI;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -14,9 +14,14 @@ namespace Ultimate_ZPL_Viewer
         private DesktopAcrylicController? _acrylicController;
         private SystemBackdropConfiguration? _backdropConfig;
 
-        public MainWindow(LaunchOptions launchOptions)
+        /// <summary>The page hosting this window's documents.</summary>
+        public PreviewPage? Page => rootFrame.Content as PreviewPage;
+
+        public MainWindow(LaunchOptions launchOptions, DocTab? adopt = null)
         {
             InitializeComponent();
+            WindowManager.Register(this);
+            if (adopt is not null) launchOptions = launchOptions with { Adopt = adopt };
 
             // Windows 11-style custom title bar: content extends into the frame,
             // the 40 px bar is our XAML, the caption buttons stay system-drawn.
@@ -110,6 +115,69 @@ namespace Ultimate_ZPL_Viewer
             {
                 _closeFlowRunning = false;
             }
+        }
+
+        /// <summary>
+        /// Closes without the unsaved-documents question: the documents are not being
+        /// discarded, they have just moved to another window.
+        /// </summary>
+        public void CloseWithoutPrompt()
+        {
+            _closeApproved = true;
+            Close();
+        }
+
+        // ── Merging a lone document by dragging the title bar ────────────────
+        //
+        // A window showing a single document has no tab strip, so there is no tab to
+        // drag: the user grabs the title bar instead. We watch the end of the window
+        // move and, if the pointer landed on another window's tab area, hand the
+        // document over and disappear — the same result as dragging a tab across.
+
+        private void TryMergeIntoWindowUnderCursor()
+        {
+            if (Page?.SingleDocument() is not { } single) return;   // several tabs → drag the tab
+            if (!GetCursorPos(out var cursor)) return;
+
+            var target = WindowManager.AtScreenPoint(cursor.X, cursor.Y, ignore: this);
+            if (target?.Page is not { } targetPage) return;
+            if (!targetPage.IsOverTabDropZone(cursor.X, cursor.Y)) return;
+
+            var carried = Page.GiveAwayTab(single.Item, single.Tab);
+            targetPage.TakeOverDocument(carried);
+        }
+
+        [StructLayout(LayoutKind.Sequential)] private struct POINT { public int X, Y; }
+
+        [DllImport("user32.dll")] private static extern bool GetCursorPos(out POINT lpPoint);
+
+        /// <summary>Restores and raises the window (a second launch was routed here).</summary>
+        public void BringToFront()
+        {
+            try
+            {
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+                if (IsIconic(hwnd)) ShowWindow(hwnd, SW_RESTORE);
+                Activate();
+                SetForegroundWindow(hwnd);
+            }
+            catch { /* focus is best-effort */ }
+        }
+
+        private const int SW_RESTORE = 9;
+        [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr hWnd);
+        [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        /// <summary>Places the window so its top-left corner sits at a screen point.</summary>
+        public void MoveTo(int screenX, int screenY)
+        {
+            try
+            {
+                var size = AppWindow.Size;
+                AppWindow.Move(new Windows.Graphics.PointInt32(screenX, screenY));
+                AppWindow.Resize(size);
+            }
+            catch { /* placement is cosmetic */ }
         }
 
         // Called by the settings dialog so the title bar follows theme changes.
@@ -326,6 +394,10 @@ namespace Ultimate_ZPL_Viewer
         private IntPtr MinSizeSubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, uint uIdSubclass, IntPtr dwRefData)
         {
             const uint WM_GETMINMAXINFO = 0x0024;
+            const uint WM_EXITSIZEMOVE = 0x0232;
+            // The user just finished dragging the window: a lone document dropped on
+            // another window's tab area joins it (see TryMergeIntoWindowUnderCursor).
+            if (uMsg == WM_EXITSIZEMOVE) TryMergeIntoWindowUnderCursor();
             if (uMsg == WM_GETMINMAXINFO)
             {
                 var dpi = GetDpiForWindow(hWnd);

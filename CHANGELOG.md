@@ -6,6 +6,42 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.3.0] — 2026-07-31 — onglets et fenêtres
+
+L'application se comporte désormais comme un navigateur : une seule instance, des
+documents qui se rangent en onglets, et des onglets qui se détachent en fenêtres.
+
+### ✨ Ajouté
+
+- **Ouverture en onglets** 🗂️
+  Ouvrir un second fichier `.zpl` alors que l'application tourne déjà ne lance plus
+  une deuxième copie du programme : le document rejoint la fenêtre déjà à l'écran.
+
+- **Trois réglages d'ouverture indépendants** ⚙️ (carte **Général**)
+
+  | Réglage | Choix |
+  | :-- | :-- |
+  | Fichiers ouverts depuis l'Explorateur | dans un nouvel onglet **ou** dans une nouvelle fenêtre |
+  | Bouton « Ouvrir un fichier » | dans un nouvel onglet **ou** dans une nouvelle fenêtre |
+  | Lancer l'application sans fichier | ouvrir une nouvelle fenêtre vide **ou** revenir à la fenêtre déjà ouverte |
+
+- **« Ouvrir dans une nouvelle fenêtre »** 🪟
+  Nouvelle entrée au clic droit sur un onglet : le document part dans sa propre
+  fenêtre.
+
+- **Détacher et rattacher un onglet à la souris** ↔️
+  Glisser un onglet hors de la fenêtre en fait une fenêtre à part ; le déposer sur
+  la barre d'onglets d'une autre fenêtre l'y rattache. Un document seul n'ayant pas
+  d'onglet visible, il se déplace en glissant la **barre de titre** de sa fenêtre sur
+  la zone d'onglets de celle d'arrivée. Quand le dernier document d'une fenêtre s'en
+  va, la fenêtre se referme d'elle-même.
+
+- **Restauration de la disposition des fenêtres** 💾
+  L'option « rouvrir les derniers fichiers » restaure désormais quel document était
+  dans quelle fenêtre, et non plus une liste à plat.
+
+---
+
 ## [1.2.0] — 2026-07-31 — couverture des commandes ZPL
 
 Passe de fond sur le moteur : l'objectif est qu'une étiquette **jamais vue** s'affiche

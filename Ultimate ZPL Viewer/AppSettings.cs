@@ -88,8 +88,21 @@ public sealed class AppSettings
     // Most-recently-opened files, newest first (capped at RecentFilesMax).
     public List<string> RecentFiles { get; set; } = new();
     // Saved documents open at the last graceful exit (tab order); used by
-    // ReopenLastFile to restore the whole tab set.
+    // ReopenLastFile to restore the whole tab set. Kept for the single-window
+    // sessions written by earlier versions — WindowSessions supersedes it.
     public List<string> OpenFiles { get; set; } = new();
+
+    // One entry per window at the last graceful exit, each holding that window's
+    // documents in tab order, so the whole arrangement comes back.
+    public List<List<string>> WindowSessions { get; set; } = new();
+
+    // Where a document opens when the app is ALREADY running. "tab" adds it to the
+    // active window, "window" gives it a window of its own.
+    public string OpenFromExplorer { get; set; } = "tab";   // double-click, "Open with"
+    public string OpenFromToolbar { get; set; } = "tab";    // the "Open a file" button
+    // Starting the app with no file while a window is already open: "window" opens
+    // an empty one, "focus" just brings the existing window to the front.
+    public string LaunchWithoutFile { get; set; } = "window";
     public bool ShowFilePathInTitle { get; set; } = true;
     // Show the full path in parentheses in a tab's hover tooltip.
     public bool ShowPathInTabTooltip { get; set; } = true;

@@ -2144,7 +2144,7 @@ public sealed partial class PreviewPage : Page
             panel.Children.Add(FieldRow(heightBox, unitLabel));
 
             var dialog = CreateDialog("Nouveau fichier", panel, "Ok", "Annuler");
-            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+            if (await ShowDialogAsync(dialog) != ContentDialogResult.Primary) return;
             if (!UnitConverter.TryParseLength(widthBox.Text, out var width) || !UnitConverter.TryParseLength(heightBox.Text, out var height))
                 return;
             widthMm  = UnitConverter.ToMillimeters(width, _settings.Unit);
@@ -2887,10 +2887,22 @@ public sealed partial class PreviewPage : Page
     {
         var window = WindowManager.Open(
             new LaunchOptions(null, false, false, false, RestoreSession: false));
-        DispatcherQueue.TryEnqueue(async () =>
+        if (window.Page is not { } page) return;
+
+        // Wait for the page to be IN THE VISUAL TREE. Right after the window is
+        // created it has been navigated to but not loaded, so it has no XamlRoot —
+        // and the "New file" size dialog cannot be shown without one.
+        if (page.IsLoaded)
         {
-            if (window.Page is { } page) await page.StartAsNewDocumentAsync();
-        });
+            _ = page.StartAsNewDocumentAsync();
+            return;
+        }
+        void OnceLoaded(object sender, RoutedEventArgs e)
+        {
+            page.Loaded -= OnceLoaded;
+            _ = page.StartAsNewDocumentAsync();
+        }
+        page.Loaded += OnceLoaded;
     }
 
     /// <summary>Runs the "New file" flow, then drops the sample tab this window opened on.</summary>

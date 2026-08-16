@@ -1869,5 +1869,62 @@
         "step5": "Higher quality — Heavier"
       }
     }
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "subtitle": "Every command Ultimate ZPL Viewer answers to from the keyboard.",
+    "close": "Close",
+    "key": {
+      "ctrl": "Ctrl",
+      "shift": "Shift",
+      "alt": "Alt",
+      "esc": "Esc",
+      "tab": "Tab"
+    },
+    "section": {
+      "tabs": "Tabs and windows",
+      "file": "File",
+      "view": "View",
+      "preview": "Preview",
+      "editor": "Code editor"
+    },
+    "row": {
+      "newTab": "New document in a tab",
+      "newWindow": "New document in a window",
+      "duplicateTab": "Duplicate the tab",
+      "closeTab": "Close the tab",
+      "closeWindow": "Close the window",
+      "reopenClosed": "Reopen the last closed tab",
+      "stepTab": "Next / previous tab",
+      "goToTab": "Go to tab n",
+      "lastTab": "Go to the last tab",
+      "open": "Open a file",
+      "save": "Save",
+      "saveAs": "Save as…",
+      "exportPdf": "Export to PDF",
+      "exportPng": "Export to a PNG image",
+      "print": "Print the label",
+      "settings": "Open the settings",
+      "leaveSettings": "Leave the settings",
+      "fullScreen": "Full screen",
+      "toolbar": "Show or hide the toolbar",
+      "editor": "Show or hide the editor",
+      "grid": "Show or hide the grid",
+      "lineNumbers": "Show or hide line numbers",
+      "help": "Show this window",
+      "zoom": "Zoom the preview in / out",
+      "zoom100": "Preview at 100 %",
+      "zoomFit": "Fit the preview to the window",
+      "rotate": "Rotate the preview by 90°",
+      "fontSize": "Larger / smaller text",
+      "wordWrap": "Word wrap",
+      "minimap": "Show or hide the minimap",
+      "find": "Find",
+      "replace": "Replace",
+      "undoRedo": "Undo / Redo",
+      "gotoLine": "Go to line",
+      "selectLine": "Select the line",
+      "nextMatch": "Select the next occurrence"
+    }
   }
 }

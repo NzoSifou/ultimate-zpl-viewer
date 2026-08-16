@@ -1869,5 +1869,62 @@
         "step5": "Meilleure qualité — Plus lourde"
       }
     }
+  },
+  "shortcuts": {
+    "title": "Raccourcis clavier",
+    "subtitle": "Toutes les commandes accessibles au clavier dans Ultimate ZPL Viewer.",
+    "close": "Fermer",
+    "key": {
+      "ctrl": "Ctrl",
+      "shift": "Maj",
+      "alt": "Alt",
+      "esc": "Échap",
+      "tab": "Tab"
+    },
+    "section": {
+      "tabs": "Onglets et fenêtres",
+      "file": "Fichier",
+      "view": "Affichage",
+      "preview": "Aperçu",
+      "editor": "Éditeur de code"
+    },
+    "row": {
+      "newTab": "Nouveau document dans un onglet",
+      "newWindow": "Nouveau document dans une fenêtre",
+      "duplicateTab": "Dupliquer l'onglet",
+      "closeTab": "Fermer l'onglet",
+      "closeWindow": "Fermer la fenêtre",
+      "reopenClosed": "Rouvrir le dernier onglet fermé",
+      "stepTab": "Onglet suivant / précédent",
+      "goToTab": "Aller à l'onglet n",
+      "lastTab": "Aller au dernier onglet",
+      "open": "Ouvrir un fichier",
+      "save": "Enregistrer",
+      "saveAs": "Enregistrer sous…",
+      "exportPdf": "Exporter en PDF",
+      "exportPng": "Exporter en image PNG",
+      "print": "Imprimer l'étiquette",
+      "settings": "Ouvrir les paramètres",
+      "leaveSettings": "Quitter les paramètres",
+      "fullScreen": "Plein écran",
+      "toolbar": "Afficher ou masquer la barre d'outils",
+      "editor": "Afficher ou masquer l'éditeur",
+      "grid": "Afficher ou masquer la grille",
+      "lineNumbers": "Afficher ou masquer les numéros de ligne",
+      "help": "Afficher cette fenêtre",
+      "zoom": "Zoomer / dézoomer l'aperçu",
+      "zoom100": "Aperçu à 100 %",
+      "zoomFit": "Ajuster l'aperçu à la fenêtre",
+      "rotate": "Tourner l'aperçu de 90°",
+      "fontSize": "Agrandir / réduire le texte",
+      "wordWrap": "Retour à la ligne",
+      "minimap": "Afficher ou masquer la minimap",
+      "find": "Rechercher",
+      "replace": "Remplacer",
+      "undoRedo": "Annuler / Rétablir",
+      "gotoLine": "Aller à la ligne",
+      "selectLine": "Sélectionner la ligne",
+      "nextMatch": "Sélectionner l'occurrence suivante"
+    }
   }
 }

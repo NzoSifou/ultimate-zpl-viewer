@@ -2814,6 +2814,13 @@ public sealed partial class PreviewPage : Page
         Add((VirtualKey)188 /* , */, Ctrl, "settings");
         Add(VirtualKey.F11, VirtualKeyModifiers.None, "fullScreen");
 
+        // Ctrl+/ opens the cheat sheet. On an AZERTY keyboard the slash needs Shift
+        // to be typed at all, so the shifted form has to answer too — and the numeric
+        // keypad's divide key is the one place "/" is unshifted on every layout.
+        Add((VirtualKey)191 /* / on QWERTY */, Ctrl, "shortcutsHelp");
+        Add((VirtualKey)191, CtrlShift, "shortcutsHelp");
+        Add(VirtualKey.Divide, Ctrl, "shortcutsHelp");
+
         // Escape leaves the settings screen — and ONLY that. Everything else Escape
         // does (close a dialog, a flyout, Monaco's find bar) must keep working, so
         // the key is left unhandled whenever the settings screen is not up.
@@ -2869,7 +2876,7 @@ public sealed partial class PreviewPage : Page
         // The settings screen is not a document: only the shortcuts that make sense
         // in front of it stay live (and Ctrl+, closes it again, like the button does).
         if (SettingsOverlay.Visibility == Visibility.Visible
-            && name is not ("print" or "newWindow" or "fullScreen" or "settings"))
+            && name is not ("print" or "newWindow" or "fullScreen" or "settings" or "shortcutsHelp"))
             return;
 
         switch (name)
@@ -2929,6 +2936,7 @@ public sealed partial class PreviewPage : Page
             case "zoom100": ApplyZoomPercent(100); break;
             case "zoomFit": FitPreviewToView(); break;
             case "rotate": Rotate90(); break;
+            case "shortcutsHelp": _ = ShowShortcutsHelpAsync(); break;
             default:
                 if (name.StartsWith("goToTab", StringComparison.Ordinal)
                     && int.TryParse(name[7..], out int n))
@@ -2954,6 +2962,15 @@ public sealed partial class PreviewPage : Page
         if (count < 2) return;
         int index = DocTabs.SelectedIndex + delta;
         SelectTabAt(((index % count) + count) % count);
+    }
+
+    // Ctrl+/ — the cheat sheet. Sized against the window so it never gets clipped.
+    private async Task ShowShortcutsHelpAsync()
+    {
+        if (XamlRoot is null) return;
+        await ShowDialogAsync(ShortcutsHelp.Create(
+            XamlRoot, _settings.ToElementTheme(),
+            XamlRoot.Size.Width, XamlRoot.Size.Height));
     }
 
     // The tab strip is collapsed while a single document is open, and a collapsed

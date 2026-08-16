@@ -226,6 +226,10 @@
             editor.addCommand(M.CtrlCmd | M.Shift | K.KeyI, forward('exportPng'));
 
             editor.addCommand(M.CtrlCmd | K.Comma, forward('settings'));
+            // Ctrl+/ — shifted too, since AZERTY needs Shift to type a slash.
+            editor.addCommand(M.CtrlCmd | K.Slash, forward('shortcutsHelp'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.Slash, forward('shortcutsHelp'));
+            editor.addCommand(M.CtrlCmd | K.NumpadDivide, forward('shortcutsHelp'));
             editor.addCommand(K.F11, forward('fullScreen'));
             editor.addCommand(M.CtrlCmd | K.KeyB, forward('toggleToolbar'));
             editor.addCommand(M.CtrlCmd | K.KeyE, forward('toggleEditor'));

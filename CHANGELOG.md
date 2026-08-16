@@ -46,6 +46,15 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 | `Ctrl` + `Maj` + `1` | Aperçu à 100 % |
 | `Ctrl` + `Maj` + `9` | Ajuster l'aperçu à la fenêtre |
 | `Ctrl` + `Maj` + `R` | Tourner l'aperçu de 90° |
+| `Ctrl` + `/` | **Afficher la liste de tous les raccourcis** |
+
+**Aide-mémoire des raccourcis** ⌨️
+`Ctrl` + `/` ouvre une fiche récapitulative : chaque commande sur une ligne, ses
+touches dessinées en pastilles à droite, regroupées par thème (onglets et fenêtres,
+fichier, affichage, aperçu, éditeur de code). Elle passe à une seule colonne et
+défile sur une petite fenêtre, et elle est traduite comme le reste de l'interface.
+Sur un clavier AZERTY la barre oblique demande `Maj` : la forme avec `Maj` répond
+donc aussi, tout comme la touche `/` du pavé numérique.
 
 > `Ctrl` + `Maj` + `0` aurait été le pendant naturel de `Ctrl` + `Maj` + `9`, mais
 > Windows le réserve à l'échelle du système pour une méthode de saisie

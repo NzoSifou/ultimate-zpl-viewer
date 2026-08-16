@@ -2160,6 +2160,10 @@ public sealed partial class PreviewPage : Page
     }
 
     private async void OpenFileButton_Click(SplitButton sender, SplitButtonClickEventArgs e)
+        => await OpenFileFromPickerAsync();
+
+    // Shared by the toolbar button and Ctrl+O.
+    private async Task OpenFileFromPickerAsync()
     {
         var picker = new FileOpenPicker();
         InitializeWithWindow.Initialize(picker, GetWindowHandle());
@@ -2798,6 +2802,46 @@ public sealed partial class PreviewPage : Page
         }
         Add(VirtualKey.Number0, Ctrl, "lastTab");
         Add(VirtualKey.NumberPad0, Ctrl, "lastTab");
+        Add(VirtualKey.D, Ctrl, "duplicateTab");
+
+        // File
+        Add(VirtualKey.O, Ctrl, "openFile");
+        Add(VirtualKey.S, CtrlShift, "saveAs");
+        Add(VirtualKey.E, CtrlShift, "exportPdf");
+        Add(VirtualKey.I, CtrlShift, "exportPng");
+
+        // View
+        Add((VirtualKey)188 /* , */, Ctrl, "settings");
+        Add(VirtualKey.F11, VirtualKeyModifiers.None, "fullScreen");
+
+        // Escape leaves the settings screen — and ONLY that. Everything else Escape
+        // does (close a dialog, a flyout, Monaco's find bar) must keep working, so
+        // the key is left unhandled whenever the settings screen is not up.
+        var escape = new KeyboardAccelerator { Key = VirtualKey.Escape };
+        escape.Invoked += (_, args) =>
+        {
+            if (SettingsOverlay.Visibility != Visibility.Visible) return;
+            // A dialog or a flyout is on top: Escape belongs to it.
+            if (XamlRoot is not null
+                && VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot).Count > 0) return;
+            args.Handled = true;
+            CloseSettings();
+        };
+        Root.KeyboardAccelerators.Add(escape);
+        Add(VirtualKey.B, Ctrl, "toggleToolbar");
+        Add(VirtualKey.E, Ctrl, "toggleEditor");
+        Add(VirtualKey.G, Ctrl, "toggleGrid");
+        Add(VirtualKey.L, Ctrl, "toggleLineNumbers");
+
+        // Preview
+        // 100 % is on Ctrl+Shift+1, NOT on Ctrl+Shift+0: Windows reserves that one
+        // system-wide for an input-method hotkey (HKCU\Control Panel\Input Method\
+        // Hot Keys\00000104 = Ctrl+Shift+VK_0), so the key never reaches any app.
+        // It stays registered all the same, for the machines that leave it free.
+        Add(VirtualKey.Number1, CtrlShift, "zoom100");
+        Add(VirtualKey.Number0, CtrlShift, "zoom100");
+        Add(VirtualKey.Number9, CtrlShift, "zoomFit");
+        Add(VirtualKey.R, CtrlShift, "rotate");
 
         // Ctrl +/- zooms the PREVIEW here. Inside the editor the same keys resize the
         // text instead, which is why they are not handled globally.
@@ -2822,13 +2866,16 @@ public sealed partial class PreviewPage : Page
             && VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot).Count > 0)
             return;
 
-        if (SettingsOverlay.Visibility == Visibility.Visible && name is not ("print" or "newWindow"))
-            return;   // the settings screen is not a document
+        // The settings screen is not a document: only the shortcuts that make sense
+        // in front of it stay live (and Ctrl+, closes it again, like the button does).
+        if (SettingsOverlay.Visibility == Visibility.Visible
+            && name is not ("print" or "newWindow" or "fullScreen" or "settings"))
+            return;
 
         switch (name)
         {
             case "closeTab":
-                if (DocTabs.SelectedItem is TabViewItem sel && sel.Tag is DocTab selTab)
+                if (ActiveTabItem() is { Tag: DocTab selTab } sel)
                     _ = RequestCloseSingleAsync(sel, selTab);
                 break;
             case "closeWindow":
@@ -2849,6 +2896,39 @@ public sealed partial class PreviewPage : Page
             case "print": _ = PrintCurrentAsync(); break;
             case "zoomIn": StepZoom(+1); break;
             case "zoomOut": StepZoom(-1); break;
+            case "duplicateTab":
+                if (ActiveTabItem() is { Tag: DocTab dupTab }) DuplicateTab(dupTab);
+                break;
+
+            case "openFile": _ = OpenFileFromPickerAsync(); break;
+            case "saveAs": _ = SaveAsAsync(); break;
+            case "exportPdf": _ = ExportPdfAsync(); break;
+            case "exportPng": _ = ExportPngAsync(); break;
+
+            case "settings":
+                if (SettingsOverlay.Visibility == Visibility.Visible) CloseSettings();
+                else OpenSettings("general");
+                break;
+            case "fullScreen":
+                (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.ToggleFullScreen();
+                break;
+            case "toggleToolbar":
+                (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)
+                    ?.SetToolbarToggleGlyph(ToggleToolbar());
+                break;
+            case "toggleEditor": ToggleEditor(); break;
+            case "toggleGrid":
+                SetPreviewGrid(!_settings.ShowPreviewGrid);
+                if (_gridToggle is not null) _gridToggle.IsOn = _settings.ShowPreviewGrid;
+                break;
+            case "toggleLineNumbers":
+                SetLineNumbers(!_settings.ShowLineNumbers);
+                if (_lineToggle is not null) _lineToggle.IsOn = _settings.ShowLineNumbers;
+                break;
+
+            case "zoom100": ApplyZoomPercent(100); break;
+            case "zoomFit": FitPreviewToView(); break;
+            case "rotate": Rotate90(); break;
             default:
                 if (name.StartsWith("goToTab", StringComparison.Ordinal)
                     && int.TryParse(name[7..], out int n))
@@ -2875,6 +2955,16 @@ public sealed partial class PreviewPage : Page
         int index = DocTabs.SelectedIndex + delta;
         SelectTabAt(((index % count) + count) % count);
     }
+
+    // The tab strip is collapsed while a single document is open, and a collapsed
+    // TabView reports NO selection — so SelectedItem is null exactly when the user
+    // has one document, which is when they are most likely to press Ctrl+W or Ctrl+D.
+    // The active document's item is the answer in that case.
+    private TabViewItem? ActiveTabItem()
+        => DocTabs.SelectedItem as TabViewItem
+           ?? DocTabs.TabItems.OfType<TabViewItem>()
+                     .FirstOrDefault(t => ReferenceEquals(t.Tag, _activeTab))
+           ?? DocTabs.TabItems.OfType<TabViewItem>().FirstOrDefault();
 
     private void SelectTabAt(int index)
     {
@@ -3204,6 +3294,10 @@ public sealed partial class PreviewPage : Page
 
 
     private async void PngButton_Click(object sender, RoutedEventArgs e)
+        => await ExportPngAsync();
+
+    // Shared by the toolbar button and Ctrl+Shift+I.
+    private async Task ExportPngAsync()
     {
         // Resolution factor: "ask" pops the quality dialog, "default" uses the
         // saved step silently. 1=÷2, 2=÷1.5, 3=original, 4=×1.5, 5=×2.
@@ -3291,6 +3385,10 @@ public sealed partial class PreviewPage : Page
     }
 
     private async void PdfButton_Click(object sender, RoutedEventArgs e)
+        => await ExportPdfAsync();
+
+    // Shared by the toolbar button and Ctrl+Shift+E.
+    private async Task ExportPdfAsync()
     {
         // Vector PDF built from the render model (crisp at any zoom), not a raster.
         var pdf = ZplRenderer.ToPdf(_model, SelectedDpmm, _rotationDegrees);
@@ -3864,6 +3962,7 @@ public sealed partial class PreviewPage : Page
         _minimapToggle = minimap;
         var lineToggle = MakeToggle(_settings.ShowLineNumbers);
         lineToggle.Toggled += (_, _) => SetLineNumbers(lineToggle.IsOn);
+        _lineToggle = lineToggle;
         var lowWarn = MakeToggle(_settings.ShowLowWarnings);
         lowWarn.Toggled += (_, _) => { _settings.ShowLowWarnings = lowWarn.IsOn; _settings.Save(); RunStaticAnalysis(); };
 
@@ -3908,6 +4007,7 @@ public sealed partial class PreviewPage : Page
         // ── Aperçu ──────────────────────────────────────────────────────────
         var gridToggle = MakeToggle(_settings.ShowPreviewGrid);
         gridToggle.Toggled += (_, _) => SetPreviewGrid(gridToggle.IsOn);
+        _gridToggle = gridToggle;
         var gridSpacing = new NumberBox
         {
             Value = _settings.PreviewGridSpacing, Minimum = 0.1, Maximum = 1000, SmallChange = 1,
@@ -5104,6 +5204,8 @@ public sealed partial class PreviewPage : Page
     // settings screen has never been built).
     private ToggleSwitch? _wrapToggle;
     private ToggleSwitch? _minimapToggle;
+    private ToggleSwitch? _lineToggle;
+    private ToggleSwitch? _gridToggle;
     private NumberBox? _fontSizeBox;
 
     private bool IsDarkTheme => Root.ActualTheme == ElementTheme.Dark;

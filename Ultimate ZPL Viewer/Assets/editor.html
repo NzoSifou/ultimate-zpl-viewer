@@ -218,12 +218,45 @@
                 })(d);
             }
             editor.addCommand(M.CtrlCmd | K.Digit0, forward('lastTab'));
+            editor.addCommand(M.CtrlCmd | K.KeyD, forward('duplicateTab'));
 
-            // Ctrl+P must never open the browser's print dialog. Only the DEFAULT
-            // action is cancelled here — stopping propagation as well would keep the
-            // editor command above from ever running.
+            editor.addCommand(M.CtrlCmd | K.KeyO, forward('openFile'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.KeyS, forward('saveAs'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.KeyE, forward('exportPdf'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.KeyI, forward('exportPng'));
+
+            editor.addCommand(M.CtrlCmd | K.Comma, forward('settings'));
+            editor.addCommand(K.F11, forward('fullScreen'));
+            editor.addCommand(M.CtrlCmd | K.KeyB, forward('toggleToolbar'));
+            editor.addCommand(M.CtrlCmd | K.KeyE, forward('toggleEditor'));
+            editor.addCommand(M.CtrlCmd | K.KeyG, forward('toggleGrid'));
+            editor.addCommand(M.CtrlCmd | K.KeyL, forward('toggleLineNumbers'));
+
+            // Ctrl+Shift+1, not Ctrl+Shift+0: Windows keeps that one for an input
+            // method hotkey and it never reaches the app (see RegisterShortcuts).
+            editor.addCommand(M.CtrlCmd | M.Shift | K.Digit1, forward('zoom100'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.Digit0, forward('zoom100'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.Digit9, forward('zoomFit'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.KeyR, forward('rotate'));
+
+            // Three of those took a Monaco binding away (go to line, select line,
+            // select next occurrence). They are re-hung on Alt so nothing is lost.
+            function rebind(keybinding, commandId) {
+                editor.addCommand(keybinding, function () { editor.trigger('shortcut', commandId, null); });
+            }
+            rebind(M.Alt | K.KeyG, 'editor.action.gotoLine');
+            rebind(M.Alt | K.KeyL, 'expandLineSelection');
+            rebind(M.Alt | K.KeyD, 'editor.action.addSelectionToNextFindMatch');
+
+            // Ctrl+P must never open the browser's print dialog, Ctrl+O never the
+            // browser's file picker, F11 never the browser's own full screen. Only the
+            // DEFAULT action is cancelled here — stopping propagation as well would
+            // keep the editor commands above from ever running.
             window.addEventListener('keydown', function (e) {
-                if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) e.preventDefault();
+                if (e.key === 'F11') { e.preventDefault(); return; }
+                if (!(e.ctrlKey || e.metaKey)) return;
+                var k = (e.key || '').toLowerCase();
+                if (k === 'p' || k === 'o') e.preventDefault();
             }, true);
 
             // Report the cursor offset so C# can show the documentation of the

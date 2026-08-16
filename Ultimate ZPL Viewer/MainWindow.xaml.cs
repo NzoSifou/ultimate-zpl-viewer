@@ -338,10 +338,20 @@ namespace Ultimate_ZPL_Viewer
         // reveals an overlay bar with minimize / exit fullscreen / close.
 
         private void FullScreenButton_Click(object sender, RoutedEventArgs e)
+            => EnterFullScreen();
+
+        private void EnterFullScreen()
         {
             AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
             AppTitleBar.Visibility       = Visibility.Collapsed;
             FullScreenTopEdge.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>F11: same button, both ways.</summary>
+        public void ToggleFullScreen()
+        {
+            if (AppWindow.Presenter.Kind == AppWindowPresenterKind.FullScreen) ExitFullScreen();
+            else EnterFullScreen();
         }
 
         private void ExitFullScreen()

@@ -23,11 +23,44 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 | `Alt` + `Z` | Retour à la ligne dans l'éditeur |
 | `Ctrl` + `M` | Afficher ou masquer la minimap |
 
-Les bascules `Alt`+`Z` et `Ctrl`+`M`, ainsi que la taille du texte modifiée au clavier,
-mettent à jour le **réglage correspondant** dans la page Paramètres.
+**Fichier et export**
+
+| Raccourci | Effet |
+| :-- | :-- |
+| `Ctrl` + `O` | Ouvrir un fichier (respecte le réglage « onglet ou fenêtre » de la barre d'outils) |
+| `Ctrl` + `Maj` + `S` | Enregistrer sous… |
+| `Ctrl` + `Maj` + `E` | **E**xporter en PDF |
+| `Ctrl` + `Maj` + `I` | Exporter en **i**mage PNG |
+| `Ctrl` + `D` | Dupliquer l'onglet |
+
+**Affichage**
+
+| Raccourci | Effet |
+| :-- | :-- |
+| `Ctrl` + `,` | Ouvrir les paramètres — `Échap` (ou de nouveau `Ctrl` + `,`) pour en sortir |
+| `F11` | Entrer et sortir du plein écran |
+| `Ctrl` + `B` | Afficher ou masquer la **b**arre d'outils |
+| `Ctrl` + `E` | Afficher ou masquer l'**é**diteur |
+| `Ctrl` + `G` | Afficher ou masquer la **g**rille |
+| `Ctrl` + `L` | Afficher ou masquer les numéros de **l**igne |
+| `Ctrl` + `Maj` + `1` | Aperçu à 100 % |
+| `Ctrl` + `Maj` + `9` | Ajuster l'aperçu à la fenêtre |
+| `Ctrl` + `Maj` + `R` | Tourner l'aperçu de 90° |
+
+> `Ctrl` + `Maj` + `0` aurait été le pendant naturel de `Ctrl` + `Maj` + `9`, mais
+> Windows le réserve à l'échelle du système pour une méthode de saisie
+> (`HKCU\Control Panel\Input Method\Hot Keys\00000104`) : la touche n'atteint aucune
+> application. C'est donc `Ctrl` + `Maj` + `1` qui donne le 100 %. Le raccourci en `0`
+> reste déclaré, pour les machines qui le laissent libre.
+
+Les bascules `Alt`+`Z`, `Ctrl`+`M`, `Ctrl`+`G` et `Ctrl`+`L`, ainsi que la taille du
+texte modifiée au clavier, mettent à jour le **réglage correspondant** dans la page
+Paramètres.
 
 Tous ces raccourcis fonctionnent aussi lorsque le curseur est dans l'éditeur, qui
-sinon les intercepterait.
+sinon les intercepterait. Trois d'entre eux reprenaient une commande de l'éditeur :
+celles-ci sont déplacées et restent disponibles — `Alt`+`G` (aller à la ligne),
+`Alt`+`L` (sélectionner la ligne), `Alt`+`D` (sélectionner l'occurrence suivante).
 
 ### 🐛 Corrigé
 
@@ -46,6 +79,16 @@ sinon les intercepterait.
   Ouvrait la boîte d'impression du navigateur depuis l'éditeur — donc imprimait le
   **code**. Envoie désormais l'étiquette à l'imprimante sélectionnée, en respectant
   le réglage de confirmation.
+
+- **`Ctrl` + `W` avec un seul document** 🗂️
+  Ne faisait rien. La barre d'onglets est masquée quand il n'y a qu'un document, et
+  un `TabView` masqué ne signale aucune sélection : le raccourci ne trouvait donc pas
+  l'onglet à fermer — exactement dans le cas le plus courant.
+
+- **`Ctrl` + `N`** 🪟
+  Ouvrait une fenêtre entièrement noire, puis l'application s'arrêtait. La page de la
+  nouvelle fenêtre n'était pas encore dans l'arbre visuel, donc sans `XamlRoot`, et la
+  boîte « Nouveau fichier » ne pouvait pas s'y afficher.
 
 ---
 

@@ -157,6 +157,13 @@ public sealed partial class PreviewPage : Page
             _ = SaveAsync();
         };
         Root.KeyboardAccelerators.Add(saveAccel);
+        RegisterShortcuts();
+        // Clicking the preview must take the focus OUT of the editor: Ctrl +/- then
+        // zooms the label instead of resizing the code, which is what the keys mean
+        // once the caret is no longer in the text.
+        PreviewScrollViewer.IsTabStop = true;
+        PreviewScrollViewer.AddHandler(PointerPressedEvent,
+            new PointerEventHandler((_, _) => PreviewScrollViewer.Focus(FocusState.Pointer)), true);
         // No automatic "Ctrl+S" tooltip on hover (it even leaked into the settings).
         Root.KeyboardAcceleratorPlacementMode = KeyboardAcceleratorPlacementMode.Hidden;
         // Cursor set per state in ApplyEditorLayout (resize when shown, hand when hidden).
@@ -984,6 +991,9 @@ public sealed partial class PreviewPage : Page
         var star = new GridLength(1, GridUnitType.Star);
 
         EditorHost.Visibility = _editorVisible ? Visibility.Visible : Visibility.Collapsed;
+        // A hidden editor must not keep the keyboard focus, or Ctrl +/- would still
+        // be resizing text nobody can see.
+        if (!_editorVisible) PreviewScrollViewer.Focus(FocusState.Programmatic);
         Grid.SetColumn(EditorHost, swap ? 2 : 0);
         Grid.SetColumn(PreviewSurface, swap ? 0 : 2);
 
@@ -2095,6 +2105,11 @@ public sealed partial class PreviewPage : Page
     }
 
     private async void NewFileButton_Click(object sender, RoutedEventArgs e)
+        => await NewDocumentAsync();
+
+    // The "New file" flow: asks for the size when configured to, then opens the
+    // blank label in its own tab.
+    private async Task NewDocumentAsync()
     {
         double widthMm, heightMm;
 
@@ -2642,7 +2657,7 @@ public sealed partial class PreviewPage : Page
     {
         var carried = Snapshot(tab);
         if (DocTabs.TabItems.Count <= 1) CloseOwnWindow();
-        else CloseTab(item, tab);
+        else CloseTab(item, tab, remember: false);   // it moved, it was not closed
         return carried;
     }
 
@@ -2727,7 +2742,7 @@ public sealed partial class PreviewPage : Page
         if (screenX is int sx && screenY is int sy) window.MoveTo(sx - 120, sy - 24);
 
         if (wasLast) CloseOwnWindow();
-        else CloseTab(item, tab);
+        else CloseTab(item, tab, remember: false);   // it moved, it was not closed
     }
 
     /// <summary>Takes a document handed over by another window as a new tab here.</summary>
@@ -2750,6 +2765,183 @@ public sealed partial class PreviewPage : Page
         _settings.WindowSessions = layout;
         _settings.OpenFiles = flat;
     }
+
+    // ── Keyboard shortcuts ───────────────────────────────────────────────────
+
+    // These fire when the focus is anywhere BUT the editor: Monaco swallows every
+    // key it receives, so it carries its own copy of the same list and forwards the
+    // presses back here (see editor.html).
+    private void RegisterShortcuts()
+    {
+        void Add(VirtualKey key, VirtualKeyModifiers mods, string action)
+        {
+            var accel = new KeyboardAccelerator { Key = key, Modifiers = mods };
+            accel.Invoked += (_, args) => { args.Handled = true; RunShortcut(action); };
+            Root.KeyboardAccelerators.Add(accel);
+        }
+
+        const VirtualKeyModifiers Ctrl = VirtualKeyModifiers.Control;
+        const VirtualKeyModifiers CtrlShift = VirtualKeyModifiers.Control | VirtualKeyModifiers.Shift;
+
+        Add(VirtualKey.W, Ctrl, "closeTab");
+        Add(VirtualKey.W, CtrlShift, "closeWindow");
+        Add(VirtualKey.T, Ctrl, "newTab");
+        Add(VirtualKey.N, Ctrl, "newWindow");
+        Add(VirtualKey.T, CtrlShift, "reopenClosed");
+        Add(VirtualKey.Tab, Ctrl, "nextTab");
+        Add(VirtualKey.Tab, CtrlShift, "prevTab");
+        Add(VirtualKey.P, Ctrl, "print");
+        for (int i = 1; i <= 9; i++)
+        {
+            Add((VirtualKey)((int)VirtualKey.Number0 + i), Ctrl, $"goToTab{i}");
+            Add((VirtualKey)((int)VirtualKey.NumberPad0 + i), Ctrl, $"goToTab{i}");
+        }
+        Add(VirtualKey.Number0, Ctrl, "lastTab");
+        Add(VirtualKey.NumberPad0, Ctrl, "lastTab");
+
+        // Ctrl +/- zooms the PREVIEW here. Inside the editor the same keys resize the
+        // text instead, which is why they are not handled globally.
+        foreach (var key in new[] { (VirtualKey)187 /* = + */, (VirtualKey)107 /* numpad + */ })
+        {
+            Add(key, Ctrl, "zoomIn");
+            Add(key, CtrlShift, "zoomIn");
+        }
+        foreach (var key in new[] { (VirtualKey)189 /* - _ */, (VirtualKey)109 /* numpad - */ })
+            Add(key, Ctrl, "zoomOut");
+    }
+
+    // Every shortcut goes through here, whether it came from a XAML accelerator (the
+    // editor does not have the focus) or was forwarded by Monaco (it does). One
+    // implementation, one behaviour.
+    internal void RunShortcut(string name)
+    {
+        // A dialog is up (unsaved changes, print confirmation…): the user has a
+        // question to answer first. Acting now would try to open a second
+        // ContentDialog, which WinUI refuses — and took the app down with it.
+        if (XamlRoot is not null
+            && VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot).Count > 0)
+            return;
+
+        if (SettingsOverlay.Visibility == Visibility.Visible && name is not ("print" or "newWindow"))
+            return;   // the settings screen is not a document
+
+        switch (name)
+        {
+            case "closeTab":
+                if (DocTabs.SelectedItem is TabViewItem sel && sel.Tag is DocTab selTab)
+                    _ = RequestCloseSingleAsync(sel, selTab);
+                break;
+            case "closeWindow":
+                _ = CloseWindowWithPromptAsync();
+                break;
+            case "newTab":
+                _ = NewDocumentAsync();          // always a tab, whatever the settings say
+                break;
+            case "newWindow":
+                OpenNewDocumentWindow();
+                break;
+            case "reopenClosed":
+                ReopenLastClosed();
+                break;
+            case "nextTab": StepTab(+1); break;
+            case "prevTab": StepTab(-1); break;
+            case "lastTab": SelectTabAt(DocTabs.TabItems.Count - 1); break;
+            case "print": _ = PrintCurrentAsync(); break;
+            case "zoomIn": StepZoom(+1); break;
+            case "zoomOut": StepZoom(-1); break;
+            default:
+                if (name.StartsWith("goToTab", StringComparison.Ordinal)
+                    && int.TryParse(name[7..], out int n))
+                    SelectTabAt(n - 1);
+                break;
+        }
+    }
+
+    // Ctrl+Shift+W closes every tab, i.e. the window. Window.Close() called from code
+    // does NOT raise the closing event the title-bar cross goes through, so the
+    // unsaved-documents question is run here explicitly — same dialog, same choices,
+    // and cancelling still leaves everything open.
+    private async Task CloseWindowWithPromptAsync()
+    {
+        if (await PrepareAppCloseAsync("Fermer tous les onglets"))
+            (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.CloseWithoutPrompt();
+    }
+
+    // Ctrl+Tab / Ctrl+Shift+Tab, wrapping around at both ends.
+    private void StepTab(int delta)
+    {
+        int count = DocTabs.TabItems.Count;
+        if (count < 2) return;
+        int index = DocTabs.SelectedIndex + delta;
+        SelectTabAt(((index % count) + count) % count);
+    }
+
+    private void SelectTabAt(int index)
+    {
+        if (index < 0 || index >= DocTabs.TabItems.Count) return;
+        DocTabs.SelectedIndex = index;
+    }
+
+    // Ctrl+N: a new window that starts on a blank label instead of the sample one.
+    private void OpenNewDocumentWindow()
+    {
+        var window = WindowManager.Open(
+            new LaunchOptions(null, false, false, false, RestoreSession: false));
+        DispatcherQueue.TryEnqueue(async () =>
+        {
+            if (window.Page is { } page) await page.StartAsNewDocumentAsync();
+        });
+    }
+
+    /// <summary>Runs the "New file" flow, then drops the sample tab this window opened on.</summary>
+    internal async Task StartAsNewDocumentAsync()
+    {
+        var sample = DocTabs.TabItems.Count == 1 ? DocTabs.TabItems[0] as TabViewItem : null;
+        await NewDocumentAsync();
+        if (sample is not null && DocTabs.TabItems.Count > 1 && sample.Tag is DocTab tab)
+            CloseTab(sample, tab, remember: false);
+    }
+
+    // Ctrl+Shift+T. A closed tab comes back here; a closed window comes back as a
+    // window carrying every document it held.
+    private void ReopenLastClosed()
+    {
+        if (ClosedDocuments.Pop() is not { } entry) return;
+
+        if (entry.WasWindow)
+        {
+            var first = entry.Docs[0];
+            var window = WindowManager.Open(new LaunchOptions(null, false, false, false,
+                new DocTab { FilePath = first.FilePath, Text = first.Text, IsDirty = first.Dirty },
+                RestoreSession: false));
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                foreach (var doc in entry.Docs.Skip(1))
+                    window.Page?.AdoptTab(new DocTab
+                    {
+                        FilePath = doc.FilePath, Text = doc.Text, IsDirty = doc.Dirty,
+                    });
+            });
+            return;
+        }
+
+        var single = entry.Docs[0];
+        AdoptTab(new DocTab { FilePath = single.FilePath, Text = single.Text, IsDirty = single.Dirty });
+    }
+
+    private ClosedDoc SnapshotClosed(DocTab tab)
+    {
+        bool active = ReferenceEquals(tab, _activeTab);
+        return new ClosedDoc(active ? _currentFilePath : tab.FilePath,
+            active ? _currentText : tab.Text,
+            active ? _isDirty : tab.IsDirty);
+    }
+
+    /// <summary>Every document of this window, for the reopen-closed history.</summary>
+    internal List<ClosedDoc> SnapshotAllDocuments()
+        => DocTabs.TabItems.OfType<TabViewItem>()
+            .Select(t => SnapshotClosed((DocTab)t.Tag))
+            .ToList();
 
     /// <summary>The documents of this window, in tab order (for session saving).</summary>
     public List<string> OpenFilePaths()
@@ -2823,8 +3015,11 @@ public sealed partial class PreviewPage : Page
     // (Enregistrer / Ne pas enregistrer / Annuler — Annuler keeps the app open),
     // then records the open saved documents so ReopenLastFile can restore them.
     // Returns false to abort the close.
-    public async Task<bool> PrepareAppCloseAsync()
+    public async Task<bool> PrepareAppCloseAsync(string? title = null)
     {
+        // "Quitter l'application" when the window IS the app; "Fermer tous les onglets"
+        // when the user asked for that with Ctrl+Shift+W.
+        title ??= "Quitter l'application";
         foreach (var item in DocTabs.TabItems.OfType<TabViewItem>().ToList())
         {
             var tab = (DocTab)item.Tag;
@@ -2832,7 +3027,7 @@ public sealed partial class PreviewPage : Page
             if (!dirty) continue;
 
             DocTabs.SelectedItem = item; // show the document being decided on
-            var result = await ShowUnsavedDialogAsync("Quitter l'application");
+            var result = await ShowUnsavedDialogAsync(title);
             if (result == ContentDialogResult.None) return false;
             if (result == ContentDialogResult.Primary)
             {
@@ -2842,6 +3037,7 @@ public sealed partial class PreviewPage : Page
         }
 
         CaptureActiveTab();
+        ClosedDocuments.PushWindow(SnapshotAllDocuments());
         // Only this window's own list: the multi-window arrangement is kept up to
         // date live by WindowManager and must NOT be rewritten while the windows are
         // being closed one after another — the last one would shrink it to itself.
@@ -2855,8 +3051,11 @@ public sealed partial class PreviewPage : Page
         return true;
     }
 
-    private void CloseTab(TabViewItem item, DocTab tab)
+    // remember=false when the document is not really going away — it is moving to
+    // another window — so it never shows up in the reopen-closed history.
+    private void CloseTab(TabViewItem item, DocTab tab, bool remember = true)
     {
+        if (remember) ClosedDocuments.PushTab(SnapshotClosed(tab));
         int idx = DocTabs.TabItems.IndexOf(item);
         bool wasActive = ReferenceEquals(tab, _activeTab);
         _suppressTabEvents = true;
@@ -3104,6 +3303,12 @@ public sealed partial class PreviewPage : Page
     }
 
     private async void PrintButton_Click(object sender, RoutedEventArgs e)
+        => await PrintCurrentAsync();
+
+    // Sends the label to the selected printer, asking first when the setting says so.
+    // Shared by the toolbar button and Ctrl+P (which used to open the browser's print
+    // dialog from inside Monaco — printing the CODE, which is never what is wanted).
+    private async Task PrintCurrentAsync()
     {
         if (PrinterComboBox.SelectedItem is not string printer || string.IsNullOrWhiteSpace(printer))
         {
@@ -3638,10 +3843,13 @@ public sealed partial class PreviewPage : Page
             _settings.EditorFontSize = (int)Math.Clamp(fontSize.Value, 8, 40); _settings.Save();
             ApplyEditorOptions();
         };
+        _fontSizeBox = fontSize;
         var wrapToggle = MakeToggle(_settings.EditorWordWrap);
         wrapToggle.Toggled += (_, _) => { _settings.EditorWordWrap = wrapToggle.IsOn; _settings.Save(); ApplyEditorOptions(); };
+        _wrapToggle = wrapToggle;
         var minimap = MakeToggle(_settings.EditorMinimap);
         minimap.Toggled += (_, _) => { _settings.EditorMinimap = minimap.IsOn; _settings.Save(); ApplyEditorOptions(); };
+        _minimapToggle = minimap;
         var lineToggle = MakeToggle(_settings.ShowLineNumbers);
         lineToggle.Toggled += (_, _) => SetLineNumbers(lineToggle.IsOn);
         var lowWarn = MakeToggle(_settings.ShowLowWarnings);
@@ -4852,8 +5060,39 @@ public sealed partial class PreviewPage : Page
             case "save":
                 _ = SaveAsync();
                 break;
+            case "shortcut":
+                RunShortcut(doc.RootElement.GetProperty("name").GetString() ?? "");
+                break;
+            case "fontSizeChanged":
+                ApplyEditorFontSizeFromEditor(doc.RootElement.GetProperty("size").GetInt32());
+                break;
+            case "wordWrapChanged":
+                _settings.EditorWordWrap = doc.RootElement.GetProperty("on").GetBoolean();
+                _settings.Save();
+                if (_wrapToggle is not null) _wrapToggle.IsOn = _settings.EditorWordWrap;
+                break;
+            case "minimapChanged":
+                _settings.EditorMinimap = doc.RootElement.GetProperty("on").GetBoolean();
+                _settings.Save();
+                if (_minimapToggle is not null) _minimapToggle.IsOn = _settings.EditorMinimap;
+                break;
         }
     }
+
+    // Ctrl +/- inside the editor changed the text size: keep the "Text size" setting
+    // and its control in step, so the two never drift apart.
+    private void ApplyEditorFontSizeFromEditor(int size)
+    {
+        _settings.EditorFontSize = Math.Clamp(size, 8, 40);
+        _settings.Save();
+        if (_fontSizeBox is not null) _fontSizeBox.Value = _settings.EditorFontSize;
+    }
+
+    // Live settings controls, kept so a shortcut can move them (null while the
+    // settings screen has never been built).
+    private ToggleSwitch? _wrapToggle;
+    private ToggleSwitch? _minimapToggle;
+    private NumberBox? _fontSizeBox;
 
     private bool IsDarkTheme => Root.ActualTheme == ElementTheme.Dark;
 

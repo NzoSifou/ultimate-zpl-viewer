@@ -152,10 +152,79 @@
                 }));
             });
 
+            function send(msg) { window.chrome.webview.postMessage(JSON.stringify(msg)); }
+
             // Ctrl+S → ask C# to save (Monaco would otherwise swallow it).
             editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function () {
-                window.chrome.webview.postMessage(JSON.stringify({ type: 'save' }));
+                send({ type: 'save' });
             });
+
+            // ── Text size ────────────────────────────────────────────────────
+            // The line height has to follow the font size: leaving it fixed is what
+            // made the size setting feel wrong (cramped when large, airy when small)
+            // while Ctrl+/- looked right, since a zoom scales everything at once.
+            window._fontSize = 14;
+            function applyFontSize(size) {
+                window._fontSize = Math.max(8, Math.min(40, size));
+                editor.updateOptions({
+                    fontSize: window._fontSize,
+                    lineHeight: Math.round(window._fontSize * 1.5)
+                });
+            }
+            applyFontSize(window._fontSize);
+
+            // Ctrl+/- resize the text AND tell C# so the "Text size" setting follows.
+            function nudgeFontSize(delta) {
+                applyFontSize(window._fontSize + delta);
+                send({ type: 'fontSizeChanged', size: window._fontSize });
+            }
+            [monaco.KeyCode.Equal, monaco.KeyCode.NumpadAdd].forEach(function (k) {
+                editor.addCommand(monaco.KeyMod.CtrlCmd | k, function () { nudgeFontSize(1); });
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | k, function () { nudgeFontSize(1); });
+            });
+            [monaco.KeyCode.Minus, monaco.KeyCode.NumpadSubtract].forEach(function (k) {
+                editor.addCommand(monaco.KeyMod.CtrlCmd | k, function () { nudgeFontSize(-1); });
+            });
+
+            // ── Editor toggles, mirrored into the app settings ───────────────
+            editor.addCommand(monaco.KeyMod.Alt | monaco.KeyCode.KeyZ, function () {
+                var on = editor.getOption(monaco.editor.EditorOption.wordWrap) === 'off';
+                editor.updateOptions({ wordWrap: on ? 'on' : 'off' });
+                send({ type: 'wordWrapChanged', on: on });
+            });
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM, function () {
+                window._minimapWanted = !window._minimapWanted;
+                updateMinimap();
+                send({ type: 'minimapChanged', on: window._minimapWanted });
+            });
+
+            // ── Shortcuts that belong to the app, not to the editor ──────────
+            // While Monaco has the focus it swallows every key, so the whole set is
+            // re-declared here and forwarded; C# runs the very same actions as when
+            // the accelerators fire from the XAML side.
+            function forward(name) { return function () { send({ type: 'shortcut', name: name }); }; }
+            var K = monaco.KeyCode, M = monaco.KeyMod;
+            editor.addCommand(M.CtrlCmd | K.KeyW, forward('closeTab'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.KeyW, forward('closeWindow'));
+            editor.addCommand(M.CtrlCmd | K.KeyT, forward('newTab'));
+            editor.addCommand(M.CtrlCmd | K.KeyN, forward('newWindow'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.KeyT, forward('reopenClosed'));
+            editor.addCommand(M.CtrlCmd | K.Tab, forward('nextTab'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.Tab, forward('prevTab'));
+            editor.addCommand(M.CtrlCmd | K.KeyP, forward('print'));
+            for (var d = 1; d <= 9; d++) {
+                (function (n) {
+                    editor.addCommand(M.CtrlCmd | (K.Digit0 + n), forward('goToTab' + n));
+                })(d);
+            }
+            editor.addCommand(M.CtrlCmd | K.Digit0, forward('lastTab'));
+
+            // Ctrl+P must never open the browser's print dialog. Only the DEFAULT
+            // action is cancelled here — stopping propagation as well would keep the
+            // editor command above from ever running.
+            window.addEventListener('keydown', function (e) {
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) e.preventDefault();
+            }, true);
 
             // Report the cursor offset so C# can show the documentation of the
             // command under the caret.
@@ -213,7 +282,7 @@
                         editor.updateOptions({ lineNumbers: msg.show ? 'on' : 'off' });
                     } else if (msg.type === 'setEditorOptions') {
                         var o = {};
-                        if (typeof msg.fontSize === 'number') o.fontSize = msg.fontSize;
+                        if (typeof msg.fontSize === 'number') applyFontSize(msg.fontSize);
                         if (typeof msg.wordWrap === 'boolean') o.wordWrap = msg.wordWrap ? 'on' : 'off';
                         editor.updateOptions(o);
                         if (typeof msg.minimap === 'boolean') window._minimapWanted = msg.minimap;

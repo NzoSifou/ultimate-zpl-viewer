@@ -6,6 +6,49 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.3.1] — 2026-07-31 — raccourcis clavier
+
+### ✨ Ajouté
+
+| Raccourci | Effet |
+| :-- | :-- |
+| `Ctrl` + `W` | Fermer l'onglet courant (la confirmation reste si le document a des modifications non enregistrées) |
+| `Ctrl` + `Maj` + `W` | Fermer tous les onglets, avec la même confirmation document par document |
+| `Ctrl` + `T` | Nouveau document dans un **onglet**, quel que soit le réglage d'ouverture |
+| `Ctrl` + `N` | Nouveau document dans une **fenêtre** |
+| `Ctrl` + `Maj` + `T` | Rouvrir le dernier onglet fermé — ou la dernière **fenêtre** fermée avec tous ses onglets |
+| `Ctrl` + `Tab` / `Ctrl` + `Maj` + `Tab` | Onglet suivant / précédent (rebouclage aux extrémités) |
+| `Ctrl` + `1` … `9` | Aller à l'onglet correspondant |
+| `Ctrl` + `0` | Aller au dernier onglet |
+| `Alt` + `Z` | Retour à la ligne dans l'éditeur |
+| `Ctrl` + `M` | Afficher ou masquer la minimap |
+
+Les bascules `Alt`+`Z` et `Ctrl`+`M`, ainsi que la taille du texte modifiée au clavier,
+mettent à jour le **réglage correspondant** dans la page Paramètres.
+
+Tous ces raccourcis fonctionnent aussi lorsque le curseur est dans l'éditeur, qui
+sinon les intercepterait.
+
+### 🐛 Corrigé
+
+- **Taille du texte de l'éditeur** 🔤
+  La hauteur de ligne restait figée quand la taille de police changeait : le texte
+  paraissait tassé en grand et flottant en petit, alors que `Ctrl` `+`/`-` donnait un
+  bien meilleur résultat. Les deux avancent désormais ensemble, et `Ctrl` `+`/`-`
+  ajuste le réglage « Taille de police » au lieu de dériver à côté.
+
+- **`Ctrl` `+` / `-` hors de l'éditeur** 🔍
+  Ces touches ajustent maintenant le zoom de l'**aperçu** dès que le curseur n'est
+  plus dans l'éditeur. Cliquer dans l'aperçu lui donne le focus, et masquer l'éditeur
+  le lui retire.
+
+- **`Ctrl` + `P`** 🖨️
+  Ouvrait la boîte d'impression du navigateur depuis l'éditeur — donc imprimait le
+  **code**. Envoie désormais l'étiquette à l'imprimante sélectionnée, en respectant
+  le réglage de confirmation.
+
+---
+
 ## [1.3.0] — 2026-07-31 — onglets et fenêtres
 
 L'application se comporte désormais comme un navigateur : une seule instance, des

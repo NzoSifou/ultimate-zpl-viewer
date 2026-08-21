@@ -240,71 +240,54 @@ public sealed partial class PreviewPage : Page
         if (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) is MainWindow mw)
             mw.AppWindow.Changed += (_, args) => { if (args.DidPositionChange) UpdateRealSizeScaleAsync(preserve: true); };
 
+        // First run: everything that used to arrive as a queue of dialogs is now a
+        // single guided page. Only the first window runs it — a second window opened
+        // from a file must not put the user through it again.
+        var onboarding = OnboardingState.Load();
+        if (!onboarding.Completed && WindowManager.Windows.Count <= 1)
+        {
+            ShowOnboarding(onboarding);
+            return;
+        }
+
+        // Onboarding already done: the checks below only cover what can change after
+        // it (fonts uninstalled, printer removed, a new monitor plugged in).
         var missing = FontService.GetMissingFonts();
         if (missing.Count > 0)
             await ShowMissingFontsDialogAsync(missing);
 
-        await MaybePromptPrinterInstallAsync();
-        await MaybePromptZplAssociationAsync();
         await MaybePromptScreenSizeAsync();
     }
 
-    // Offers, once, to make Ultimate ZPL Viewer the default app for .zpl files.
-    // Skipped if already default or if the user ticked "don't ask again".
-    private async Task MaybePromptZplAssociationAsync()
+    // Hands the window over to the first-run wizard: the page is covered, and the
+    // title bar loses the buttons that lead back into an application the user has
+    // not been let into yet.
+    private void ShowOnboarding(OnboardingState state)
     {
-        if (!_settings.AskZplAssociation) return;
-        if (FileAssociationService.IsDefault()) return;
+        var window = AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow;
+        window?.EnterOnboardingMode();
 
-        var body = new StackPanel { Spacing = 10, MinWidth = 440 };
-        body.Children.Add(new TextBlock
-        {
-            Text = SL("general.zplPrompt.body"),
-            TextWrapping = TextWrapping.Wrap,
-            FontWeight = FontWeights.SemiBold,
-        });
-        body.Children.Add(new TextBlock
-        {
-            Text = SL("general.zplPrompt.desc"),
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.85,
-        });
-        var dontAsk = new CheckBox { Content = SL("general.zplPrompt.dontAsk"), Margin = new Thickness(0, 4, 0, 0) };
-        body.Children.Add(dontAsk);
+        var flow = new OnboardingFlow(
+            OnboardingOverlay, _settings, state,
+            openApp: () => window?.ExitOnboardingMode(),
+            openSettings: () => { window?.ExitOnboardingMode(); OpenSettings("general"); },
+            quit: () => Application.Current.Exit(),
+            restart: RestartApp);
+        flow.Show();
+    }
 
-        var dialog = new ContentDialog
+    // Used after installing fonts: a running WinUI process does not pick up a newly
+    // installed font, so it has to come back fresh.
+    private static void RestartApp()
+    {
+        try { AppInstance.Restart(string.Empty); }
+        catch
         {
-            XamlRoot          = XamlRoot,
-            RequestedTheme    = _settings.ToElementTheme(),
-            Title             = SL("general.zplPrompt.title"),
-            Content           = body,
-            PrimaryButtonText = SL("general.zplPrompt.setDefault"),
-            CloseButtonText   = SL("general.zplPrompt.no"),
-            DefaultButton     = ContentDialogButton.Primary,
-        };
-
-        var result = await ShowDialogAsync(dialog);
-        bool stopAsking = dontAsk.IsChecked == true;
-        if (result == ContentDialogResult.Primary)
-        {
-            if (FileAssociationService.SetAsDefault())
-            {
-                // Confirm success to the user.
-                await ShowMessageAsync(SL("general.zplAssoc.successTitle"), SL("general.zplAssoc.successBody"));
-            }
-            else
-            {
-                // Windows blocked it (an existing UserChoice). Give the manual steps
-                // and stop prompting at startup — it won't succeed automatically next
-                // time either.
-                await ShowMessageAsync(SL("general.zplAssoc.manualTitle"), SL("general.zplAssoc.manualBody"));
-                stopAsking = true;
-            }
-        }
-        if (stopAsking)
-        {
-            _settings.AskZplAssociation = false;
-            _settings.Save();
+            var exe = Environment.ProcessPath;
+            if (exe is not null)
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = true });
+            Application.Current.Exit();
         }
     }
 
@@ -401,72 +384,6 @@ public sealed partial class PreviewPage : Page
 
         if (result == ContentDialogResult.Primary)
             OpenSettings("screen");
-    }
-
-    // Offers to install the "Ultimate ZPL Viewer" virtual printer when it is
-    // missing, unless the user asked not to be prompted again.
-    private async Task MaybePromptPrinterInstallAsync()
-    {
-        if (_settings.SkipPrinterInstallPrompt) return;
-        if (VirtualPrinterService.IsInstalled()) return;
-
-        var body = new StackPanel { Spacing = 10, MinWidth = 440 };
-        body.Children.Add(new TextBlock
-        {
-            Text = "Ultimate ZPL Viewer peut créer une imprimante virtuelle du même nom.",
-            TextWrapping = TextWrapping.Wrap,
-            FontWeight = FontWeights.SemiBold,
-        });
-        body.Children.Add(new TextBlock
-        {
-            Text = "Lorsque vous imprimez un fichier ZPL sur cette imprimante virtuelle, " +
-                   "l'application s'ouvre automatiquement pour afficher un aperçu du document avant son impression.\n" +
-                   "Vous pouvez ensuite l'imprimer sur une imprimante Zebra directement depuis l'application.",
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.85,
-        });
-        body.Children.Add(new TextBlock
-        {
-            Text = "L'installation nécessite une autorisation administrateur (une seule fois).",
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.7,
-            FontSize = 12,
-        });
-        var dontAsk = new CheckBox { Content = "Ne plus me demander", Margin = new Thickness(0, 4, 0, 0) };
-        body.Children.Add(dontAsk);
-
-        var dialog = new ContentDialog
-        {
-            XamlRoot            = XamlRoot,
-            RequestedTheme = _settings.ToElementTheme(),
-            Title               = "Installer l'imprimante virtuelle « Ultimate ZPL Viewer » ?",
-            Content             = body,
-            PrimaryButtonText   = "Installer l'imprimante",
-            CloseButtonText     = "Annuler",
-            DefaultButton       = ContentDialogButton.Primary,
-        };
-
-        var result = await ShowDialogAsync(dialog);
-
-        if (result != ContentDialogResult.Primary)
-        {
-            // "Ne pas installer": only stop prompting if the checkbox is ticked.
-            if (dontAsk.IsChecked == true)
-            {
-                _settings.SkipPrinterInstallPrompt = true;
-                _settings.Save();
-            }
-            return;
-        }
-
-        // Install (elevated, one UAC prompt) off the UI thread, then report.
-        var install = await Task.Run(VirtualPrinterService.EnsureInstalled);
-        if (install.Ok)
-            await ShowMessageAsync("Imprimante installée",
-                "L'imprimante virtuelle « Ultimate ZPL Viewer » est prête. Vous pouvez désormais imprimer des fichier ZPL sur cette imprimante pour les visualiser dans cette application.");
-        else
-            await ShowMessageAsync("Échec de l'installation",
-                $"L'imprimante n'a pas pu être installée.\n\n{install.Error}");
     }
 
     private async Task ShowMissingFontsDialogAsync(List<FontInfo> missing)

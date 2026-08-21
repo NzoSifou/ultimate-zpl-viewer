@@ -602,6 +602,17 @@
             </Border>
         </Grid>
 
+        <!-- First-run wizard. Covers the whole page (toolbar, tabs, editor and
+             preview) so nothing of the application shows behind it; the window
+             title bar is stripped down by MainWindow.EnterOnboardingMode. Its
+             content is built by OnboardingFlow. Sits above the settings overlay
+             so the summary can hand over to the settings underneath. -->
+        <Grid x:Name="OnboardingOverlay"
+              Grid.Row="0"
+              Grid.RowSpan="3"
+              Visibility="Collapsed"
+              Canvas.ZIndex="60"/>
+
         <!-- Full-screen settings (PowerToys-style: categories on the left, the
              selected category's settings on the right). Covers everything below
              the title bar; the app content stays alive behind it. -->

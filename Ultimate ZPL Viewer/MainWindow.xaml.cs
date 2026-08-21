@@ -228,6 +228,28 @@ namespace Ultimate_ZPL_Viewer
             UpdateTitleBarBackground();
         }
 
+        // ── First-run wizard ─────────────────────────────────────────────────
+        // The wizard covers the page, so the title bar must not offer doors into an
+        // application the user has not been let into yet: settings, the toolbar
+        // toggle and fullscreen all go, leaving the name and the caption buttons.
+
+        public void EnterOnboardingMode()
+        {
+            SettingsTitleButton.Visibility = Visibility.Collapsed;
+            ToolbarToggleButton.Visibility = Visibility.Collapsed;
+            FullScreenButton.Visibility = Visibility.Collapsed;
+            AppTitleText.Text = "Ultimate ZPL Viewer";
+        }
+
+        public void ExitOnboardingMode()
+        {
+            if (_inSettings) return;   // the wizard handed over to the settings screen
+            SettingsTitleButton.Visibility = Visibility.Visible;
+            ToolbarToggleButton.Visibility = Visibility.Visible;
+            FullScreenButton.Visibility = Visibility.Visible;
+            AppTitleText.Text = _documentTitle;
+        }
+
         // In settings the title bar is opaque, matching the settings page
         // background (SolidBackgroundFillColorBase); otherwise transparent so
         // the acrylic backdrop shows through.

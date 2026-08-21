@@ -6,6 +6,63 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.4.0] — 2026-08-22 — premier démarrage guidé
+
+### ✨ Ajouté
+
+- **Assistant de premier démarrage** 👋
+  Au premier lancement, l'application enchaînait les boîtes de dialogue : polices,
+  imprimante virtuelle, fichiers `.zpl`, taille d'écran. Il fallait toutes les
+  traiter avant de voir quoi que ce soit du logiciel, sans savoir combien il en
+  restait. Elles sont remplacées par **une page unique**, en plein écran, qui se
+  parcourt étape par étape :
+
+  | # | Étape | |
+  | :-- | :-- | :-- |
+  |  | Bienvenue sur Ultimate ZPL Viewer | page d'accueil |
+  | 1 | Polices | **obligatoire** — sans elles l'aperçu ne correspond pas à l'impression, donc pas de bouton pour passer |
+  | 2 | Imprimante virtuelle | facultative |
+  | 3 | Fichiers `.zpl` | facultative |
+  | 4 | Écrans | tous les écrans connectés, avec leur taille |
+  | 5 | Récapitulatif | ce qui a été fait, passé ou échoué |
+
+- **Indicateur d'étapes** 🔢
+  Un numéro par étape dans une pastille, reliée par une barre qui se remplit. Une
+  étape franchie porte une coche — sauf si elle a été **passée** ou a **échoué**,
+  auquel cas elle porte un tiret gris : une coche verte dirait que quelque chose a
+  été fait alors que non.
+
+- **Les étapes déjà satisfaites restent visibles** ✅
+  Polices déjà installées, imprimante déjà créée, `.zpl` déjà associés : l'étape
+  s'affiche marquée comme faite au lieu d'être sautée en silence. Pour les écrans,
+  une taille lue automatiquement apparaît dans un champ **verrouillé** : elle est
+  montrée, pas demandée.
+
+- **Deux sorties au récapitulatif** 🚪
+  Entrer dans l'application, ou ouvrir directement ses paramètres.
+
+Le bouton **Passer** est volontairement discret : c'est une sortie, pas une
+invitation. Et le fond n'est pas un aplat gris — un dégradé diagonal teinté de la
+couleur d'accent de l'application.
+
+### 🔧 Détails
+
+- Le passage par l'assistant est enregistré dans `onboarding.json`, à côté des
+  réglages. **Le désinstalleur le supprime** : une réinstallation repropose
+  l'assistant, sans toucher aux réglages, aux fichiers de langue ni au thème de
+  couleurs — une réinstallation sert souvent à réparer, pas à tout perdre.
+- L'installation des polices redémarre l'application (un processus WinUI en cours ne
+  voit pas une police fraîchement installée) : l'assistant **reprend à l'étape
+  suivante** au lieu de repartir du début.
+- L'assistant ne s'affiche que dans la première fenêtre : ouvrir un fichier dans une
+  seconde fenêtre n'y renvoie pas.
+- Barre de titre dépouillée pendant l'assistant : les boutons paramètres, barre
+  d'outils et plein écran mènent à une application où l'utilisateur n'est pas encore
+  entré.
+- Traduit en français et en anglais comme le reste de l'interface.
+
+---
+
 ## [1.3.1] — 2026-07-31 — raccourcis clavier
 
 ### ✨ Ajouté

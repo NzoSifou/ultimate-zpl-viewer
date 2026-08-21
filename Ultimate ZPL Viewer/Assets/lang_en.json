@@ -1926,5 +1926,78 @@
       "selectLine": "Select the line",
       "nextMatch": "Select the next occurrence"
     }
+  },
+  "onboarding": {
+    "nav": {
+      "back": "Back",
+      "next": "Next",
+      "skip": "Skip"
+    },
+    "step": {
+      "fonts": "Fonts",
+      "printer": "Printer",
+      "association": ".zpl files",
+      "screens": "Screens",
+      "summary": "Summary"
+    },
+    "welcome": {
+      "title": "Welcome to Ultimate ZPL Viewer",
+      "body": "A few settings before you start. Everything stays changeable afterwards in the settings.",
+      "start": "Get started"
+    },
+    "fonts": {
+      "title": "Required fonts",
+      "body": "These fonts reproduce the ones in Zebra printers. Without them the preview does not match what the printer will produce — this step cannot be skipped.",
+      "installed": "Already installed",
+      "willInstall": "Will be downloaded and installed",
+      "commercial": "Commercial font: buy and install it yourself, then come back here",
+      "install": "Install the fonts",
+      "recheck": "Check again",
+      "retry": "Try again",
+      "failed": "The installation failed.",
+      "quit": "Quit the application"
+    },
+    "printer": {
+      "title": "Virtual printer",
+      "body": "An « Ultimate ZPL Viewer » printer that opens the application instead of printing: you see the label before sending it to a real Zebra.",
+      "what": "Create the « Ultimate ZPL Viewer » virtual printer",
+      "elevation": "Asks for administrator permission, once.",
+      "already": "The virtual printer is already installed",
+      "install": "Install the printer",
+      "installing": "Installing…",
+      "failed": "The printer could not be installed: {0}"
+    },
+    "assoc": {
+      "title": ".zpl files",
+      "body": "Open .zpl files with a double-click, straight into Ultimate ZPL Viewer.",
+      "what": "Make Ultimate ZPL Viewer the default application for .zpl files",
+      "already": "Ultimate ZPL Viewer already opens .zpl files",
+      "set": "Make default",
+      "manual": "Windows does not allow changing this automatically. Right-click a .zpl file, then “Open with” → “Choose another app”."
+    },
+    "screens": {
+      "title": "Your screens",
+      "body": "The physical screen size is what shows the label at its real dimensions. A size read automatically is shown but locked.",
+      "detected": "{0} × {1} — size detected automatically",
+      "manual": "{0} × {1} — size unknown, measure the diagonal of the visible area",
+      "inches": "inches",
+      "none": "No screen detected"
+    },
+    "summary": {
+      "title": "You are all set",
+      "body": "Here is what was configured.",
+      "fonts": "Required fonts",
+      "printer": "Virtual printer",
+      "assoc": ".zpl files",
+      "screens": "Screens",
+      "screensDetail": "Changeable at any time in Settings → Screen",
+      "done": "Configured just now",
+      "already": "Already in place",
+      "skipped": "Skipped — available in the settings",
+      "failed": "Failed — pick it up again in the settings",
+      "later": "All of these choices stay changeable in the settings.",
+      "openApp": "Go to the application",
+      "openSettings": "Open the settings"
+    }
   }
 }

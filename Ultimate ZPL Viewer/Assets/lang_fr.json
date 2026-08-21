@@ -1926,5 +1926,78 @@
       "selectLine": "Sélectionner la ligne",
       "nextMatch": "Sélectionner l'occurrence suivante"
     }
+  },
+  "onboarding": {
+    "nav": {
+      "back": "Retour",
+      "next": "Suivant",
+      "skip": "Passer"
+    },
+    "step": {
+      "fonts": "Polices",
+      "printer": "Imprimante",
+      "association": "Fichiers .zpl",
+      "screens": "Écrans",
+      "summary": "Récapitulatif"
+    },
+    "welcome": {
+      "title": "Bienvenue sur Ultimate ZPL Viewer",
+      "body": "Quelques réglages avant de commencer. Tout reste modifiable ensuite dans les paramètres.",
+      "start": "Commencer"
+    },
+    "fonts": {
+      "title": "Polices requises",
+      "body": "Ces polices reproduisent celles des imprimantes Zebra. Sans elles, l'aperçu ne correspond pas à ce qui sortira de l'imprimante — cette étape ne peut pas être passée.",
+      "installed": "Déjà installée",
+      "willInstall": "Sera téléchargée et installée",
+      "commercial": "Police commerciale : à acheter et installer vous-même, puis revenir ici",
+      "install": "Installer les polices",
+      "recheck": "Vérifier à nouveau",
+      "retry": "Réessayer",
+      "failed": "L'installation a échoué.",
+      "quit": "Quitter l'application"
+    },
+    "printer": {
+      "title": "Imprimante virtuelle",
+      "body": "Une imprimante « Ultimate ZPL Viewer » qui ouvre l'application au lieu d'imprimer : vous voyez l'étiquette avant de l'envoyer à une vraie Zebra.",
+      "what": "Créer l'imprimante virtuelle « Ultimate ZPL Viewer »",
+      "elevation": "Demande une autorisation administrateur, une seule fois.",
+      "already": "L'imprimante virtuelle est déjà installée",
+      "install": "Installer l'imprimante",
+      "installing": "Installation en cours…",
+      "failed": "L'imprimante n'a pas pu être installée : {0}"
+    },
+    "assoc": {
+      "title": "Fichiers .zpl",
+      "body": "Ouvrir les fichiers .zpl d'un double-clic, directement dans Ultimate ZPL Viewer.",
+      "what": "Définir Ultimate ZPL Viewer comme application par défaut pour les fichiers .zpl",
+      "already": "Ultimate ZPL Viewer ouvre déjà les fichiers .zpl",
+      "set": "Définir par défaut",
+      "manual": "Windows n'autorise pas le changement automatique. Faites un clic droit sur un fichier .zpl puis « Ouvrir avec » → « Choisir une autre application »."
+    },
+    "screens": {
+      "title": "Vos écrans",
+      "body": "La taille physique de l'écran sert à afficher l'étiquette à ses dimensions réelles. Une taille lue automatiquement est affichée mais verrouillée.",
+      "detected": "{0} × {1} — taille détectée automatiquement",
+      "manual": "{0} × {1} — taille inconnue, mesurez la diagonale de la partie visible",
+      "inches": "pouces",
+      "none": "Aucun écran détecté"
+    },
+    "summary": {
+      "title": "Tout est prêt",
+      "body": "Voici ce qui a été configuré.",
+      "fonts": "Polices requises",
+      "printer": "Imprimante virtuelle",
+      "assoc": "Fichiers .zpl",
+      "screens": "Écrans",
+      "screensDetail": "Modifiable à tout moment dans Paramètres → Écran",
+      "done": "Configuré à l'instant",
+      "already": "Déjà en place",
+      "skipped": "Passé — disponible dans les paramètres",
+      "failed": "Échec — à reprendre dans les paramètres",
+      "later": "Tous ces choix restent modifiables dans les paramètres.",
+      "openApp": "Accéder à l'application",
+      "openSettings": "Ouvrir les paramètres"
+    }
   }
 }

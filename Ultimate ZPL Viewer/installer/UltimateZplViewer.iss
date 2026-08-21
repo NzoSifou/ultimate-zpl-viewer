@@ -14,7 +14,7 @@
 ; ============================================================================
 
 #define MyAppName "Ultimate ZPL Viewer"
-#define MyAppVersion "1.3.1"
+#define MyAppVersion "1.4.0"
 #define MyAppPublisher "Enzo Monchanin (NzoSifou)"
 #define MyAppExeName "Ultimate ZPL Viewer.exe"
 ; Dossier de publication (relatif a ce .iss). Genere par :
@@ -80,6 +80,12 @@ Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedType
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+
+[UninstallDelete]
+; Le marqueur du premier demarrage : une reinstallation doit reproposer l'assistant.
+; Les reglages, les fichiers de langue et le schema de couleurs de l'utilisateur ne
+; sont PAS touches - une reinstallation sert souvent a reparer, pas a tout perdre.
+Type: files; Name: "{localappdata}\Ultimate ZPL Viewer\onboarding.json"
 
 [UninstallRun]
 ; Nettoyage a la desinstallation : retire l'imprimante virtuelle, son port et la

@@ -27,7 +27,9 @@
     "zoomIn": "Zoom avant (+10 %, maintenir pour accélérer)",
     "zoomReset": "Réinitialiser le zoom (100 %)",
     "widthTooLarge": "La largeur dépasse 50 cm : l'aperçu est limité à 50 cm.",
-    "heightTooLarge": "La hauteur dépasse 50 cm : l'aperçu est limité à 50 cm."
+    "heightTooLarge": "La hauteur dépasse 50 cm : l'aperçu est limité à 50 cm.",
+    "inspectOn": "Inspection active : cliquez un élément de l'aperçu pour voir son code, ou une ligne de code pour voir son élément",
+    "inspectOff": "Activer l'inspection : relier un élément de l'aperçu au code qui le produit"
   },
   "editor": {
     "shortDescription": {

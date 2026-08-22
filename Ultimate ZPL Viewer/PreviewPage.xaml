@@ -284,6 +284,16 @@
                 </Button>
             </StackPanel>
 
+            <!-- Inspect mode: an icon that is either lit (active) or plain. The
+                 accent style is swapped in from code rather than a custom checked
+                 brush, so a custom accent colour follows for free. -->
+            <StackPanel x:Name="InspectGroup" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="InspectButton" Click="InspectButton_Click"
+                        Width="40" Padding="0" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xE7C9;" FontSize="16"/>
+                </Button>
+            </StackPanel>
+
             <StackPanel x:Name="DownloadGroup" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <StackPanel.Resources>
                     <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>

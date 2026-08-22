@@ -81,6 +81,8 @@ public sealed partial class PreviewPage : Page
         ApplyToolbarStrings(); // localize the toolbar button labels/tooltips
         ApplyPreviewCaptionVisibility();
         RebuildToolbar(); // place the toolbar groups per the saved layout
+        ApplyInspectButtonState();
+        PreviewCanvas.Tapped += PreviewCanvas_Tapped;
         PreviewScrollViewer.PointerWheelChanged += PreviewScrollViewer_PointerWheelChanged;
         RotateSplitButton.Click += RotateButton_Click;
         PreviewScrollViewer.PointerPressed      += PreviewScrollViewer_PointerPressed;
@@ -96,6 +98,7 @@ public sealed partial class PreviewPage : Page
             // ScrollViewer actually landed on (a requested factor can drift,
             // and pinch/native zoom never goes through our own code).
             if (!e.IsIntermediate) CaptureSettledZoom();
+            UpdateInspectFrameThickness();
             UpdatePreviewCaption();
             DrawRulers();
         };
@@ -773,6 +776,7 @@ public sealed partial class PreviewPage : Page
         ("size", "Taille", "", null),
         ("rotate", "Tourner", "", null),
         ("zoom", "Zoom", "", null),
+        ("inspect", "Inspecter", "", null),
         ("download", "Téléchargement", "", new[]
             { ("", "PDF"), ("", "PNG") }),
         ("print", "Imprimer", "", null),
@@ -785,6 +789,7 @@ public sealed partial class PreviewPage : Page
         "size"     => SizeGroup,
         "rotate"   => RotateGroup,
         "zoom"     => ZoomGroup,
+        "inspect"  => InspectGroup,
         "download" => DownloadGroup,
         "print"    => PrintGroup,
         _          => null,
@@ -1094,7 +1099,11 @@ public sealed partial class PreviewPage : Page
             };
 
             UpdateSizeBoxes(fillEmptyBoxes: kind == SizeUpdate.DocumentLoaded);
-            ZplRenderer.Draw(PreviewCanvas, _model, SelectedDpmm, _rotationDegrees);
+            ZplRenderer.Draw(PreviewCanvas, _model, SelectedDpmm, _rotationDegrees, _hitMap);
+            // The canvas was rebuilt: the frame has to find its element again.
+            // Low priority so the new children have been measured by then.
+            DispatcherQueue.TryEnqueue(
+                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, UpdateInspectFrame);
 
             // Re-apply the default zoom after every redraw (low priority: waits
             // for the new canvas size to be measured).
@@ -5102,6 +5111,7 @@ public sealed partial class PreviewPage : Page
             case "cursorChanged":
                 _cursorOffset = doc.RootElement.GetProperty("offset").GetInt32();
                 if (DocBadge.IsChecked == true) UpdateDocPanel();
+                OnEditorCaretMoved(_cursorOffset);
                 break;
             case "save":
                 _ = SaveAsync();

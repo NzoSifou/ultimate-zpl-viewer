@@ -6,9 +6,33 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
-## [1.4.0] — 2026-08-22 — premier démarrage guidé
+## [1.4.0] — 2026-08-22 — premier démarrage guidé et inspection
 
 ### ✨ Ajouté
+
+- **Mode inspection** 🔎 (icône dans la barre d'outils)
+  Une icône qui s'allume à la couleur de l'application — celle que vous avez
+  choisie si vous en avez personnalisé une. Tant qu'elle est allumée, l'aperçu et
+  le code se désignent mutuellement, **dans les deux sens** :
+
+  | Vous cliquez… | …et |
+  | :-- | :-- |
+  | un élément de l'aperçu | il est **encadré** sur toute la place qu'il occupe, et le code qui le produit est **surligné** — l'éditeur défile jusqu'à lui s'il est hors écran |
+  | une ligne de code | la ligne est **surlignée** et l'élément correspondant est **encadré** dans l'aperçu |
+
+  Ce qui est désigné, c'est le **champ entier** — de son `^FO`/`^FT` jusqu'à son
+  `^FS` — et non la seule commande sous le curseur : c'est le champ qui fait
+  l'élément. Un champ qui produit plusieurs traits (un code-barres et sa ligne
+  d'interprétation) est encadré d'un seul tenant.
+
+  Un trait `^GB` d'un ou deux points est invisible à viser : le clic dispose d'une
+  petite tolérance, exprimée en pixels à l'écran, donc constante quel que soit le
+  zoom. Quand plusieurs champs se recouvrent, c'est le plus petit qui l'emporte —
+  le code-barres plutôt que le cadre qui l'entoure.
+
+  Le mode est **désactivé par défaut** : il change ce que fait un clic sur
+  l'aperçu, donc il s'active délibérément. Son état est conservé d'une session à
+  l'autre.
 
 - **Assistant de premier démarrage** 👋
   Au premier lancement, l'application enchaînait les boîtes de dialogue : polices,

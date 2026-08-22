@@ -20,6 +20,8 @@
     </style>
     <!-- ZPL color classes — injected at runtime via setColors message -->
     <style id="zpl-theme"></style>
+    <!-- Inspect-mode highlight; rewritten with the accent colour on each use -->
+    <style id="zpl-inspect"></style>
 </head>
 <body>
     <div id="container"></div>
@@ -98,6 +100,14 @@
 
             window.editor = editor;
             window._decorations = [];
+            // Inspect-mode highlight. Kept apart from the colour-run decorations
+            // above, which are replaced wholesale on every edit and would take the
+            // highlight with them.
+            window._inspect = [];
+            function clearInspect() {
+                window._inspect = editor.deltaDecorations(window._inspect, []);
+            }
+
             // Concrete hex colours per decoration class, kept in sync with setColors.
             // The minimap can't read the CSS inlineClassName, so each decoration also
             // carries an explicit minimap colour taken from here.
@@ -288,6 +298,33 @@
                         // Keep the minimap colours in sync and re-tint existing marks.
                         window._zplColors = { 'zpl-cmd': msg.cmd, 'zpl-param': msg.param, 'zpl-text': msg.text };
                         reapplyDecorations();
+                    } else if (msg.type === 'highlightRange') {
+                        // The element clicked on the preview lives at [start, end)
+                        // in the text; light it up and, when asked, bring it into
+                        // view. The colour follows the app accent, so it is passed
+                        // in rather than hard-coded here.
+                        var model = editor.getModel();
+                        var from = model.getPositionAt(Math.max(0, msg.start));
+                        var to = model.getPositionAt(Math.max(0, msg.end));
+                        document.getElementById('zpl-inspect').textContent =
+                            '.zpl-inspect{background:' + msg.color + '38;' +
+                            'outline:1px solid ' + msg.color + '80}' +
+                            '.zpl-inspect-line{background:' + msg.color + '14}';
+                        window._inspect = editor.deltaDecorations(window._inspect, [{
+                            range: new monaco.Range(from.lineNumber, from.column, to.lineNumber, to.column),
+                            options: {
+                                className: 'zpl-inspect',
+                                isWholeLine: false,
+                                linesDecorationsClassName: null,
+                                marginClassName: 'zpl-inspect-line'
+                            }
+                        }]);
+                        if (msg.reveal) {
+                            editor.revealRangeInCenterIfOutsideViewport(
+                                new monaco.Range(from.lineNumber, 1, to.lineNumber, 1));
+                        }
+                    } else if (msg.type === 'clearHighlight') {
+                        clearInspect();
                     } else if (msg.type === 'setTheme') {
                         monaco.editor.setTheme(msg.dark ? 'zpl-dark' : 'vs');
                         // On #container, never on body: a body background propagates

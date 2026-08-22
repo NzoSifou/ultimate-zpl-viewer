@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -40,6 +40,9 @@ public sealed class AppSettings
     public string Language { get; set; } = "fr";
     public bool ShowLineNumbers { get; set; } = true;
     public bool ShowPreviewGrid { get; set; } = true;
+    // Inspect mode: clicking an element in the preview highlights the ZPL that
+    // produced it, and vice versa. Off by default - it changes what a click does.
+    public bool InspectMode { get; set; }
     // Grid colour: default (faint, theme-based) or a custom ARGB (#AARRGGBB).
     public bool UseCustomGridColor { get; set; }
     public string CustomGridColor { get; set; } = "#40808080";

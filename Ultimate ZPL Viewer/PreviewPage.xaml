@@ -288,9 +288,21 @@
                  accent style is swapped in from code rather than a custom checked
                  brush, so a custom accent colour follows for free. -->
             <StackPanel x:Name="InspectGroup" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Square, the same 32 px the other toolbar buttons come out at,
+                     so a lit icon reads as a button and not as a stray badge. -->
                 <Button x:Name="InspectButton" Click="InspectButton_Click"
-                        Width="40" Padding="0" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xE7C9;" FontSize="16"/>
+                        Width="32" Height="32" MinWidth="0" Padding="0"
+                        VerticalAlignment="Center">
+                    <!-- Paint's rectangular-selection marquee. Drawn rather than
+                         taken from the icon font: the nearest glyph (SelectAll)
+                         carries four squares inside the dashes. Stroke colour is
+                         set from code, so it follows the lit/unlit foreground. -->
+                    <Rectangle x:Name="InspectIcon"
+                               Width="15" Height="15"
+                               Fill="Transparent"
+                               StrokeThickness="1.2"
+                               StrokeDashArray="2,2"
+                               StrokeDashCap="Flat"/>
                 </Button>
             </StackPanel>
 

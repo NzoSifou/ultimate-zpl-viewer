@@ -101,6 +101,7 @@ public static partial class ZplRenderer
 
     public static ZplRenderModel Parse(string zpl, double fallbackDpmm)
     {
+        var src = zpl ?? string.Empty;
         var x = 0d;
         var y = 0d;
         // Power-on default: font A at its 9x5 cell, exactly what a printer (and the
@@ -185,9 +186,18 @@ public static partial class ZplRenderer
         var maxXCommitted = 0d; var maxYCommitted = 0d;
 
         void Grow(double gx, double gy) { growBuf.Add((gx, gy)); }
+        // The end of a field span lands after the trailing whitespace, because the
+        // last token's arguments run up to the next ^ or ~ - the line break included.
+        int TrimmedEnd()
+        {
+            var end = Math.Min(fieldEnd, src.Length);
+            while (end > fieldStart && char.IsWhiteSpace(src[end - 1])) end--;
+            return end;
+        }
         void CommitField()
         {
-            foreach (var d in fieldBuf) { d.SourceStart = fieldStart; d.SourceEnd = fieldEnd; }
+            var end = fieldStart >= 0 ? TrimmedEnd() : fieldEnd;
+            foreach (var d in fieldBuf) { d.SourceStart = fieldStart; d.SourceEnd = end; }
             drawables.AddRange(fieldBuf);
             blackBoxes.AddRange(fieldBlackBoxes);
             foreach (var (gx, gy) in growBuf)
@@ -506,7 +516,7 @@ public static partial class ZplRenderer
             Grow(fx + bw, topY + bh);
         }
 
-        foreach (var token in ExpandStoredFormats(Tokenize(zpl ?? string.Empty)))
+        foreach (var token in ExpandStoredFormats(Tokenize(src)))
         {
             if (stop) break;
             var command = token.Command;

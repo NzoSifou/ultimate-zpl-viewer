@@ -776,7 +776,7 @@ public sealed partial class PreviewPage : Page
         ("size", "Taille", "", null),
         ("rotate", "Tourner", "", null),
         ("zoom", "Zoom", "", null),
-        ("inspect", "Inspecter", "", null),
+        ("inspect", "Inspecter", "", null),
         ("download", "Téléchargement", "", new[]
             { ("", "PDF"), ("", "PNG") }),
         ("print", "Imprimer", "", null),

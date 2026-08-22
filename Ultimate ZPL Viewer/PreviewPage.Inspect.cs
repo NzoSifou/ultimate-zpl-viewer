@@ -57,6 +57,10 @@ public sealed partial class PreviewPage
         InspectButton.Style = InspectOn
             ? (Style)Application.Current.Resources["AccentButtonStyle"]
             : null;
+        // The marquee is a Rectangle, not a glyph, so its stroke has to be told
+        // which foreground it sits on.
+        InspectIcon.Stroke = (Brush)Application.Current.Resources[
+            InspectOn ? "TextOnAccentFillColorPrimaryBrush" : "TextFillColorPrimaryBrush"];
         ToolTipService.SetToolTip(InspectButton,
             LocalizationService.Get(InspectOn ? "toolbar.inspectOn" : "toolbar.inspectOff"));
     }

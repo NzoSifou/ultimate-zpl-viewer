@@ -303,6 +303,50 @@ internal sealed class OnboardingFlow
         }
     }
 
+    // Said the same way by every step the user has to complete before moving on,
+    // so a required step always announces itself identically.
+    private static Grid RequiredNotice() => StatusLine(GlyphInfo, Accent, L("nav.required"), null);
+
+    // A quiet "Details ⌄" that unfolds the raw error underneath. A failure can then
+    // explain itself without putting a wall of text in front of everyone.
+    private static StackPanel Disclosure(string label, string detail)
+    {
+        var body = new TextBlock
+        {
+            Text = detail,
+            Visibility = Visibility.Collapsed,
+            FontSize = 12,
+            Opacity = 0.75,
+            TextWrapping = TextWrapping.Wrap,
+            IsTextSelectionEnabled = true,
+            Margin = new Thickness(0, 4, 0, 0),
+        };
+
+        var chevron = new FontIcon
+        {
+            Glyph = GlyphExpand,
+            FontSize = 10,
+            Margin = new Thickness(0, 0, 6, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var header = new StackPanel { Orientation = Orientation.Horizontal };
+        header.Children.Add(chevron);
+        header.Children.Add(new TextBlock { Text = label, FontSize = 12 });
+
+        var toggle = new HyperlinkButton { Content = header, Padding = new Thickness(0) };
+        toggle.Click += (_, _) =>
+        {
+            bool show = body.Visibility == Visibility.Collapsed;
+            body.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            chevron.Glyph = show ? GlyphCollapse : GlyphExpand;
+        };
+
+        var panel = new StackPanel();
+        panel.Children.Add(toggle);
+        panel.Children.Add(body);
+        return panel;
+    }
+
     // The quiet "Passer" shown by the steps the user is allowed to leave alone.
     private void OfferSkip(Action onSkip)
     {
@@ -390,9 +434,13 @@ internal sealed class OnboardingFlow
     private const string GlyphInfo = "";
     private const string GlyphWarn = "";
     private const string GlyphDash = "";
+    private const string GlyphError = "";
+    private const string GlyphExpand = "";
+    private const string GlyphCollapse = "";
 
     private static Brush Ok => new SolidColorBrush(Color.FromArgb(255, 0x2E, 0xA0, 0x43));
     private static Brush Warn => new SolidColorBrush(Color.FromArgb(255, 0xE0, 0xA0, 0x30));
+    private static Brush Err => new SolidColorBrush(Color.FromArgb(255, 0xC4, 0x2B, 0x1C));
     private static Brush Muted => (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
     private static Brush Accent => (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"];
 
@@ -464,6 +512,7 @@ internal sealed class OnboardingFlow
         var auto = missing.Where(f => f.CanAutoInstall).ToList();
 
         var page = Page("fonts.title", "fonts.body");
+        page.Children.Add(RequiredNotice());
         var list = new StackPanel { Spacing = 12 };
 
         foreach (var font in FontService.RequiredFonts)
@@ -575,15 +624,12 @@ internal sealed class OnboardingFlow
         var card = new StackPanel { Spacing = 10 };
         card.Children.Add(installed
             ? StatusLine(GlyphCheck, Ok, L("printer.already"), null)
-            : StatusLine(GlyphInfo, Muted, L("printer.what"), L("printer.elevation")));
-        var status = new TextBlock
-        {
-            Visibility = Visibility.Collapsed,
-            TextWrapping = TextWrapping.Wrap,
-            FontSize = 12,
-            Margin = new Thickness(0, 4, 0, 0),
-        };
-        card.Children.Add(status);
+            : StatusLine(GlyphInfo, Accent, L("printer.what"), L("printer.elevation")));
+
+        // Where "installing", "installed" and "failed" are each rendered in turn,
+        // so the outcome is stated on the page instead of only being navigated past.
+        var resultHost = new StackPanel { Spacing = 6, Margin = new Thickness(0, 4, 0, 0) };
+        card.Children.Add(resultHost);
         page.Children.Add(Card(card));
         _contentHost.Content = page;
 
@@ -602,35 +648,50 @@ internal sealed class OnboardingFlow
             GoTo(Step.Association);
         });
         _primaryButton.Content = L("printer.install");
-        _onPrimary = () => _ = InstallPrinterAsync(status);
+        _onPrimary = () => _ = InstallPrinterAsync(resultHost);
     }
 
-    private async Task InstallPrinterAsync(TextBlock status)
+    private async Task InstallPrinterAsync(StackPanel resultHost)
     {
         _onPrimary = null;
         _primaryButton.IsEnabled = false;
         _secondaryButton.IsEnabled = false;
-        status.Visibility = Visibility.Visible;
-        status.Text = L("printer.installing");
+
+        resultHost.Children.Clear();
+        resultHost.Children.Add(new TextBlock
+        {
+            Text = L("printer.installing"),
+            FontSize = 12,
+            Opacity = 0.75,
+            TextWrapping = TextWrapping.Wrap,
+        });
 
         var result = await Task.Run(VirtualPrinterService.EnsureInstalled);
+
+        resultHost.Children.Clear();
+        _primaryButton.IsEnabled = true;
         _secondaryButton.IsEnabled = true;
 
         if (result.Ok)
         {
             _state.Printer = OnboardingState.Outcome.Done;
             _state.Save();
-            GoTo(Step.Association);
+            resultHost.Children.Add(StatusLine(GlyphCheck, Ok, L("printer.success"), null));
+            // Nothing left to skip once it is installed.
+            _secondaryButton.Visibility = Visibility.Collapsed;
+            _onSecondary = null;
+            _primaryButton.Content = L("nav.next");
+            _onPrimary = () => GoTo(Step.Association);
             return;
         }
 
         _state.Printer = OnboardingState.Outcome.Failed;
         _state.Save();
-        status.Foreground = Warn;
-        status.Text = string.Format(L("printer.failed"), result.Error);
-        _primaryButton.IsEnabled = true;
-        _primaryButton.Content = L("nav.next");
-        _onPrimary = () => GoTo(Step.Association);
+        resultHost.Children.Add(StatusLine(GlyphError, Err, L("printer.failedShort"), null));
+        if (!string.IsNullOrWhiteSpace(result.Error))
+            resultHost.Children.Add(Disclosure(L("printer.details"), result.Error));
+        _primaryButton.Content = L("printer.retry");
+        _onPrimary = () => _ = InstallPrinterAsync(resultHost);
     }
 
     // ── Step 3 — .zpl association (optional) ─────────────────────────────────
@@ -727,8 +788,21 @@ internal sealed class OnboardingFlow
         bool auto = mon.EdidDiagonalInches is not null;
 
         var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        // Ticked as soon as this screen has a usable size, so the ones still to fill
+        // in stand out. Faded rather than collapsed, to keep every card aligned.
+        var check = new FontIcon
+        {
+            Glyph = GlyphCheck,
+            FontSize = 15,
+            Foreground = Ok,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 12, 0),
+        };
+        grid.Children.Add(check);
 
         var left = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         left.Children.Add(new TextBlock
@@ -745,6 +819,7 @@ internal sealed class OnboardingFlow
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 2, 12, 0),
         });
+        Grid.SetColumn(left, 1);
         grid.Children.Add(left);
 
         var box = new TextBox { MinWidth = 90, VerticalAlignment = VerticalAlignment.Center };
@@ -755,6 +830,7 @@ internal sealed class OnboardingFlow
             ? initial.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture)
             : "";
         box.IsEnabled = !auto;   // a detected size is shown, not editable
+        check.Opacity = auto || initial > 0 ? 1 : 0;
 
         box.TextChanging += (s, _) =>
         {
@@ -767,9 +843,11 @@ internal sealed class OnboardingFlow
         box.TextChanged += (_, _) =>
         {
             if (auto) return;
-            if (double.TryParse((box.Text ?? "").Replace(',', '.'),
+            bool valid = double.TryParse((box.Text ?? "").Replace(',', '.'),
                     System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out var val) && val > 0)
+                    System.Globalization.CultureInfo.InvariantCulture, out var val) && val > 0;
+            check.Opacity = valid ? 1 : 0;
+            if (valid)
             {
                 _settings.ManualScreenSizesInches[mon.InterfaceId] = val;
                 _settings.Save();
@@ -789,7 +867,7 @@ internal sealed class OnboardingFlow
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.7,
         });
-        Grid.SetColumn(row, 1);
+        Grid.SetColumn(row, 2);
         grid.Children.Add(row);
 
         return Card(grid);

@@ -41,6 +41,26 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 - **Deux sorties au récapitulatif** 🚪
   Entrer dans l'application, ou ouvrir directement ses paramètres.
 
+- **« Étape obligatoire pour continuer »** ℹ️
+  Une étape qu'on ne peut pas passer le dit sur sa propre ligne, plutôt que de le
+  glisser en fin de paragraphe. La formulation vit dans une clé partagée : les
+  prochaines étapes obligatoires diront exactement la même chose.
+
+- **Le résultat de l'installation de l'imprimante est affiché** ✅
+  L'étape enchaînait en silence une fois l'installation finie. Elle annonce
+  maintenant **« Installée avec succès ! »** avec une coche verte et propose
+  **Suivant** — ou **« Installation échouée »** avec une croix rouge, un
+  **« Détails »** repliable qui montre l'erreur, et **Réessayer**. Le « Passer »
+  disparaît après un succès : il n'y a plus rien à passer.
+
+- **L'imprimante virtuelle est présentée comme recommandée** 🖨️
+  Sa ligne d'action passe en couleur d'accent, et le texte lève le frein du
+  téléchargement : l'installation est en un clic et incluse dans l'application.
+
+- **Une coche verte par écran** 🖥️
+  Sur chaque carte, dès que l'écran a une taille exploitable — détectée ou saisie,
+  en direct pendant la frappe. On voit d'un coup d'œil ce qu'il reste à renseigner.
+
 Le bouton **Passer** est volontairement discret : c'est une sortie, pas une
 invitation. Et le fond n'est pas un aplat gris — un dégradé diagonal teinté de la
 couleur d'accent de l'application.

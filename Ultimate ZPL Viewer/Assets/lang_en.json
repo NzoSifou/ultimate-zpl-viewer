@@ -1931,7 +1931,8 @@
     "nav": {
       "back": "Back",
       "next": "Next",
-      "skip": "Skip"
+      "skip": "Skip",
+      "required": "Required step to continue."
     },
     "step": {
       "fonts": "Fonts",
@@ -1947,7 +1948,7 @@
     },
     "fonts": {
       "title": "Required fonts",
-      "body": "These fonts reproduce the ones in Zebra printers. Without them the preview does not match what the printer will produce — this step cannot be skipped.",
+      "body": "These fonts reproduce the ones in Zebra printers. Without them the preview does not match what the printer will produce.",
       "installed": "Already installed",
       "willInstall": "Will be downloaded and installed",
       "commercial": "Commercial font: buy and install it yourself, then come back here",
@@ -1959,13 +1960,16 @@
     },
     "printer": {
       "title": "Virtual printer",
-      "body": "An « Ultimate ZPL Viewer » printer that opens the application instead of printing: you see the label before sending it to a real Zebra.",
-      "what": "Create the « Ultimate ZPL Viewer » virtual printer",
-      "elevation": "Asks for administrator permission, once.",
+      "body": "An “Ultimate ZPL Viewer” printer that opens the application instead of printing: you see the label before sending it to a real Zebra. Installing it is recommended.",
+      "what": "Create the “Ultimate ZPL Viewer” virtual printer",
+      "elevation": "One-click installation, built into the application: nothing to download. Administrator permission is asked for once.",
       "already": "The virtual printer is already installed",
       "install": "Install the printer",
       "installing": "Installing…",
-      "failed": "The printer could not be installed: {0}"
+      "success": "Installed successfully!",
+      "failedShort": "Installation failed",
+      "details": "Details",
+      "retry": "Retry"
     },
     "assoc": {
       "title": ".zpl files",

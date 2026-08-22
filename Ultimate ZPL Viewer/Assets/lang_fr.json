@@ -1931,7 +1931,8 @@
     "nav": {
       "back": "Retour",
       "next": "Suivant",
-      "skip": "Passer"
+      "skip": "Passer",
+      "required": "Étape obligatoire pour continuer."
     },
     "step": {
       "fonts": "Polices",
@@ -1947,7 +1948,7 @@
     },
     "fonts": {
       "title": "Polices requises",
-      "body": "Ces polices reproduisent celles des imprimantes Zebra. Sans elles, l'aperçu ne correspond pas à ce qui sortira de l'imprimante — cette étape ne peut pas être passée.",
+      "body": "Ces polices reproduisent celles des imprimantes Zebra. Sans elles, l'aperçu ne correspond pas à ce qui sortira de l'imprimante.",
       "installed": "Déjà installée",
       "willInstall": "Sera téléchargée et installée",
       "commercial": "Police commerciale : à acheter et installer vous-même, puis revenir ici",
@@ -1959,13 +1960,16 @@
     },
     "printer": {
       "title": "Imprimante virtuelle",
-      "body": "Une imprimante « Ultimate ZPL Viewer » qui ouvre l'application au lieu d'imprimer : vous voyez l'étiquette avant de l'envoyer à une vraie Zebra.",
+      "body": "Une imprimante « Ultimate ZPL Viewer » qui ouvre l'application au lieu d'imprimer : vous voyez l'étiquette avant de l'envoyer à une vraie Zebra. Son installation est recommandée.",
       "what": "Créer l'imprimante virtuelle « Ultimate ZPL Viewer »",
-      "elevation": "Demande une autorisation administrateur, une seule fois.",
+      "elevation": "Installation en un clic, incluse dans l'application : rien à télécharger. Une autorisation administrateur est demandée une seule fois.",
       "already": "L'imprimante virtuelle est déjà installée",
       "install": "Installer l'imprimante",
       "installing": "Installation en cours…",
-      "failed": "L'imprimante n'a pas pu être installée : {0}"
+      "success": "Installée avec succès !",
+      "failedShort": "Installation échouée",
+      "details": "Détails",
+      "retry": "Réessayer"
     },
     "assoc": {
       "title": "Fichiers .zpl",

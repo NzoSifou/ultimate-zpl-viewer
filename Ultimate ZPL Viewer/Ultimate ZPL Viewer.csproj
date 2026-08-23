@@ -32,9 +32,9 @@
          to be deployed…"). À false, le projet se lance comme un simple .exe. -->
     <EnableMsixTooling>false</EnableMsixTooling>
     <Nullable>enable</Nullable>
-    <Version>1.3.1</Version>
-    <FileVersion>1.3.1.0</FileVersion>
-    <AssemblyVersion>1.3.1.0</AssemblyVersion>
+    <Version>1.4.0</Version>
+    <FileVersion>1.4.0.0</FileVersion>
+    <AssemblyVersion>1.4.0.0</AssemblyVersion>
     <!-- Editeur / auteur, visible dans les proprietes du fichier .exe. -->
     <Authors>Enzo Monchanin (NzoSifou)</Authors>
     <Company>Enzo Monchanin (NzoSifou)</Company>
@@ -104,6 +104,10 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.1839" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.2.0" />
     <PackageReference Include="PDFtoImage" Version="5.2.1" />
+    <!-- GDI+ printing: the only way to send a rendered page to a NAMED printer
+         without the system print dialog. WinUI's PrintManager always shows its
+         own UI, which is exactly what our print dialog replaces. -->
+    <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
   </ItemGroup>
   <ItemGroup>
     <Page Update="PreviewPage.xaml">

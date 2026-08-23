@@ -35,7 +35,14 @@ public sealed record LabelSize(double WidthDots, double HeightDots)
     public double HeightMm(double dpmm) => HeightDots / dpmm;
 }
 
-public abstract record ZplDrawable(double X, double Y);
+public abstract record ZplDrawable(double X, double Y)
+{
+    // The span, in the original ZPL text, of the field this element came from —
+    // from its ^FO/^FT through its ^FS. Set once the field commits; -1 means the
+    // element could not be traced back (nothing selectable). End is exclusive.
+    public int SourceStart { get; set; } = -1;
+    public int SourceEnd { get; set; } = -1;
+}
 // X,Y = ZPL field origin. Rotation in degrees (0/90/180/270). Baseline = true for
 // ^FT (origin is the text baseline), false for ^FO (origin is the top-left).
 public sealed record ZplText(double X, double Y, string Text, double Height, double Width, string Font, bool Bold, bool Reverse, int Rotation, bool Baseline) : ZplDrawable(X, Y);
@@ -94,6 +101,7 @@ public static partial class ZplRenderer
 
     public static ZplRenderModel Parse(string zpl, double fallbackDpmm)
     {
+        var src = zpl ?? string.Empty;
         var x = 0d;
         var y = 0d;
         // Power-on default: font A at its 9x5 cell, exactly what a printer (and the
@@ -170,12 +178,26 @@ public static partial class ZplRenderer
         // abandons the un-terminated field, exactly like real printers/Labelary.
         var fieldBuf = new List<ZplDrawable>();
         var fieldBlackBoxes = new List<ZplRect>();
+        // Span of the field being built, so the elements it commits can point back
+        // at the code that produced them (-1 = not started).
+        var fieldStart = -1;
+        var fieldEnd = -1;
         var growBuf = new List<(double X, double Y)>();
         var maxXCommitted = 0d; var maxYCommitted = 0d;
 
         void Grow(double gx, double gy) { growBuf.Add((gx, gy)); }
+        // The end of a field span lands after the trailing whitespace, because the
+        // last token's arguments run up to the next ^ or ~ - the line break included.
+        int TrimmedEnd()
+        {
+            var end = Math.Min(fieldEnd, src.Length);
+            while (end > fieldStart && char.IsWhiteSpace(src[end - 1])) end--;
+            return end;
+        }
         void CommitField()
         {
+            var end = fieldStart >= 0 ? TrimmedEnd() : fieldEnd;
+            foreach (var d in fieldBuf) { d.SourceStart = fieldStart; d.SourceEnd = end; }
             drawables.AddRange(fieldBuf);
             blackBoxes.AddRange(fieldBlackBoxes);
             foreach (var (gx, gy) in growBuf)
@@ -190,6 +212,8 @@ public static partial class ZplRenderer
             fieldBuf.Clear();
             fieldBlackBoxes.Clear();
             growBuf.Clear();
+            fieldStart = -1;
+            fieldEnd = -1;
         }
 
         // Emits a text field (with ^FB word-wrap, justification, bitmap-font quirks).
@@ -492,7 +516,7 @@ public static partial class ZplRenderer
             Grow(fx + bw, topY + bh);
         }
 
-        foreach (var token in ExpandStoredFormats(Tokenize(zpl ?? string.Empty)))
+        foreach (var token in ExpandStoredFormats(Tokenize(src)))
         {
             if (stop) break;
             var command = token.Command;
@@ -524,6 +548,7 @@ public static partial class ZplRenderer
                 case "FO":
                 {
                     AbandonField(); // an unterminated previous field never prints
+                    fieldStart = token.Start; fieldEnd = token.End;
                     var o = ParseNumbers(args).ToArray();
                     if (o.Length > 0) x = o[0] * unitScale;
                     if (o.Length > 1) y = o[1] * unitScale;
@@ -533,6 +558,7 @@ public static partial class ZplRenderer
                 case "FT":
                 {
                     AbandonField();
+                    fieldStart = token.Start; fieldEnd = token.End;
                     var o = ParseNumbers(args).ToArray();
                     if (o.Length > 0) x = o[0] * unitScale;
                     if (o.Length > 1) y = o[1] * unitScale;
@@ -1119,6 +1145,7 @@ public static partial class ZplRenderer
                     break;
                 }
                 case "FS":
+                    fieldEnd = token.End;
                     CommitField();
                     pendingBarcode = false;
                     pending2D = false;
@@ -1138,6 +1165,14 @@ public static partial class ZplRenderer
                     fieldHex = false;
                     fbActive = false;
                     break;
+            }
+
+            // A field that never opened with ^FO/^FT still needs somewhere to point,
+            // and a field spans every token that fed it: widen as they go by.
+            if (fieldBuf.Count > 0)
+            {
+                if (fieldStart < 0) fieldStart = token.Start;
+                if (token.End > fieldEnd) fieldEnd = token.End;
             }
         }
 
@@ -1425,8 +1460,18 @@ public static partial class ZplRenderer
         return outBytes;
     }
 
-    public static void Draw(Canvas canvas, ZplRenderModel model, double dpmm, double rotationDegrees)
+    /// <summary>
+    /// Renders the model onto the canvas. When <paramref name="hitMap"/> is given it
+    /// is filled with every element created and the drawable it came from, which is
+    /// what lets a click on the preview find its way back to the ZPL that made it.
+    /// Collected here rather than recomputed from the model: the geometry of a field
+    /// (condensed glyphs, baseline anchors, rotation) lives in the drawing helpers,
+    /// and a second copy of it would drift away from this one.
+    /// </summary>
+    public static void Draw(Canvas canvas, ZplRenderModel model, double dpmm, double rotationDegrees,
+                            IDictionary<UIElement, ZplDrawable>? hitMap = null)
     {
+        hitMap?.Clear();
         canvas.Children.Clear();
 
         double w = model.Size.WidthDots;
@@ -1493,6 +1538,7 @@ public static partial class ZplRenderer
         var blackFilledRects = new List<ZplRect>();
         foreach (var drawable in model.Drawables)
         {
+            int childrenBefore = target.Children.Count;
             switch (drawable)
             {
                 case ZplText text:
@@ -1529,6 +1575,13 @@ public static partial class ZplRenderer
                     DrawModuleGrid(target, grid.X, grid.Y, grid.ModW, grid.ModH, grid.Matrix);
                     break;
             }
+
+            // Everything this drawable just put on the canvas belongs to it. A field
+            // can produce several (a barcode is bars plus its interpretation line),
+            // and they are reunited later by their shared source span.
+            if (hitMap is not null)
+                for (int i = childrenBefore; i < target.Children.Count; i++)
+                    hitMap[target.Children[i]] = drawable;
         }
     }
 
@@ -2716,7 +2769,7 @@ public static partial class ZplRenderer
                 if (formats.TryGetValue(FormatName(t.Args), out var fmt))
                     foreach (var ft in fmt)
                         output.Add(ft.Command == "FN" && int.TryParse(ft.Args.Trim(), out int n)
-                            ? new ZplToken("FD", fieldData.TryGetValue(n, out var d) ? d : "")
+                            ? new ZplToken("FD", fieldData.TryGetValue(n, out var d) ? d : "", ft.Start, ft.End)
                             : ft);
                 continue;
             }
@@ -2731,7 +2784,7 @@ public static partial class ZplRenderer
                 // labels, whose barcodes are ^BC…^FN1^FS with the data supplied by a
                 // later ^FN1^FD… pair): substitute the data in place.
                 if (int.TryParse(t.Args.Trim(), out int placeholder))
-                    output.Add(new ZplToken("FD", fieldData.TryGetValue(placeholder, out var pd) ? pd : ""));
+                    output.Add(new ZplToken("FD", fieldData.TryGetValue(placeholder, out var pd) ? pd : "", t.Start, t.End));
                 continue;
             }
             output.Add(t);
@@ -2781,7 +2834,7 @@ public static partial class ZplRenderer
             }
 
             var args = zpl[argsStart..i];
-            tokens.Add(new ZplToken(command, args));
+            tokens.Add(new ZplToken(command, args, start, i));
             i--;
         }
 
@@ -3393,7 +3446,9 @@ public static partial class ZplRenderer
     }
 }
 
-public sealed record ZplToken(string Command, string Args);
+// Start/End bracket the token in the ORIGINAL ZPL text, so an element on the
+// preview can be traced back to the code that produced it (End is exclusive).
+public sealed record ZplToken(string Command, string Args, int Start = 0, int End = 0);
 public sealed record BarcodeRun(bool Black, int Width);
 public sealed record ZplRect(double X, double Y, double Width, double Height)
 {

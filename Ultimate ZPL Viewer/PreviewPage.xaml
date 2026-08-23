@@ -284,6 +284,29 @@
                 </Button>
             </StackPanel>
 
+            <!-- Inspect mode: an icon that is either lit (active) or plain. The
+                 accent style is swapped in from code rather than a custom checked
+                 brush, so a custom accent colour follows for free. -->
+            <StackPanel x:Name="InspectGroup" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Square, the same 32 px the other toolbar buttons come out at,
+                     so a lit icon reads as a button and not as a stray badge. -->
+                <Button x:Name="InspectButton" Click="InspectButton_Click"
+                        Width="32" Height="32" MinWidth="0" Padding="0"
+                        CornerRadius="{ThemeResource ControlCornerRadius}"
+                        VerticalAlignment="Center">
+                    <!-- Paint's rectangular-selection marquee. Drawn rather than
+                         taken from the icon font: the nearest glyph (SelectAll)
+                         carries four squares inside the dashes. Stroke colour is
+                         set from code, so it follows the lit/unlit foreground. -->
+                    <Rectangle x:Name="InspectIcon"
+                               Width="15" Height="15"
+                               Fill="Transparent"
+                               StrokeThickness="1.2"
+                               StrokeDashArray="2,2"
+                               StrokeDashCap="Flat"/>
+                </Button>
+            </StackPanel>
+
             <StackPanel x:Name="DownloadGroup" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <StackPanel.Resources>
                     <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>
@@ -309,7 +332,6 @@
             </StackPanel>
 
             <StackPanel x:Name="PrintGroup" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                <ComboBox x:Name="PrinterComboBox" MinWidth="170" SelectionChanged="PrinterComboBox_SelectionChanged"/>
                 <Button x:Name="PrintButton" Click="PrintButton_Click" Style="{StaticResource AccentButtonStyle}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <FontIcon Glyph="&#xE749;" FontSize="14"/>
@@ -601,6 +623,17 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- First-run wizard. Covers the whole page (toolbar, tabs, editor and
+             preview) so nothing of the application shows behind it; the window
+             title bar is stripped down by MainWindow.EnterOnboardingMode. Its
+             content is built by OnboardingFlow. Sits above the settings overlay
+             so the summary can hand over to the settings underneath. -->
+        <Grid x:Name="OnboardingOverlay"
+              Grid.Row="0"
+              Grid.RowSpan="3"
+              Visibility="Collapsed"
+              Canvas.ZIndex="60"/>
 
         <!-- Full-screen settings (PowerToys-style: categories on the left, the
              selected category's settings on the right). Covers everything below

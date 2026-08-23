@@ -6,6 +6,192 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.4.0] — 2026-08-22 — premier démarrage guidé, inspection et impression
+
+### ✨ Ajouté
+
+- **Fenêtre d'impression** 🖨️
+  La liste d'imprimantes qui occupait la barre d'outils disparaît, et le bouton
+  « Imprimer » ouvre une fenêtre qui **montre ce qui va sortir** : l'aperçu occupe
+  les trois quarts de la largeur et se redessine à chaque réglage touché.
+
+  | Réglage | |
+  | :-- | :-- |
+  | Imprimante | les imprimantes du poste, sauf l'imprimante virtuelle de l'application |
+  | Type d'imprimante | Imprimante classique / Imprimante thermique (ZPL brut) |
+  | Nombre d'exemplaires | 1 ou plus |
+  | Exemplaires par page | 1 par défaut — plusieurs fois la même étiquette sur une feuille |
+  | Mise en page | Portrait / Paysage / Portrait (inversé) / Paysage (inversé) |
+  | Taille du papier | les formats proposés par l'imprimante |
+  | Marges | en mm ou en cm, aucune par défaut |
+
+  Chaque champ s'ouvre sur la valeur par défaut définie dans les paramètres.
+
+  Sur une imprimante classique, l'étiquette **remplit la page** : elle occupe tout
+  l'espace que les marges lui laissent, en gardant ses proportions. Une étiquette
+  en paysage sur une A4 portrait prend donc toute la largeur, et sa hauteur suit.
+  Rien n'est déformé — les marges sont là pour lui donner moins de place.
+
+  Au-delà d'un **exemplaire par page**, cet espace se divise en autant de cases
+  égales, une par copie, et **la division suit la mise en page** : une page en
+  portrait se coupe en bandes horizontales, une page en paysage en colonnes. Quatre
+  étiquettes sur une A4 portrait donnent quatre bandes ; les mêmes en paysage, quatre
+  colonnes.
+
+  Le découpage **se replie tout seul quand la place est gâchée** : dès qu'une case
+  laisse à côté de l'étiquette autant de vide que l'étiquette occupe — les deux
+  marges réunies valent la largeur du document — c'est qu'une seconde y tiendrait,
+  et l'autre axe se divise à son tour. Tant que ça reste vrai, il continue. Huit
+  étiquettes sur une A4 portrait donnent donc **deux colonnes de quatre**, et non
+  huit bandes étriquées.
+
+- **Deux façons d'envoyer, selon le type d'imprimante** 🔀
+  Une **imprimante thermique** reçoit le **ZPL brut**, qu'elle compose elle-même —
+  c'est ce qui garantit la fidélité. Une **imprimante classique** reçoit le rendu
+  de l'étiquette, mis en page par Windows. Le type est deviné d'après le pilote,
+  modifiable dans la fenêtre, et retenu pour cette imprimante.
+
+  Sur une imprimante thermique, seuls le nombre d'exemplaires (`^PQ`) et
+  l'inversion (`^POI`) sont transmissibles : le langage n'a aucune commande pour
+  tourner une étiquette entière, et c'est l'imprimante qui choisit son média. La
+  taille du papier et les marges y sont donc **grisées**, plutôt qu'acceptées puis
+  ignorées en silence.
+
+- **Quatre valeurs par défaut d'impression** ⚙️ (section **Impression**)
+  Nombre d'exemplaires, exemplaires par page, mise en page et marges. Chacune au
+  choix **fixe** ou **reprise de la dernière impression**. Le mode et sa valeur
+  sont empilés à droite de la carte, face au texte. Sur « reprendre la dernière
+  valeur » le champ de saisie **disparaît** au lieu d'être grisé : il n'y a rien à
+  y écrire.
+
+- **Impression rapide** ⚡
+  Le bouton « Imprimer » imprime sans ouvrir la fenêtre. L'interrupteur est
+  **grisé** dès qu'un des quatre réglages reprend la dernière valeur : ce qui
+  sortirait ne serait alors pas connu d'avance. Quand il est actif, survoler le
+  bouton annonce ce qui va partir — `Zebra ZD421, x1, Portrait, aucune marge`.
+
+- **Taille de la sélection** 📏 (section **Éditeur et aperçu**)
+  Épaisseur du cadre d'inspection, de 1 à 10 px.
+
+- **Mode inspection** 🔎 (icône dans la barre d'outils)
+  Une icône qui s'allume à la couleur de l'application — celle que vous avez
+  choisie si vous en avez personnalisé une. Tant qu'elle est allumée, l'aperçu et
+  le code se désignent mutuellement, **dans les deux sens** :
+
+  | Vous cliquez… | …et |
+  | :-- | :-- |
+  | un élément de l'aperçu | il est **encadré** sur toute la place qu'il occupe, et le code qui le produit est **surligné** — l'éditeur défile jusqu'à lui s'il est hors écran |
+  | une ligne de code | la ligne est **surlignée** et l'élément correspondant est **encadré** dans l'aperçu |
+
+  Ce qui est désigné, c'est le **champ entier** — de son `^FO`/`^FT` jusqu'à son
+  `^FS` — et non la seule commande sous le curseur : c'est le champ qui fait
+  l'élément. Un champ qui produit plusieurs traits (un code-barres et sa ligne
+  d'interprétation) est encadré d'un seul tenant.
+
+  Un trait `^GB` d'un ou deux points est invisible à viser : le clic dispose d'une
+  petite tolérance, exprimée en pixels à l'écran, donc constante quel que soit le
+  zoom. Quand plusieurs champs se recouvrent, c'est le plus petit qui l'emporte —
+  le code-barres plutôt que le cadre qui l'entoure.
+
+  Le mode est **désactivé par défaut** : il change ce que fait un clic sur
+  l'aperçu, donc il s'active délibérément. Son état est conservé d'une session à
+  l'autre.
+
+- **Assistant de premier démarrage** 👋
+  Au premier lancement, l'application enchaînait les boîtes de dialogue : polices,
+  imprimante virtuelle, fichiers `.zpl`, taille d'écran. Il fallait toutes les
+  traiter avant de voir quoi que ce soit du logiciel, sans savoir combien il en
+  restait. Elles sont remplacées par **une page unique**, en plein écran, qui se
+  parcourt étape par étape :
+
+  | # | Étape | |
+  | :-- | :-- | :-- |
+  |  | Bienvenue sur Ultimate ZPL Viewer | page d'accueil |
+  | 1 | Polices | **obligatoire** — sans elles l'aperçu ne correspond pas à l'impression, donc pas de bouton pour passer |
+  | 2 | Imprimante virtuelle | facultative |
+  | 3 | Fichiers `.zpl` | facultative |
+  | 4 | Écrans | tous les écrans connectés, avec leur taille |
+  | 5 | Récapitulatif | ce qui a été fait, passé ou échoué |
+
+- **Indicateur d'étapes** 🔢
+  Un numéro par étape dans une pastille, reliée par une barre qui se remplit. Une
+  étape franchie porte une coche — sauf si elle a été **passée** ou a **échoué**,
+  auquel cas elle porte un tiret gris : une coche verte dirait que quelque chose a
+  été fait alors que non.
+
+- **Les étapes déjà satisfaites restent visibles** ✅
+  Polices déjà installées, imprimante déjà créée, `.zpl` déjà associés : l'étape
+  s'affiche marquée comme faite au lieu d'être sautée en silence. Pour les écrans,
+  une taille lue automatiquement apparaît dans un champ **verrouillé** : elle est
+  montrée, pas demandée.
+
+- **Deux sorties au récapitulatif** 🚪
+  Entrer dans l'application, ou ouvrir directement ses paramètres.
+
+- **« Étape obligatoire pour continuer »** ℹ️
+  Une étape qu'on ne peut pas passer le dit sur sa propre ligne, plutôt que de le
+  glisser en fin de paragraphe. La formulation vit dans une clé partagée : les
+  prochaines étapes obligatoires diront exactement la même chose.
+
+- **Le résultat de l'installation de l'imprimante est affiché** ✅
+  L'étape enchaînait en silence une fois l'installation finie. Elle annonce
+  maintenant **« Installée avec succès ! »** avec une coche verte et propose
+  **Suivant** — ou **« Installation échouée »** avec une croix rouge, un
+  **« Détails »** repliable qui montre l'erreur, et **Réessayer**. Le « Passer »
+  disparaît après un succès : il n'y a plus rien à passer.
+
+- **L'imprimante virtuelle est présentée comme recommandée** 🖨️
+  Sa ligne d'action passe en couleur d'accent, et le texte lève le frein du
+  téléchargement : l'installation est en un clic et incluse dans l'application.
+
+- **Une coche verte par écran** 🖥️
+  Sur chaque carte, dès que l'écran a une taille exploitable — détectée ou saisie,
+  en direct pendant la frappe. On voit d'un coup d'œil ce qu'il reste à renseigner.
+
+Le bouton **Passer** est volontairement discret : c'est une sortie, pas une
+invitation. Et le fond n'est pas un aplat gris — un dégradé diagonal teinté de la
+couleur d'accent de l'application.
+
+### 🗑️ Retiré
+
+- La liste déroulante d'imprimantes de la barre d'outils.
+- Le réglage « Confirmer avant impression » et sa boîte de confirmation : la
+  fenêtre d'impression montre ce qui va sortir, ce qu'un oui/non ne faisait pas.
+
+### 🐛 Corrigé
+
+- **Les textes réécrits n'arrivaient jamais chez un utilisateur existant** 🌍
+  Les fichiers de langue sont recopiés dans le dossier de l'utilisateur au premier
+  lancement, et la mise à jour n'y **ajoutait** que les clés absentes, sans jamais
+  toucher à une valeur déjà présente — pour ne pas écraser une traduction
+  personnalisée. Mais une phrase **reformulée** garde sa clé : l'ancien libellé
+  restait donc à l'écran pour toujours.
+
+  L'application conserve désormais, à côté de vos fichiers de langue, une copie de
+  ce qui était livré à la dernière fusion. Une valeur que vous avez toujours telle
+  qu'elle a été livrée n'a pas été touchée : la nouvelle formulation la remplace.
+  Une valeur qui en diffère est la vôtre, et elle est laissée intacte. Même règle
+  pour les clés supprimées. Vos fichiers actuels sont sauvegardés en `.bak` lors de
+  cette première mise à niveau, puisque rien ne permettait de trancher avant.
+
+### 🔧 Détails
+
+- Le passage par l'assistant est enregistré dans `onboarding.json`, à côté des
+  réglages. **Le désinstalleur le supprime** : une réinstallation repropose
+  l'assistant, sans toucher aux réglages, aux fichiers de langue ni au thème de
+  couleurs — une réinstallation sert souvent à réparer, pas à tout perdre.
+- L'installation des polices redémarre l'application (un processus WinUI en cours ne
+  voit pas une police fraîchement installée) : l'assistant **reprend à l'étape
+  suivante** au lieu de repartir du début.
+- L'assistant ne s'affiche que dans la première fenêtre : ouvrir un fichier dans une
+  seconde fenêtre n'y renvoie pas.
+- Barre de titre dépouillée pendant l'assistant : les boutons paramètres, barre
+  d'outils et plein écran mènent à une application où l'utilisateur n'est pas encore
+  entré.
+- Traduit en français et en anglais comme le reste de l'interface.
+
+---
+
 ## [1.3.1] — 2026-07-31 — raccourcis clavier
 
 ### ✨ Ajouté

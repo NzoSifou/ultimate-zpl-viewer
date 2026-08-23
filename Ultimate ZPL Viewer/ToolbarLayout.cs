@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Ultimate_ZPL_Viewer;
 
@@ -7,7 +7,7 @@ namespace Ultimate_ZPL_Viewer;
 public static class ToolbarItems
 {
     public static readonly string[] AllIds =
-        { "file", "density", "size", "rotate", "zoom", "download", "print" };
+        { "file", "density", "size", "rotate", "zoom", "inspect", "download", "print" };
 
     // Removes unknown/duplicate ids and appends any missing ones (e.g. a group
     // added by an app update), preserving the user's order.

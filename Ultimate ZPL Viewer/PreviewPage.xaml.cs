@@ -77,10 +77,12 @@ public sealed partial class PreviewPage : Page
         Root.RequestedTheme = _settings.ToElementTheme();
         ApplyPreviewTheme(); // preview background (may differ from the chrome)
         LoadDensityOptions(_settings.DefaultDpmm);
-        LoadPrinters();
+        ApplyPrintButtonTooltip();
         ApplyToolbarStrings(); // localize the toolbar button labels/tooltips
         ApplyPreviewCaptionVisibility();
         RebuildToolbar(); // place the toolbar groups per the saved layout
+        ApplyInspectButtonState();
+        PreviewCanvas.Tapped += PreviewCanvas_Tapped;
         PreviewScrollViewer.PointerWheelChanged += PreviewScrollViewer_PointerWheelChanged;
         RotateSplitButton.Click += RotateButton_Click;
         PreviewScrollViewer.PointerPressed      += PreviewScrollViewer_PointerPressed;
@@ -96,6 +98,7 @@ public sealed partial class PreviewPage : Page
             // ScrollViewer actually landed on (a requested factor can drift,
             // and pinch/native zoom never goes through our own code).
             if (!e.IsIntermediate) CaptureSettledZoom();
+            UpdateInspectFrameThickness();
             UpdatePreviewCaption();
             DrawRulers();
         };
@@ -240,71 +243,54 @@ public sealed partial class PreviewPage : Page
         if (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) is MainWindow mw)
             mw.AppWindow.Changed += (_, args) => { if (args.DidPositionChange) UpdateRealSizeScaleAsync(preserve: true); };
 
+        // First run: everything that used to arrive as a queue of dialogs is now a
+        // single guided page. Only the first window runs it — a second window opened
+        // from a file must not put the user through it again.
+        var onboarding = OnboardingState.Load();
+        if (!onboarding.Completed && WindowManager.Windows.Count <= 1)
+        {
+            ShowOnboarding(onboarding);
+            return;
+        }
+
+        // Onboarding already done: the checks below only cover what can change after
+        // it (fonts uninstalled, printer removed, a new monitor plugged in).
         var missing = FontService.GetMissingFonts();
         if (missing.Count > 0)
             await ShowMissingFontsDialogAsync(missing);
 
-        await MaybePromptPrinterInstallAsync();
-        await MaybePromptZplAssociationAsync();
         await MaybePromptScreenSizeAsync();
     }
 
-    // Offers, once, to make Ultimate ZPL Viewer the default app for .zpl files.
-    // Skipped if already default or if the user ticked "don't ask again".
-    private async Task MaybePromptZplAssociationAsync()
+    // Hands the window over to the first-run wizard: the page is covered, and the
+    // title bar loses the buttons that lead back into an application the user has
+    // not been let into yet.
+    private void ShowOnboarding(OnboardingState state)
     {
-        if (!_settings.AskZplAssociation) return;
-        if (FileAssociationService.IsDefault()) return;
+        var window = AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow;
+        window?.EnterOnboardingMode();
 
-        var body = new StackPanel { Spacing = 10, MinWidth = 440 };
-        body.Children.Add(new TextBlock
-        {
-            Text = SL("general.zplPrompt.body"),
-            TextWrapping = TextWrapping.Wrap,
-            FontWeight = FontWeights.SemiBold,
-        });
-        body.Children.Add(new TextBlock
-        {
-            Text = SL("general.zplPrompt.desc"),
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.85,
-        });
-        var dontAsk = new CheckBox { Content = SL("general.zplPrompt.dontAsk"), Margin = new Thickness(0, 4, 0, 0) };
-        body.Children.Add(dontAsk);
+        var flow = new OnboardingFlow(
+            OnboardingOverlay, _settings, state,
+            openApp: () => window?.ExitOnboardingMode(),
+            openSettings: () => { window?.ExitOnboardingMode(); OpenSettings("general"); },
+            quit: () => Application.Current.Exit(),
+            restart: RestartApp);
+        flow.Show();
+    }
 
-        var dialog = new ContentDialog
+    // Used after installing fonts: a running WinUI process does not pick up a newly
+    // installed font, so it has to come back fresh.
+    private static void RestartApp()
+    {
+        try { AppInstance.Restart(string.Empty); }
+        catch
         {
-            XamlRoot          = XamlRoot,
-            RequestedTheme    = _settings.ToElementTheme(),
-            Title             = SL("general.zplPrompt.title"),
-            Content           = body,
-            PrimaryButtonText = SL("general.zplPrompt.setDefault"),
-            CloseButtonText   = SL("general.zplPrompt.no"),
-            DefaultButton     = ContentDialogButton.Primary,
-        };
-
-        var result = await ShowDialogAsync(dialog);
-        bool stopAsking = dontAsk.IsChecked == true;
-        if (result == ContentDialogResult.Primary)
-        {
-            if (FileAssociationService.SetAsDefault())
-            {
-                // Confirm success to the user.
-                await ShowMessageAsync(SL("general.zplAssoc.successTitle"), SL("general.zplAssoc.successBody"));
-            }
-            else
-            {
-                // Windows blocked it (an existing UserChoice). Give the manual steps
-                // and stop prompting at startup — it won't succeed automatically next
-                // time either.
-                await ShowMessageAsync(SL("general.zplAssoc.manualTitle"), SL("general.zplAssoc.manualBody"));
-                stopAsking = true;
-            }
-        }
-        if (stopAsking)
-        {
-            _settings.AskZplAssociation = false;
-            _settings.Save();
+            var exe = Environment.ProcessPath;
+            if (exe is not null)
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = true });
+            Application.Current.Exit();
         }
     }
 
@@ -401,72 +387,6 @@ public sealed partial class PreviewPage : Page
 
         if (result == ContentDialogResult.Primary)
             OpenSettings("screen");
-    }
-
-    // Offers to install the "Ultimate ZPL Viewer" virtual printer when it is
-    // missing, unless the user asked not to be prompted again.
-    private async Task MaybePromptPrinterInstallAsync()
-    {
-        if (_settings.SkipPrinterInstallPrompt) return;
-        if (VirtualPrinterService.IsInstalled()) return;
-
-        var body = new StackPanel { Spacing = 10, MinWidth = 440 };
-        body.Children.Add(new TextBlock
-        {
-            Text = "Ultimate ZPL Viewer peut créer une imprimante virtuelle du même nom.",
-            TextWrapping = TextWrapping.Wrap,
-            FontWeight = FontWeights.SemiBold,
-        });
-        body.Children.Add(new TextBlock
-        {
-            Text = "Lorsque vous imprimez un fichier ZPL sur cette imprimante virtuelle, " +
-                   "l'application s'ouvre automatiquement pour afficher un aperçu du document avant son impression.\n" +
-                   "Vous pouvez ensuite l'imprimer sur une imprimante Zebra directement depuis l'application.",
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.85,
-        });
-        body.Children.Add(new TextBlock
-        {
-            Text = "L'installation nécessite une autorisation administrateur (une seule fois).",
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.7,
-            FontSize = 12,
-        });
-        var dontAsk = new CheckBox { Content = "Ne plus me demander", Margin = new Thickness(0, 4, 0, 0) };
-        body.Children.Add(dontAsk);
-
-        var dialog = new ContentDialog
-        {
-            XamlRoot            = XamlRoot,
-            RequestedTheme = _settings.ToElementTheme(),
-            Title               = "Installer l'imprimante virtuelle « Ultimate ZPL Viewer » ?",
-            Content             = body,
-            PrimaryButtonText   = "Installer l'imprimante",
-            CloseButtonText     = "Annuler",
-            DefaultButton       = ContentDialogButton.Primary,
-        };
-
-        var result = await ShowDialogAsync(dialog);
-
-        if (result != ContentDialogResult.Primary)
-        {
-            // "Ne pas installer": only stop prompting if the checkbox is ticked.
-            if (dontAsk.IsChecked == true)
-            {
-                _settings.SkipPrinterInstallPrompt = true;
-                _settings.Save();
-            }
-            return;
-        }
-
-        // Install (elevated, one UAC prompt) off the UI thread, then report.
-        var install = await Task.Run(VirtualPrinterService.EnsureInstalled);
-        if (install.Ok)
-            await ShowMessageAsync("Imprimante installée",
-                "L'imprimante virtuelle « Ultimate ZPL Viewer » est prête. Vous pouvez désormais imprimer des fichier ZPL sur cette imprimante pour les visualiser dans cette application.");
-        else
-            await ShowMessageAsync("Échec de l'installation",
-                $"L'imprimante n'a pas pu être installée.\n\n{install.Error}");
     }
 
     private async Task ShowMissingFontsDialogAsync(List<FontInfo> missing)
@@ -856,6 +776,7 @@ public sealed partial class PreviewPage : Page
         ("size", "Taille", "", null),
         ("rotate", "Tourner", "", null),
         ("zoom", "Zoom", "", null),
+        ("inspect", "Inspecter", "", null),
         ("download", "Téléchargement", "", new[]
             { ("", "PDF"), ("", "PNG") }),
         ("print", "Imprimer", "", null),
@@ -868,6 +789,7 @@ public sealed partial class PreviewPage : Page
         "size"     => SizeGroup,
         "rotate"   => RotateGroup,
         "zoom"     => ZoomGroup,
+        "inspect"  => InspectGroup,
         "download" => DownloadGroup,
         "print"    => PrintGroup,
         _          => null,
@@ -1053,25 +975,6 @@ public sealed partial class PreviewPage : Page
             .First();
     }
 
-    private void LoadPrinters()
-    {
-        PrinterComboBox.Items.Clear();
-        foreach (var printer in GetInstalledPrinters())
-        {
-            PrinterComboBox.Items.Add(printer);
-        }
-
-        var preferred = _settings.DefaultPrinter == "last" ? _settings.LastPrinter : _settings.DefaultPrinter;
-        if (!string.IsNullOrWhiteSpace(preferred) && PrinterComboBox.Items.Contains(preferred))
-        {
-            PrinterComboBox.SelectedItem = preferred;
-        }
-        else if (PrinterComboBox.Items.Count > 0)
-        {
-            PrinterComboBox.SelectedIndex = 0;
-        }
-    }
-
     private double SelectedDpmm => (DensityComboBox.SelectedItem as DpmmOption)?.Dpmm ?? _settings.DefaultDpmm;
 
     // What triggered the refresh — decides whether the document size may be updated.
@@ -1177,7 +1080,11 @@ public sealed partial class PreviewPage : Page
             };
 
             UpdateSizeBoxes(fillEmptyBoxes: kind == SizeUpdate.DocumentLoaded);
-            ZplRenderer.Draw(PreviewCanvas, _model, SelectedDpmm, _rotationDegrees);
+            ZplRenderer.Draw(PreviewCanvas, _model, SelectedDpmm, _rotationDegrees, _hitMap);
+            // The canvas was rebuilt: the frame has to find its element again.
+            // Low priority so the new children have been measured by then.
+            DispatcherQueue.TryEnqueue(
+                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, UpdateInspectFrame);
 
             // Re-apply the default zoom after every redraw (low priority: waits
             // for the new canvas size to be measured).
@@ -2900,7 +2807,7 @@ public sealed partial class PreviewPage : Page
             case "nextTab": StepTab(+1); break;
             case "prevTab": StepTab(-1); break;
             case "lastTab": SelectTabAt(DocTabs.TabItems.Count - 1); break;
-            case "print": _ = PrintCurrentAsync(); break;
+            case "print": _ = StartPrintAsync(); break;
             case "zoomIn": StepZoom(+1); break;
             case "zoomOut": StepZoom(-1); break;
             case "duplicateTab":
@@ -3420,66 +3327,8 @@ public sealed partial class PreviewPage : Page
         }
     }
 
-    private void PrinterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (PrinterComboBox.SelectedItem is string printer)
-        {
-            _settings.LastPrinter = printer;
-            _settings.Save();
-        }
-    }
-
     private async void PrintButton_Click(object sender, RoutedEventArgs e)
-        => await PrintCurrentAsync();
-
-    // Sends the label to the selected printer, asking first when the setting says so.
-    // Shared by the toolbar button and Ctrl+P (which used to open the browser's print
-    // dialog from inside Monaco — printing the CODE, which is never what is wanted).
-    private async Task PrintCurrentAsync()
-    {
-        if (PrinterComboBox.SelectedItem is not string printer || string.IsNullOrWhiteSpace(printer))
-        {
-            await ShowMessageAsync("Impression", "Sélectionnez d'abord une imprimante dans la liste.");
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(_currentText))
-        {
-            await ShowMessageAsync("Impression", "Le document ZPL est vide : rien à imprimer.");
-            return;
-        }
-
-        if (_settings.ConfirmBeforePrint)
-        {
-            var confirm = CreateDialog("Imprimer",
-                new TextBlock
-                {
-                    Text = $"Envoyer l'étiquette à « {printer} » ?\n\n" +
-                           "Le code ZPL est envoyé tel quel (données brutes) : l'imprimante doit être " +
-                           "une imprimante d'étiquettes compatible ZPL (Zebra ou équivalent).",
-                    TextWrapping = TextWrapping.Wrap,
-                    MaxWidth = 420,
-                },
-                "Imprimer", "Annuler");
-            if (await confirm.ShowAsync() != ContentDialogResult.Primary)
-            {
-                return;
-            }
-        }
-
-        try
-        {
-            var zpl = _currentText;
-            await Task.Run(() => RawPrinterService.SendRaw(printer, zpl, "Ultimate ZPL Viewer"));
-            await ShowMessageAsync("Impression", $"Étiquette envoyée à « {printer} ».");
-        }
-        catch (Exception ex)
-        {
-            await ShowMessageAsync("Erreur d'impression",
-                $"L'envoi à « {printer} » a échoué : {ex.Message}");
-        }
-    }
-
+        => await StartPrintAsync();
 
     // ── Full-screen settings (PowerToys style) ──────────────────────────────
 
@@ -3602,7 +3451,10 @@ public sealed partial class PreviewPage : Page
             // (a designer canvas) forces each card to exactly 1/3 of the container
             // width, so every sub-category lines up identically.
             ["doc"]        = WithThirdWidthCards(BuildDocumentSettings()),
-            ["print"]      = WithThirdWidthCards(BuildPrintSettings()),
+            // Full width, not a third: the print defaults carry a mode selector
+            // AND a value side by side, and a third-width card crushes the label
+            // column down to one word per line.
+            ["print"]      = BuildPrintSettingsSection(),
             ["editor"]     = BuildEditorSettings(),
             ["appearance"] = WithThirdWidthCards(BuildAppearanceSettings()),
             ["toolbar"]    = BuildToolbarDesignerSettings(), // designer card: not applicable
@@ -3910,26 +3762,6 @@ public sealed partial class PreviewPage : Page
         return panel;
     }
 
-    private UIElement BuildPrintSettings()
-    {
-        var panel = SettingsPanel();
-        panel.Children.Add(LocalizedSettingsHeader("print"));
-
-        var printer = new ComboBox { MinWidth = 240 };
-        printer.Items.Add(SL("print.lbl.lastPrinter"));
-        foreach (string item in PrinterComboBox.Items) printer.Items.Add(item);
-        printer.SelectedIndex = _settings.DefaultPrinter == "last" ? 0 : Math.Max(0, printer.Items.IndexOf(_settings.DefaultPrinter));
-        printer.SelectionChanged += (_, _) =>
-        {
-            _settings.DefaultPrinter = printer.SelectedIndex <= 0 ? "last" : printer.SelectedItem?.ToString() ?? "last";
-            _settings.Save();
-        };
-        panel.Children.Add(MakeCard("\uE749", SL("print.cards.printer.title"),
-            SL("print.cards.printer.desc"), printer));
-
-        return panel;
-    }
-
     private UIElement BuildEditorSettings()
     {
         var panel = SettingsPanel();
@@ -4022,6 +3854,19 @@ public sealed partial class PreviewPage : Page
             MakeCard("\uE8A5", SL("editor.cards.editScheme.title"), SL("editor.cards.editScheme.desc"), editSchemeBtn)));
 
         // ── Aperçu ──────────────────────────────────────────────────────────
+        var selWidth = new NumberBox
+        {
+            Value = _settings.InspectFrameThickness, Minimum = 1, Maximum = 10, SmallChange = 1,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact, MinWidth = 96,
+        };
+        selWidth.ValueChanged += (_, _) =>
+        {
+            if (double.IsNaN(selWidth.Value)) return;
+            _settings.InspectFrameThickness = (int)Math.Clamp(selWidth.Value, 1, 10);
+            _settings.Save();
+            UpdateInspectFrameThickness();
+        };
+
         var gridToggle = MakeToggle(_settings.ShowPreviewGrid);
         gridToggle.Toggled += (_, _) => SetPreviewGrid(gridToggle.IsOn);
         _gridToggle = gridToggle;
@@ -4111,7 +3956,8 @@ public sealed partial class PreviewPage : Page
             MakeCard("\uE80A", SL("editor.cards.gridSpacing.title"), SL("editor.cards.gridSpacing.desc"), gridSpacingRow),
             MakeCard("\uE790", SL("editor.cards.gridColor.title"), SL("editor.cards.gridColor.desc"), gridColorBtn),
             MakeCard("\uE7AD", SL("editor.cards.rotation.title"), SL("editor.cards.rotation.desc"), rotation),
-            MakeCard("\uE7B3", SL("editor.cards.previewCaption.title"), SL("editor.cards.previewCaption.desc"), captionToggle)));
+            MakeCard("\uE7B3", SL("editor.cards.previewCaption.title"), SL("editor.cards.previewCaption.desc"), captionToggle),
+            MakeCard("\uE8B3", SL("editor.cards.selWidth.title"), SL("editor.cards.selWidth.desc"), selWidth)));
 
         // \u2500\u2500 R\u00E8gles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         var rulerH = MakeToggle(_settings.ShowRulerHorizontal);
@@ -4823,11 +4669,6 @@ public sealed partial class PreviewPage : Page
         var panel = SettingsPanel();
         panel.Children.Add(LocalizedSettingsHeader("general"));
 
-        var confirm = MakeToggle(_settings.ConfirmBeforePrint);
-        confirm.Toggled += (_, _) => { _settings.ConfirmBeforePrint = confirm.IsOn; _settings.Save(); };
-        panel.Children.Add(MakeCard("\uE749", SL("general.cards.confirmPrint.title"),
-            SL("general.cards.confirmPrint.desc"), confirm));
-
         var reopen = MakeToggle(_settings.ReopenLastFile);
         reopen.Toggled += (_, _) => { _settings.ReopenLastFile = reopen.IsOn; _settings.Save(); };
         panel.Children.Add(MakeCard("\uED25", SL("general.cards.reopen.title"),
@@ -5185,6 +5026,7 @@ public sealed partial class PreviewPage : Page
             case "cursorChanged":
                 _cursorOffset = doc.RootElement.GetProperty("offset").GetInt32();
                 if (DocBadge.IsChecked == true) UpdateDocPanel();
+                OnEditorCaretMoved(_cursorOffset);
                 break;
             case "save":
                 _ = SaveAsync();

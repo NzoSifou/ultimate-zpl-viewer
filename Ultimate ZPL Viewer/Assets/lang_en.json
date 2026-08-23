@@ -27,7 +27,9 @@
     "zoomIn": "Zoom in (+10 %, hold to accelerate)",
     "zoomReset": "Reset zoom (100 %)",
     "widthTooLarge": "Width exceeds 50 cm: the preview is capped at 50 cm.",
-    "heightTooLarge": "Height exceeds 50 cm: the preview is capped at 50 cm."
+    "heightTooLarge": "Height exceeds 50 cm: the preview is capped at 50 cm.",
+    "inspectOn": "Inspect on: click an element in the preview to see its code, or a line of code to see its element",
+    "inspectOff": "Turn on inspect: link an element in the preview to the code that makes it"
   },
   "editor": {
     "shortDescription": {
@@ -1481,10 +1483,6 @@
       "title": "General",
       "subtitle": "General application behaviour.",
       "cards": {
-        "confirmPrint": {
-          "title": "Confirm before printing",
-          "desc": "Ask for confirmation before sending a label to the printer."
-        },
         "reopen": {
           "title": "Reopen last file(s)",
           "desc": "Reloads the files open in the last session at startup."
@@ -1698,6 +1696,10 @@
         "rulerSize": {
           "title": "Ruler size",
           "desc": "Thickness of the ruler bands."
+        },
+        "selWidth": {
+          "title": "Selection size",
+          "desc": "Thickness of the inspect frame on the preview, in pixels."
         }
       },
       "lbl": {
@@ -1728,10 +1730,73 @@
         "printer": {
           "title": "Default printer",
           "desc": "Printer preselected when the application opens."
+        },
+        "quick": {
+          "title": "Quick print",
+          "desc": "The Print button prints straight away, without opening the window.",
+          "blocked": "Unavailable while one of the settings below reuses the last value: the values would not be known in advance."
+        },
+        "copies": {
+          "title": "Default copies",
+          "desc": "How many times the label is printed."
+        },
+        "layout": {
+          "title": "Default layout",
+          "desc": "Page orientation when printing."
+        },
+        "margins": {
+          "title": "Default margins",
+          "desc": "Margin left around the label on the page. No effect on a thermal printer."
+        },
+        "perPage": {
+          "title": "Default copies per sheet",
+          "desc": "How many times the same label is repeated on one sheet. No effect on a thermal printer."
         }
       },
       "lbl": {
         "lastPrinter": "Last selected printer"
+      },
+      "layout": {
+        "portrait": "Portrait",
+        "landscape": "Landscape",
+        "portraitFlipped": "Portrait (flipped)",
+        "landscapeFlipped": "Landscape (flipped)"
+      },
+      "mode": {
+        "last": "Reuse the last value",
+        "fixed": "Fixed value"
+      },
+      "dialog": {
+        "title": "Print the label",
+        "print": "Print",
+        "cancel": "Cancel"
+      },
+      "field": {
+        "printer": "Printer",
+        "send": "Printer type",
+        "copies": "Copies",
+        "layout": "Layout",
+        "paper": "Paper size",
+        "margins": "Margins",
+        "perPage": "Copies per sheet"
+      },
+      "send": {
+        "raw": "Thermal printer (raw ZPL)",
+        "image": "Classic printer"
+      },
+      "msg": {
+        "title": "Printing",
+        "empty": "The ZPL document is empty: nothing to print.",
+        "noPrinter": "No printer was found on this machine.",
+        "sent": "Label sent to “{0}”.",
+        "failedTitle": "Printing error",
+        "failedBody": "Sending to “{0}” failed: {1}"
+      },
+      "margins": {
+        "none": "no margin"
+      },
+      "perPage": {
+        "summary": "{0} per sheet"
       }
     },
     "appearance": {
@@ -1925,6 +1990,83 @@
       "gotoLine": "Go to line",
       "selectLine": "Select the line",
       "nextMatch": "Select the next occurrence"
+    }
+  },
+  "onboarding": {
+    "nav": {
+      "back": "Back",
+      "next": "Next",
+      "skip": "Skip",
+      "required": "Required step to continue."
+    },
+    "step": {
+      "fonts": "Fonts",
+      "printer": "Printer",
+      "association": ".zpl files",
+      "screens": "Screens",
+      "summary": "Summary"
+    },
+    "welcome": {
+      "title": "Welcome to Ultimate ZPL Viewer",
+      "body": "A few settings before you start. Everything stays changeable afterwards in the settings.",
+      "start": "Get started"
+    },
+    "fonts": {
+      "title": "Required fonts",
+      "body": "These fonts reproduce the ones in Zebra printers. Without them the preview does not match what the printer will produce.",
+      "installed": "Already installed",
+      "willInstall": "Will be downloaded and installed",
+      "commercial": "Commercial font: buy and install it yourself, then come back here",
+      "install": "Install the fonts",
+      "recheck": "Check again",
+      "retry": "Try again",
+      "failed": "The installation failed.",
+      "quit": "Quit the application"
+    },
+    "printer": {
+      "title": "Virtual printer",
+      "body": "An “Ultimate ZPL Viewer” printer that opens the application instead of printing: you see the label before sending it to a real Zebra. Installing it is recommended.",
+      "what": "Create the “Ultimate ZPL Viewer” virtual printer",
+      "elevation": "One-click installation, built into the application: nothing to download. Administrator permission is asked for once.",
+      "already": "The virtual printer is already installed",
+      "install": "Install the printer",
+      "installing": "Installing…",
+      "success": "Installed successfully!",
+      "failedShort": "Installation failed",
+      "details": "Details",
+      "retry": "Retry"
+    },
+    "assoc": {
+      "title": ".zpl files",
+      "body": "Open .zpl files with a double-click, straight into Ultimate ZPL Viewer.",
+      "what": "Make Ultimate ZPL Viewer the default application for .zpl files",
+      "already": "Ultimate ZPL Viewer already opens .zpl files",
+      "set": "Make default",
+      "manual": "Windows does not allow changing this automatically. Right-click a .zpl file, then “Open with” → “Choose another app”."
+    },
+    "screens": {
+      "title": "Your screens",
+      "body": "The physical screen size is what shows the label at its real dimensions. A size read automatically is shown but locked.",
+      "detected": "{0} × {1} — size detected automatically",
+      "manual": "{0} × {1} — size unknown, measure the diagonal of the visible area",
+      "inches": "inches",
+      "none": "No screen detected"
+    },
+    "summary": {
+      "title": "You are all set",
+      "body": "Here is what was configured.",
+      "fonts": "Required fonts",
+      "printer": "Virtual printer",
+      "assoc": ".zpl files",
+      "screens": "Screens",
+      "screensDetail": "Changeable at any time in Settings → Screen",
+      "done": "Configured just now",
+      "already": "Already in place",
+      "skipped": "Skipped — available in the settings",
+      "failed": "Failed — pick it up again in the settings",
+      "later": "All of these choices stay changeable in the settings.",
+      "openApp": "Go to the application",
+      "openSettings": "Open the settings"
     }
   }
 }

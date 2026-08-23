@@ -27,7 +27,9 @@
     "zoomIn": "Zoom avant (+10 %, maintenir pour accélérer)",
     "zoomReset": "Réinitialiser le zoom (100 %)",
     "widthTooLarge": "La largeur dépasse 50 cm : l'aperçu est limité à 50 cm.",
-    "heightTooLarge": "La hauteur dépasse 50 cm : l'aperçu est limité à 50 cm."
+    "heightTooLarge": "La hauteur dépasse 50 cm : l'aperçu est limité à 50 cm.",
+    "inspectOn": "Inspection active : cliquez un élément de l'aperçu pour voir son code, ou une ligne de code pour voir son élément",
+    "inspectOff": "Activer l'inspection : relier un élément de l'aperçu au code qui le produit"
   },
   "editor": {
     "shortDescription": {
@@ -1481,10 +1483,6 @@
       "title": "Général",
       "subtitle": "Comportement général de l'application.",
       "cards": {
-        "confirmPrint": {
-          "title": "Confirmer avant impression",
-          "desc": "Demander une confirmation avant d'envoyer une étiquette à l'imprimante."
-        },
         "reopen": {
           "title": "Rouvrir le(s) dernier(s) fichier(s)",
           "desc": "Recharge les fichiers ouverts lors de la dernière session au démarrage."
@@ -1698,6 +1696,10 @@
         "rulerSize": {
           "title": "Taille des règles",
           "desc": "Épaisseur des bandes de règles."
+        },
+        "selWidth": {
+          "title": "Taille de la sélection",
+          "desc": "Épaisseur du cadre d'inspection sur l'aperçu, en pixels."
         }
       },
       "lbl": {
@@ -1728,10 +1730,73 @@
         "printer": {
           "title": "Imprimante par défaut",
           "desc": "Imprimante présélectionnée à l'ouverture de l'application."
+        },
+        "quick": {
+          "title": "Impression rapide",
+          "desc": "Le bouton « Imprimer » lance l'impression directement, sans ouvrir la fenêtre.",
+          "blocked": "Indisponible tant qu'un des réglages ci-dessous reprend la dernière valeur utilisée : les valeurs ne seraient pas connues d'avance."
+        },
+        "copies": {
+          "title": "Nombre d'exemplaires par défaut",
+          "desc": "Combien de fois l'étiquette est imprimée."
+        },
+        "layout": {
+          "title": "Mise en page par défaut",
+          "desc": "Orientation de la page à l'impression."
+        },
+        "margins": {
+          "title": "Marges par défaut",
+          "desc": "Marge laissée autour de l'étiquette sur la page. Sans effet sur une imprimante thermique."
+        },
+        "perPage": {
+          "title": "Exemplaires par page par défaut",
+          "desc": "Combien de fois la même étiquette est répétée sur une feuille. Sans effet sur une imprimante thermique."
         }
       },
       "lbl": {
         "lastPrinter": "Dernière imprimante sélectionnée"
+      },
+      "layout": {
+        "portrait": "Portrait",
+        "landscape": "Paysage",
+        "portraitFlipped": "Portrait (inversé)",
+        "landscapeFlipped": "Paysage (inversé)"
+      },
+      "mode": {
+        "last": "Reprendre la dernière valeur",
+        "fixed": "Valeur fixe"
+      },
+      "dialog": {
+        "title": "Imprimer l'étiquette",
+        "print": "Imprimer",
+        "cancel": "Annuler"
+      },
+      "field": {
+        "printer": "Imprimante",
+        "send": "Type d'imprimante",
+        "copies": "Nombre d'exemplaires",
+        "layout": "Mise en page",
+        "paper": "Taille du papier",
+        "margins": "Marges",
+        "perPage": "Exemplaires par page"
+      },
+      "send": {
+        "raw": "Imprimante thermique (ZPL brut)",
+        "image": "Imprimante classique"
+      },
+      "msg": {
+        "title": "Impression",
+        "empty": "Le document ZPL est vide : rien à imprimer.",
+        "noPrinter": "Aucune imprimante n'a été détectée sur ce poste.",
+        "sent": "Étiquette envoyée à « {0} ».",
+        "failedTitle": "Erreur d'impression",
+        "failedBody": "L'envoi à « {0} » a échoué : {1}"
+      },
+      "margins": {
+        "none": "aucune marge"
+      },
+      "perPage": {
+        "summary": "{0} par page"
       }
     },
     "appearance": {
@@ -1925,6 +1990,83 @@
       "gotoLine": "Aller à la ligne",
       "selectLine": "Sélectionner la ligne",
       "nextMatch": "Sélectionner l'occurrence suivante"
+    }
+  },
+  "onboarding": {
+    "nav": {
+      "back": "Retour",
+      "next": "Suivant",
+      "skip": "Passer",
+      "required": "Étape obligatoire pour continuer."
+    },
+    "step": {
+      "fonts": "Polices",
+      "printer": "Imprimante",
+      "association": "Fichiers .zpl",
+      "screens": "Écrans",
+      "summary": "Récapitulatif"
+    },
+    "welcome": {
+      "title": "Bienvenue sur Ultimate ZPL Viewer",
+      "body": "Quelques réglages avant de commencer. Tout reste modifiable ensuite dans les paramètres.",
+      "start": "Commencer"
+    },
+    "fonts": {
+      "title": "Polices requises",
+      "body": "Ces polices reproduisent celles des imprimantes Zebra. Sans elles, l'aperçu ne correspond pas à ce qui sortira de l'imprimante.",
+      "installed": "Déjà installée",
+      "willInstall": "Sera téléchargée et installée",
+      "commercial": "Police commerciale : à acheter et installer vous-même, puis revenir ici",
+      "install": "Installer les polices",
+      "recheck": "Vérifier à nouveau",
+      "retry": "Réessayer",
+      "failed": "L'installation a échoué.",
+      "quit": "Quitter l'application"
+    },
+    "printer": {
+      "title": "Imprimante virtuelle",
+      "body": "Une imprimante « Ultimate ZPL Viewer » qui ouvre l'application au lieu d'imprimer : vous voyez l'étiquette avant de l'envoyer à une vraie Zebra. Son installation est recommandée.",
+      "what": "Créer l'imprimante virtuelle « Ultimate ZPL Viewer »",
+      "elevation": "Installation en un clic, incluse dans l'application : rien à télécharger. Une autorisation administrateur est demandée une seule fois.",
+      "already": "L'imprimante virtuelle est déjà installée",
+      "install": "Installer l'imprimante",
+      "installing": "Installation en cours…",
+      "success": "Installée avec succès !",
+      "failedShort": "Installation échouée",
+      "details": "Détails",
+      "retry": "Réessayer"
+    },
+    "assoc": {
+      "title": "Fichiers .zpl",
+      "body": "Ouvrir les fichiers .zpl d'un double-clic, directement dans Ultimate ZPL Viewer.",
+      "what": "Définir Ultimate ZPL Viewer comme application par défaut pour les fichiers .zpl",
+      "already": "Ultimate ZPL Viewer ouvre déjà les fichiers .zpl",
+      "set": "Définir par défaut",
+      "manual": "Windows n'autorise pas le changement automatique. Faites un clic droit sur un fichier .zpl puis « Ouvrir avec » → « Choisir une autre application »."
+    },
+    "screens": {
+      "title": "Vos écrans",
+      "body": "La taille physique de l'écran sert à afficher l'étiquette à ses dimensions réelles. Une taille lue automatiquement est affichée mais verrouillée.",
+      "detected": "{0} × {1} — taille détectée automatiquement",
+      "manual": "{0} × {1} — taille inconnue, mesurez la diagonale de la partie visible",
+      "inches": "pouces",
+      "none": "Aucun écran détecté"
+    },
+    "summary": {
+      "title": "Tout est prêt",
+      "body": "Voici ce qui a été configuré.",
+      "fonts": "Polices requises",
+      "printer": "Imprimante virtuelle",
+      "assoc": "Fichiers .zpl",
+      "screens": "Écrans",
+      "screensDetail": "Modifiable à tout moment dans Paramètres → Écran",
+      "done": "Configuré à l'instant",
+      "already": "Déjà en place",
+      "skipped": "Passé — disponible dans les paramètres",
+      "failed": "Échec — à reprendre dans les paramètres",
+      "later": "Tous ces choix restent modifiables dans les paramètres.",
+      "openApp": "Accéder à l'application",
+      "openSettings": "Ouvrir les paramètres"
     }
   }
 }

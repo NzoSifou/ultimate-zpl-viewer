@@ -38,6 +38,13 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   étiquettes sur une A4 portrait donnent quatre bandes ; les mêmes en paysage, quatre
   colonnes.
 
+  Le découpage **se replie tout seul quand la place est gâchée** : dès qu'une case
+  laisse à côté de l'étiquette autant de vide que l'étiquette occupe — les deux
+  marges réunies valent la largeur du document — c'est qu'une seconde y tiendrait,
+  et l'autre axe se divise à son tour. Tant que ça reste vrai, il continue. Huit
+  étiquettes sur une A4 portrait donnent donc **deux colonnes de quatre**, et non
+  huit bandes étriquées.
+
 - **Deux façons d'envoyer, selon le type d'imprimante** 🔀
   Une **imprimante thermique** reçoit le **ZPL brut**, qu'elle compose elle-même —
   c'est ce qui garantit la fidélité. Une **imprimante classique** reçoit le rendu
@@ -52,7 +59,10 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 - **Quatre valeurs par défaut d'impression** ⚙️ (section **Impression**)
   Nombre d'exemplaires, exemplaires par page, mise en page et marges. Chacune au
-  choix **fixe** ou **reprise de la dernière impression**.
+  choix **fixe** ou **reprise de la dernière impression**. Sur « reprendre la
+  dernière valeur » le champ de saisie **disparaît** au lieu d'être grisé — il n'y
+  a rien à y écrire — et il revient **sous** la liste dès qu'une valeur fixe est
+  choisie, là où le regard va ensuite.
 
 - **Impression rapide** ⚡
   Le bouton « Imprimer » imprime sans ouvrir la fenêtre. L'interrupteur est

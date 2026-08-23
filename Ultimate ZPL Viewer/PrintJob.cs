@@ -174,7 +174,7 @@ public static class PrintJobService
             float availH = Math.Max(1, bounds.Height - 2 * marginUnits);
 
             e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            foreach (var cell in Cells(marginUnits, marginUnits, availW, availH, job))
+            foreach (var cell in Cells(marginUnits, marginUnits, availW, availH, job, wUnits, hUnits))
             {
                 // The label takes all of its cell: whichever dimension runs out
                 // first decides the factor, so proportions hold and nothing is
@@ -191,19 +191,55 @@ public static class PrintJobService
     }
 
     /// <summary>
-    /// The area split into one cell per copy. A portrait page divides into rows and
-    /// a landscape one into columns, so the split follows the layout as asked.
+    /// The area split into one cell per copy.
+    /// <para>
+    /// The split follows the layout: a portrait page divides into bands, a landscape
+    /// one into columns. But a band that is far wider than the label it holds wastes
+    /// the page - so when the room left beside a copy is as wide as the copy itself,
+    /// a second one fits there, and the other axis is divided too. That repeats
+    /// while it stays true, which is what turns eight labels on an A4 into two
+    /// columns of four rather than eight thin strips.
+    /// </para>
     /// </summary>
-    public static IEnumerable<RectangleF> Cells(float x, float y, float width, float height, PrintJob job)
+    public static IReadOnlyList<RectangleF> Cells(float x, float y, float width, float height,
+                                                  PrintJob job, float labelW, float labelH)
     {
         int n = Math.Max(1, job.PerPage);
-        bool rows = job.Layout is PrintLayout.Portrait or PrintLayout.PortraitFlipped;
+        bool portrait = job.Layout is PrintLayout.Portrait or PrintLayout.PortraitFlipped;
+
+        int cols = portrait ? 1 : n;
+        int rows = portrait ? n : 1;
+
+        for (int guard = 0; guard < n; guard++)
+        {
+            float cellW = width / cols, cellH = height / rows;
+            float fit = Math.Min(cellW / Math.Max(0.01f, labelW), cellH / Math.Max(0.01f, labelH));
+            float drawnW = labelW * fit, drawnH = labelH * fit;
+
+            // The leftover is the whole gap across the cell - both sides together,
+            // which is how the rule was framed.
+            if (portrait)
+            {
+                if (cols >= n || cellW - drawnW < drawnW) break;
+                cols++;
+                rows = (int)Math.Ceiling(n / (double)cols);
+            }
+            else
+            {
+                if (rows >= n || cellH - drawnH < drawnH) break;
+                rows++;
+                cols = (int)Math.Ceiling(n / (double)rows);
+            }
+        }
+
+        var cells = new List<RectangleF>(n);
         for (int i = 0; i < n; i++)
         {
-            yield return rows
-                ? new RectangleF(x, y + height * i / n, width, height / n)
-                : new RectangleF(x + width * i / n, y, width / n, height);
+            int r = i / cols, c = i % cols;
+            cells.Add(new RectangleF(x + width * c / cols, y + height * r / rows,
+                                     width / cols, height / rows));
         }
+        return cells;
     }
 
     private static PaperSize? FindPaper(PrinterSettings settings, string name)

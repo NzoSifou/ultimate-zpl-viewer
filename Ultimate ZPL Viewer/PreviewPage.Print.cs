@@ -349,7 +349,8 @@ public sealed partial class PreviewPage
         double availW = Math.Max(1, pageW - 2 * job.MarginsMm);
         double availH = Math.Max(1, pageH - 2 * job.MarginsMm);
         var cells = PrintJobService.Cells((float)job.MarginsMm, (float)job.MarginsMm,
-                                          (float)availW, (float)availH, job).ToList();
+                                          (float)availW, (float)availH, job,
+                                          (float)labelWmm, (float)labelHmm);
 
         // One millimetre is one unit here; the Viewbox around it does the fitting.
         var page = new Grid { Width = pageW, Height = pageH, Background = new SolidColorBrush(Microsoft.UI.Colors.White) };
@@ -379,7 +380,7 @@ public sealed partial class PreviewPage
                                      cell.Height / Math.Max(0.1, labelHmm));
             // The first cell holds the live render; the others show the same picture,
             // so the canvas is not rebuilt once per copy.
-            FrameworkElement copy = i == 0 ? label : CloneLabel(canvas, flip);
+            FrameworkElement copy = i == 0 ? label : CloneLabel(previewAngle, flip);
             var placed = new Border
             {
                 Child = copy,
@@ -404,12 +405,10 @@ public sealed partial class PreviewPage
 
     // A second view of the same drawing. A Canvas can only have one parent, so a
     // repeated label is redrawn into its own canvas rather than shared.
-    private FrameworkElement CloneLabel(Canvas source, double flip)
+    private FrameworkElement CloneLabel(double angle, double flip)
     {
         var canvas = new Canvas();
-        ZplRenderer.Draw(canvas, _model, SelectedDpmm,
-                         _rotationDegrees == 0 ? 0 : _rotationDegrees);
-        _ = source;
+        ZplRenderer.Draw(canvas, _model, SelectedDpmm, angle);
         return new Viewbox
         {
             Child = canvas,
@@ -641,6 +640,12 @@ public sealed partial class PreviewPage
     // A default that is either "whatever was used last" or a value typed here. The
     // value control is only reachable in the second mode - in the first there is
     // nothing to type, the last print decides.
+    // A default that is either "whatever was used last" or a value typed here.
+    //
+    // In the first mode there is nothing to type, so the value control is not shown
+    // at all rather than shown greyed: an empty disabled box is furniture that
+    // invites a click it will refuse. It reappears BELOW the mode when a fixed value
+    // is chosen, where the eye goes next after making that choice.
     private Border DualModeCard(string glyph, string key, FrameworkElement valueControl,
                                 Func<string> get, Action<string> set, Action onChanged)
     {
@@ -650,28 +655,26 @@ public sealed partial class PreviewPage
             ItemsSource = new[] { SL("print.mode.last"), SL("print.mode.fixed") },
             SelectedIndex = get() == "last" ? 0 : 1,
         };
-        SetEnabled(valueControl, get() != "last");
+
+        var valueHost = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Visibility = get() == "last" ? Visibility.Collapsed : Visibility.Visible,
+        };
+        valueHost.Children.Add(valueControl);
+
         mode.SelectionChanged += (_, _) =>
         {
             set(mode.SelectedIndex == 0 ? "last" : "fixed");
             _settings.Save();
-            SetEnabled(valueControl, mode.SelectedIndex != 0);
+            valueHost.Visibility = mode.SelectedIndex == 0
+                ? Visibility.Collapsed : Visibility.Visible;
             onChanged();
         };
 
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
-        row.Children.Add(mode);
-        row.Children.Add(valueControl);
-        return MakeCard(glyph, SL("print.cards." + key + ".title"), SL("print.cards." + key + ".desc"), row);
-    }
-
-    // The value side of a dual-mode card is sometimes a single control and
-    // sometimes a value plus its unit, so greying it out has to reach inside.
-    private static void SetEnabled(FrameworkElement element, bool enabled)
-    {
-        if (element is Control control) { control.IsEnabled = enabled; return; }
-        if (element is Panel panel)
-            foreach (var child in panel.Children)
-                if (child is Control c) c.IsEnabled = enabled;
+        return MakeCard(glyph, SL("print.cards." + key + ".title"),
+                        SL("print.cards." + key + ".desc"), mode, valueHost);
     }
 }

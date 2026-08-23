@@ -59,10 +59,10 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 - **Quatre valeurs par défaut d'impression** ⚙️ (section **Impression**)
   Nombre d'exemplaires, exemplaires par page, mise en page et marges. Chacune au
-  choix **fixe** ou **reprise de la dernière impression**. Sur « reprendre la
-  dernière valeur » le champ de saisie **disparaît** au lieu d'être grisé — il n'y
-  a rien à y écrire — et il revient **sous** la liste dès qu'une valeur fixe est
-  choisie, là où le regard va ensuite.
+  choix **fixe** ou **reprise de la dernière impression**. Le mode et sa valeur
+  sont empilés à droite de la carte, face au texte. Sur « reprendre la dernière
+  valeur » le champ de saisie **disparaît** au lieu d'être grisé : il n'y a rien à
+  y écrire.
 
 - **Impression rapide** ⚡
   Le bouton « Imprimer » imprime sans ouvrir la fenêtre. L'interrupteur est

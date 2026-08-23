@@ -642,10 +642,14 @@ public sealed partial class PreviewPage
     // nothing to type, the last print decides.
     // A default that is either "whatever was used last" or a value typed here.
     //
+    // Both sit in the card's control column, stacked and pinned right, so the pair
+    // faces the description and stays centred against it - rather than the value
+    // dropping underneath the whole text block, which is what a card's expanded
+    // area does.
+    //
     // In the first mode there is nothing to type, so the value control is not shown
     // at all rather than shown greyed: an empty disabled box is furniture that
-    // invites a click it will refuse. It reappears BELOW the mode when a fixed value
-    // is chosen, where the eye goes next after making that choice.
+    // invites a click it will refuse.
     private Border DualModeCard(string glyph, string key, FrameworkElement valueControl,
                                 Func<string> get, Action<string> set, Action onChanged)
     {
@@ -660,10 +664,14 @@ public sealed partial class PreviewPage
         {
             Orientation = Orientation.Horizontal,
             Spacing = 6,
-            HorizontalAlignment = HorizontalAlignment.Left,
+            HorizontalAlignment = HorizontalAlignment.Right,
             Visibility = get() == "last" ? Visibility.Collapsed : Visibility.Visible,
         };
         valueHost.Children.Add(valueControl);
+
+        var column = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right };
+        column.Children.Add(mode);
+        column.Children.Add(valueHost);
 
         mode.SelectionChanged += (_, _) =>
         {
@@ -675,6 +683,6 @@ public sealed partial class PreviewPage
         };
 
         return MakeCard(glyph, SL("print.cards." + key + ".title"),
-                        SL("print.cards." + key + ".desc"), mode, valueHost);
+                        SL("print.cards." + key + ".desc"), column);
     }
 }

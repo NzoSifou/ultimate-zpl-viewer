@@ -24,11 +24,13 @@ public sealed record PrintJob(
     SendMode Mode,
     int Copies,
     PrintLayout Layout,
-    // Both only mean something on a classic printer: a thermal printer is fed the
-    // ZPL and picks its own media. PaperSize is a Windows paper name, empty for
-    // "whatever the printer defaults to".
+    // These three only mean something on a classic printer: a thermal printer is
+    // fed the ZPL and picks its own media. PaperSize is a Windows paper name, empty
+    // for "whatever the printer defaults to"; PerPage repeats the label that many
+    // times on one sheet.
     string PaperSize,
-    double MarginsMm);
+    double MarginsMm,
+    int PerPage);
 
 // Printing, and the small amount of knowledge about printers the dialog needs.
 //
@@ -131,6 +133,12 @@ public static class PrintJobService
     /// leave, centred, keeping its proportions - a landscape label on a portrait
     /// sheet spans the full width and takes whatever height that implies. It is
     /// never distorted; the margins are the way to give it less room.
+    /// <para>
+    /// With PerPage above 1 that area is split into as many equal cells, each
+    /// holding one copy. The split follows the layout: a portrait page divides into
+    /// rows, a landscape one into columns, so a cell keeps roughly the shape of the
+    /// page it came from.
+    /// </para>
     /// </summary>
     public static void PrintImage(PrintJob job, RenderSnapshot snapshot, double widthMm, double heightMm)
     {
@@ -161,21 +169,41 @@ public static class PrintJobService
             if (e.Graphics is null) return;
             var bounds = e.PageBounds;   // the sheet, not the printable area
 
-            // The margins carve out the area the label may use, and the label takes
-            // all of it: whichever of the two dimensions runs out first decides the
-            // factor, so the proportions hold and nothing is stretched.
+            // The margins carve out the area the label may use.
             float availW = Math.Max(1, bounds.Width - 2 * marginUnits);
             float availH = Math.Max(1, bounds.Height - 2 * marginUnits);
-            float fill = Math.Min(availW / wUnits, availH / hUnits);
-            wUnits *= fill; hUnits *= fill;
 
-            float x = (bounds.Width - wUnits) / 2f;
-            float y = (bounds.Height - hUnits) / 2f;
             e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            e.Graphics.DrawImage(bitmap, new RectangleF(x, y, wUnits, hUnits));
+            foreach (var cell in Cells(marginUnits, marginUnits, availW, availH, job))
+            {
+                // The label takes all of its cell: whichever dimension runs out
+                // first decides the factor, so proportions hold and nothing is
+                // stretched.
+                float fill = Math.Min(cell.Width / wUnits, cell.Height / hUnits);
+                float w = wUnits * fill, h = hUnits * fill;
+                e.Graphics.DrawImage(bitmap, new RectangleF(
+                    cell.X + (cell.Width - w) / 2f,
+                    cell.Y + (cell.Height - h) / 2f, w, h));
+            }
             e.HasMorePages = false;
         };
         doc.Print();
+    }
+
+    /// <summary>
+    /// The area split into one cell per copy. A portrait page divides into rows and
+    /// a landscape one into columns, so the split follows the layout as asked.
+    /// </summary>
+    public static IEnumerable<RectangleF> Cells(float x, float y, float width, float height, PrintJob job)
+    {
+        int n = Math.Max(1, job.PerPage);
+        bool rows = job.Layout is PrintLayout.Portrait or PrintLayout.PortraitFlipped;
+        for (int i = 0; i < n; i++)
+        {
+            yield return rows
+                ? new RectangleF(x, y + height * i / n, width, height / n)
+                : new RectangleF(x + width * i / n, y, width / n, height);
+        }
     }
 
     private static PaperSize? FindPaper(PrinterSettings settings, string name)

@@ -50,7 +50,8 @@ public sealed partial class PreviewPage
     }
 
     private bool DefaultsAreFixed =>
-        _settings.CopiesMode == "fixed" && _settings.LayoutMode == "fixed" && _settings.MarginsMode == "fixed";
+        _settings.CopiesMode == "fixed" && _settings.LayoutMode == "fixed"
+        && _settings.MarginsMode == "fixed" && _settings.PerPageMode == "fixed";
 
     // The values the dialog opens on: each one either a fixed default or whatever
     // the last print used.
@@ -66,7 +67,8 @@ public sealed partial class PreviewPage
             _settings.CopiesMode == "last" ? _settings.LastCopies : _settings.DefaultCopies,
             PrintJobService.LayoutFromKey(_settings.LayoutMode == "last" ? _settings.LastLayout : _settings.DefaultLayout),
             PaperSize: "",   // the printer own default until the dialog says otherwise
-            _settings.MarginsMode == "last" ? _settings.LastMarginsMm : _settings.DefaultMarginsMm);
+            _settings.MarginsMode == "last" ? _settings.LastMarginsMm : _settings.DefaultMarginsMm,
+            _settings.PerPageMode == "last" ? _settings.LastPerPage : _settings.DefaultPerPage);
     }
 
     // ── The dialog ───────────────────────────────────────────────────────────
@@ -121,6 +123,12 @@ public sealed partial class PreviewPage
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
 
+        var perPageBox = new NumberBox
+        {
+            Minimum = 1, Maximum = 20, SmallChange = 1, Value = job.PerPage,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
         var layoutBox = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
         var paperBox = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
 
@@ -150,6 +158,7 @@ public sealed partial class PreviewPage
         right.Children.Add(Field(SL("print.field.printer"), printerBox));
         right.Children.Add(Field(SL("print.field.send"), modeBox));
         right.Children.Add(Field(SL("print.field.copies"), copiesBox));
+        right.Children.Add(Field(SL("print.field.perPage"), perPageBox));
         right.Children.Add(Field(SL("print.field.layout"), layoutBox));
         right.Children.Add(Field(SL("print.field.paper"), paperBox));
         right.Children.Add(Field(SL("print.field.margins"), marginRow));
@@ -196,6 +205,15 @@ public sealed partial class PreviewPage
 
             marginBox.IsEnabled = !raw;
             marginUnit.IsEnabled = !raw;
+
+            // A thermal printer feeds one label at a time; there is no sheet to
+            // share, so repeating it on a page means nothing there.
+            perPageBox.IsEnabled = !raw;
+            if (raw && job.PerPage != 1)
+            {
+                job = job with { PerPage = 1 };
+                perPageBox.Value = 1;
+            }
         }
 
         void Refresh()
@@ -228,6 +246,12 @@ public sealed partial class PreviewPage
         {
             if (layoutBox.Tag is PrintLayout[] set && layoutBox.SelectedIndex >= 0)
                 job = job with { Layout = set[layoutBox.SelectedIndex] };
+            Refresh();
+        };
+        perPageBox.ValueChanged += (_, _) =>
+        {
+            if (double.IsNaN(perPageBox.Value)) return;
+            job = job with { PerPage = (int)Math.Clamp(perPageBox.Value, 1, 20) };
             Refresh();
         };
         paperBox.SelectionChanged += (_, _) =>
@@ -319,11 +343,13 @@ public sealed partial class PreviewPage
         bool sideways = job.Layout is PrintLayout.Landscape or PrintLayout.LandscapeFlipped;
         double pageW = sideways ? paper.H : paper.W;
         double pageH = sideways ? paper.W : paper.H;
-        // The label fills what the margins leave, proportions kept - exactly what
-        // the printing code does, so this really is what will come out.
+        // The label fills what the margins leave - split into one cell per copy -
+        // proportions kept. The cell maths comes from the printing code itself, so
+        // this really is what will come out rather than a lookalike.
         double availW = Math.Max(1, pageW - 2 * job.MarginsMm);
         double availH = Math.Max(1, pageH - 2 * job.MarginsMm);
-        double factor = Math.Min(availW / Math.Max(0.1, labelWmm), availH / Math.Max(0.1, labelHmm));
+        var cells = PrintJobService.Cells((float)job.MarginsMm, (float)job.MarginsMm,
+                                          (float)availW, (float)availH, job).ToList();
 
         // One millimetre is one unit here; the Viewbox around it does the fitting.
         var page = new Grid { Width = pageW, Height = pageH, Background = new SolidColorBrush(Microsoft.UI.Colors.White) };
@@ -346,15 +372,26 @@ public sealed partial class PreviewPage
             });
         }
 
-        var placed = new Border
+        for (int i = 0; i < cells.Count; i++)
         {
-            Child = label,
-            Width = labelWmm * factor,
-            Height = labelHmm * factor,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        page.Children.Add(placed);
+            var cell = cells[i];
+            double factor = Math.Min(cell.Width / Math.Max(0.1, labelWmm),
+                                     cell.Height / Math.Max(0.1, labelHmm));
+            // The first cell holds the live render; the others show the same picture,
+            // so the canvas is not rebuilt once per copy.
+            FrameworkElement copy = i == 0 ? label : CloneLabel(canvas, flip);
+            var placed = new Border
+            {
+                Child = copy,
+                Width = labelWmm * factor,
+                Height = labelHmm * factor,
+                Margin = new Thickness(cell.X + (cell.Width - labelWmm * factor) / 2,
+                                       cell.Y + (cell.Height - labelHmm * factor) / 2, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+            };
+            page.Children.Add(placed);
+        }
 
         var framed = new Border
         {
@@ -363,6 +400,23 @@ public sealed partial class PreviewPage
             BorderThickness = new Thickness(1),
         };
         return new Viewbox { Child = framed, Stretch = Stretch.Uniform };
+    }
+
+    // A second view of the same drawing. A Canvas can only have one parent, so a
+    // repeated label is redrawn into its own canvas rather than shared.
+    private FrameworkElement CloneLabel(Canvas source, double flip)
+    {
+        var canvas = new Canvas();
+        ZplRenderer.Draw(canvas, _model, SelectedDpmm,
+                         _rotationDegrees == 0 ? 0 : _rotationDegrees);
+        _ = source;
+        return new Viewbox
+        {
+            Child = canvas,
+            Stretch = Stretch.Uniform,
+            RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
+            RenderTransform = new RotateTransform { Angle = flip },
+        };
     }
 
     private static FrameworkElement Sheet(FrameworkElement content, double wMm, double hMm, Brush? background)
@@ -422,6 +476,7 @@ public sealed partial class PreviewPage
         _settings.LastCopies = job.Copies;
         _settings.LastLayout = PrintJobService.KeyOf(job.Layout);
         _settings.LastMarginsMm = job.MarginsMm;
+        _settings.LastPerPage = job.PerPage;
         _settings.Save();
         ApplyPrintButtonTooltip();
     }
@@ -438,8 +493,11 @@ public sealed partial class PreviewPage
             if (printers.Count > 0)
             {
                 var job = DefaultJob(printers);
+                var perPage = job.PerPage > 1
+                    ? ", " + string.Format(SL("print.perPage.summary"), job.PerPage) : "";
                 ToolTipService.SetToolTip(PrintButton,
-                    string.Format("{0}, x{1}, {2}, {3}", job.Printer, job.Copies, PrintJobService.NameOf(job.Layout), MarginsLabel(job.MarginsMm)));
+                    string.Format("{0}, x{1}{2}, {3}, {4}", job.Printer, job.Copies, perPage,
+                                  PrintJobService.NameOf(job.Layout), MarginsLabel(job.MarginsMm)));
                 return;
             }
         }
@@ -514,6 +572,20 @@ public sealed partial class PreviewPage
         };
         panel.Children.Add(DualModeCard("", "copies", copies,
             () => _settings.CopiesMode, m => _settings.CopiesMode = m, RefreshQuickAvailability));
+
+        var perPage = new NumberBox
+        {
+            Minimum = 1, Maximum = 20, SmallChange = 1, Value = _settings.DefaultPerPage,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact, MinWidth = 96,
+        };
+        perPage.ValueChanged += (_, _) =>
+        {
+            if (double.IsNaN(perPage.Value)) return;
+            _settings.DefaultPerPage = (int)Math.Clamp(perPage.Value, 1, 20);
+            _settings.Save(); ApplyPrintButtonTooltip();
+        };
+        panel.Children.Add(DualModeCard("", "perPage", perPage,
+            () => _settings.PerPageMode, m => _settings.PerPageMode = m, RefreshQuickAvailability));
 
         var layout = new ComboBox { MinWidth = 180 };
         var layoutValues = new[] { PrintLayout.Portrait, PrintLayout.Landscape,

@@ -1747,6 +1747,10 @@
         "margins": {
           "title": "Default margins",
           "desc": "Margin left around the label on the page. No effect on a thermal printer."
+        },
+        "perPage": {
+          "title": "Default copies per sheet",
+          "desc": "How many times the same label is repeated on one sheet. No effect on a thermal printer."
         }
       },
       "lbl": {
@@ -1773,7 +1777,8 @@
         "copies": "Copies",
         "layout": "Layout",
         "paper": "Paper size",
-        "margins": "Margins"
+        "margins": "Margins",
+        "perPage": "Copies per sheet"
       },
       "send": {
         "raw": "Thermal printer (raw ZPL)",
@@ -1789,6 +1794,9 @@
       },
       "margins": {
         "none": "no margin"
+      },
+      "perPage": {
+        "summary": "{0} per sheet"
       }
     },
     "appearance": {

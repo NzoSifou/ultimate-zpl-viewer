@@ -44,12 +44,17 @@ public sealed class AppSettings
     public int DefaultCopies { get; set; } = 1;
     public string LayoutMode { get; set; } = "fixed";     // last | fixed
     public string DefaultLayout { get; set; } = "portrait";
+    // Copies per sheet: the same label repeated N times on one page. Classic
+    // printers only - a thermal printer prints one label per feed.
+    public string PerPageMode { get; set; } = "fixed";    // last | fixed
+    public int DefaultPerPage { get; set; } = 1;
     public string MarginsMode { get; set; } = "fixed";    // last | fixed
     public double DefaultMarginsMm { get; set; }          // 0 = no margin
 
     // What the last print actually used, for the "last" modes.
     public int LastCopies { get; set; } = 1;
     public string LastLayout { get; set; } = "portrait";
+    public int LastPerPage { get; set; } = 1;
     public double LastMarginsMm { get; set; }
     // Unit the margin box is shown in: "mm" or "cm". Purely a display choice.
     public string MarginsUnit { get; set; } = "mm";

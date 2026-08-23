@@ -1747,6 +1747,10 @@
         "margins": {
           "title": "Marges par défaut",
           "desc": "Marge laissée autour de l'étiquette sur la page. Sans effet sur une imprimante thermique."
+        },
+        "perPage": {
+          "title": "Exemplaires par page par défaut",
+          "desc": "Combien de fois la même étiquette est répétée sur une feuille. Sans effet sur une imprimante thermique."
         }
       },
       "lbl": {
@@ -1773,7 +1777,8 @@
         "copies": "Nombre d'exemplaires",
         "layout": "Mise en page",
         "paper": "Taille du papier",
-        "margins": "Marges"
+        "margins": "Marges",
+        "perPage": "Exemplaires par page"
       },
       "send": {
         "raw": "Imprimante thermique (ZPL brut)",
@@ -1789,6 +1794,9 @@
       },
       "margins": {
         "none": "aucune marge"
+      },
+      "perPage": {
+        "summary": "{0} par page"
       }
     },
     "appearance": {

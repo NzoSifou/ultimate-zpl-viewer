@@ -20,6 +20,7 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   | Imprimante | les imprimantes du poste, sauf l'imprimante virtuelle de l'application |
   | Type d'imprimante | Imprimante classique / Imprimante thermique (ZPL brut) |
   | Nombre d'exemplaires | 1 ou plus |
+  | Exemplaires par page | 1 par défaut — plusieurs fois la même étiquette sur une feuille |
   | Mise en page | Portrait / Paysage / Portrait (inversé) / Paysage (inversé) |
   | Taille du papier | les formats proposés par l'imprimante |
   | Marges | en mm ou en cm, aucune par défaut |
@@ -30,6 +31,12 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   l'espace que les marges lui laissent, en gardant ses proportions. Une étiquette
   en paysage sur une A4 portrait prend donc toute la largeur, et sa hauteur suit.
   Rien n'est déformé — les marges sont là pour lui donner moins de place.
+
+  Au-delà d'un **exemplaire par page**, cet espace se divise en autant de cases
+  égales, une par copie, et **la division suit la mise en page** : une page en
+  portrait se coupe en bandes horizontales, une page en paysage en colonnes. Quatre
+  étiquettes sur une A4 portrait donnent quatre bandes ; les mêmes en paysage, quatre
+  colonnes.
 
 - **Deux façons d'envoyer, selon le type d'imprimante** 🔀
   Une **imprimante thermique** reçoit le **ZPL brut**, qu'elle compose elle-même —
@@ -43,13 +50,13 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   taille du papier et les marges y sont donc **grisées**, plutôt qu'acceptées puis
   ignorées en silence.
 
-- **Trois valeurs par défaut d'impression** ⚙️ (section **Impression**)
-  Nombre d'exemplaires, mise en page et marges. Chacune au choix **fixe** ou
-  **reprise de la dernière impression**.
+- **Quatre valeurs par défaut d'impression** ⚙️ (section **Impression**)
+  Nombre d'exemplaires, exemplaires par page, mise en page et marges. Chacune au
+  choix **fixe** ou **reprise de la dernière impression**.
 
 - **Impression rapide** ⚡
   Le bouton « Imprimer » imprime sans ouvrir la fenêtre. L'interrupteur est
-  **grisé** dès qu'un des trois réglages reprend la dernière valeur : ce qui
+  **grisé** dès qu'un des quatre réglages reprend la dernière valeur : ce qui
   sortirait ne serait alors pas connu d'avance. Quand il est actif, survoler le
   bouton annonce ce qui va partir — `Zebra ZD421, x1, Portrait, aucune marge`.
 

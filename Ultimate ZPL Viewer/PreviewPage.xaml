@@ -292,6 +292,7 @@
                      so a lit icon reads as a button and not as a stray badge. -->
                 <Button x:Name="InspectButton" Click="InspectButton_Click"
                         Width="32" Height="32" MinWidth="0" Padding="0"
+                        CornerRadius="{ThemeResource ControlCornerRadius}"
                         VerticalAlignment="Center">
                     <!-- Paint's rectangular-selection marquee. Drawn rather than
                          taken from the icon font: the nearest glyph (SelectAll)

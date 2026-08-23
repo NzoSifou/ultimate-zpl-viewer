@@ -54,9 +54,12 @@ public sealed partial class PreviewPage
     // and pressed states that a locally-set Background would flatten.
     private void ApplyInspectButtonState()
     {
-        InspectButton.Style = InspectOn
-            ? (Style)Application.Current.Resources["AccentButtonStyle"]
-            : null;
+        // Both states get a REAL style. Setting Style to null instead of the default
+        // one drops every value the style carried - CornerRadius among them, which
+        // falls back to 0 - while the template already applied keeps drawing: the
+        // button rendered with square corners only when it was off.
+        InspectButton.Style = (Style)Application.Current.Resources[
+            InspectOn ? "AccentButtonStyle" : "DefaultButtonStyle"];
         // The marquee is a Rectangle, not a glyph, so its stroke has to be told
         // which foreground it sits on.
         InspectIcon.Stroke = (Brush)Application.Current.Resources[

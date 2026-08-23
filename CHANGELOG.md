@@ -51,12 +51,6 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 - **Taille de la sélection** 📏 (section **Éditeur et aperçu**)
   Épaisseur du cadre d'inspection, de 1 à 10 px.
 
-### 🗑️ Retiré
-
-- La liste déroulante d'imprimantes de la barre d'outils.
-- Le réglage « Confirmer avant impression » et sa boîte de confirmation : la
-  fenêtre d'impression montre ce qui va sortir, ce qu'un oui/non ne faisait pas.
-
 - **Mode inspection** 🔎 (icône dans la barre d'outils)
   Une icône qui s'allume à la couleur de l'application — celle que vous avez
   choisie si vous en avez personnalisé une. Tant qu'elle est allumée, l'aperçu et
@@ -135,6 +129,12 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 Le bouton **Passer** est volontairement discret : c'est une sortie, pas une
 invitation. Et le fond n'est pas un aplat gris — un dégradé diagonal teinté de la
 couleur d'accent de l'application.
+
+### 🗑️ Retiré
+
+- La liste déroulante d'imprimantes de la barre d'outils.
+- Le réglage « Confirmer avant impression » et sa boîte de confirmation : la
+  fenêtre d'impression montre ce qui va sortir, ce qu'un oui/non ne faisait pas.
 
 ### 🔧 Détails
 

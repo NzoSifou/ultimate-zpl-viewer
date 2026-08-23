@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -298,20 +298,56 @@ public static class LocalizationService
                                .FirstOrDefault(File.Exists);
             if (src is null) continue;
 
+            var baseline = Path.Combine(BaselineDir, code + ".json");
             if (!File.Exists(dest)) { try { File.Copy(src, dest); } catch { } }
-            else MergeMissingKeys(src, dest);
+            else MergeFromBundled(src, dest, baseline);
+            // Remember what shipped, so the next update can tell a value the user
+            // rewrote from one they simply still have.
+            try
+            {
+                Directory.CreateDirectory(BaselineDir);
+                File.Copy(src, baseline, overwrite: true);
+            }
+            catch { }
         }
     }
 
-    // Adds keys present in the bundled file but missing from the user file, then
-    // rewrites the user file if anything was added. Never touches existing values.
-    private static void MergeMissingKeys(string bundledPath, string destPath)
+    // Where the bundled files are kept as they were when last merged. A subfolder,
+    // so ScanFiles (which does not recurse) never mistakes them for languages.
+    private static string BaselineDir { get; } = Path.Combine(LanguagesDir, ".baseline");
+
+    // Brings a user language file up to date with the one that ships in the app.
+    //
+    // Adding missing keys is not enough: a REWORDED string keeps its key, so a
+    // merge that never touches an existing value leaves the old wording on screen
+    // for good - every user who had already run the app once. But overwriting
+    // everything would throw away the edits of someone who translated the file
+    // themselves, which these files exist to allow.
+    //
+    // The baseline settles it. A value the user still has exactly as it shipped was
+    // never touched, so the new wording replaces it; a value that differs from what
+    // shipped is theirs, and is left alone. Same rule for deletions.
+    private static void MergeFromBundled(string bundledPath, string destPath, string baselinePath)
     {
         try
         {
             if (JsonNode.Parse(File.ReadAllText(bundledPath)) is not JsonObject bundled) return;
             if (JsonNode.Parse(File.ReadAllText(destPath))    is not JsonObject user)    return;
-            if (!MergeInto(user, bundled)) return;
+
+            JsonObject? baseline = null;
+            if (File.Exists(baselinePath))
+                baseline = JsonNode.Parse(File.ReadAllText(baselinePath)) as JsonObject;
+
+            // No baseline: this file predates the mechanism, so nothing can be told
+            // apart. Adopt what ships - otherwise the stale wording is permanent -
+            // and keep a copy of the old file beside it in case it was hand-edited.
+            if (baseline is null)
+            {
+                try { File.Copy(destPath, destPath + ".bak", overwrite: true); } catch { }
+                baseline = user.DeepClone() as JsonObject;
+            }
+
+            if (!MergeInto(user, bundled, baseline)) return;
             File.WriteAllText(destPath, user.ToJsonString(new JsonSerializerOptions
             {
                 WriteIndented = true,
@@ -321,12 +357,16 @@ public static class LocalizationService
         catch { /* merge is best-effort; a bad user file just keeps its old keys */ }
     }
 
-    // Deep-adds keys from src missing in dst. Returns true if dst changed.
-    private static bool MergeInto(JsonObject dst, JsonObject src)
+    // Three-way merge of dst (the user file) against src (what ships now) using
+    // baseline (what shipped last time). Returns true if dst changed.
+    private static bool MergeInto(JsonObject dst, JsonObject src, JsonObject? baseline)
     {
         bool changed = false;
+
         foreach (var kv in src)
         {
+            var wasShipped = baseline? [kv.Key];
+
             if (!dst.ContainsKey(kv.Key))
             {
                 dst[kv.Key] = kv.Value?.DeepClone();
@@ -334,9 +374,34 @@ public static class LocalizationService
             }
             else if (dst[kv.Key] is JsonObject dChild && kv.Value is JsonObject sChild)
             {
-                changed |= MergeInto(dChild, sChild);
+                changed |= MergeInto(dChild, sChild, wasShipped as JsonObject);
+            }
+            else if (wasShipped is not null && Same(dst[kv.Key], wasShipped) && !Same(dst[kv.Key], kv.Value))
+            {
+                // Untouched since it shipped: the new wording is an improvement the
+                // user asked for by updating, not a change they have to opt into.
+                dst[kv.Key] = kv.Value?.DeepClone();
+                changed = true;
             }
         }
+
+        // A key that shipped before, is gone now, and the user never touched: drop
+        // it, so a renamed setting does not leave its old string lying around.
+        if (baseline is not null)
+        {
+            foreach (var key in dst.Select(kv => kv.Key).ToList())
+            {
+                if (src.ContainsKey(key)) continue;
+                var wasShipped = baseline[key];
+                if (wasShipped is null || !Same(dst[key], wasShipped)) continue;
+                dst.Remove(key);
+                changed = true;
+            }
+        }
+
         return changed;
     }
+
+    private static bool Same(JsonNode? a, JsonNode? b)
+        => (a?.ToJsonString() ?? "null") == (b?.ToJsonString() ?? "null");
 }

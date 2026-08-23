@@ -287,8 +287,8 @@ public sealed partial class PreviewPage
 
     // ── The preview column ───────────────────────────────────────────────────
 
-    // What will actually come out. On the rendered road that means the label sitting
-    // on the sheet at its real size, so the layout, the paper and the margins are
+    // What will actually come out. On the classic road that means the label filling
+    // the sheet inside its margins, so the layout, the paper and the margins are
     // all visible as themselves rather than as numbers. On the thermal road the
     // printer decides the media, so there is no sheet to draw - only the label.
     private FrameworkElement BuildPrintPreview(PrintJob job)
@@ -319,11 +319,11 @@ public sealed partial class PreviewPage
         bool sideways = job.Layout is PrintLayout.Landscape or PrintLayout.LandscapeFlipped;
         double pageW = sideways ? paper.H : paper.W;
         double pageH = sideways ? paper.W : paper.H;
-        // The label keeps its real size; only one that no longer fits inside the
-        // margins is shrunk, exactly as the printing code does it.
+        // The label fills what the margins leave, proportions kept - exactly what
+        // the printing code does, so this really is what will come out.
         double availW = Math.Max(1, pageW - 2 * job.MarginsMm);
         double availH = Math.Max(1, pageH - 2 * job.MarginsMm);
-        double factor = Math.Min(1.0, Math.Min(availW / Math.Max(0.1, labelWmm), availH / Math.Max(0.1, labelHmm)));
+        double factor = Math.Min(availW / Math.Max(0.1, labelWmm), availH / Math.Max(0.1, labelHmm));
 
         // One millimetre is one unit here; the Viewbox around it does the fitting.
         var page = new Grid { Width = pageW, Height = pageH, Background = new SolidColorBrush(Microsoft.UI.Colors.White) };

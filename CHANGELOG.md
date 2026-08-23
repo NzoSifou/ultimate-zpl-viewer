@@ -26,6 +26,11 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
   Chaque champ s'ouvre sur la valeur par défaut définie dans les paramètres.
 
+  Sur une imprimante classique, l'étiquette **remplit la page** : elle occupe tout
+  l'espace que les marges lui laissent, en gardant ses proportions. Une étiquette
+  en paysage sur une A4 portrait prend donc toute la largeur, et sa hauteur suit.
+  Rien n'est déformé — les marges sont là pour lui donner moins de place.
+
 - **Deux façons d'envoyer, selon le type d'imprimante** 🔀
   Une **imprimante thermique** reçoit le **ZPL brut**, qu'elle compose elle-même —
   c'est ce qui garantit la fidélité. Une **imprimante classique** reçoit le rendu
@@ -135,6 +140,22 @@ couleur d'accent de l'application.
 - La liste déroulante d'imprimantes de la barre d'outils.
 - Le réglage « Confirmer avant impression » et sa boîte de confirmation : la
   fenêtre d'impression montre ce qui va sortir, ce qu'un oui/non ne faisait pas.
+
+### 🐛 Corrigé
+
+- **Les textes réécrits n'arrivaient jamais chez un utilisateur existant** 🌍
+  Les fichiers de langue sont recopiés dans le dossier de l'utilisateur au premier
+  lancement, et la mise à jour n'y **ajoutait** que les clés absentes, sans jamais
+  toucher à une valeur déjà présente — pour ne pas écraser une traduction
+  personnalisée. Mais une phrase **reformulée** garde sa clé : l'ancien libellé
+  restait donc à l'écran pour toujours.
+
+  L'application conserve désormais, à côté de vos fichiers de langue, une copie de
+  ce qui était livré à la dernière fusion. Une valeur que vous avez toujours telle
+  qu'elle a été livrée n'a pas été touchée : la nouvelle formulation la remplace.
+  Une valeur qui en diffère est la vôtre, et elle est laissée intacte. Même règle
+  pour les clés supprimées. Vos fichiers actuels sont sauvegardés en `.bak` lors de
+  cette première mise à niveau, puisque rien ne permettait de trancher avant.
 
 ### 🔧 Détails
 

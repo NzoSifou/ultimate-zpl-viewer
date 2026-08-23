@@ -127,9 +127,10 @@ public static class PrintJobService
     // ── Rendered page ────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Prints a rendered label as a page. <paramref name="widthMm"/>/<paramref name="heightMm"/>
-    /// are the label's real size: it comes out at that size, centred, and is only
-    /// ever shrunk - never stretched - if the margins leave it too little room.
+    /// Prints a rendered label as a page. The label FILLS the area the margins
+    /// leave, centred, keeping its proportions - a landscape label on a portrait
+    /// sheet spans the full width and takes whatever height that implies. It is
+    /// never distorted; the margins are the way to give it less room.
     /// </summary>
     public static void PrintImage(PrintJob job, RenderSnapshot snapshot, double widthMm, double heightMm)
     {
@@ -160,14 +161,13 @@ public static class PrintJobService
             if (e.Graphics is null) return;
             var bounds = e.PageBounds;   // the sheet, not the printable area
 
-            // The margins carve out the area the label may use. It keeps its real
-            // size inside that area; only a label that no longer fits is scaled
-            // down, because printing it clipped would be worse than printing it
-            // slightly small.
+            // The margins carve out the area the label may use, and the label takes
+            // all of it: whichever of the two dimensions runs out first decides the
+            // factor, so the proportions hold and nothing is stretched.
             float availW = Math.Max(1, bounds.Width - 2 * marginUnits);
             float availH = Math.Max(1, bounds.Height - 2 * marginUnits);
-            float shrink = Math.Min(1f, Math.Min(availW / wUnits, availH / hUnits));
-            wUnits *= shrink; hUnits *= shrink;
+            float fill = Math.Min(availW / wUnits, availH / hUnits);
+            wUnits *= fill; hUnits *= fill;
 
             float x = (bounds.Width - wUnits) / 2f;
             float y = (bounds.Height - hUnits) / 2f;

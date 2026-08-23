@@ -260,8 +260,9 @@ public sealed partial class PreviewPage
     internal void UpdateInspectFrameThickness()
     {
         if (_inspectFrame is null) return;
+        double px = Math.Clamp(_settings.InspectFrameThickness, 1, 10);
         double zoom = PreviewScrollViewer.ZoomFactor;
-        _inspectFrame.StrokeThickness = zoom > 0 ? Math.Max(0.5, 2.0 / zoom) : 2.0;
+        _inspectFrame.StrokeThickness = zoom > 0 ? Math.Max(0.5, px / zoom) : px;
     }
 
     private static Color AccentColor() =>

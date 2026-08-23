@@ -1483,10 +1483,6 @@
       "title": "Général",
       "subtitle": "Comportement général de l'application.",
       "cards": {
-        "confirmPrint": {
-          "title": "Confirmer avant impression",
-          "desc": "Demander une confirmation avant d'envoyer une étiquette à l'imprimante."
-        },
         "reopen": {
           "title": "Rouvrir le(s) dernier(s) fichier(s)",
           "desc": "Recharge les fichiers ouverts lors de la dernière session au démarrage."
@@ -1700,6 +1696,10 @@
         "rulerSize": {
           "title": "Taille des règles",
           "desc": "Épaisseur des bandes de règles."
+        },
+        "selWidth": {
+          "title": "Taille de la sélection",
+          "desc": "Épaisseur du cadre d'inspection sur l'aperçu, en pixels."
         }
       },
       "lbl": {
@@ -1730,10 +1730,65 @@
         "printer": {
           "title": "Imprimante par défaut",
           "desc": "Imprimante présélectionnée à l'ouverture de l'application."
+        },
+        "quick": {
+          "title": "Impression rapide",
+          "desc": "Le bouton « Imprimer » lance l'impression directement, sans ouvrir la fenêtre.",
+          "blocked": "Indisponible tant qu'un des réglages ci-dessous reprend la dernière valeur utilisée : les valeurs ne seraient pas connues d'avance."
+        },
+        "copies": {
+          "title": "Nombre d'exemplaires par défaut",
+          "desc": "Combien de fois l'étiquette est imprimée."
+        },
+        "layout": {
+          "title": "Mise en page par défaut",
+          "desc": "Orientation de la page à l'impression."
+        },
+        "margins": {
+          "title": "Marges par défaut",
+          "desc": "Marge laissée autour de l'étiquette sur la page. Sans effet sur une imprimante thermique."
         }
       },
       "lbl": {
         "lastPrinter": "Dernière imprimante sélectionnée"
+      },
+      "layout": {
+        "portrait": "Portrait",
+        "landscape": "Paysage",
+        "portraitFlipped": "Portrait (inversé)",
+        "landscapeFlipped": "Paysage (inversé)"
+      },
+      "mode": {
+        "last": "Reprendre la dernière valeur",
+        "fixed": "Valeur fixe"
+      },
+      "dialog": {
+        "title": "Imprimer l'étiquette",
+        "print": "Imprimer",
+        "cancel": "Annuler"
+      },
+      "field": {
+        "printer": "Imprimante",
+        "send": "Type d'imprimante",
+        "copies": "Nombre d'exemplaires",
+        "layout": "Mise en page",
+        "paper": "Taille du papier",
+        "margins": "Marges"
+      },
+      "send": {
+        "raw": "Imprimante thermique (ZPL brut)",
+        "image": "Imprimante classique"
+      },
+      "msg": {
+        "title": "Impression",
+        "empty": "Le document ZPL est vide : rien à imprimer.",
+        "noPrinter": "Aucune imprimante n'a été détectée sur ce poste.",
+        "sent": "Étiquette envoyée à « {0} ».",
+        "failedTitle": "Erreur d'impression",
+        "failedBody": "L'envoi à « {0} » a échoué : {1}"
+      },
+      "margins": {
+        "none": "aucune marge"
       }
     },
     "appearance": {

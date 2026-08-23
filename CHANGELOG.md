@@ -6,9 +6,56 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
-## [1.4.0] — 2026-08-22 — premier démarrage guidé et inspection
+## [1.4.0] — 2026-08-22 — premier démarrage guidé, inspection et impression
 
 ### ✨ Ajouté
+
+- **Fenêtre d'impression** 🖨️
+  La liste d'imprimantes qui occupait la barre d'outils disparaît, et le bouton
+  « Imprimer » ouvre une fenêtre qui **montre ce qui va sortir** : l'aperçu occupe
+  les trois quarts de la largeur et se redessine à chaque réglage touché.
+
+  | Réglage | |
+  | :-- | :-- |
+  | Imprimante | les imprimantes du poste, sauf l'imprimante virtuelle de l'application |
+  | Type d'imprimante | Imprimante classique / Imprimante thermique (ZPL brut) |
+  | Nombre d'exemplaires | 1 ou plus |
+  | Mise en page | Portrait / Paysage / Portrait (inversé) / Paysage (inversé) |
+  | Taille du papier | les formats proposés par l'imprimante |
+  | Marges | en mm ou en cm, aucune par défaut |
+
+  Chaque champ s'ouvre sur la valeur par défaut définie dans les paramètres.
+
+- **Deux façons d'envoyer, selon le type d'imprimante** 🔀
+  Une **imprimante thermique** reçoit le **ZPL brut**, qu'elle compose elle-même —
+  c'est ce qui garantit la fidélité. Une **imprimante classique** reçoit le rendu
+  de l'étiquette, mis en page par Windows. Le type est deviné d'après le pilote,
+  modifiable dans la fenêtre, et retenu pour cette imprimante.
+
+  Sur une imprimante thermique, seuls le nombre d'exemplaires (`^PQ`) et
+  l'inversion (`^POI`) sont transmissibles : le langage n'a aucune commande pour
+  tourner une étiquette entière, et c'est l'imprimante qui choisit son média. La
+  taille du papier et les marges y sont donc **grisées**, plutôt qu'acceptées puis
+  ignorées en silence.
+
+- **Trois valeurs par défaut d'impression** ⚙️ (section **Impression**)
+  Nombre d'exemplaires, mise en page et marges. Chacune au choix **fixe** ou
+  **reprise de la dernière impression**.
+
+- **Impression rapide** ⚡
+  Le bouton « Imprimer » imprime sans ouvrir la fenêtre. L'interrupteur est
+  **grisé** dès qu'un des trois réglages reprend la dernière valeur : ce qui
+  sortirait ne serait alors pas connu d'avance. Quand il est actif, survoler le
+  bouton annonce ce qui va partir — `Zebra ZD421, x1, Portrait, aucune marge`.
+
+- **Taille de la sélection** 📏 (section **Éditeur et aperçu**)
+  Épaisseur du cadre d'inspection, de 1 à 10 px.
+
+### 🗑️ Retiré
+
+- La liste déroulante d'imprimantes de la barre d'outils.
+- Le réglage « Confirmer avant impression » et sa boîte de confirmation : la
+  fenêtre d'impression montre ce qui va sortir, ce qu'un oui/non ne faisait pas.
 
 - **Mode inspection** 🔎 (icône dans la barre d'outils)
   Une icône qui s'allume à la couleur de l'application — celle que vous avez

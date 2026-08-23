@@ -331,7 +331,6 @@
             </StackPanel>
 
             <StackPanel x:Name="PrintGroup" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                <ComboBox x:Name="PrinterComboBox" MinWidth="170" SelectionChanged="PrinterComboBox_SelectionChanged"/>
                 <Button x:Name="PrintButton" Click="PrintButton_Click" Style="{StaticResource AccentButtonStyle}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <FontIcon Glyph="&#xE749;" FontSize="14"/>

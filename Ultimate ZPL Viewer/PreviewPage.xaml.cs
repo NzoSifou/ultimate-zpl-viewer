@@ -77,7 +77,7 @@ public sealed partial class PreviewPage : Page
         Root.RequestedTheme = _settings.ToElementTheme();
         ApplyPreviewTheme(); // preview background (may differ from the chrome)
         LoadDensityOptions(_settings.DefaultDpmm);
-        LoadPrinters();
+        ApplyPrintButtonTooltip();
         ApplyToolbarStrings(); // localize the toolbar button labels/tooltips
         ApplyPreviewCaptionVisibility();
         RebuildToolbar(); // place the toolbar groups per the saved layout
@@ -973,25 +973,6 @@ public sealed partial class PreviewPage : Page
         DensityComboBox.SelectedItem = _densityOptions
             .OrderBy(d => Math.Abs(d.Dpmm - dpmm))
             .First();
-    }
-
-    private void LoadPrinters()
-    {
-        PrinterComboBox.Items.Clear();
-        foreach (var printer in GetInstalledPrinters())
-        {
-            PrinterComboBox.Items.Add(printer);
-        }
-
-        var preferred = _settings.DefaultPrinter == "last" ? _settings.LastPrinter : _settings.DefaultPrinter;
-        if (!string.IsNullOrWhiteSpace(preferred) && PrinterComboBox.Items.Contains(preferred))
-        {
-            PrinterComboBox.SelectedItem = preferred;
-        }
-        else if (PrinterComboBox.Items.Count > 0)
-        {
-            PrinterComboBox.SelectedIndex = 0;
-        }
     }
 
     private double SelectedDpmm => (DensityComboBox.SelectedItem as DpmmOption)?.Dpmm ?? _settings.DefaultDpmm;
@@ -2826,7 +2807,7 @@ public sealed partial class PreviewPage : Page
             case "nextTab": StepTab(+1); break;
             case "prevTab": StepTab(-1); break;
             case "lastTab": SelectTabAt(DocTabs.TabItems.Count - 1); break;
-            case "print": _ = PrintCurrentAsync(); break;
+            case "print": _ = StartPrintAsync(); break;
             case "zoomIn": StepZoom(+1); break;
             case "zoomOut": StepZoom(-1); break;
             case "duplicateTab":
@@ -3346,66 +3327,8 @@ public sealed partial class PreviewPage : Page
         }
     }
 
-    private void PrinterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (PrinterComboBox.SelectedItem is string printer)
-        {
-            _settings.LastPrinter = printer;
-            _settings.Save();
-        }
-    }
-
     private async void PrintButton_Click(object sender, RoutedEventArgs e)
-        => await PrintCurrentAsync();
-
-    // Sends the label to the selected printer, asking first when the setting says so.
-    // Shared by the toolbar button and Ctrl+P (which used to open the browser's print
-    // dialog from inside Monaco — printing the CODE, which is never what is wanted).
-    private async Task PrintCurrentAsync()
-    {
-        if (PrinterComboBox.SelectedItem is not string printer || string.IsNullOrWhiteSpace(printer))
-        {
-            await ShowMessageAsync("Impression", "Sélectionnez d'abord une imprimante dans la liste.");
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(_currentText))
-        {
-            await ShowMessageAsync("Impression", "Le document ZPL est vide : rien à imprimer.");
-            return;
-        }
-
-        if (_settings.ConfirmBeforePrint)
-        {
-            var confirm = CreateDialog("Imprimer",
-                new TextBlock
-                {
-                    Text = $"Envoyer l'étiquette à « {printer} » ?\n\n" +
-                           "Le code ZPL est envoyé tel quel (données brutes) : l'imprimante doit être " +
-                           "une imprimante d'étiquettes compatible ZPL (Zebra ou équivalent).",
-                    TextWrapping = TextWrapping.Wrap,
-                    MaxWidth = 420,
-                },
-                "Imprimer", "Annuler");
-            if (await confirm.ShowAsync() != ContentDialogResult.Primary)
-            {
-                return;
-            }
-        }
-
-        try
-        {
-            var zpl = _currentText;
-            await Task.Run(() => RawPrinterService.SendRaw(printer, zpl, "Ultimate ZPL Viewer"));
-            await ShowMessageAsync("Impression", $"Étiquette envoyée à « {printer} ».");
-        }
-        catch (Exception ex)
-        {
-            await ShowMessageAsync("Erreur d'impression",
-                $"L'envoi à « {printer} » a échoué : {ex.Message}");
-        }
-    }
-
+        => await StartPrintAsync();
 
     // ── Full-screen settings (PowerToys style) ──────────────────────────────
 
@@ -3528,7 +3451,10 @@ public sealed partial class PreviewPage : Page
             // (a designer canvas) forces each card to exactly 1/3 of the container
             // width, so every sub-category lines up identically.
             ["doc"]        = WithThirdWidthCards(BuildDocumentSettings()),
-            ["print"]      = WithThirdWidthCards(BuildPrintSettings()),
+            // Full width, not a third: the print defaults carry a mode selector
+            // AND a value side by side, and a third-width card crushes the label
+            // column down to one word per line.
+            ["print"]      = BuildPrintSettingsSection(),
             ["editor"]     = BuildEditorSettings(),
             ["appearance"] = WithThirdWidthCards(BuildAppearanceSettings()),
             ["toolbar"]    = BuildToolbarDesignerSettings(), // designer card: not applicable
@@ -3836,26 +3762,6 @@ public sealed partial class PreviewPage : Page
         return panel;
     }
 
-    private UIElement BuildPrintSettings()
-    {
-        var panel = SettingsPanel();
-        panel.Children.Add(LocalizedSettingsHeader("print"));
-
-        var printer = new ComboBox { MinWidth = 240 };
-        printer.Items.Add(SL("print.lbl.lastPrinter"));
-        foreach (string item in PrinterComboBox.Items) printer.Items.Add(item);
-        printer.SelectedIndex = _settings.DefaultPrinter == "last" ? 0 : Math.Max(0, printer.Items.IndexOf(_settings.DefaultPrinter));
-        printer.SelectionChanged += (_, _) =>
-        {
-            _settings.DefaultPrinter = printer.SelectedIndex <= 0 ? "last" : printer.SelectedItem?.ToString() ?? "last";
-            _settings.Save();
-        };
-        panel.Children.Add(MakeCard("\uE749", SL("print.cards.printer.title"),
-            SL("print.cards.printer.desc"), printer));
-
-        return panel;
-    }
-
     private UIElement BuildEditorSettings()
     {
         var panel = SettingsPanel();
@@ -3948,6 +3854,19 @@ public sealed partial class PreviewPage : Page
             MakeCard("\uE8A5", SL("editor.cards.editScheme.title"), SL("editor.cards.editScheme.desc"), editSchemeBtn)));
 
         // ── Aperçu ──────────────────────────────────────────────────────────
+        var selWidth = new NumberBox
+        {
+            Value = _settings.InspectFrameThickness, Minimum = 1, Maximum = 10, SmallChange = 1,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact, MinWidth = 96,
+        };
+        selWidth.ValueChanged += (_, _) =>
+        {
+            if (double.IsNaN(selWidth.Value)) return;
+            _settings.InspectFrameThickness = (int)Math.Clamp(selWidth.Value, 1, 10);
+            _settings.Save();
+            UpdateInspectFrameThickness();
+        };
+
         var gridToggle = MakeToggle(_settings.ShowPreviewGrid);
         gridToggle.Toggled += (_, _) => SetPreviewGrid(gridToggle.IsOn);
         _gridToggle = gridToggle;
@@ -4037,7 +3956,8 @@ public sealed partial class PreviewPage : Page
             MakeCard("\uE80A", SL("editor.cards.gridSpacing.title"), SL("editor.cards.gridSpacing.desc"), gridSpacingRow),
             MakeCard("\uE790", SL("editor.cards.gridColor.title"), SL("editor.cards.gridColor.desc"), gridColorBtn),
             MakeCard("\uE7AD", SL("editor.cards.rotation.title"), SL("editor.cards.rotation.desc"), rotation),
-            MakeCard("\uE7B3", SL("editor.cards.previewCaption.title"), SL("editor.cards.previewCaption.desc"), captionToggle)));
+            MakeCard("\uE7B3", SL("editor.cards.previewCaption.title"), SL("editor.cards.previewCaption.desc"), captionToggle),
+            MakeCard("\uE8B3", SL("editor.cards.selWidth.title"), SL("editor.cards.selWidth.desc"), selWidth)));
 
         // \u2500\u2500 R\u00E8gles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         var rulerH = MakeToggle(_settings.ShowRulerHorizontal);
@@ -4748,11 +4668,6 @@ public sealed partial class PreviewPage : Page
     {
         var panel = SettingsPanel();
         panel.Children.Add(LocalizedSettingsHeader("general"));
-
-        var confirm = MakeToggle(_settings.ConfirmBeforePrint);
-        confirm.Toggled += (_, _) => { _settings.ConfirmBeforePrint = confirm.IsOn; _settings.Save(); };
-        panel.Children.Add(MakeCard("\uE749", SL("general.cards.confirmPrint.title"),
-            SL("general.cards.confirmPrint.desc"), confirm));
 
         var reopen = MakeToggle(_settings.ReopenLastFile);
         reopen.Toggled += (_, _) => { _settings.ReopenLastFile = reopen.IsOn; _settings.Save(); };

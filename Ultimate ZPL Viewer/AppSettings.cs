@@ -34,12 +34,42 @@ public sealed class AppSettings
     public double DefaultDpmm { get; set; } = 8;      // default density (new documents AND opening a file)
     public string DefaultPrinter { get; set; } = "last";
     public string LastPrinter { get; set; } = string.Empty;
+
+    // ── Printing ─────────────────────────────────────────────────────────────
+    // Copies, layout and scale each choose between reusing whatever was used last
+    // ("last") and always applying one value ("fixed"). Default is "fixed" with the
+    // neutral values, so the defaults are predictable and quick print is usable
+    // straight away - "last" is what makes them non-deterministic.
+    public string CopiesMode { get; set; } = "fixed";     // last | fixed
+    public int DefaultCopies { get; set; } = 1;
+    public string LayoutMode { get; set; } = "fixed";     // last | fixed
+    public string DefaultLayout { get; set; } = "portrait";
+    public string MarginsMode { get; set; } = "fixed";    // last | fixed
+    public double DefaultMarginsMm { get; set; }          // 0 = no margin
+
+    // What the last print actually used, for the "last" modes.
+    public int LastCopies { get; set; } = 1;
+    public string LastLayout { get; set; } = "portrait";
+    public double LastMarginsMm { get; set; }
+    // Unit the margin box is shown in: "mm" or "cm". Purely a display choice.
+    public string MarginsUnit { get; set; } = "mm";
+
+    // Skips the print dialog and prints straight away with the defaults. Only
+    // meaningful while all three settings above are on "fixed".
+    public bool QuickPrint { get; set; }
+
+    // How each printer is driven: "raw" hands it the ZPL untouched (a label
+    // printer speaks it natively), "image" prints the rendered label through
+    // Windows. Keyed by printer name; absent means "work it out from the driver".
+    public Dictionary<string, string> PrinterSendModes { get; set; } = new();
     public ThemePreference Theme { get; set; } = ThemePreference.System;
     public bool UseSystemAccent { get; set; } = true;
     public string CustomAccent { get; set; } = "#0078D4";
     public string Language { get; set; } = "fr";
     public bool ShowLineNumbers { get; set; } = true;
     public bool ShowPreviewGrid { get; set; } = true;
+    // Thickness, in screen pixels, of the inspect-mode selection frame (1..10).
+    public int InspectFrameThickness { get; set; } = 2;
     // Inspect mode: clicking an element in the preview highlights the ZPL that
     // produced it, and vice versa. Off by default - it changes what a click does.
     public bool InspectMode { get; set; }
@@ -85,7 +115,6 @@ public sealed class AppSettings
     public double NewDocHeightMm { get; set; } = 60;
 
     // General
-    public bool ConfirmBeforePrint { get; set; } = true;
     public bool ReopenLastFile { get; set; }
     public string LastFilePath { get; set; } = string.Empty;
     // Most-recently-opened files, newest first (capped at RecentFilesMax).

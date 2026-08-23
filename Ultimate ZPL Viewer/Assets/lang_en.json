@@ -1483,10 +1483,6 @@
       "title": "General",
       "subtitle": "General application behaviour.",
       "cards": {
-        "confirmPrint": {
-          "title": "Confirm before printing",
-          "desc": "Ask for confirmation before sending a label to the printer."
-        },
         "reopen": {
           "title": "Reopen last file(s)",
           "desc": "Reloads the files open in the last session at startup."
@@ -1700,6 +1696,10 @@
         "rulerSize": {
           "title": "Ruler size",
           "desc": "Thickness of the ruler bands."
+        },
+        "selWidth": {
+          "title": "Selection size",
+          "desc": "Thickness of the inspect frame on the preview, in pixels."
         }
       },
       "lbl": {
@@ -1730,10 +1730,65 @@
         "printer": {
           "title": "Default printer",
           "desc": "Printer preselected when the application opens."
+        },
+        "quick": {
+          "title": "Quick print",
+          "desc": "The Print button prints straight away, without opening the window.",
+          "blocked": "Unavailable while one of the settings below reuses the last value: the values would not be known in advance."
+        },
+        "copies": {
+          "title": "Default copies",
+          "desc": "How many times the label is printed."
+        },
+        "layout": {
+          "title": "Default layout",
+          "desc": "Page orientation when printing."
+        },
+        "margins": {
+          "title": "Default margins",
+          "desc": "Margin left around the label on the page. No effect on a thermal printer."
         }
       },
       "lbl": {
         "lastPrinter": "Last selected printer"
+      },
+      "layout": {
+        "portrait": "Portrait",
+        "landscape": "Landscape",
+        "portraitFlipped": "Portrait (flipped)",
+        "landscapeFlipped": "Landscape (flipped)"
+      },
+      "mode": {
+        "last": "Reuse the last value",
+        "fixed": "Fixed value"
+      },
+      "dialog": {
+        "title": "Print the label",
+        "print": "Print",
+        "cancel": "Cancel"
+      },
+      "field": {
+        "printer": "Printer",
+        "send": "Printer type",
+        "copies": "Copies",
+        "layout": "Layout",
+        "paper": "Paper size",
+        "margins": "Margins"
+      },
+      "send": {
+        "raw": "Thermal printer (raw ZPL)",
+        "image": "Classic printer"
+      },
+      "msg": {
+        "title": "Printing",
+        "empty": "The ZPL document is empty: nothing to print.",
+        "noPrinter": "No printer was found on this machine.",
+        "sent": "Label sent to “{0}”.",
+        "failedTitle": "Printing error",
+        "failedBody": "Sending to “{0}” failed: {1}"
+      },
+      "margins": {
+        "none": "no margin"
       }
     },
     "appearance": {

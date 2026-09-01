@@ -1914,12 +1914,23 @@
         },
         "copyright": {
           "title": "Copyright"
+        },
+        "updates": {
+          "title": "Updates",
+          "desc": "Checks the releases published on GitHub and installs the new one from the application."
+        },
+        "autoUpdate": {
+          "title": "Check at startup",
+          "desc": "Asks GitHub at launch and speaks up only when a newer version exists."
         }
       },
       "lbl": {
         "copy": "Copy",
         "unknownVersion": "unknown",
-        "copyrightText": "© {year} Enzo Monchanin. All rights reserved."
+        "copyrightText": "© {year} Enzo Monchanin. All rights reserved.",
+        "checkUpdates": "Check",
+        "checking": "Checking…",
+        "lastCheck": "Last checked: {date}."
       }
     },
     "png": {
@@ -1935,6 +1946,30 @@
         "step4": "Improved quality",
         "step5": "Higher quality — Heavier"
       }
+    },
+    "update": {
+      "title": "Update available",
+      "available": "New version: {version}",
+      "current": "Installed version: {version}",
+      "notes": "What's new",
+      "install": "Update now",
+      "later": "Later",
+      "skip": "Skip this version",
+      "cancel": "Cancel",
+      "close": "Close",
+      "openPage": "Open the release page",
+      "downloading": "Downloading ({size})…",
+      "installing": "Installing. The application will close, then reopen.",
+      "unsaved": "Some documents have unsaved changes. Save them before updating: installing closes the application.",
+      "upToDate": {
+        "title": "No update",
+        "desc": "You are already on the latest published version ({version})."
+      },
+      "failed": {
+        "title": "Check failed",
+        "desc": "The latest version could not be retrieved: {error}"
+      },
+      "closeTitle": "Update"
     }
   },
   "shortcuts": {

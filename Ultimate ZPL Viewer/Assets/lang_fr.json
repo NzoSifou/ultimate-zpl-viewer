@@ -1914,12 +1914,23 @@
         },
         "copyright": {
           "title": "Copyright"
+        },
+        "updates": {
+          "title": "Mises à jour",
+          "desc": "Vérifie les versions publiées sur GitHub et installe la nouvelle depuis l’application."
+        },
+        "autoUpdate": {
+          "title": "Vérifier au démarrage",
+          "desc": "Interroge GitHub au lancement et prévient seulement si une version plus récente existe."
         }
       },
       "lbl": {
         "copy": "Copier",
         "unknownVersion": "inconnue",
-        "copyrightText": "© {year} Enzo Monchanin. Tous droits réservés."
+        "copyrightText": "© {year} Enzo Monchanin. Tous droits réservés.",
+        "checkUpdates": "Rechercher",
+        "checking": "Recherche…",
+        "lastCheck": "Dernière vérification : {date}."
       }
     },
     "png": {
@@ -1935,6 +1946,30 @@
         "step4": "Qualité améliorée",
         "step5": "Meilleure qualité — Plus lourde"
       }
+    },
+    "update": {
+      "title": "Mise à jour disponible",
+      "available": "Nouvelle version : {version}",
+      "current": "Version installée : {version}",
+      "notes": "Nouveautés",
+      "install": "Mettre à jour",
+      "later": "Plus tard",
+      "skip": "Ignorer cette version",
+      "cancel": "Annuler",
+      "close": "Fermer",
+      "openPage": "Ouvrir la page de la version",
+      "downloading": "Téléchargement ({size})…",
+      "installing": "Installation en cours. L’application va se fermer, puis se rouvrir.",
+      "unsaved": "Des documents ont des modifications non enregistrées. Enregistrez-les avant de mettre à jour : l’installation ferme l’application.",
+      "upToDate": {
+        "title": "Aucune mise à jour",
+        "desc": "Vous utilisez déjà la dernière version publiée ({version})."
+      },
+      "failed": {
+        "title": "Vérification impossible",
+        "desc": "La dernière version n’a pas pu être récupérée : {error}"
+      },
+      "closeTitle": "Mettre à jour"
     }
   },
   "shortcuts": {

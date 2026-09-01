@@ -146,6 +146,15 @@ public sealed class AppSettings
     // Show the size/dpi/zoom caption at the bottom-right of the preview.
     public bool ShowPreviewCaption { get; set; } = true;
 
+    // Updates
+    // Looks at the project's GitHub releases at startup. The only network call the
+    // application makes; switching it off leaves the manual button in "À propos".
+    public bool CheckUpdatesOnStartup { get; set; } = true;
+    // A release the user chose to ignore — its asset hash, or its name when the
+    // release publishes no hash. Cleared as soon as a newer one appears.
+    public string SkippedUpdate { get; set; } = string.Empty;
+    public string LastUpdateCheck { get; set; } = string.Empty;
+
     // Layout
     public bool SwapEditorPreview { get; set; }
     // Toolbar + editor visibility (title-bar / collapse-handle toggles); persist

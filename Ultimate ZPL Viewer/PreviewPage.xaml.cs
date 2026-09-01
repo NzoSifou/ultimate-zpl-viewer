@@ -671,7 +671,10 @@ public sealed partial class PreviewPage : Page
         ApplyToolbarVisibility();
         ApplyEditorLayout();
         Loaded += (_, _) =>
+        {
             (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.SetToolbarToggleGlyph(_toolbarVisible);
+            ScheduleStartupUpdateCheck();
+        };
 
         _rotationDegrees = Math.Clamp(_settings.DefaultRotation, 0, 359.99);
 
@@ -5014,6 +5017,31 @@ public sealed partial class PreviewPage : Page
         copyVersion.Click += (_, _) => CopyTextToClipboard($"Ultimate ZPL Viewer {version}");
         panel.Children.Add(MakeCard("\uE946", SL("about.cards.version.title"),
             $"Ultimate ZPL Viewer {version}", copyVersion));
+
+        // Updates: a button that always answers (including "you are up to date",
+        // which is what pressing it is for) and the switch for the startup check.
+        var checkNow = new Button { Content = SL("about.lbl.checkUpdates") };
+        checkNow.Click += async (_, _) =>
+        {
+            checkNow.IsEnabled = false;
+            checkNow.Content = SL("about.lbl.checking");
+            try { await CheckForUpdatesAsync(silent: false); }
+            finally { checkNow.IsEnabled = true; checkNow.Content = SL("about.lbl.checkUpdates"); }
+        };
+        var updatesDesc = SL("about.cards.updates.desc");
+        if (!string.IsNullOrEmpty(_settings.LastUpdateCheck)
+            && DateTime.TryParse(_settings.LastUpdateCheck, out var last))
+            updatesDesc += " " + SL("about.lbl.lastCheck").Replace("{date}", last.ToString("g"));
+        panel.Children.Add(MakeCard("\uE895", SL("about.cards.updates.title"), updatesDesc, checkNow));
+
+        var autoUpdate = MakeToggle(_settings.CheckUpdatesOnStartup);
+        autoUpdate.Toggled += (_, _) =>
+        {
+            _settings.CheckUpdatesOnStartup = autoUpdate.IsOn;
+            _settings.Save();
+        };
+        panel.Children.Add(MakeCard("\uE117", SL("about.cards.autoUpdate.title"),
+            SL("about.cards.autoUpdate.desc"), autoUpdate));
 
         panel.Children.Add(MakeCard("\uE77B", SL("about.cards.developer.title"),
             SL("about.cards.developer.desc"), null));

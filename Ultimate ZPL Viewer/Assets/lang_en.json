@@ -29,7 +29,9 @@
     "widthTooLarge": "Width exceeds 50 cm: the preview is capped at 50 cm.",
     "heightTooLarge": "Height exceeds 50 cm: the preview is capped at 50 cm.",
     "inspectOn": "Inspect on: click an element in the preview to see its code, or a line of code to see its element",
-    "inspectOff": "Turn on inspect: link an element in the preview to the code that makes it"
+    "inspectOff": "Turn on inspect: link an element in the preview to the code that makes it",
+    "rendering": "Rendering preview…",
+    "sizeCapped": "capped"
   },
   "editor": {
     "shortDescription": {

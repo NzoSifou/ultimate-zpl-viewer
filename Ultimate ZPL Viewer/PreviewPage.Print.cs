@@ -296,6 +296,16 @@ public sealed partial class PreviewPage
         };
         dialog.Resources["ContentDialogMaxWidth"] = width + 120;
 
+        // Enter must NOT print. Typing a number and pressing Enter to validate the
+        // field is the natural gesture, and a NumberBox lets the key bubble on to
+        // the dialog's default button: the job left for the printer, unprompted and
+        // unrecoverable. The key still commits the field on its way through — it is
+        // swallowed here, one level below the dialog, so only a real click prints.
+        grid.KeyDown += (_, e) =>
+        {
+            if (e.Key is Windows.System.VirtualKey.Enter) e.Handled = true;
+        };
+
         if (await ShowDialogAsync(dialog) != ContentDialogResult.Primary) return null;
         PrintJobService.RememberMode(_settings, job.Printer, job.Mode);
         return job;

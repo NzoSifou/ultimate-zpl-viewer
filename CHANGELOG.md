@@ -6,6 +6,123 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.4.1] — 2026-09-02 — volet éditeur et tenue sous charge
+
+Deux chantiers : trois retouches d'ergonomie sur le volet éditeur, puis une passe
+de tests agressifs (fichier de 1,8 Mo à 20 000 champs, ligne unique de 200 000
+caractères, UTF-16, octets nuls, `^PW0`, `^FO999999`, ouvertures et rotations en
+rafale) qui a sorti sept défauts.
+
+### ✨ Ajouté
+
+- **La largeur de l'éditeur est conservée** ↔️
+  Mettez l'éditeur à la moitié de la fenêtre : il y sera encore au prochain
+  démarrage. La valeur *appliquée* est bornée à la fenêtre courante — une largeur
+  enregistrée sur un grand écran ne peut donc pas pousser la poignée hors de vue
+  sur un plus petit, ce qui n'aurait laissé aucun moyen de récupérer l'aperçu.
+  Réélargir la fenêtre rend à l'éditeur la taille choisie.
+
+- **Un bandeau pendant le rendu des documents lourds** ⏳
+  Une étiquette de plusieurs milliers d'éléments met quelques secondes à se
+  dessiner, et le dessin occupe l'interface pendant ce temps. Le bandeau paraît
+  *avant* que ça arrive, au lieu d'une fenêtre qui semble bloquée sans raison.
+
+### 🔄 Modifié
+
+- **Les boutons flottants de l'éditeur s'écartent de la minimap** ↔️
+  Ils la recouvraient et avalaient ses clics. La largeur à dégager est mesurée sur
+  les éléments **tels qu'ils sont peints** : les chiffres de mise en page de Monaco
+  placent le bord de la minimap quelques pixels à droite de sa position réelle, et
+  s'y fier laissait le bouton la frôler à 2 px.
+
+- **Le bouton de repli de l'éditeur ne bouge plus** ◀️
+  Il quitte la frontière éditeur/aperçu pour le bord de la fenêtre, du côté de
+  l'éditeur (à droite si les volets sont inversés) : dans la gouttière que laisse
+  la marge de la carte quand l'éditeur est ouvert, au même pixel quand il est
+  fermé. Seul le chevron pivote. La bande centrale ne sert plus qu'à
+  redimensionner — viser la poignée ne peut plus fermer l'éditeur par accident.
+
+- **La barre de titre nomme le document actif** 🏷️
+  Elle retombait sur le seul nom du produit dès le deuxième onglet ouvert, ce qui
+  vidait aussi le texte de la barre des tâches et rendait deux fenêtres
+  indistinguables.
+
+- **Ouvrir un fichier déjà ouvert active son onglet** 📑
+  Au lieu d'en empiler une seconde copie, avec ses propres modifications, sur le
+  même chemin.
+
+- **L'info-bulle d'un onglet est lisible en entier** 💬
+  Elle s'affiche sous l'onglet et non plus par-dessus la barre d'outils, et se
+  replie sur plusieurs lignes. Ancrée sur l'onglet le plus à gauche, elle
+  débordait de la fenêtre et perdait le début du chemin qu'elle est justement
+  chargée de montrer.
+
+- **La légende indique quand l'aperçu est plafonné** 📐
+  `(limité)` apparaît quand le rendu est ramené à 50 cm, au lieu d'afficher une
+  taille qui contredisait silencieusement les champs de la barre d'outils.
+
+### 🐛 Corrigé
+
+- **Un gros document figeait l'application, définitivement** 🧊
+  Sur une étiquette de 20 000 champs, maintenir la rotation gelait l'application
+  plus de sept minutes, la mémoire montant à 4,8 Go sans jamais redescendre.
+
+  Ce n'était pas le dessin : **chaque rotation relançait l'analyse complète du
+  ZPL** — deux à quatre secondes — sur un texte identique, et les résultats
+  s'empilaient. L'analyse ne dépend plus que des deux seules choses qu'elle lit,
+  le texte et la densité. Le dessin est fusionné par-dessus : une rafale peint son
+  dernier état, une fois, au lieu de chaque état à la suite.
+
+  Ouverture du fichier : 985 Mo → **306 Mo**. Douze rotations : figé pour de bon →
+  **réactif, 788 Mo**, et trois passes de dessin au lieu de douze.
+
+- **L'application disparaissait sans un mot dans deux situations** 💥
+  Ouvrir dix fichiers coup sur coup, ou zoomer en rafale sur une grande étiquette
+  avec plusieurs onglets. Aucune des deux n'était une exception — d'où un
+  `crash.log` resté vide : c'était un emballement du rendu.
+
+  Le déclencheur : **le zoom est hérité d'un onglet à l'autre**. Passer d'une
+  étiquette minuscule (ajustée à ~2000 %) à une étiquette de 500 mm demandait, le
+  temps d'une passe, de rasteriser des dizaines de milliers de pixels de côté. Le
+  plafond de zoom se calcule maintenant *avant* que le canevas grandisse.
+
+  Deux causes voisines corrigées au passage : les éléments qui commencent au-delà
+  de l'étiquette ne sont plus construits (un `^BY99` de 400 caractères court sur
+  435 000 points, des milliers de barres invisibles), et une boucle de mise en page
+  qui empêchait l'affichage de se stabiliser.
+
+  Dix fichiers en rafale : processus mort → **réactif, 201 Mo**. Cinquante crans de
+  zoom sur 500 mm : machine à court de mémoire → **190 Mo, stable**.
+
+- **Entrée lançait l'impression** ⌨️
+  Taper une valeur dans la fenêtre d'impression puis appuyer sur Entrée pour la
+  valider envoyait le travail à l'imprimante, sans confirmation. La touche remontait
+  des champs numériques jusqu'au bouton par défaut. Elle valide toujours le champ,
+  mais seul un clic sur « Imprimer » imprime.
+
+- **Un fichier vide ne signalait rien** 📄
+  Alors qu'un fichier texte quelconque signalait bien ses deux erreurs. Il indique
+  désormais ses `^XA` et `^XZ` manquants comme n'importe quel non-étiquette.
+
+- **`^PW0` donnait une étiquette de 0,25 mm** 🔬
+  Que l'aperçu devait ensuite grossir à 5000 %. Une taille **déduite du contenu** a
+  maintenant un plancher de 5 mm ; une taille explicitement demandée reste intacte,
+  un `^PW2` reste un `^PW2`.
+
+### 🔧 Détails
+
+- Les plantages sont désormais journalisés par trois canaux au lieu d'un : XAML,
+  CLR et tâches non observées. À noter qu'un *failfast* XAML natif reste hors de
+  portée de tout gestionnaire managé — aucun code ne peut l'intercepter.
+- Les ouvertures de fichiers sont sérialisées : deux lancements simultanés
+  reprenaient l'un dans l'autre au milieu de la lecture disque.
+- Le plafond de zoom est calculé par document plutôt que fixé à ×20 ; une étiquette
+  ordinaire atteint ×19,6, donc rien ne change en pratique.
+- Vérifié sans régression sur les jeux de test DPD, Mondial Relay, GLS et
+  Chronopost : taille, rendu et légende identiques.
+
+---
+
 ## [1.4.0] — 2026-08-22 — premier démarrage guidé, inspection et impression
 
 ### ✨ Ajouté

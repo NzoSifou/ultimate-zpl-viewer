@@ -44,6 +44,21 @@ public static class UpdateService
     public const string Repo = "NzoSifou/ultimate-zpl-viewer";
     private const string LatestApi = "https://api.github.com/repos/" + Repo + "/releases/latest";
 
+    // ─────────────────────────────────────────────────────────────────────────
+    //  INTERRUPTEUR DE TEST — à laisser sur false dans une version publiée.
+    //
+    //  true  : la dernière release est toujours annoncée comme une mise à jour,
+    //          même quand elle est déjà installée. Tout le reste est réel — le
+    //          téléchargement, la vérification d'empreinte, l'installation et la
+    //          relance — ce qui permet de dérouler le parcours complet sans avoir
+    //          à publier quoi que ce soit.
+    //  false : comportement normal, l'empreinte décide.
+    //
+    //  Un champ et non une constante : le compilateur ne replie donc rien, et la
+    //  valeur reste modifiable à chaud depuis le débogueur.
+    // ─────────────────────────────────────────────────────────────────────────
+    public static bool ForceUpdatePrompt = false;
+
     // GitHub refuses requests without a User-Agent.
     private static readonly HttpClient Http = CreateClient();
 
@@ -114,7 +129,7 @@ public static class UpdateService
         var label = string.IsNullOrWhiteSpace(name) ? tag : name!;
 
         var asset = PickInstaller(release["assets"] as JsonArray);
-        bool newer = IsNewer(asset, tag, name);
+        bool newer = ForceUpdatePrompt || IsNewer(asset, tag, name);
         return new UpdateCheck(newer, label, notes.Trim(), page, asset, null);
 
         static UpdateCheck Failed(string why) => new(false, "", "", "", null, why);

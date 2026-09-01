@@ -67,8 +67,10 @@ public sealed partial class PreviewPage
             }
 
             // A release the user chose to ignore stays ignored on startup, but a
-            // deliberate check always shows it again.
-            if (silent && string.Equals(_settings.SkippedUpdate, UpdateKey(check), StringComparison.OrdinalIgnoreCase))
+            // deliberate check always shows it again — and the test switch ignores
+            // the ignore list, or a single click would end the testing.
+            if (silent && !UpdateService.ForceUpdatePrompt
+                && string.Equals(_settings.SkippedUpdate, UpdateKey(check), StringComparison.OrdinalIgnoreCase))
                 return;
 
             await ShowUpdateDialogAsync(check);

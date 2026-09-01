@@ -164,6 +164,44 @@
 
             function send(msg) { window.chrome.webview.postMessage(JSON.stringify(msg)); }
 
+            // ── Floating button bar (XAML, drawn on top of this editor) ──────
+            // It hovers over the top-right corner — exactly where Monaco puts the
+            // minimap, whose clicks it would then swallow. Reporting the width of
+            // that right-hand furniture lets the host slide the bar clear of it.
+            //
+            // The width is MEASURED on the elements as drawn, not derived from
+            // getLayoutInfo(): the layout numbers put the minimap's left edge a few
+            // pixels right of where it actually lands, which left the bar all but
+            // touching it.
+            window._barChrome = -1;
+            function updateFloatBar() {
+                var host = editor.getDomNode();
+                if (!host) return;
+                var right = host.getBoundingClientRect().right;
+                var edge = null;
+                ['.minimap', '.decorationsOverviewRuler'].forEach(function (sel) {
+                    var el = host.querySelector(sel);
+                    if (!el) return;
+                    var r = el.getBoundingClientRect();
+                    if (r.width <= 0) return;
+                    if (edge === null || r.left < edge) edge = r.left;
+                });
+                var chrome = edge === null ? 0 : Math.max(0, Math.round(right - edge));
+                if (chrome === window._barChrome) return;
+                window._barChrome = chrome;
+                send({ type: 'floatBar', chrome: chrome });
+            }
+            // Typing fires all three of these at once; coalesce into one pass a frame.
+            var _barPending = false;
+            function queueFloatBar() {
+                if (_barPending) return;
+                _barPending = true;
+                requestAnimationFrame(function () { _barPending = false; updateFloatBar(); });
+            }
+            editor.onDidLayoutChange(queueFloatBar);
+            editor.onDidScrollChange(queueFloatBar);
+            editor.onDidChangeModelContent(queueFloatBar);
+
             // Ctrl+S → ask C# to save (Monaco would otherwise swallow it).
             editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function () {
                 send({ type: 'save' });

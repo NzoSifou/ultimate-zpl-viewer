@@ -169,6 +169,22 @@ public sealed partial class PreviewPage : Page
             new PointerEventHandler((_, _) => PreviewScrollViewer.Focus(FocusState.Pointer)), true);
         // No automatic "Ctrl+S" tooltip on hover (it even leaked into the settings).
         Root.KeyboardAcceleratorPlacementMode = KeyboardAcceleratorPlacementMode.Hidden;
+        // The floating bar has to tell Monaco how much room it takes before Monaco
+        // can say what it covers; its width changes as diagnostics appear.
+        // The restored width is only checked against the window once the window has
+        // one, and again whenever it changes.
+        Root.SizeChanged += (_, _) =>
+        {
+            if (!_editorVisible) return;
+            // Assign ONLY on a real change. Writing the column width back on every
+            // size notification invalidates the layout, which raises the next size
+            // notification, and the pass never settles: the window stops responding
+            // while the thread spins. Same value, no write, no loop.
+            var want = ClampedEditorWidth();
+            var column = EditorColumnDef;
+            if (Math.Abs(column.Width.Value - want) > 0.5)
+                column.Width = new GridLength(want);
+        };
         // Cursor set per state in ApplyEditorLayout (resize when shown, hand when hidden).
         EditorSplitter.PointerPressed     += EditorSplitter_PointerPressed;
         EditorSplitter.PointerMoved       += EditorSplitter_PointerMoved;
@@ -651,6 +667,7 @@ public sealed partial class PreviewPage : Page
         _suppressLayoutPersist = options.Forced;
         _toolbarVisible = options.HideToolbar ? false : _settings.ToolbarVisible;
         _editorVisible  = options.HideEditor  ? false : _settings.EditorVisible;
+        if (_settings.EditorWidth > 0) _editorWidth = _settings.EditorWidth;
         ApplyToolbarVisibility();
         ApplyEditorLayout();
         Loaded += (_, _) =>
@@ -901,6 +918,24 @@ public sealed partial class PreviewPage : Page
 
     private double _editorWidth = 420;
 
+    // A width saved on a wider window (or on another screen) must not leave the
+    // preview a sliver — worse, a splitter pushed past the window edge could not be
+    // dragged back. Only what is APPLIED is clamped, never the stored value, so
+    // widening the window again gives the editor back the size the user chose.
+    private double ClampedEditorWidth()
+        => Root.ActualWidth > 0
+            ? Math.Clamp(_editorWidth, 220, Math.Max(220, Root.ActualWidth - 320))
+            : _editorWidth;
+
+    // Saves the splitter position. Shares the --hide guard with the visibility:
+    // a forced layout is a one-off override, not a preference.
+    private void PersistEditorWidth()
+    {
+        if (_suppressLayoutPersist) return;
+        _settings.EditorWidth = _editorWidth;
+        _settings.Save();
+    }
+
     // Places the editor and the preview in the left/right columns per the swap
     // setting, sizes the columns, and aligns the splitter hairline against the
     // preview. The editor's column is fixed-width (resizable); the preview fills.
@@ -909,10 +944,13 @@ public sealed partial class PreviewPage : Page
         bool swap = _settings.SwapEditorPreview;
         // Hidden editor: its column collapses to 0 so the handle sits at the window
         // edge; the card is hidden and its margin removed so nothing shows through.
-        var editorWidth = new GridLength(_editorVisible ? _editorWidth : 0);
+        var editorWidth = new GridLength(_editorVisible ? ClampedEditorWidth() : 0);
         var star = new GridLength(1, GridUnitType.Star);
 
         EditorHost.Visibility = _editorVisible ? Visibility.Visible : Visibility.Collapsed;
+        // Nothing to resize while the editor is hidden, and the strip would land
+        // exactly under the collapse handle at the window edge.
+        EditorSplitter.Visibility = _editorVisible ? Visibility.Visible : Visibility.Collapsed;
         // A hidden editor must not keep the keyboard focus, or Ctrl +/- would still
         // be resizing text nobody can see.
         if (!_editorVisible) PreviewScrollViewer.Focus(FocusState.Programmatic);
@@ -937,17 +975,27 @@ public sealed partial class PreviewPage : Page
         // Hairline only makes sense as a boundary when the editor is shown.
         SplitterHairline.Visibility = _editorVisible ? Visibility.Visible : Visibility.Collapsed;
 
-        // Chevron points toward the editor to collapse it, away from it to expand.
-        // left when (visible XOR swapped): editor-left+shown, or editor-right+hidden.
+        // The handle stays pinned to the window edge on the editor's side, shown or
+        // hidden: only the chevron flips. It points toward the editor to collapse it,
+        // away from it to bring it back — left when (visible XOR swapped).
+        EditorCollapseHandle.HorizontalAlignment =
+            swap ? HorizontalAlignment.Right : HorizontalAlignment.Left;
         bool pointLeft = _editorVisible ^ swap;
         EditorCollapseChevron.Glyph = pointLeft ? "" : ""; // ChevronLeft / ChevronRight
-        ToolTipService.SetToolTip(EditorSplitter,
+        ToolTipService.SetToolTip(EditorCollapseHandle,
             _editorVisible ? "Masquer l'éditeur" : "Afficher l'éditeur");
+        EditorCollapseHandle.SetCursor(Microsoft.UI.Input.InputSystemCursor.Create(
+            Microsoft.UI.Input.InputSystemCursorShape.Hand));
 
-        // Resize cursor when the editor can be resized, hand when it is just a button.
+        // The strip only ever resizes now — the collapse handle owns the toggle.
         EditorSplitter.SetCursor(Microsoft.UI.Input.InputSystemCursor.Create(
-            _editorVisible ? Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast
-                           : Microsoft.UI.Input.InputSystemCursorShape.Hand));
+            Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast));
+    }
+
+    private void EditorCollapseHandle_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        ToggleEditor();
+        e.Handled = true;
     }
 
     private ColumnDefinition EditorColumnDef => _settings.SwapEditorPreview ? ColRight : ColLeft;
@@ -998,7 +1046,7 @@ public sealed partial class PreviewPage : Page
         _updating = true;
         try
         {
-            var parsed = ZplRenderer.Parse(_currentText, SelectedDpmm);
+            var parsed = ParseCurrentText();
 
             // Detect ^PW / ^LL additions, removals and value changes.
             var pw = parsed.DeclaredWidthDots;
@@ -1080,11 +1128,12 @@ public sealed partial class PreviewPage : Page
             };
 
             UpdateSizeBoxes(fillEmptyBoxes: kind == SizeUpdate.DocumentLoaded);
-            ZplRenderer.Draw(PreviewCanvas, _model, SelectedDpmm, _rotationDegrees, _hitMap);
+            DrawPreviewModel();
             // The canvas was rebuilt: the frame has to find its element again.
             // Low priority so the new children have been measured by then.
             DispatcherQueue.TryEnqueue(
-                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, UpdateInspectFrame);
+                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                UpdateInspectFrame);
 
             // Re-apply the default zoom after every redraw (low priority: waits
             // for the new canvas size to be measured).
@@ -1096,6 +1145,99 @@ public sealed partial class PreviewPage : Page
         {
             _updating = false;
         }
+    }
+
+    // ── Parsing ──────────────────────────────────────────────────────────────
+    // Most redraws do not touch the ZPL: rotating, zooming, resizing the label,
+    // switching units. Parsing is what a redraw costs on a big document (measured:
+    // ~2 s on 20 000 fields), and every one of those redraws was paying it again on
+    // identical text — holding the rotate key ran a dozen parses whose results piled
+    // up until the process was out of memory. The parse now depends on the only two
+    // things it reads, and repeats only when one of them changes.
+    private string? _parsedText;
+    private double _parsedDpmm;
+    private ZplRenderModel? _parsedCache;
+
+    private ZplRenderModel ParseCurrentText()
+    {
+        var dpmm = SelectedDpmm;
+        if (_parsedCache is not null && _parsedDpmm == dpmm && _parsedText == _currentText)
+            return _parsedCache;
+        _parsedCache = ZplRenderer.Parse(_currentText, dpmm);
+        _parsedText = _currentText;
+        _parsedDpmm = dpmm;
+        return _parsedCache;
+    }
+
+    // ── Drawing the model onto the canvas ────────────────────────────────────
+    // A label with tens of thousands of elements takes seconds to draw, and the
+    // draw owns the UI thread while it runs. Holding a redraw key used to queue one
+    // FULL pass per keystroke: twelve rotations meant twelve passes, several minutes
+    // frozen, and the memory of each pass piling up on the way (measured: 4.8 GB and
+    // never recovered). A heavy document now draws from a queued callback that a
+    // newer request supersedes — a burst paints its LAST state, once.
+    //
+    // Light documents (the overwhelming majority) keep drawing inline: deferring
+    // them would only add a frame of latency to every keystroke.
+    private const int HeavyDrawableCount = 1500;
+    private int _drawGeneration;
+
+    private void DrawPreviewModel()
+    {
+        int generation = ++_drawGeneration;
+        if (_model.Drawables.Count < HeavyDrawableCount) { DrawPreviewNow(); return; }
+
+        // The notice has to reach the screen BEFORE the draw blocks the thread,
+        // which is exactly what queueing the draw behind this frame buys.
+        PreviewBusyText.Text = LocalizationService.Get("toolbar.rendering");
+        PreviewBusy.Visibility = Visibility.Visible;
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        {
+            if (generation != _drawGeneration) return;   // a newer request won
+            try { DrawPreviewNow(); }
+            finally { PreviewBusy.Visibility = Visibility.Collapsed; }
+        });
+    }
+
+    private void DrawPreviewNow()
+    {
+        // Ceiling FIRST, from the size the draw is about to produce. Switching from
+        // a tiny label to a huge one carries the small one's zoom over: for the one
+        // pass between the canvas growing and the fit landing, the view asks to
+        // rasterise a 4 000-dot label at ×20 — tens of thousands of DIPs a side, and
+        // the render thread never comes back. Clamping before the canvas changes
+        // means that pass never happens. (The diagonal covers any rotation.)
+        double diagonal = Math.Sqrt(_model.Size.WidthDots * _model.Size.WidthDots
+                                  + _model.Size.HeightDots * _model.Size.HeightDots);
+        ApplyZoomBudget(diagonal, diagonal);
+        ZplRenderer.Draw(PreviewCanvas, _model, SelectedDpmm, _rotationDegrees, _hitMap);
+        ApplyZoomBudget();   // again, on the real canvas, which may allow more
+    }
+
+    // The ScrollViewer rasterises the whole canvas at the zoom factor, so the
+    // surface it asks for grows with (label size × zoom)². A 500 mm label at ×20
+    // wants some 80 000 px a side: the allocation starves the machine and the
+    // process dies as a stowed XAML exception, with nothing written anywhere. The
+    // ceiling is therefore computed per document instead of being a fixed ×20 —
+    // an ordinary label lands at ×19.6, so nothing changes for it in practice.
+    private const double ZoomLongestSideDip = 16000;
+    private const double ZoomAreaBudgetDip2 = 64e6;
+
+    private void ApplyZoomBudget() => ApplyZoomBudget(PreviewCanvas.Width, PreviewCanvas.Height);
+
+    private void ApplyZoomBudget(double w, double h)
+    {
+        if (w <= 0 || h <= 0) return;
+        var max = (float)Math.Clamp(
+            Math.Min(ZoomLongestSideDip / Math.Max(w, h), Math.Sqrt(ZoomAreaBudgetDip2 / (w * h))),
+            1.0, 20.0);
+        if (Math.Abs(max - PreviewScrollViewer.MaxZoomFactor) < 0.001f) return;
+        // Bringing the ceiling below the current factor needs the view inside it
+        // first, or the ScrollViewer refuses the new bound. Fit rather than clamp:
+        // parking the view AT the ceiling is the most expensive place it can be,
+        // and the fit is what the redraw is about to ask for anyway.
+        if (PreviewScrollViewer.ZoomFactor > max) FitPreviewToView();
+        PreviewScrollViewer.MaxZoomFactor = max;
     }
 
     // Suppresses the TextBox clear ("✕") button. WinUI exposes no property for it,
@@ -1694,10 +1836,10 @@ public sealed partial class PreviewPage : Page
     // ── Editor / preview splitter (horizontal resize only) ──────────────────
 
     private bool _isResizingEditor;
-    private bool _splitterDragged;   // moved past the click threshold since press
+    private bool _splitterDragged;   // moved past the dead zone since press
     private double _resizeStartX;
     private double _resizeStartWidth;
-    private const double SplitterClickSlop = 4; // px of movement still counted as a click
+    private const double SplitterClickSlop = 4; // px of movement ignored (hand tremor)
 
     private void EditorSplitter_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -1715,8 +1857,6 @@ public sealed partial class PreviewPage : Page
         var x = e.GetCurrentPoint(Root).Position.X;
         var delta = x - _resizeStartX;
         if (Math.Abs(delta) > SplitterClickSlop) _splitterDragged = true;
-        // Resizing only applies while the editor is shown; a hidden editor can only
-        // be expanded by a click (handled on release).
         if (!_editorVisible || !_splitterDragged) return;
         // When the editor is on the right, dragging left grows it (invert).
         if (_settings.SwapEditorPreview) delta = -delta;
@@ -1732,8 +1872,9 @@ public sealed partial class PreviewPage : Page
         if (!_isResizingEditor) return;
         _isResizingEditor = false;
         EditorSplitter.ReleasePointerCapture(e.Pointer);
-        // A press without a real drag is a click on the collapse handle.
-        if (!_splitterDragged) ToggleEditor();
+        // The splitter position is part of the layout the user arranged: keep it,
+        // like the toolbar and editor visibility.
+        if (_splitterDragged) PersistEditorWidth();
         e.Handled = true;
     }
 
@@ -1848,6 +1989,11 @@ public sealed partial class PreviewPage : Page
         var dpi = (DensityComboBox.SelectedItem as DpmmOption)?.Dpi
                   ?? (int)Math.Round(SelectedDpmm * 25.4);
         _captionSizeDpi = $"{capW} {unit} × {capH} {unit} — {dpi} dpi";
+        // Say so when these are not the numbers in the size fields: the toolbar
+        // showing 137499 mm while the caption said 500 mm, with nothing linking the
+        // two, read as a contradiction rather than as a cap.
+        if (WidthWarningIcon.Visibility == Visibility.Visible || HeightWarningIcon.Visibility == Visibility.Visible)
+            _captionSizeDpi += $" ({LocalizationService.Get("toolbar.sizeCapped")})";
         UpdatePreviewCaption();
     }
 
@@ -2092,15 +2238,39 @@ public sealed partial class PreviewPage : Page
     /// <summary>Opens a file as a new tab here — used when another launch hands one over.</summary>
     public Task OpenFileFromAnotherLaunchAsync(string path) => OpenPathAsync(path);
 
+    // Opens run one at a time. Each one awaits the disk read, and a second launch
+    // arriving during that await used to resume inside the first: two openings then
+    // added tabs and switched documents through each other, and the TabView threw
+    // from a state neither of them had left it in. The crash was a stowed XAML
+    // exception — the process just vanished, with nothing in any log — so the fix
+    // has to be to never overlap them in the first place.
+    private readonly SemaphoreSlim _openGate = new(1, 1);
+
     // Opens a file by path in its own tab, at the "open" default density, and
     // records it in the recent-files list. Shared by the picker and the recent menu.
     private async Task OpenPathAsync(string path)
+    {
+        await _openGate.WaitAsync();
+        try { await OpenPathCoreAsync(path); }
+        finally { _openGate.Release(); }
+    }
+
+    private async Task OpenPathCoreAsync(string path)
     {
         if (!File.Exists(path))
         {
             await ShowMessageAsync("Ouvrir un fichier", $"Fichier introuvable :\n{path}");
             RemoveRecentFile(path);
             _settings.Save();
+            return;
+        }
+
+        // Already open here? Bring that tab forward instead of stacking a second
+        // copy of the same file — opening a document twice gave two independent
+        // tabs, each with its own edits, on the same path.
+        if (FindTabForPath(path) is { } existing)
+        {
+            DocTabs.SelectedItem = existing;
             return;
         }
 
@@ -2120,6 +2290,23 @@ public sealed partial class PreviewPage : Page
         SetEditorText(text);
         _isDirty = false;
         UpdateDocumentTitle();
+    }
+
+    // The tab holding a given file, if any. Paths are compared in their full form
+    // and case-insensitively: "a.zpl" reached from the recent list, from Explorer
+    // and from a relative command line is one and the same document.
+    private TabViewItem? FindTabForPath(string path)
+    {
+        string Key(string p) { try { return Path.GetFullPath(p); } catch { return p; } }
+        var wanted = Key(path);
+        foreach (var o in DocTabs.TabItems)
+            if (o is TabViewItem item && item.Tag is DocTab tab)
+            {
+                var tabPath = ReferenceEquals(tab, _activeTab) ? _currentFilePath : tab.FilePath;
+                if (tabPath is not null && string.Equals(Key(tabPath), wanted, StringComparison.OrdinalIgnoreCase))
+                    return item;
+            }
+        return null;
     }
 
     // ── Recent files ──────────────────────────────────────────────────────────
@@ -2213,11 +2400,10 @@ public sealed partial class PreviewPage : Page
     {
         if (_activeTab is not null) RefreshTabHeader(_activeTab);
         var mw = AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow;
-        if (DocTabs.TabItems.Count > 1)
-        {
-            mw?.SetDocumentTitle("Ultimate ZPL Viewer");
-            return;
-        }
+        // The title always names the ACTIVE document, tabs or not. It used to fall
+        // back to the bare product name as soon as a second tab existed, which left
+        // the title bar saying nothing at all — and, since it is also the taskbar
+        // and Alt-Tab text, made two windows indistinguishable.
         var name = _currentFilePath is null ? LocalizationService.Get("titlebar.untitled") : Path.GetFileName(_currentFilePath);
         var title = $"Ultimate ZPL Viewer - {name}";
         if (_isDirty || _currentFilePath is null) title += "*";
@@ -2254,7 +2440,7 @@ public sealed partial class PreviewPage : Page
             Header = TabTitle(tab),
             Style = (Style)Resources["FloatingTabViewItemStyle"],
         };
-        ToolTipService.SetToolTip(item, TabTooltip(tab));
+        ApplyTabTooltip(item, tab);
         var menu = new MenuFlyout();
         menu.Opening += (_, _) => BuildTabContextMenu(menu, item, tab);
         item.ContextFlyout = menu;
@@ -2263,12 +2449,30 @@ public sealed partial class PreviewPage : Page
 
     // Tab hover tooltip: the file name, plus the full path in parentheses when
     // "afficher le chemin" is enabled (mirrors the window title bar).
-    private string TabTooltip(DocTab tab)
+    //
+    // Returned as a wrapped, width-capped ToolTip rather than a bare string: a long
+    // path made one endless line that ran off the left edge of the window, where it
+    // was CUT — the tooltip exists to show the whole path and showed a truncated
+    // one, over the toolbar. Placed below the tab for the same reason.
+    private object TabTooltip(DocTab tab)
     {
         bool active = ReferenceEquals(tab, _activeTab);
         var path = active ? _currentFilePath : tab.FilePath;
         var name = path is null ? LocalizationService.Get("titlebar.untitled") : Path.GetFileName(path);
-        return path is not null && _settings.ShowPathInTabTooltip ? $"{name} ({path})" : name;
+        var text = path is not null && _settings.ShowPathInTabTooltip ? $"{name}\n{path}" : name;
+        // A TextBlock, not a ToolTip: the host wraps it in one itself, and a ToolTip
+        // handed over ready-made simply never appeared. The width cap is what keeps
+        // the box inside the window — anchored on the leftmost tab, a wider one
+        // hangs off the left edge and the path gets cut exactly where it matters.
+        return new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, MaxWidth = 180 };
+    }
+
+    // Tooltip + placement in one place, for the three spots that refresh a tab.
+    // Below the tab, never above: overlapping the toolbar hid the buttons behind it.
+    private void ApplyTabTooltip(TabViewItem item, DocTab tab)
+    {
+        ToolTipService.SetToolTip(item, TabTooltip(tab));
+        ToolTipService.SetPlacement(item, Microsoft.UI.Xaml.Controls.Primitives.PlacementMode.Bottom);
     }
 
     // Refreshes every tab's header and hover tooltip (e.g. after the
@@ -2279,7 +2483,7 @@ public sealed partial class PreviewPage : Page
             if (o is TabViewItem item && item.Tag is DocTab tab)
             {
                 item.Header = TabTitle(tab);
-                ToolTipService.SetToolTip(item, TabTooltip(tab));
+                ApplyTabTooltip(item, tab);
             }
     }
 
@@ -2299,7 +2503,7 @@ public sealed partial class PreviewPage : Page
             if (o is TabViewItem item && ReferenceEquals(item.Tag, tab))
             {
                 item.Header = TabTitle(tab);
-                ToolTipService.SetToolTip(item, TabTooltip(tab));
+                ApplyTabTooltip(item, tab);
                 break;
             }
     }
@@ -4835,7 +5039,7 @@ public sealed partial class PreviewPage : Page
         Root.RequestedTheme = _settings.ToElementTheme();
         (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.SetTheme(_settings.ToElementTheme());
         ApplyAccentFromSettings();
-        _editorWidth = 420;
+        _editorWidth = _settings.EditorWidth;   // reset by ResetToDefaults above
         ApplyEditorLayout();
         ApplyEditorOptions();
         LoadDensityOptions(SelectedDpmm);
@@ -5047,6 +5251,10 @@ public sealed partial class PreviewPage : Page
                 _settings.Save();
                 if (_minimapToggle is not null) _minimapToggle.IsOn = _settings.EditorMinimap;
                 break;
+            case "floatBar":
+                _floatBarChrome = doc.RootElement.GetProperty("chrome").GetDouble();
+                ApplyEditorFloatBar();
+                break;
         }
     }
 
@@ -5138,6 +5346,30 @@ public sealed partial class PreviewPage : Page
         if (!string.IsNullOrEmpty(_currentText))
             PostToEditor(ZplHighlighter.GetDecorationsJson(_currentText));
         RunStaticAnalysis();
+    }
+
+    // ── Floating diagnostics bar placement ─────────────────────────────────
+    // The bar is a XAML overlay, so Monaco knows nothing about it and cannot leave
+    // room. It reports instead how wide its right-hand furniture (the minimap) is,
+    // and the bar steps that far aside.
+
+    private const double FloatBarGap = 12;        // idle: from the card's right edge
+    private const double FloatBarClearance = 12;  // room left beyond the minimap's box
+    private const double FloatBarTop = 8;         // from the card's top edge
+    private const double WebViewInset = 4;        // the WebView2's margin in the card
+    private double _floatBarChrome;               // what Monaco draws on its right
+
+    // Slides the bar clear of the minimap so it never covers or intercepts it. The
+    // chrome width is measured from the WebView's right edge, which the inset pushes
+    // one step inside the card, so that step is added back here. The minimap's box
+    // runs a few pixels wider than what it paints, so the gap on screen lands around
+    // twenty pixels — deliberately airy, since the point is that it reads as clear.
+    private void ApplyEditorFloatBar()
+    {
+        var right = _floatBarChrome > 0
+            ? WebViewInset + _floatBarChrome + FloatBarClearance
+            : FloatBarGap;
+        EditorFloatBar.Margin = new Thickness(0, FloatBarTop, right, 0);
     }
 
     // Pushes the editor display options (font size, word wrap, minimap).

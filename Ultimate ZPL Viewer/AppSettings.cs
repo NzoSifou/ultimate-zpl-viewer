@@ -152,6 +152,11 @@ public sealed class AppSettings
     // across sessions (unless the app was launched with a --hide override).
     public bool ToolbarVisible { get; set; } = true;
     public bool EditorVisible { get; set; } = true;
+    // Where the user left the editor/preview splitter, in pixels. Stored as a width
+    // rather than a share of the window because that is what the drag manipulates:
+    // a window resized during the session leaves the editor where it was put, and
+    // reopening the app the same size puts it back exactly there.
+    public double EditorWidth { get; set; } = 420;
     // Toolbar layout: up to 3 rows of group ids. Each row still wraps automatically
     // on narrow windows. Row 0 holds every group by default.
     public List<List<string>> ToolbarRows { get; set; } = new()

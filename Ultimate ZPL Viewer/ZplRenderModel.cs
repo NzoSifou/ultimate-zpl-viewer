@@ -98,6 +98,8 @@ public static partial class ZplRenderer
 {
     private const double DefaultLabelWidthInches = 4d;
     private const double DefaultLabelHeightInches = 6d;
+    // Smallest label the preview will DEDUCE from the content (see below).
+    private const double MinDeducedSizeMm = 5d;
 
     public static ZplRenderModel Parse(string zpl, double fallbackDpmm)
     {
@@ -1183,6 +1185,14 @@ public static partial class ZplRenderer
         var maxY = maxYCommitted;
         var contentWidth  = maxX > 0 ? maxX + lhX : effectiveDpmm * 25.4 * DefaultLabelWidthInches;
         var contentHeight = maxY > 0 ? maxY + lhY : effectiveDpmm * 25.4 * DefaultLabelHeightInches;
+        // Floor on the DEDUCED size only. A document whose content measures a
+        // fraction of a millimetre (^PW0 with a one-dot field, say) produced a
+        // 0.25 mm label the preview then had to blow up to 5000 % — unreadable, and
+        // nothing about it said why. A size the label ASKS for is never touched: an
+        // explicit ^PW2 stays a two-dot label.
+        double floorDots = effectiveDpmm * MinDeducedSizeMm;
+        contentWidth  = Math.Max(contentWidth,  floorDots);
+        contentHeight = Math.Max(contentHeight, floorDots);
 
         return new ZplRenderModel
         {
@@ -1582,6 +1592,32 @@ public static partial class ZplRenderer
             if (hitMap is not null)
                 for (int i = childrenBefore; i < target.Children.Count; i++)
                     hitMap[target.Children[i]] = drawable;
+        }
+
+        CullOutsideLabel(target, w, h, hitMap);
+    }
+
+    // Drops the children that start beyond the label. The canvas clip already HIDES
+    // them, but hidden is not free: they are still laid out and handed to the
+    // compositor, and a single field can put a great many of them out there — a
+    // ^BY99 barcode carrying four hundred characters runs to some 435 000 dots,
+    // thousands of bars wide, on a 4 000-dot label. Zoom into that and the render
+    // pass takes the whole machine down. What cannot be shown is not built.
+    //
+    // Only what starts past an edge goes: anything overlapping the label is kept
+    // whole, so nothing visible ever changes.
+    private static void CullOutsideLabel(Canvas canvas, double w, double h,
+                                         IDictionary<UIElement, ZplDrawable>? hitMap)
+    {
+        for (int i = canvas.Children.Count - 1; i >= 0; i--)
+        {
+            var child = canvas.Children[i];
+            double left = Canvas.GetLeft(child), top = Canvas.GetTop(child);
+            if (double.IsNaN(left)) left = 0;
+            if (double.IsNaN(top)) top = 0;
+            if (left <= w && top <= h) continue;
+            canvas.Children.RemoveAt(i);
+            hitMap?.Remove(child);
         }
     }
 

@@ -376,8 +376,13 @@
                      matches the page background. -->
                 <WebView2 x:Name="EditorWebView" Grid.Row="0" Margin="4"/>
 
-                <!-- Floating diagnostics buttons in the top-right corner (IDE style) -->
-                <Border Grid.Row="0"
+                <!-- Floating diagnostics buttons in the top-right corner (IDE style).
+                     They float ABOVE the editor, so they would sit on top of the
+                     minimap and swallow its clicks: the margin is recomputed in code
+                     from the width Monaco reports for its right-hand chrome, and the
+                     bar dims while text runs underneath (see ApplyEditorFloatBar). -->
+                <Border x:Name="EditorFloatBar"
+                        Grid.Row="0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
                         Margin="0,8,12,0"
@@ -537,11 +542,9 @@
                 </Border>
             </Grid>
 
-            <!-- Editor/preview boundary. A thin, full-height strip that doubles as
-                 the collapse handle: click toggles the editor, drag resizes it.
-                 A centred chevron shows the direction (points toward the editor to
-                 collapse, away to expand). When the editor is hidden the strip
-                 sits at the window edge (its column shrinks to 0). -->
+            <!-- Editor/preview boundary: a thin, full-height strip that RESIZES the
+                 editor. It is hidden along with the editor - there is nothing left
+                 to resize then, and it would sit under the collapse handle. -->
             <local:CursorGrid x:Name="EditorSplitter"
                               Grid.Column="1"
                               Width="14"
@@ -552,6 +555,22 @@
                            Opacity="0.5"
                            HorizontalAlignment="Right"
                            VerticalAlignment="Stretch"/>
+            </local:CursorGrid>
+
+            <!-- Collapse handle. It NEVER moves: it is pinned to the window edge on
+                 the editor's side (left, or right when the panes are swapped) and
+                 spans every column so it stays there whether the editor is shown -
+                 riding in the 14px gutter its margin leaves - or hidden. Only the
+                 chevron flips: it points toward the editor to collapse it, away to
+                 bring it back. -->
+            <local:CursorGrid x:Name="EditorCollapseHandle"
+                              Grid.Column="0" Grid.ColumnSpan="3"
+                              Canvas.ZIndex="20"
+                              Width="14"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Background="Transparent"
+                              Tapped="EditorCollapseHandle_Tapped">
                 <Border x:Name="EditorCollapseChip"
                         Width="14" Height="44"
                         CornerRadius="4"
@@ -601,6 +620,23 @@
                               Margin="0,0,14,10"
                               IsHitTestVisible="False"/>
                     </local:CursorGrid>
+
+                    <!-- Shown while a heavy document is being drawn. The draw runs on
+                         the UI thread, so nothing can animate during it: this is a
+                         plain static notice, painted one frame BEFORE the draw starts
+                         (see DrawPreviewModel). -->
+                    <Border x:Name="PreviewBusy"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Visibility="Collapsed"
+                            IsHitTestVisible="False"
+                            Canvas.ZIndex="30"
+                            CornerRadius="8"
+                            Padding="20,14"
+                            Background="{ThemeResource EditorSurfaceBrush}"
+                            BorderBrush="{ThemeResource SurfaceStrokeBrush}"
+                            BorderThickness="1">
+                        <TextBlock x:Name="PreviewBusyText" FontSize="14"/>
+                    </Border>
 
                     <!-- Rulers, drawn ON TOP of the preview at the top / left edges.
                          Sized/positioned in code (ApplyRulerVisibility). -->

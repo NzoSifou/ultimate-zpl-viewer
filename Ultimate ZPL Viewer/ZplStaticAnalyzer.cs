@@ -45,7 +45,14 @@ public static class ZplStaticAnalyzer
     public static List<ZplDiagnostic> Analyze(string text, bool includeLowWarnings = true)
     {
         var diags = new List<ZplDiagnostic>();
-        if (string.IsNullOrWhiteSpace(text)) return diags;
+        // An empty document is not a label either, and used to be the one case that
+        // reported nothing at all — while a file of plain prose got its two errors.
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            Add(diags, new List<int> { 0 }, 0, 0, "Il manque ^XA (début de format)", Error);
+            Add(diags, new List<int> { 0 }, 0, 0, "Il manque ^XZ (fin de format)", Error);
+            return diags;
+        }
 
         var lookup     = ZplHighlighter.Lookup;
         var textParams = ZplHighlighter.TextParams;

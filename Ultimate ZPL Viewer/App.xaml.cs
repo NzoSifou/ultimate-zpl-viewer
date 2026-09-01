@@ -20,21 +20,37 @@ namespace Ultimate_ZPL_Viewer
         public App()
         {
             InitializeComponent();
-            // Crash diagnostics: XAML stowed exceptions (0xc000027b) hide the real
-            // error; log it before the process dies.
-            UnhandledException += (_, e) =>
+            // Crash diagnostics. THREE channels, because the XAML one alone misses
+            // the crashes that matter most: a failure inside a XAML callback dies as
+            // a stowed exception (0xc000027b in Microsoft.UI.Xaml.dll) that never
+            // reaches Application.UnhandledException, so the log stayed empty on
+            // exactly the cases worth diagnosing. The CLR-level handler catches
+            // those; the task one catches faults nobody awaited.
+            UnhandledException += (_, e) => LogCrash("XAML", e.Message, e.Exception);
+            AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+                LogCrash("CLR", (e.ExceptionObject as Exception)?.Message ?? "?",
+                         e.ExceptionObject as Exception);
+            System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (_, e) =>
             {
-                try
-                {
-                    var log = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                        "Ultimate ZPL Viewer", "crash.log");
-                    Directory.CreateDirectory(Path.GetDirectoryName(log)!);
-                    File.AppendAllText(log,
-                        $"[{DateTime.Now:o}] {e.Message}\n{e.Exception}\n\n");
-                }
-                catch { }
+                LogCrash("Task", e.Exception.Message, e.Exception);
+                e.SetObserved();   // an unawaited fault must not take the app down
             };
+        }
+
+        // Appends one crash entry. Never throws: it runs while the process is dying,
+        // and a failure here would replace the real error with its own.
+        internal static void LogCrash(string channel, string message, Exception? ex)
+        {
+            try
+            {
+                var log = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Ultimate ZPL Viewer", "crash.log");
+                Directory.CreateDirectory(Path.GetDirectoryName(log)!);
+                File.AppendAllText(log,
+                    $"[{DateTime.Now:o}] ({channel}) {message}\n{ex}\n\n");
+            }
+            catch { }
         }
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)

@@ -1,6 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -84,130 +86,237 @@ public sealed partial class PreviewPage
 
     private async Task ShowUpdateDialogAsync(UpdateCheck check)
     {
-        var body = new StackPanel { Spacing = 12, Width = 460 };
+        var body = new StackPanel { Spacing = 18, Width = 520 };
 
-        body.Children.Add(new TextBlock
+        // ── Header: the release, then everything secondary on one muted line ──
+        var header = new Grid { ColumnSpacing = 14 };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        header.Children.Add(new Border
         {
-            Text = SL("update.available").Replace("{version}", check.Label),
-            FontSize = 16,
+            Width = 44,
+            Height = 44,
+            CornerRadius = new CornerRadius(22),
+            Background = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"],
+            VerticalAlignment = VerticalAlignment.Top,
+            Child = new FontIcon
+            {
+                Glyph = "",   // download
+                FontSize = 20,
+                Foreground = (Brush)Application.Current.Resources["TextOnAccentFillColorPrimaryBrush"],
+            },
+        });
+
+        var titles = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+        titles.Children.Add(new TextBlock
+        {
+            Text = check.Label,
+            FontSize = 20,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             TextWrapping = TextWrapping.Wrap,
         });
-        body.Children.Add(new TextBlock
+        var facts = new List<string>
         {
-            Text = SL("update.current").Replace("{version}", UpdateService.CurrentVersion()),
-            Opacity = 0.7,
+            SL("update.current").Replace("{version}", UpdateService.CurrentVersion()),
+        };
+        if (check.Asset is { Size: > 0 } sized) facts.Add(UpdateService.FormatSize(sized.Size));
+        if (check.PublishedAt is { } when)
+            facts.Add(SL("update.published").Replace("{date}", when.LocalDateTime.ToString("d MMMM yyyy")));
+        titles.Children.Add(new TextBlock
+        {
+            Text = string.Join("   ·   ", facts),
+            FontSize = 12,
+            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
             TextWrapping = TextWrapping.Wrap,
         });
+        Grid.SetColumn(titles, 1);
+        header.Children.Add(titles);
+        body.Children.Add(header);
 
+        // ── Release notes, presented as a fenced code block ──────────────────
         if (!string.IsNullOrWhiteSpace(check.Notes))
         {
-            body.Children.Add(new TextBlock
+            var notes = new StackPanel { Spacing = 6 };
+            notes.Children.Add(new TextBlock
             {
                 Text = SL("update.notes"),
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Margin = new Thickness(0, 4, 0, 0),
             });
-            body.Children.Add(new ScrollViewer
+            notes.Children.Add(new Border
             {
-                MaxHeight = 220,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Content = new TextBlock
+                Background = (Brush)Application.Current.Resources["CardBackgroundFillColorSecondaryBrush"],
+                BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(14, 12, 14, 12),
+                Child = new ScrollViewer
                 {
-                    Text = PlainNotes(check.Notes),
-                    TextWrapping = TextWrapping.Wrap,
-                    IsTextSelectionEnabled = true,
+                    MaxHeight = 240,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    Content = new TextBlock
+                    {
+                        Text = PlainNotes(check.Notes),
+                        FontFamily = new FontFamily("Cascadia Mono, Consolas, Courier New"),
+                        FontSize = 12,
+                        LineHeight = 18,
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true,
+                    },
                 },
             });
+            body.Children.Add(notes);
         }
 
-        // Filled in when the download starts; the dialog swaps to it in place
-        // rather than opening a second window on top of the first.
-        var progressText = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        // ── Progress, revealed in place once something starts ────────────────
+        var progressText = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 13,
+            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+        };
         var progressBar = new ProgressBar { Minimum = 0, Maximum = 1, Value = 0 };
-        var progressPanel = new StackPanel { Spacing = 12, Width = 460 };
+        var progressPanel = new StackPanel { Spacing = 10, Visibility = Visibility.Collapsed };
         progressPanel.Children.Add(progressText);
         progressPanel.Children.Add(progressBar);
+        body.Children.Add(progressPanel);
 
-        var host = new ContentControl { Content = body, HorizontalContentAlignment = HorizontalAlignment.Stretch };
-        string? downloaded = null;   // set once the file is on disk and verified
+        // ── Four actions — one more than a ContentDialog can hold, so the footer
+        //    is ours. The two that commit sit on the right, the one that walks away
+        //    beside them, and "ignore" stays the quietest of the four.
+        var footer = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+        var skipButton = new Button
+        {
+            Content = SL("update.skip"),
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            BorderThickness = new Thickness(0),
+            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+            Padding = new Thickness(2, 6, 2, 6),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        footer.Children.Add(skipButton);
+
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var laterButton = new Button { Content = SL("update.later") };
+        var onExitButton = new Button { Content = SL("update.onExit") };
+        ToolTipService.SetToolTip(onExitButton, SL("update.onExitHint"));
+        var installButton = new Button
+        {
+            Content = SL("update.install"),
+            Style = (Style)Application.Current.Resources["AccentButtonStyle"],
+        };
+        actions.Children.Add(laterButton);
+        if (check.Asset is not null) actions.Children.Add(onExitButton);
+        actions.Children.Add(installButton);
+        Grid.SetColumn(actions, 1);
+        footer.Children.Add(actions);
+        body.Children.Add(footer);
+
+        // No built-in buttons: the dialog is only the frame around the layout above.
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
             RequestedTheme = _settings.ToElementTheme(),
             Title = SL("update.title"),
-            Content = host,
-            PrimaryButtonText = check.Asset is null ? "" : SL("update.install"),
-            SecondaryButtonText = SL("update.later"),
-            CloseButtonText = SL("update.skip"),
-            DefaultButton = ContentDialogButton.Primary,
+            Content = body,
         };
+        // A ContentDialog is capped at 548 DIP by default, and four actions plus the
+        // padding do not fit in that: the primary button was clipped at the edge.
+        dialog.Resources["ContentDialogMaxWidth"] = 640d;
 
-        // No installer attached to the release (a release can carry anything):
-        // offer the page instead of a button that could not work.
+        string? downloaded = null;
+        bool armForExit = false;
+        var cancellation = new CancellationTokenSource();
+
+        // Once something is under way, the four choices collapse to one exit.
+        void LeaveOnly(string label)
+        {
+            skipButton.Visibility = Visibility.Collapsed;
+            onExitButton.Visibility = Visibility.Collapsed;
+            installButton.Visibility = Visibility.Collapsed;
+            laterButton.Content = label;
+        }
+
+        skipButton.Click += (_, _) =>
+        {
+            _settings.SkippedUpdate = UpdateKey(check);
+            _settings.Save();
+            dialog.Hide();
+        };
+        laterButton.Click += (_, _) => { cancellation.Cancel(); dialog.Hide(); };
+
+        // A release with no installer attached (it can carry anything): the page is
+        // all that can honestly be offered.
         if (check.Asset is null)
         {
-            dialog.PrimaryButtonText = SL("update.openPage");
-            dialog.PrimaryButtonClick += (_, _) => OpenUrl(check.PageUrl);
+            installButton.Content = SL("update.openPage");
+            installButton.Click += (_, _) => { OpenUrl(check.PageUrl); dialog.Hide(); };
         }
         else
         {
-            var cancellation = new CancellationTokenSource();
-            dialog.PrimaryButtonClick += async (sender, args) =>
+            installButton.Click += async (_, _) =>
             {
-                var deferral = args.GetDeferral();
-                args.Cancel = true;   // the dialog stays up and becomes the progress view
+                progressPanel.Visibility = Visibility.Visible;
+                LeaveOnly(SL("update.cancel"));
+                var progress = new Progress<double>(fraction =>
+                {
+                    progressBar.Value = fraction;
+                    progressText.Text = SL("update.downloading")
+                        .Replace("{size}", UpdateService.FormatSize(check.Asset.Size))
+                        + $"   {fraction * 100:0} %";
+                });
                 try
                 {
-                    sender.PrimaryButtonText = "";
-                    sender.SecondaryButtonText = "";
-                    sender.CloseButtonText = SL("update.cancel");
-                    progressText.Text = SL("update.downloading")
-                        .Replace("{size}", UpdateService.FormatSize(check.Asset.Size));
-                    host.Content = progressPanel;
-
-                    var progress = new Progress<double>(fraction =>
-                    {
-                        progressBar.Value = fraction;
-                        progressText.Text = SL("update.downloading")
-                            .Replace("{size}", UpdateService.FormatSize(check.Asset.Size))
-                            + $"  {fraction * 100:0} %";
-                    });
-
                     downloaded = await UpdateService.DownloadAsync(check.Asset, progress, cancellation.Token);
                     // Handing over happens once this dialog is gone: closing the
                     // documents may need dialogs of its own, and WinUI allows only
                     // one at a time.
-                    sender.Hide();
+                    dialog.Hide();
                 }
-                catch (OperationCanceledException) { sender.Hide(); }
+                catch (OperationCanceledException) { }
                 catch (Exception ex)
                 {
                     progressBar.Visibility = Visibility.Collapsed;
                     progressText.Text = SL("update.failed.desc").Replace("{error}", ex.Message);
-                    sender.CloseButtonText = SL("update.close");
-                    sender.PrimaryButtonText = SL("update.openPage");
-                    sender.IsPrimaryButtonEnabled = true;
+                    laterButton.Content = SL("update.close");
                 }
-                finally { deferral.Complete(); }
             };
-            dialog.Closing += (_, _) => cancellation.Cancel();
+
+            // "On exit": nothing may get in the way now. The download runs
+            // unattended and only the closing of the application installs it.
+            onExitButton.Click += (_, _) =>
+            {
+                armForExit = true;
+                progressPanel.Visibility = Visibility.Visible;
+                progressBar.Visibility = Visibility.Collapsed;
+                progressText.Text = SL("update.armed");
+                LeaveOnly(SL("update.close"));
+            };
         }
 
-        var result = await ShowDialogAsync(dialog);
+        await ShowDialogAsync(dialog);
 
         if (downloaded is not null) { await HandOverToInstallerAsync(downloaded); return; }
+        if (armForExit) _ = DownloadForExitAsync(check.Asset!);
+    }
 
-        // The close button is "ignore this release" only while it still says so:
-        // once the download starts it becomes Cancel/Close, and ignoring would be
-        // the wrong reading of the same click.
-        if (result == ContentDialogResult.None
-            && string.Equals(dialog.CloseButtonText, SL("update.skip"), StringComparison.Ordinal))
+    /// <summary>
+    /// Fetches the installer with nothing on screen, and leaves it armed for the
+    /// last window closing. A session that ends before the download does installs
+    /// nothing and offers the release again next time — a far better failure than
+    /// holding a shutdown hostage to a progress bar.
+    /// </summary>
+    private static async Task DownloadForExitAsync(ReleaseAsset asset)
+    {
+        try
         {
-            _settings.SkippedUpdate = UpdateKey(check);
-            _settings.Save();
+            var path = await UpdateService.DownloadAsync(asset, null);
+            UpdateService.ArmForExit(path);
         }
+        catch { }
     }
 
     /// <summary>
@@ -227,7 +336,7 @@ public sealed partial class PreviewPage
 
     /// <summary>
     /// Release notes are Markdown; this is not a Markdown renderer, it just takes
-    /// the marks off so the text reads as text.
+    /// the marks off so the text reads as text inside the code block.
     /// </summary>
     private static string PlainNotes(string markdown)
     {

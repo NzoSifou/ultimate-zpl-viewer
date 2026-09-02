@@ -1969,7 +1969,11 @@
         "title": "Vérification impossible",
         "desc": "La dernière version n’a pas pu être récupérée : {error}"
       },
-      "closeTitle": "Mettre à jour"
+      "closeTitle": "Mettre à jour",
+      "onExit": "À la fermeture",
+      "armed": "La mise à jour sera installée quand vous fermerez l’application. Le téléchargement se poursuit en arrière-plan.",
+      "published": "publiée le {date}",
+      "onExitHint": "L’application se mettra à jour quand vous la fermerez, sans se rouvrir."
     }
   },
   "shortcuts": {

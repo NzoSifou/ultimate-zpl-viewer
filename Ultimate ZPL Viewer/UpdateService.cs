@@ -22,7 +22,7 @@ public sealed record ReleaseAsset(string Name, string Url, long Size, string? Sh
 /// </summary>
 public sealed record UpdateCheck(
     bool Available, string Label, string Notes, string PageUrl,
-    ReleaseAsset? Asset, string? Error);
+    ReleaseAsset? Asset, string? Error, DateTimeOffset? PublishedAt = null);
 
 /// <summary>
 /// Looks for a newer build on the project's GitHub releases, and fetches it.
@@ -128,9 +128,13 @@ public static class UpdateService
                     ?? $"https://github.com/{Repo}/releases/latest";
         var label = string.IsNullOrWhiteSpace(name) ? tag : name!;
 
+        DateTimeOffset? published = null;
+        if (DateTimeOffset.TryParse(release["published_at"]?.GetValue<string>(), out var when))
+            published = when.ToLocalTime();
+
         var asset = PickInstaller(release["assets"] as JsonArray);
         bool newer = ForceUpdatePrompt || IsNewer(asset, tag, name);
-        return new UpdateCheck(newer, label, notes.Trim(), page, asset, null);
+        return new UpdateCheck(newer, label, notes.Trim(), page, asset, null, published);
 
         static UpdateCheck Failed(string why) => new(false, "", "", "", null, why);
     }
@@ -245,16 +249,42 @@ public static class UpdateService
     /// Hands over to the downloaded installer and leaves. /SILENT keeps the wizard
     /// out of the way — the app already asked; /UPDATED tells the script to bring
     /// the application back up once the files are in place.
+    ///
+    /// /NORESTARTAPPLICATIONS matters: Setup would otherwise restart, on its own,
+    /// whatever the Restart Manager closed, and the app would come back twice.
+    /// Bringing it back is the script's job, once.
     /// </summary>
-    public static void LaunchInstaller(string setupPath)
+    public static void LaunchInstaller(string setupPath) =>
+        Run(setupPath, "/SILENT /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /UPDATED");
+
+    // ── Installing on the way out ────────────────────────────────────────────
+
+    /// <summary>A verified installer waiting for the application to close.</summary>
+    public static string? PendingInstaller { get; private set; }
+
+    public static void ArmForExit(string setupPath) => PendingInstaller = setupPath;
+
+    /// <summary>
+    /// Starts the installer the user asked to run at closing time. No /UPDATED and
+    /// no restart: they chose "on exit" to be left alone, and an application that
+    /// springs back up after being closed is the opposite of that.
+    /// Called once, from the last window going away.
+    /// </summary>
+    public static void RunPendingInstaller()
     {
+        if (PendingInstaller is not { } path) return;
+        PendingInstaller = null;
+        try { Run(path, "/SILENT /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS"); }
+        catch { }
+    }
+
+    private static void Run(string setupPath, string arguments) =>
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
         {
             FileName = setupPath,
-            Arguments = "/SILENT /NORESTART /CLOSEAPPLICATIONS /UPDATED",
+            Arguments = arguments,
             UseShellExecute = true,
         });
-    }
 
     /// <summary>Human-readable size, for the "download 80 MB" line.</summary>
     public static string FormatSize(long bytes)

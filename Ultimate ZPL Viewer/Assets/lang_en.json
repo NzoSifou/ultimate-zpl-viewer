@@ -1969,7 +1969,11 @@
         "title": "Check failed",
         "desc": "The latest version could not be retrieved: {error}"
       },
-      "closeTitle": "Update"
+      "closeTitle": "Update",
+      "onExit": "On exit",
+      "armed": "The update will be installed when you close the application. The download continues in the background.",
+      "published": "published {date}",
+      "onExitHint": "The application updates itself when you close it, and does not reopen."
     }
   },
   "shortcuts": {

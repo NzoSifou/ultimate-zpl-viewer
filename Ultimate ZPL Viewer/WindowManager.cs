@@ -37,6 +37,9 @@ internal static class WindowManager
             if (s is not MainWindow w) return;
             _windows.Remove(w);
             if (ReferenceEquals(Active, w)) Active = _windows.LastOrDefault();
+            // Last window gone: this is where an update the user scheduled for
+            // closing time gets to run. Nothing to interrupt any more.
+            if (_windows.Count == 0) UpdateService.RunPendingInstaller();
         };
     }
 

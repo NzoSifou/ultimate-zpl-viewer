@@ -21,13 +21,19 @@ public sealed partial class PreviewPage
         public string Text = "";
         public double? Progress;      // null → indeterminate
         public Action? Cancel;        // null → no cancel button
+        public bool ShowBar = true;   // false → the label alone
     }
 
     private readonly List<StatusJob> _statusJobs = new();
 
-    private StatusJob BeginStatus(string text, Action? cancel = null)
+    /// <summary>
+    /// Starts reporting a task. <paramref name="showBar"/> false is for work that
+    /// owns the UI thread from start to finish: the bar could not animate anyway,
+    /// and a frozen one reads as a failure rather than as progress.
+    /// </summary>
+    private StatusJob BeginStatus(string text, Action? cancel = null, bool showBar = true)
     {
-        var job = new StatusJob { Text = text, Cancel = cancel };
+        var job = new StatusJob { Text = text, Cancel = cancel, ShowBar = showBar };
         _statusJobs.Add(job);
         RenderStatus();
         return job;
@@ -58,6 +64,7 @@ public sealed partial class PreviewPage
         }
 
         StatusText.Text = job.Text;
+        StatusProgress.Visibility = job.ShowBar ? Visibility.Visible : Visibility.Collapsed;
         if (job.Progress is { } fraction)
         {
             StatusProgress.IsIndeterminate = false;
@@ -66,7 +73,7 @@ public sealed partial class PreviewPage
         }
         else
         {
-            StatusProgress.IsIndeterminate = true;
+            StatusProgress.IsIndeterminate = job.ShowBar;
             StatusPercent.Text = "";
         }
         _statusCancel = job.Cancel;

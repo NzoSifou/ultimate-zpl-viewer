@@ -625,23 +625,6 @@
                               IsHitTestVisible="False"/>
                     </local:CursorGrid>
 
-                    <!-- Shown while a heavy document is being drawn. The draw runs on
-                         the UI thread, so nothing can animate during it: this is a
-                         plain static notice, painted one frame BEFORE the draw starts
-                         (see DrawPreviewModel). -->
-                    <Border x:Name="PreviewBusy"
-                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                            Visibility="Collapsed"
-                            IsHitTestVisible="False"
-                            Canvas.ZIndex="30"
-                            CornerRadius="8"
-                            Padding="20,14"
-                            Background="{ThemeResource EditorSurfaceBrush}"
-                            BorderBrush="{ThemeResource SurfaceStrokeBrush}"
-                            BorderThickness="1">
-                        <TextBlock x:Name="PreviewBusyText" FontSize="14"/>
-                    </Border>
-
                     <!-- Rulers, drawn ON TOP of the preview at the top / left edges.
                          Sized/positioned in code (ApplyRulerVisibility). -->
                     <Canvas x:Name="RulerTopCanvas"

@@ -452,6 +452,11 @@ public sealed partial class PreviewPage
 
     private async Task RunPrintAsync(PrintJob job)
     {
+        // Between the click and the spooler taking the job there is a rasterisation
+        // and, on the graphical path, one page composed per copy. Nothing to count,
+        // so the strip carries the destination and no bar.
+        var sending = BeginStatus(
+            LocalizationService.Get("status.printing").Replace("{printer}", job.Printer));
         try
         {
             if (job.Mode == SendMode.Raw)
@@ -472,6 +477,7 @@ public sealed partial class PreviewPage
                 string.Format(SL("print.msg.failedBody"), job.Printer, ex.Message));
             return;
         }
+        finally { EndStatus(sending); }
 
         RememberJob(job);
         await ShowMessageAsync(SL("print.msg.title"),

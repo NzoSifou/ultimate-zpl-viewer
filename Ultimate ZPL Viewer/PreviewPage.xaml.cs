@@ -1191,16 +1191,22 @@ public sealed partial class PreviewPage : Page
         if (_model.Drawables.Count < HeavyDrawableCount) { DrawPreviewNow(); return; }
 
         // The notice has to reach the screen BEFORE the draw blocks the thread,
-        // which is exactly what queueing the draw behind this frame buys.
-        PreviewBusyText.Text = LocalizationService.Get("toolbar.rendering");
-        PreviewBusy.Visibility = Visibility.Visible;
+        // which is exactly what queueing the draw behind this frame buys. One job
+        // for the whole burst: the superseded passes return without ending it, so
+        // the line stays up until the pass that actually paints is done.
+        _renderStatus ??= BeginStatus(LocalizationService.Get("status.rendering"), showBar: false);
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
         {
             if (generation != _drawGeneration) return;   // a newer request won
             try { DrawPreviewNow(); }
-            finally { PreviewBusy.Visibility = Visibility.Collapsed; }
+            finally
+            {
+                if (_renderStatus is { } status) { EndStatus(status); _renderStatus = null; }
+            }
         });
     }
+
+    private StatusJob? _renderStatus;
 
     private void DrawPreviewNow()
     {
@@ -2382,6 +2388,13 @@ public sealed partial class PreviewPage : Page
     private async Task SaveAsync()
     {
         if (_currentFilePath is null) { await SaveAsAsync(); return; }
+        // Only worth a line for a document big enough that the write can be felt —
+        // on a network share, mostly. A local save of a small file is over before
+        // the strip could be read.
+        var saving = _currentText.Length >= StatusWorthyFileSize
+            ? BeginStatus(LocalizationService.Get("status.saving")
+                .Replace("{file}", Path.GetFileName(_currentFilePath)))
+            : null;
         try
         {
             await File.WriteAllTextAsync(_currentFilePath, _currentText);
@@ -2392,6 +2405,7 @@ public sealed partial class PreviewPage : Page
         {
             await ShowMessageAsync("Enregistrement", $"L'enregistrement a échoué : {ex.Message}");
         }
+        finally { if (saving is not null) EndStatus(saving); }
     }
 
     private async Task SaveAsAsync()
@@ -3467,8 +3481,21 @@ public sealed partial class PreviewPage : Page
             step = chosen.Value;
         }
 
-        var snapshot = await RenderSnapshotAsync();
-        var bytes = await EncodePngAsync(snapshot, PngScaleForStep(step));
+        // Rasterising and encoding happen before the picker opens, so this is where
+        // the wait is. The strip is dropped before the file dialog: a status line
+        // under a modal picker reports on nothing.
+        byte[] bytes;
+        var render = BeginStatus(LocalizationService.Get("status.exportPng"));
+        try
+        {
+            await YieldToUiAsync();
+            var snapshot = await RenderSnapshotAsync();
+            UpdateStatus(render, 0.5);
+            bytes = await EncodePngAsync(snapshot, PngScaleForStep(step));
+            UpdateStatus(render, 1.0);
+        }
+        finally { EndStatus(render); }
+
         var picker = new FileSavePicker();
         InitializeWithWindow.Initialize(picker, GetWindowHandle());
         picker.SuggestedFileName = _currentFilePath is null ? "label" : Path.GetFileNameWithoutExtension(_currentFilePath);
@@ -3545,7 +3572,17 @@ public sealed partial class PreviewPage : Page
     private async Task ExportPdfAsync()
     {
         // Vector PDF built from the render model (crisp at any zoom), not a raster.
-        var pdf = ZplRenderer.ToPdf(_model, SelectedDpmm, _rotationDegrees);
+        // Embedding the fonts is the slow part, and it holds the UI thread — hence
+        // the label without a bar, and the frame handed back before it starts.
+        byte[] pdf;
+        var building = BeginStatus(LocalizationService.Get("status.exportPdf"), showBar: false);
+        try
+        {
+            await YieldToUiAsync();
+            pdf = ZplRenderer.ToPdf(_model, SelectedDpmm, _rotationDegrees);
+        }
+        finally { EndStatus(building); }
+
         var picker = new FileSavePicker();
         InitializeWithWindow.Initialize(picker, GetWindowHandle());
         picker.SuggestedFileName = _currentFilePath is null ? "label" : Path.GetFileNameWithoutExtension(_currentFilePath);
@@ -5246,12 +5283,25 @@ public sealed partial class PreviewPage : Page
 
     // Loads a ZPL job captured from the virtual printer into a new tab, so it
     // never overwrites the document being edited.
-    public void LoadCapturedZpl(string zpl)
+    public void LoadCapturedZpl(string zpl) => _ = LoadCapturedZplAsync(zpl);
+
+    // A job arriving from the virtual printer is the one case where the application
+    // starts working without anyone asking it to, so saying what is happening
+    // matters more here than anywhere else.
+    private async Task LoadCapturedZplAsync(string zpl)
     {
-        AddTabAndActivate(null); // captured from the printer, never saved
-        SetEditorText(zpl);
-        _isDirty = true;
-        UpdateDocumentTitle();
+        var job = zpl.Length >= StatusWorthyFileSize
+            ? BeginStatus(LocalizationService.Get("status.capturing"))
+            : null;
+        try
+        {
+            if (job is not null) await YieldToUiAsync();
+            AddTabAndActivate(null); // captured from the printer, never saved
+            SetEditorText(zpl);
+            _isDirty = true;
+            UpdateDocumentTitle();
+        }
+        finally { if (job is not null) EndStatus(job); }
     }
 
     // Reports that a non-ZPL document was sent to the virtual printer.

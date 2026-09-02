@@ -304,19 +304,23 @@ public sealed partial class PreviewPage
     }
 
     /// <summary>
-    /// Fetches the installer with nothing on screen, and leaves it armed for the
-    /// last window closing. A session that ends before the download does installs
-    /// nothing and offers the release again next time — a far better failure than
-    /// holding a shutdown hostage to a progress bar.
+    /// Fetches the installer without a window of its own — the status strip carries
+    /// it — and leaves it armed for the last window closing. A session that ends
+    /// before the download does installs nothing and offers the release again next
+    /// time, which beats holding a shutdown hostage to a progress bar.
     /// </summary>
-    private static async Task DownloadForExitAsync(ReleaseAsset asset)
+    private async Task DownloadForExitAsync(ReleaseAsset asset)
     {
+        var cancellation = new CancellationTokenSource();
+        var job = BeginStatus(LocalizationService.Get("status.downloadingUpdate"), cancellation.Cancel);
         try
         {
-            var path = await UpdateService.DownloadAsync(asset, null);
+            var progress = new Progress<double>(fraction => UpdateStatus(job, fraction));
+            var path = await UpdateService.DownloadAsync(asset, progress, cancellation.Token);
             UpdateService.ArmForExit(path);
         }
         catch { }
+        finally { EndStatus(job); }
     }
 
     /// <summary>

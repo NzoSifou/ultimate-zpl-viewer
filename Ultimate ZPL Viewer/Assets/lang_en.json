@@ -2109,5 +2109,10 @@
       "openApp": "Go to the application",
       "openSettings": "Open the settings"
     }
+  },
+  "status": {
+    "loading": "Loading {file}…",
+    "downloadingUpdate": "Downloading the update…",
+    "cancel": "Cancel"
   }
 }

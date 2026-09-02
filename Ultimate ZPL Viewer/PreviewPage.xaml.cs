@@ -2277,23 +2277,46 @@ public sealed partial class PreviewPage : Page
             return;
         }
 
-        string text;
-        try { text = await File.ReadAllTextAsync(path); }
-        catch (Exception ex)
-        {
-            await ShowMessageAsync("Ouvrir un fichier", $"Lecture impossible :\n{ex.Message}");
-            return;
-        }
+        // Big documents spend seconds in the parser, the renderer and the analyser,
+        // all on the UI thread. The strip is only raised for those: a small file is
+        // open before anyone could read the label, and a flash is worse than silence.
+        StatusJob? job = null;
+        try { if (new FileInfo(path).Length >= StatusWorthyFileSize) job = BeginStatus(
+            LocalizationService.Get("status.loading").Replace("{file}", Path.GetFileName(path))); }
+        catch { }
 
-        _settings.LastFilePath = path;
-        AddRecentFile(path);
-        _settings.Save();
-        ApplyOpenDensity();           // density-on-open (does not rewrite ^PW/^LL)
-        AddTabAndActivate(path);      // an opened file gets its own tab
-        SetEditorText(text);
-        _isDirty = false;
-        UpdateDocumentTitle();
+        try
+        {
+            string text;
+            try { text = await File.ReadAllTextAsync(path); }
+            catch (Exception ex)
+            {
+                await ShowMessageAsync("Ouvrir un fichier", $"Lecture impossible :\n{ex.Message}");
+                return;
+            }
+
+            _settings.LastFilePath = path;
+            AddRecentFile(path);
+            _settings.Save();
+            ApplyOpenDensity();           // density-on-open (does not rewrite ^PW/^LL)
+
+            if (job is not null)
+            {
+                UpdateStatus(job, 0.35);
+                await YieldToUiAsync();   // let the strip reach the screen first
+            }
+
+            AddTabAndActivate(path);      // an opened file gets its own tab
+            SetEditorText(text);          // parse, render and analyse
+            _isDirty = false;
+            UpdateDocumentTitle();
+            if (job is not null) UpdateStatus(job, 1.0);
+        }
+        finally { if (job is not null) EndStatus(job); }
     }
+
+    // Below this, opening is instantaneous and the strip would only blink.
+    private const long StatusWorthyFileSize = 128 * 1024;
 
     // The tab holding a given file, if any. Paths are compared in their full form
     // and case-insensitively: "a.zpl" reached from the recent list, from Explorer

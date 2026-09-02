@@ -2109,5 +2109,10 @@
       "openApp": "Accéder à l'application",
       "openSettings": "Ouvrir les paramètres"
     }
+  },
+  "status": {
+    "loading": "Chargement de {file}…",
+    "downloadingUpdate": "Téléchargement de la mise à jour…",
+    "cancel": "Annuler"
   }
 }

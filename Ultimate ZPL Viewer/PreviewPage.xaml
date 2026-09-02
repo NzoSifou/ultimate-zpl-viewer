@@ -120,6 +120,10 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <!-- Status strip: takes no room at all until something has progress
+                 to report. The overlays above still span rows 0-2 only, so a
+                 background download stays visible from the settings screen. -->
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <Border x:Name="ToolbarBorder" Grid.Row="0"
@@ -659,6 +663,53 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- One line at the very bottom, shown only while something is running:
+             a label, a thin bar, the percentage, and a cancel button when the
+             task can be given up. Driven by PreviewPage.Status.cs. -->
+        <Border x:Name="StatusStrip"
+                Grid.Row="3"
+                Visibility="Collapsed"
+                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                Padding="12,5">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusText"
+                           FontSize="12"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="420"/>
+                <ProgressBar x:Name="StatusProgress"
+                             Grid.Column="1"
+                             Height="3"
+                             VerticalAlignment="Center"
+                             Minimum="0" Maximum="1"/>
+                <TextBlock x:Name="StatusPercent"
+                           Grid.Column="2"
+                           FontSize="12"
+                           MinWidth="38"
+                           TextAlignment="Right"
+                           VerticalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                <Button x:Name="StatusCancel"
+                        Grid.Column="3"
+                        Visibility="Collapsed"
+                        Padding="6,0"
+                        MinWidth="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="StatusCancel_Click">
+                    <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                </Button>
+            </Grid>
+        </Border>
 
         <!-- First-run wizard. Covers the whole page (toolbar, tabs, editor and
              preview) so nothing of the application shows behind it; the window

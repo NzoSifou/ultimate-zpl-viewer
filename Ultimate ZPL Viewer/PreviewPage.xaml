@@ -626,25 +626,29 @@
                             Background="{ThemeResource PreviewRulerBrush}"
                             Visibility="Collapsed"/>
 
-                    <!-- View / edit switch: a floating plate at the top centre of
-                         the preview, two icons and no text. The active one is
-                         marked by an accent OUTLINE (ApplyModeButtons) rather than
-                         a filled background, which next to its neighbour would
-                         read as "pressed" instead of "selected". Its top margin
-                         clears the horizontal ruler when that one is shown. -->
+                    <!-- View / edit switch: a floating plate at the top RIGHT of
+                         the preview, stacked vertically — view above, edit below.
+                         Two icons, no text; the active one is FILLED with the
+                         accent colour (ApplyModeButtons swaps the accent button
+                         style in, so a custom accent and the hover/pressed states
+                         both follow for free). Its top margin clears the
+                         horizontal ruler when that one is shown. -->
                     <Border x:Name="ModeSwitch"
-                            HorizontalAlignment="Center" VerticalAlignment="Top"
-                            Margin="0,10,0,0"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,10,14,0"
                             Canvas.ZIndex="30"
                             CornerRadius="8"
                             Padding="4"
                             Background="{ThemeResource FloatPlateBrush}"
                             BorderBrush="{ThemeResource SurfaceStrokeBrush}"
                             BorderThickness="1">
-                        <StackPanel Orientation="Horizontal" Spacing="2">
+                        <StackPanel Orientation="Vertical" Spacing="3">
                             <StackPanel.Resources>
-                                <!-- Flat buttons: the plate is the surface, the
-                                     buttons only light up under the pointer. -->
+                                <!-- The UNSELECTED button is flat: the plate is the
+                                     surface, and it only lights up under the
+                                     pointer. The selected one wears the accent
+                                     style, whose own AccentButton* brushes are
+                                     untouched by these overrides. -->
                                 <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>
                                 <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SubtleFillColorSecondaryBrush"/>
                                 <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SubtleFillColorTertiaryBrush"/>
@@ -652,22 +656,16 @@
                                 <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
                                 <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
                             </StackPanel.Resources>
-                            <!-- The outline lives on a wrapper Border: the button's
-                                 own border is driven by its visual states. -->
-                            <Border x:Name="ViewModeChip" CornerRadius="6" BorderThickness="1.5">
-                                <Button x:Name="ViewModeButton"
-                                        Width="34" Height="30" MinWidth="0" Padding="0"
-                                        CornerRadius="5">
-                                    <FontIcon Glyph="&#xE7B3;" FontSize="15"/>
-                                </Button>
-                            </Border>
-                            <Border x:Name="EditModeChip" CornerRadius="6" BorderThickness="1.5">
-                                <Button x:Name="EditModeButton"
-                                        Width="34" Height="30" MinWidth="0" Padding="0"
-                                        CornerRadius="5">
-                                    <FontIcon Glyph="&#xE70F;" FontSize="15"/>
-                                </Button>
-                            </Border>
+                            <Button x:Name="ViewModeButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0"
+                                    CornerRadius="6">
+                                <FontIcon x:Name="ViewModeIcon" Glyph="&#xE7B3;" FontSize="15"/>
+                            </Button>
+                            <Button x:Name="EditModeButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0"
+                                    CornerRadius="6">
+                                <FontIcon x:Name="EditModeIcon" Glyph="&#xE70F;" FontSize="15"/>
+                            </Button>
                         </StackPanel>
                     </Border>
                 </Grid>

@@ -68,16 +68,22 @@ public sealed partial class PreviewPage
         else ClearInspectSelection();
     }
 
-    // The active icon is marked by an accent OUTLINE, the way the Windows snipping
-    // toolbar marks its current tool. A filled accent background was the other
-    // option, but sitting right beside its neighbour it reads as "held down"
-    // rather than as "selected".
+    // The active icon is FILLED with the accent colour. The accent button style is
+    // swapped in rather than a hand-painted background: it tracks a custom accent
+    // on its own, and keeps the hover and pressed states a local Background would
+    // flatten. Both states get a REAL style — assigning null instead of the default
+    // one drops every value the style carried, CornerRadius included.
     private void ApplyModeButtons()
     {
-        var accent = new SolidColorBrush(AccentColor());
-        var clear = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-        ViewModeChip.BorderBrush = _editMode ? clear : accent;
-        EditModeChip.BorderBrush = _editMode ? accent : clear;
+        var on = (Style)Application.Current.Resources["AccentButtonStyle"];
+        var off = (Style)Application.Current.Resources["DefaultButtonStyle"];
+        ViewModeButton.Style = _editMode ? off : on;
+        EditModeButton.Style = _editMode ? on : off;
+        // The glyph has to be told which foreground it now sits on.
+        var onInk = (Brush)Application.Current.Resources["TextOnAccentFillColorPrimaryBrush"];
+        var offInk = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
+        ViewModeIcon.Foreground = _editMode ? offInk : onInk;
+        EditModeIcon.Foreground = _editMode ? onInk : offInk;
         ToolTipService.SetToolTip(ViewModeButton, TipBlock(LocalizationService.Get("mode.view")));
         ToolTipService.SetToolTip(EditModeButton, TipBlock(LocalizationService.Get("mode.edit")));
     }

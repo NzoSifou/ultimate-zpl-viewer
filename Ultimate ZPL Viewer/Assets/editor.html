@@ -396,6 +396,10 @@
                         var o = {};
                         if (typeof msg.fontSize === 'number') applyFontSize(msg.fontSize);
                         if (typeof msg.wordWrap === 'boolean') o.wordWrap = msg.wordWrap ? 'on' : 'off';
+                        // View mode. readOnly refuses edits but keeps selection,
+                        // copy, Ctrl+F and folding; domReadOnly would also block
+                        // the caret, which is not what we want.
+                        if (typeof msg.readOnly === 'boolean') o.readOnly = msg.readOnly;
                         editor.updateOptions(o);
                         if (typeof msg.minimap === 'boolean') window._minimapWanted = msg.minimap;
                         updateMinimap();

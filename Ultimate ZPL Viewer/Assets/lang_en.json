@@ -28,8 +28,6 @@
     "zoomReset": "Reset zoom (100 %)",
     "widthTooLarge": "Width exceeds 50 cm: the preview is capped at 50 cm.",
     "heightTooLarge": "Height exceeds 50 cm: the preview is capped at 50 cm.",
-    "inspectOn": "Inspect on: click an element in the preview to see its code, or a line of code to see its element",
-    "inspectOff": "Turn on inspect: link an element in the preview to the code that makes it",
     "sizeCapped": "capped"
   },
   "editor": {
@@ -1610,7 +1608,8 @@
         "coloring": "Syntax highlighting",
         "preview": "Preview",
         "rulers": "Rulers",
-        "layout": "Layout"
+        "layout": "Layout",
+        "mode": "Mode"
       },
       "cards": {
         "fontSize": {
@@ -1701,6 +1700,10 @@
         "selWidth": {
           "title": "Selection size",
           "desc": "Thickness of the inspect frame on the preview, in pixels."
+        },
+        "startMode": {
+          "title": "Start-up mode",
+          "desc": "Which mode a document opens in. “Last used” reopens the application in whichever mode you left it."
         }
       },
       "lbl": {
@@ -1721,6 +1724,11 @@
           "Thin",
           "Normal",
           "Large"
+        ],
+        "startMode": [
+          "View",
+          "Edit",
+          "Last used"
         ]
       }
     },
@@ -2119,5 +2127,9 @@
     "printing": "Sending to {printer}…",
     "saving": "Saving {file}…",
     "capturing": "Receiving from the virtual printer…"
+  },
+  "mode": {
+    "view": "View mode: the ZPL is shown read-only",
+    "edit": "Edit mode: change the ZPL, or the label straight from the preview"
   }
 }

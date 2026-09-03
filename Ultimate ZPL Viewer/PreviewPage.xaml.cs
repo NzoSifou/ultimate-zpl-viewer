@@ -81,7 +81,7 @@ public sealed partial class PreviewPage : Page
         ApplyToolbarStrings(); // localize the toolbar button labels/tooltips
         ApplyPreviewCaptionVisibility();
         RebuildToolbar(); // place the toolbar groups per the saved layout
-        ApplyInspectButtonState();
+        InitModeSwitch();
         PreviewCanvas.Tapped += PreviewCanvas_Tapped;
         PreviewScrollViewer.PointerWheelChanged += PreviewScrollViewer_PointerWheelChanged;
         RotateSplitButton.Click += RotateButton_Click;
@@ -796,7 +796,6 @@ public sealed partial class PreviewPage : Page
         ("size", "Taille", "", null),
         ("rotate", "Tourner", "", null),
         ("zoom", "Zoom", "", null),
-        ("inspect", "Inspecter", "", null),
         ("download", "Téléchargement", "", new[]
             { ("", "PDF"), ("", "PNG") }),
         ("print", "Imprimer", "", null),
@@ -809,7 +808,6 @@ public sealed partial class PreviewPage : Page
         "size"     => SizeGroup,
         "rotate"   => RotateGroup,
         "zoom"     => ZoomGroup,
-        "inspect"  => InspectGroup,
         "download" => DownloadGroup,
         "print"    => PrintGroup,
         _          => null,
@@ -1348,6 +1346,7 @@ public sealed partial class PreviewPage : Page
         RulerLeftCanvas.Visibility = v ? Visibility.Visible : Visibility.Collapsed;
         // The corner only shows where both bands cross.
         RulerCorner.Visibility = h && v ? Visibility.Visible : Visibility.Collapsed;
+        UpdateModeSwitchMargin();
         DrawRulers();
     }
 
@@ -2216,7 +2215,9 @@ public sealed partial class PreviewPage : Page
         var widthDots = (int)Math.Round(widthMm * SelectedDpmm);
         var heightDots = (int)Math.Round(heightMm * SelectedDpmm);
         AddTabAndActivate(null); // a new document opens in its own tab
-        SetEditorText($"^XA\n^PW{widthDots}\n^LL{heightDots}\n^FO20,20^GB{Math.Max(1, widthDots - 40)},{Math.Max(1, heightDots - 40)},2^FS\n^XZ");
+        // Empty on purpose: the guide frame it used to carry was a hint for a
+        // viewer, and is one more element to delete for someone drawing.
+        SetEditorText($"^XA\n^PW{widthDots}\n^LL{heightDots}\n^XZ");
         _isDirty = true; // a new document has never been saved
         UpdateDocumentTitle();
     }
@@ -2555,6 +2556,7 @@ public sealed partial class PreviewPage : Page
         _activeTab.FilePath = _currentFilePath;
         _activeTab.Text = _currentText;
         _activeTab.IsDirty = _isDirty;
+        _activeTab.EditMode = _editMode;
     }
 
     // Opens a fresh tab (for a new or just-opened document) and makes it active.
@@ -2562,11 +2564,12 @@ public sealed partial class PreviewPage : Page
     private void AddTabAndActivate(string? filePath)
     {
         CaptureActiveTab();
-        var tab = new DocTab { FilePath = filePath };
+        var tab = new DocTab { FilePath = filePath, EditMode = InitialEditMode };
         _activeTab = tab;
         _currentFilePath = filePath;
         _currentText = "";
         _isDirty = false;
+        RestoreTabMode();
         var item = MakeTabItem(tab);
         _suppressTabEvents = true;
         DocTabs.TabItems.Add(item);
@@ -2594,6 +2597,7 @@ public sealed partial class PreviewPage : Page
         _currentFilePath = tab.FilePath;
         _currentText = tab.Text;
         _isDirty = tab.IsDirty;
+        RestoreTabMode();
         if (_editorReady) PostToEditor(BuildSwitchDocMessage(tab.Id, tab.Text));
         // Bring this document back to its own zoom right away, so the incoming
         // tab never flashes at the outgoing tab's level (the redraw below
@@ -4082,6 +4086,31 @@ public sealed partial class PreviewPage : Page
         var lowWarn = MakeToggle(_settings.ShowLowWarnings);
         lowWarn.Toggled += (_, _) => { _settings.ShowLowWarnings = lowWarn.IsOn; _settings.Save(); RunStaticAnalysis(); };
 
+        // ── Mode ────────────────────────────────────────────────────────────
+        // A language file the user edited can be missing the options entirely, and
+        // a ComboBox with an empty ItemsSource THROWS on SelectedIndex — which would
+        // take the whole settings page down. Fall back to the shipped wording.
+        var startModeOpts = SA("editor.opt.startMode");
+        if (startModeOpts.Length < 3)
+            startModeOpts = new[] { "Visualisation", "Édition", "Dernier utilisé" };
+        var startMode = new ComboBox { MinWidth = 200, ItemsSource = startModeOpts };
+        startMode.SelectedIndex = Math.Clamp(_settings.StartMode, 0, startModeOpts.Length - 1);
+        startMode.SelectionChanged += (_, _) =>
+        {
+            _settings.StartMode = Math.Clamp(startMode.SelectedIndex, 0, 2);
+            // Seed the remembered mode with what is on screen, so picking "last
+            // used" does not send the next launch back to a mode from long ago.
+            _settings.LastModeEdit = _editMode;
+            _settings.Save();
+        };
+
+        panel.Children.Add(SubHeader(SL("editor.sub.mode")));
+        // Added straight to the panel rather than through Row(): the height
+        // equalisation the column grid does needs a row with SEVERAL cards, and a
+        // solo one grows without bound and pushes the rest of the page off screen.
+        panel.Children.Add(MakeCard("", SL("editor.cards.startMode.title"),
+            SL("editor.cards.startMode.desc"), startMode));
+
         panel.Children.Add(SubHeader(SL("editor.sub.editor")));
         panel.Children.Add(Row(
             MakeCard("\uE8D2", SL("editor.cards.fontSize.title"), SL("editor.cards.fontSize.desc"), fontSize),
@@ -5411,10 +5440,15 @@ public sealed partial class PreviewPage : Page
     // Replaces the SystemAccentColor* resources and reloads the theme so the
     // whole application (buttons, hover states, checkboxes, …) re-resolves them.
     private void ApplyAccentFromSettings()
-        => AccentColorService.Apply(_settings.UseSystemAccent
+    {
+        AccentColorService.Apply(_settings.UseSystemAccent
             ? null
             : ZplColorSchemeService.ParseHexColor(_settings.CustomAccent, Microsoft.UI.Colors.DodgerBlue),
             Root);
+        // The mode switch's outline is a brush we paint ourselves, so it does not
+        // follow the reloaded theme resources on its own.
+        ApplyModeButtons();
+    }
 
     private void ApplyEditorTheme()
     {
@@ -5481,6 +5515,10 @@ public sealed partial class PreviewPage : Page
             "{\"type\":\"setEditorOptions\"," +
             $"\"fontSize\":{_settings.EditorFontSize}," +
             $"\"wordWrap\":{(_settings.EditorWordWrap ? "true" : "false")}," +
+            // View mode shows the ZPL without letting it be touched. Monaco's own
+            // readOnly keeps selection, copy, Ctrl+F and folding working — it only
+            // refuses edits, which is exactly the line we want.
+            $"\"readOnly\":{(_editMode ? "false" : "true")}," +
             $"\"minimap\":{(_settings.EditorMinimap ? "true" : "false")}}}");
     }
 
@@ -5733,6 +5771,10 @@ public sealed class DocTab
     public string? FilePath { get; set; }
     public string Text { get; set; } = "";
     public bool IsDirty { get; set; }
+
+    // View (false) or edit (true). Per document: one tab can be open for reading
+    // while another is being drawn. Seeded from the StartMode setting.
+    public bool EditMode { get; set; }
 
     // Display zoom the user picked for THIS document, in percent. Null while the
     // document still follows the default-zoom setting. Lives only as long as the

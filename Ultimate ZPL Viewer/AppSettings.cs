@@ -73,11 +73,16 @@ public sealed class AppSettings
     public string Language { get; set; } = "fr";
     public bool ShowLineNumbers { get; set; } = true;
     public bool ShowPreviewGrid { get; set; } = true;
-    // Thickness, in screen pixels, of the inspect-mode selection frame (1..10).
+    // Thickness, in screen pixels, of the selection frame drawn in edit mode (1..10).
     public int InspectFrameThickness { get; set; } = 2;
-    // Inspect mode: clicking an element in the preview highlights the ZPL that
-    // produced it, and vice versa. Off by default - it changes what a click does.
-    public bool InspectMode { get; set; }
+
+    // ---- View / edit mode -------------------------------------------------
+    // Which mode a document opens in: 0 = view (default), 1 = edit,
+    // 2 = whichever mode was in use when the application last closed. Someone who
+    // only ever writes labels should not have to flip the switch every morning.
+    public int StartMode { get; set; }
+    // Remembered for StartMode == 2 only; written whenever the mode changes.
+    public bool LastModeEdit { get; set; }
     // Grid colour: default (faint, theme-based) or a custom ARGB (#AARRGGBB).
     public bool UseCustomGridColor { get; set; }
     public string CustomGridColor { get; set; } = "#40808080";

@@ -13,6 +13,10 @@
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Default">
                     <SolidColorBrush x:Key="EditorSurfaceBrush" Color="#131313"/>
+                    <!-- Floating bars over the preview: a light grey plate in dark
+                         mode (the editor surface would vanish into the preview
+                         background), white in light mode. -->
+                    <SolidColorBrush x:Key="FloatPlateBrush" Color="#2C2C2C"/>
                     <SolidColorBrush x:Key="PreviewSurfaceBrush" Color="#151515"/>
                     <SolidColorBrush x:Key="PreviewGridLineBrush" Color="#12FFFFFF"/>
                     <SolidColorBrush x:Key="SurfaceStrokeBrush" Color="#1FFFFFFF"/>
@@ -22,6 +26,7 @@
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <SolidColorBrush x:Key="EditorSurfaceBrush" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="FloatPlateBrush" Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="PreviewSurfaceBrush" Color="#F3F3F3"/>
                     <SolidColorBrush x:Key="PreviewGridLineBrush" Color="#12000000"/>
                     <SolidColorBrush x:Key="SurfaceStrokeBrush" Color="#40000000"/>
@@ -285,29 +290,6 @@
                         VerticalAlignment="Center"
                         ToolTipService.ToolTip="Réinitialiser le zoom (100 %)">
                     <FontIcon Glyph="&#xE72C;" FontSize="13"/>
-                </Button>
-            </StackPanel>
-
-            <!-- Inspect mode: an icon that is either lit (active) or plain. The
-                 accent style is swapped in from code rather than a custom checked
-                 brush, so a custom accent colour follows for free. -->
-            <StackPanel x:Name="InspectGroup" Orientation="Horizontal" VerticalAlignment="Center">
-                <!-- Square, the same 32 px the other toolbar buttons come out at,
-                     so a lit icon reads as a button and not as a stray badge. -->
-                <Button x:Name="InspectButton" Click="InspectButton_Click"
-                        Width="32" Height="32" MinWidth="0" Padding="0"
-                        CornerRadius="{ThemeResource ControlCornerRadius}"
-                        VerticalAlignment="Center">
-                    <!-- Paint's rectangular-selection marquee. Drawn rather than
-                         taken from the icon font: the nearest glyph (SelectAll)
-                         carries four squares inside the dashes. Stroke colour is
-                         set from code, so it follows the lit/unlit foreground. -->
-                    <Rectangle x:Name="InspectIcon"
-                               Width="15" Height="15"
-                               Fill="Transparent"
-                               StrokeThickness="1.2"
-                               StrokeDashArray="2,2"
-                               StrokeDashCap="Flat"/>
                 </Button>
             </StackPanel>
 
@@ -643,6 +625,51 @@
                             Width="22" Height="22"
                             Background="{ThemeResource PreviewRulerBrush}"
                             Visibility="Collapsed"/>
+
+                    <!-- View / edit switch: a floating plate at the top centre of
+                         the preview, two icons and no text. The active one is
+                         marked by an accent OUTLINE (ApplyModeButtons) rather than
+                         a filled background, which next to its neighbour would
+                         read as "pressed" instead of "selected". Its top margin
+                         clears the horizontal ruler when that one is shown. -->
+                    <Border x:Name="ModeSwitch"
+                            HorizontalAlignment="Center" VerticalAlignment="Top"
+                            Margin="0,10,0,0"
+                            Canvas.ZIndex="30"
+                            CornerRadius="8"
+                            Padding="4"
+                            Background="{ThemeResource FloatPlateBrush}"
+                            BorderBrush="{ThemeResource SurfaceStrokeBrush}"
+                            BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                            <StackPanel.Resources>
+                                <!-- Flat buttons: the plate is the surface, the
+                                     buttons only light up under the pointer. -->
+                                <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>
+                                <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SubtleFillColorSecondaryBrush"/>
+                                <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SubtleFillColorTertiaryBrush"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrush" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
+                            </StackPanel.Resources>
+                            <!-- The outline lives on a wrapper Border: the button's
+                                 own border is driven by its visual states. -->
+                            <Border x:Name="ViewModeChip" CornerRadius="6" BorderThickness="1.5">
+                                <Button x:Name="ViewModeButton"
+                                        Width="34" Height="30" MinWidth="0" Padding="0"
+                                        CornerRadius="5">
+                                    <FontIcon Glyph="&#xE7B3;" FontSize="15"/>
+                                </Button>
+                            </Border>
+                            <Border x:Name="EditModeChip" CornerRadius="6" BorderThickness="1.5">
+                                <Button x:Name="EditModeButton"
+                                        Width="34" Height="30" MinWidth="0" Padding="0"
+                                        CornerRadius="5">
+                                    <FontIcon Glyph="&#xE70F;" FontSize="15"/>
+                                </Button>
+                            </Border>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
         </Grid>

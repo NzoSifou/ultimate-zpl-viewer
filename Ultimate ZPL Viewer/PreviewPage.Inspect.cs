@@ -11,15 +11,16 @@ using Windows.UI;
 
 namespace Ultimate_ZPL_Viewer;
 
-// Inspect mode: the preview and the code point at each other.
+// Selection: the preview and the code point at each other.
 //
 // Clicking an element on the label frames it and highlights the ZPL that produced
 // it; putting the caret on that ZPL frames the element back. Both directions read
 // the same thing — the source span each drawable carries out of the parser (see
 // ZplDrawable.SourceStart/SourceEnd) — so neither side has to guess.
 //
-// The mode is off by default: while it is on, a click on the preview selects rather
-// than doing nothing, and that is a change the user opts into from the toolbar.
+// This used to be a toolbar toggle of its own. It is now simply what EDIT mode
+// does: there is no reason to pick an element while nothing can be changed, and
+// no reason to have to ask for it once something can (see PreviewPage.Mode.cs).
 public sealed partial class PreviewPage
 {
     // Every element on the canvas and the drawable it came from, filled by
@@ -37,36 +38,8 @@ public sealed partial class PreviewPage
     // sides for as long as the editor kept reporting.
     private bool _syncingCaret;
 
-    private bool InspectOn => _settings.InspectMode;
-
-    // ── Toolbar toggle ───────────────────────────────────────────────────────
-
-    private void InspectButton_Click(object sender, RoutedEventArgs e)
-    {
-        _settings.InspectMode = !_settings.InspectMode;
-        _settings.Save();
-        ApplyInspectButtonState();
-        if (!InspectOn) ClearInspectSelection();
-    }
-
-    // Lit = on. The accent button style is swapped in rather than a hand-painted
-    // background: it tracks a custom accent colour on its own, and keeps the hover
-    // and pressed states that a locally-set Background would flatten.
-    private void ApplyInspectButtonState()
-    {
-        // Both states get a REAL style. Setting Style to null instead of the default
-        // one drops every value the style carried - CornerRadius among them, which
-        // falls back to 0 - while the template already applied keeps drawing: the
-        // button rendered with square corners only when it was off.
-        InspectButton.Style = (Style)Application.Current.Resources[
-            InspectOn ? "AccentButtonStyle" : "DefaultButtonStyle"];
-        // The marquee is a Rectangle, not a glyph, so its stroke has to be told
-        // which foreground it sits on.
-        InspectIcon.Stroke = (Brush)Application.Current.Resources[
-            InspectOn ? "TextOnAccentFillColorPrimaryBrush" : "TextFillColorPrimaryBrush"];
-        ToolTipService.SetToolTip(InspectButton,
-            LocalizationService.Get(InspectOn ? "toolbar.inspectOn" : "toolbar.inspectOff"));
-    }
+    // Selecting is edit mode's business, and nothing else's.
+    private bool InspectOn => _editMode;
 
     // ── Preview → code ───────────────────────────────────────────────────────
 

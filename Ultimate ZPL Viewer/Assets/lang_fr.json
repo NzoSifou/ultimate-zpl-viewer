@@ -28,8 +28,6 @@
     "zoomReset": "Réinitialiser le zoom (100 %)",
     "widthTooLarge": "La largeur dépasse 50 cm : l'aperçu est limité à 50 cm.",
     "heightTooLarge": "La hauteur dépasse 50 cm : l'aperçu est limité à 50 cm.",
-    "inspectOn": "Inspection active : cliquez un élément de l'aperçu pour voir son code, ou une ligne de code pour voir son élément",
-    "inspectOff": "Activer l'inspection : relier un élément de l'aperçu au code qui le produit",
     "sizeCapped": "limité"
   },
   "editor": {
@@ -1610,7 +1608,8 @@
         "coloring": "Coloration syntaxique",
         "preview": "Aperçu",
         "rulers": "Règles",
-        "layout": "Disposition"
+        "layout": "Disposition",
+        "mode": "Mode"
       },
       "cards": {
         "fontSize": {
@@ -1701,6 +1700,10 @@
         "selWidth": {
           "title": "Taille de la sélection",
           "desc": "Épaisseur du cadre d'inspection sur l'aperçu, en pixels."
+        },
+        "startMode": {
+          "title": "Mode au démarrage",
+          "desc": "Dans quel mode un document s'ouvre. « Dernier utilisé » rouvre le logiciel dans le mode que vous aviez quitté."
         }
       },
       "lbl": {
@@ -1721,6 +1724,11 @@
           "Fine",
           "Normale",
           "Large"
+        ],
+        "startMode": [
+          "Visualisation",
+          "Édition",
+          "Dernier utilisé"
         ]
       }
     },
@@ -2119,5 +2127,9 @@
     "printing": "Envoi à {printer}…",
     "saving": "Enregistrement de {file}…",
     "capturing": "Réception depuis l’imprimante virtuelle…"
+  },
+  "mode": {
+    "view": "Mode visualisation : le ZPL est affiché en lecture seule",
+    "edit": "Mode édition : modifiez le ZPL et l'étiquette directement dans l'aperçu"
   }
 }

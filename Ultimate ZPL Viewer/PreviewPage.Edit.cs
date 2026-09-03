@@ -212,6 +212,11 @@ public sealed partial class PreviewPage
             case VirtualKey.Right: dx = step; break;
             case VirtualKey.Up: dy = -step; break;
             case VirtualKey.Down: dy = step; break;
+            case VirtualKey.Delete:
+            case VirtualKey.Back:
+                e.Handled = true;
+                DeleteSelection();
+                return;
             default: return;
         }
         e.Handled = true;
@@ -355,6 +360,7 @@ public sealed partial class PreviewPage
         if (!_editMode || _selStart < 0 || _inspectFrame is null
             || _inspectFrame.Visibility != Visibility.Visible)
         {
+            ClearHandles();
             if (!typing) SelectionTools.Visibility = Visibility.Collapsed;
             return;
         }
@@ -365,15 +371,20 @@ public sealed partial class PreviewPage
             box = _inspectFrame.TransformToVisual(EditOverlay)
                 .TransformBounds(new Rect(0, 0, _inspectFrame.Width, _inspectFrame.Height));
         }
-        catch { SelectionTools.Visibility = Visibility.Collapsed; return; }
+        catch { ClearHandles(); SelectionTools.Visibility = Visibility.Collapsed; return; }
 
         RotateElementButton.Visibility = ZplPatcher.CanRotate(_currentText, _selStart, _selEnd)
             ? Visibility.Visible : Visibility.Collapsed;
+        ToolTipService.SetToolTip(RotateElementButton, TipBlock(LocalizationService.Get("mode.act.rotate")));
+        ToolTipService.SetToolTip(DuplicateElementButton, TipBlock(LocalizationService.Get("mode.act.duplicate")));
+        ToolTipService.SetToolTip(DeleteElementButton, TipBlock(LocalizationService.Get("mode.act.delete")));
         SelectionCoords.Text = SelectionPositionText();
         SelectionCoords.Visibility = SelectionCoords.Text.Length > 0
             ? Visibility.Visible : Visibility.Collapsed;
         // The content field, the symbology picker and the "…" button (Props.cs).
         RefreshSelectionProperties();
+        // The corner handles, for what ZPL can actually resize (Resize.cs).
+        UpdateResizeHandles(box);
 
         // Nothing left to show (a field with neither a rotation nor an origin).
         if (!typing

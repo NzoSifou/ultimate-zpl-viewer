@@ -2168,6 +2168,11 @@
         "even": "This symbology expects an even number of digits.",
         "charset": "This content has characters the symbology will not take."
       }
+    },
+    "act": {
+      "rotate": "Turn a quarter turn",
+      "duplicate": "Duplicate the element",
+      "delete": "Delete the element (Del)"
     }
   }
 }

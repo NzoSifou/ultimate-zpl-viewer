@@ -173,6 +173,7 @@ public sealed partial class PreviewPage
     {
         _selStart = _selEnd = -1;
         if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
+        ClearHandles();
         UpdateSelectionTools();
         PostToEditor("{\"type\":\"clearHighlight\"}");
     }

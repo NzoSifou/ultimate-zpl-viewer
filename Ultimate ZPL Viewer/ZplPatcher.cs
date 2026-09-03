@@ -355,6 +355,54 @@ public static class ZplPatcher
         return new Edit(code.Start, code.End, "^" + command + args + trail);
     }
 
+    // ── Removing and copying ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Takes the field out. The line break that followed it goes too, so deleting
+    /// an element does not leave a blank line behind every time.
+    /// </summary>
+    public static Edit? Delete(string zpl, int start, int end)
+    {
+        if (zpl is null || start < 0 || end > zpl.Length || start >= end) return null;
+        int stop = end;
+        if (stop < zpl.Length && zpl[stop] == '\r') stop++;
+        if (stop < zpl.Length && zpl[stop] == '\n') stop++;
+        return new Edit(start, stop, "");
+    }
+
+    /// <summary>
+    /// Writes a copy of the field just after it, shifted so the two do not sit on
+    /// top of each other. The copy's own ^FO is what moves — the original is not
+    /// touched at all.
+    /// </summary>
+    public static Edit? Duplicate(string zpl, int start, int end,
+                                  double dx, double dy, double dpmm)
+    {
+        if (zpl is null || start < 0 || end > zpl.Length || start >= end) return null;
+        var origin = FindOrigin(zpl, start, end);
+        if (origin is null) return null;
+
+        double scale = UnitScaleAt(zpl, origin.Start, dpmm);
+        if (scale <= 0) scale = 1;
+
+        var (lead, body, trail) = SplitArgs(origin.Args);
+        var parts = body.Length == 0 ? new List<string> { "", "" } : body.Split(',').ToList();
+        while (parts.Count < 2) parts.Add("");
+        parts[0] = Coord(Number(parts[0]) + dx / scale);
+        parts[1] = Coord(Number(parts[1]) + dy / scale);
+
+        // Rebuild the copy around its new origin, leaving everything else verbatim.
+        int argsAt = origin.End - origin.Args.Length;
+        string copy = zpl[start..argsAt]
+                    + lead + string.Join(",", parts) + trail
+                    + zpl[origin.End..end];
+        return new Edit(end, end, "\n" + copy);
+    }
+
+    /// <summary>The span of the field, for a caller that needs to read it back.</summary>
+    public static string Slice(string zpl, int start, int end)
+        => zpl is null || start < 0 || end > zpl.Length || start >= end ? "" : zpl[start..end];
+
     // ── Shared bits ─────────────────────────────────────────────────────────
 
     private static ZplToken? FindBarcode(string zpl, int start, int end)

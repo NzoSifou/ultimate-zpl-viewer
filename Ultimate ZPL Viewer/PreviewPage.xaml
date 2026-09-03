@@ -707,6 +707,10 @@
                          so a button parented there would grow and shrink with the
                          zoom. Placed by UpdateSelectionTools. -->
                     <Canvas x:Name="EditOverlay" Canvas.ZIndex="25">
+                        <!-- Resize handles. Filled at run time (PreviewPage.Resize.cs)
+                             and kept HERE, in screen space, so they stay the same
+                             size to the eye however far the preview is zoomed. -->
+                        <Canvas x:Name="ResizeHandles"/>
                         <Border x:Name="SelectionTools"
                                 Visibility="Collapsed"
                                 CornerRadius="6"
@@ -729,12 +733,27 @@
                                             CornerRadius="5">
                                         <FontIcon Glyph="&#xE7AD;" FontSize="13"/>
                                     </Button>
+                                    <Button x:Name="DuplicateElementButton"
+                                            Width="28" Height="26" MinWidth="0" Padding="0"
+                                            CornerRadius="5">
+                                        <FontIcon Glyph="&#xE8C8;" FontSize="13"/>
+                                    </Button>
+                                    <Button x:Name="DeleteElementButton"
+                                            Width="28" Height="26" MinWidth="0" Padding="0"
+                                            CornerRadius="5">
+                                        <FontIcon Glyph="&#xE74D;" FontSize="13"/>
+                                    </Button>
                                     <!-- What the field prints. Shown for anything with
                                          a ^FD: a text, a barcode, a QR code. -->
+                                    <!-- No fixed Height: the TextBox template puts its
+                                         text at the TOP of the content area and
+                                         ignores VerticalContentAlignment, so forcing
+                                         a height only squeezed it up there. The
+                                         padding gives the line its own room, and the
+                                         box takes the height that follows. -->
                                     <TextBox x:Name="SelectionData"
-                                             Width="170" Height="28" MinHeight="0"
-                                             Padding="8,0,8,0"
-                                             VerticalContentAlignment="Center"
+                                             Width="170" MinHeight="0"
+                                             Padding="8,5,8,5"
                                              VerticalAlignment="Center"
                                              FontSize="12"
                                              Visibility="Collapsed"/>

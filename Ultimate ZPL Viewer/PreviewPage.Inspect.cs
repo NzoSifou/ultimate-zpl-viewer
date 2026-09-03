@@ -34,6 +34,9 @@ public sealed partial class PreviewPage
 
     private Rectangle? _inspectFrame;
 
+    // Set while a second attempt at finding the selected element is pending.
+    private bool _frameRetry;
+
     // Set while WE move the caret, so the caret move that follows is not read back
     // as the user picking a line — which would bounce the selection between the two
     // sides for as long as the editor kept reporting.
@@ -185,22 +188,49 @@ public sealed partial class PreviewPage
             return;
         }
 
+        // The element's box is read from the live visual, so the canvas has to have
+        // been measured. Several redraws in a row — a character typed into the
+        // content box — outrun the layout pass, and every element then reports a
+        // size of zero. Forcing the pass here is what makes the frame keep up.
+        try { PreviewCanvas.UpdateLayout(); } catch { }
+
+        // Matched on the field's START alone. Its end moves with every edit inside
+        // it — a character typed into the content box — and tracking that by
+        // arithmetic drifts sooner or later; the start does not move unless the text
+        // BEFORE the field changes, and then the selection is meant to be lost. The
+        // end is taken from whatever was found, which also repairs any drift.
         Rect box = Rect.Empty;
+        int end = _selEnd;
         foreach (var (element, drawable) in _hitMap)
         {
-            if (drawable.SourceStart != _selStart || drawable.SourceEnd != _selEnd) continue;
+            if (drawable.SourceStart != _selStart) continue;
+            end = drawable.SourceEnd;
             var b = BoundsInCanvas(element);
             if (b.IsEmpty) continue;
             box = box.IsEmpty ? b : Union(box, b);
         }
+        _selEnd = end;
 
         if (box.IsEmpty)
         {
-            // The edit removed the element the selection pointed at.
+            // Either the edit removed the element, or the canvas simply has not been
+            // measured yet: redraws coming one after another — a character typed into
+            // the content field — outrun the layout pass, and every element reports a
+            // size of zero until it catches up. Ask once more before concluding the
+            // element is gone.
+            if (!_frameRetry)
+            {
+                _frameRetry = true;
+                DispatcherQueue.TryEnqueue(
+                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, UpdateInspectFrame);
+                return;
+            }
+            _frameRetry = false;
             if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
             UpdateSelectionTools();
             return;
         }
+        _frameRetry = false;
 
         EnsureInspectFrame();
         // The frame survives a redraw (it is re-parented, not rebuilt), so the

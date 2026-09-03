@@ -261,6 +261,12 @@ public sealed partial class PreviewPage
         if (!_isDirty) { _isDirty = true; UpdateDocumentTitle(); }
         RefreshPreview(SizeUpdate.TextEdited);
         ScheduleHighlighting();
+        // And ask the frame to find its element again once the new canvas has been
+        // measured. RefreshPreview posts that itself, but it declines to run at all
+        // when one redraw is already under way — which is exactly what happens when
+        // edits arrive one after another, a character at a time.
+        DispatcherQueue.TryEnqueue(
+            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, UpdateInspectFrame);
 
         // Monaco gets the same edits, for its undo stack and its own view of the
         // document. What comes back matches what is already here, so the echo is
@@ -341,10 +347,15 @@ public sealed partial class PreviewPage
     /// </summary>
     internal void UpdateSelectionTools()
     {
+        // Hiding the bar takes the focus out of whatever is being typed into it.
+        // While it holds the caret it stays, even if the element it belongs to
+        // momentarily has nothing to frame — emptying a field does exactly that.
+        bool typing = SelectionToolsHasFocus();
+
         if (!_editMode || _selStart < 0 || _inspectFrame is null
             || _inspectFrame.Visibility != Visibility.Visible)
         {
-            SelectionTools.Visibility = Visibility.Collapsed;
+            if (!typing) SelectionTools.Visibility = Visibility.Collapsed;
             return;
         }
 
@@ -365,7 +376,8 @@ public sealed partial class PreviewPage
         RefreshSelectionProperties();
 
         // Nothing left to show (a field with neither a rotation nor an origin).
-        if (RotateElementButton.Visibility == Visibility.Collapsed
+        if (!typing
+            && RotateElementButton.Visibility == Visibility.Collapsed
             && SelectionCoords.Visibility == Visibility.Collapsed
             && SelectionData.Visibility == Visibility.Collapsed)
         {
@@ -386,6 +398,20 @@ public sealed partial class PreviewPage
 
         Canvas.SetLeft(SelectionTools, left);
         Canvas.SetTop(SelectionTools, top);
+    }
+
+    /// <summary>Whether the caret sits somewhere inside the properties bar.</summary>
+    private bool SelectionToolsHasFocus()
+    {
+        if (XamlRoot is null) return false;
+        var focused = Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(XamlRoot)
+            as DependencyObject;
+        while (focused is not null)
+        {
+            if (ReferenceEquals(focused, SelectionTools)) return true;
+            focused = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(focused);
+        }
+        return false;
     }
 
     /// <summary>The selected field's origin, in the unit the user works in.</summary>

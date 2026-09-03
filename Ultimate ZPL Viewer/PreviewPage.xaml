@@ -732,27 +732,41 @@
                                     <!-- What the field prints. Shown for anything with
                                          a ^FD: a text, a barcode, a QR code. -->
                                     <TextBox x:Name="SelectionData"
-                                             Width="170" Height="26" MinHeight="0"
-                                             Padding="7,1,7,1"
+                                             Width="170" Height="28" MinHeight="0"
+                                             Padding="8,0,8,0"
+                                             VerticalContentAlignment="Center"
+                                             VerticalAlignment="Center"
                                              FontSize="12"
                                              Visibility="Collapsed"/>
                                     <ComboBox x:Name="SelectionKind"
-                                              MinWidth="118" Height="26" MinHeight="0"
+                                              MinWidth="118" Height="28" MinHeight="0"
                                               Padding="9,0,0,0"
+                                              VerticalContentAlignment="Center"
+                                              VerticalAlignment="Center"
                                               FontSize="12"
                                               Visibility="Collapsed"/>
-                                    <Button x:Name="SelectionMoreButton"
-                                            Width="28" Height="26" MinWidth="0" Padding="0"
-                                            CornerRadius="5"
-                                            Visibility="Collapsed">
-                                        <FontIcon Glyph="&#xE712;" FontSize="13"/>
-                                    </Button>
+                                    <!-- Opens the rest of the properties INSIDE the
+                                         plate, as a second row. A flyout put them on
+                                         top of the very element being edited. -->
+                                    <ToggleButton x:Name="SelectionMoreButton"
+                                                  Width="28" Height="28" MinWidth="0" Padding="0"
+                                                  CornerRadius="5"
+                                                  Visibility="Collapsed">
+                                        <FontIcon x:Name="SelectionMoreIcon" Glyph="&#xE70D;" FontSize="12"/>
+                                    </ToggleButton>
                                     <TextBlock x:Name="SelectionCoords"
                                                FontSize="11"
                                                Margin="2,0,4,0"
                                                VerticalAlignment="Center"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                 </StackPanel>
+                                <!-- The rest of the properties. Part of the plate,
+                                     so opening them pushes it further up and never
+                                     covers what is being edited. -->
+                                <StackPanel x:Name="SelectionProps"
+                                            Visibility="Collapsed"
+                                            Spacing="8"
+                                            Margin="6,2,6,4"/>
                                 <!-- Why the symbology refuses the content, when it
                                      does. One line, under the field it is about. -->
                                 <TextBlock x:Name="SelectionWarning"

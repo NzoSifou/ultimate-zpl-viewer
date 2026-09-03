@@ -21,28 +21,17 @@ public sealed partial class PreviewPage
 {
     private ZplPatcher.FieldFacts? _facts;
     private bool _fillingProps;          // guards the controls against their own events
-    private DispatcherTimer? _dataTimer;
     private bool _aspectLocked = true;
+    private int _propsBuiltFor = -1;     // the selection the open panel was built for
 
     private void InitSelectionProperties()
     {
-        SelectionData.TextChanged += (_, _) =>
-        {
-            if (_fillingProps) return;
-            // Typing shows up on the label as it goes, but not once per keystroke:
-            // that would be one undo step per letter and a reparse per frame.
-            _dataTimer ??= NewTimer(TimeSpan.FromMilliseconds(450), CommitData);
-            _dataTimer.Stop();
-            _dataTimer.Start();
-        };
-        SelectionData.KeyDown += (_, e) =>
-        {
-            if (e.Key != Windows.System.VirtualKey.Enter) return;
-            e.Handled = true;
-            _dataTimer?.Stop();
-            CommitData();
-        };
-        SelectionData.LostFocus += (_, _) => { _dataTimer?.Stop(); CommitData(); };
+        // Every keystroke goes straight to the label. It was held back for a
+        // moment to keep the undo history tidy, and that read as lag on the one
+        // thing that should feel immediate; one undo step per letter is the price,
+        // and it is the right way round.
+        SelectionData.TextChanged += (_, _) => { if (!_fillingProps) CommitData(); };
+        SelectionData.LostFocus += (_, _) => CommitData();
 
         SelectionKind.SelectionChanged += (_, _) =>
         {
@@ -50,14 +39,21 @@ public sealed partial class PreviewPage
             ChangeSymbology();
         };
 
-        SelectionMoreButton.Click += (_, _) => ShowPropertiesFlyout();
-    }
-
-    private DispatcherTimer NewTimer(TimeSpan interval, Action tick)
-    {
-        var timer = new DispatcherTimer { Interval = interval };
-        timer.Tick += (_, _) => { timer.Stop(); tick(); };
-        return timer;
+        SelectionMoreButton.Checked += (_, _) =>
+        {
+            _propsBuiltFor = -1;
+            RefreshPropertiesPanel();
+            // The plate just got taller: it has to be lifted by that much, or it
+            // grows down over the element it belongs to.
+            UpdateSelectionTools();
+        };
+        SelectionMoreButton.Unchecked += (_, _) =>
+        {
+            SelectionProps.Children.Clear();
+            SelectionProps.Visibility = Visibility.Collapsed;
+            SelectionMoreIcon.Glyph = "";
+            UpdateSelectionTools();
+        };
     }
 
     // ── Filling the bar ─────────────────────────────────────────────────────
@@ -90,14 +86,42 @@ public sealed partial class PreviewPage
                 SelectionKind.SelectedIndex = Array.FindIndex(BarcodeCatalog.All, s => s.Key == spec.Key);
             }
 
-            // The "…" button is only worth showing when it has something to open.
-            SelectionMoreButton.Visibility =
-                _facts.FontName is not null || _facts.Barcode is not null || _facts.Shape is not null
-                    ? Visibility.Visible : Visibility.Collapsed;
+            // Only worth offering when there is something to open.
+            bool expandable = _facts.FontName is not null
+                || _facts.Barcode is not null || _facts.Shape is not null;
+            SelectionMoreButton.Visibility = expandable ? Visibility.Visible : Visibility.Collapsed;
+            if (!expandable) SelectionMoreButton.IsChecked = false;
 
             ShowWarning(spec is null ? null : BarcodeCatalog.Validate(spec.Key, _facts.Data ?? ""));
         }
         finally { _fillingProps = false; }
+
+        RefreshPropertiesPanel();
+    }
+
+    /// <summary>
+    /// Builds the second row when it is open. Rebuilt only when the SELECTION
+    /// changes, not on every redraw: an edit made from a spin button would
+    /// otherwise tear the control out from under the pointer.
+    /// </summary>
+    private void RefreshPropertiesPanel()
+    {
+        if (SelectionMoreButton.IsChecked != true || _facts is null || _selStart < 0)
+            return;
+        SelectionMoreIcon.Glyph = "";
+        if (_propsBuiltFor == _selStart && SelectionProps.Children.Count > 0)
+        {
+            SelectionProps.Visibility = Visibility.Visible;
+            return;
+        }
+
+        _propsBuiltFor = _selStart;
+        SelectionProps.Children.Clear();
+        if (_facts.FontName is not null) BuildTextProperties(SelectionProps);
+        if (_facts.Barcode is not null) BuildBarcodeProperties(SelectionProps);
+        if (_facts.Shape is not null) BuildShapeProperties(SelectionProps);
+        SelectionProps.Visibility = SelectionProps.Children.Count > 0
+            ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void ShowWarning(string? message)
@@ -154,25 +178,6 @@ public sealed partial class PreviewPage
     }
 
     // ── Everything else, behind the "…" ─────────────────────────────────────
-
-    private void ShowPropertiesFlyout()
-    {
-        if (_facts is null || _selStart < 0) return;
-        double dpmm = SelectedDpmm > 0 ? SelectedDpmm : 8;
-
-        var panel = new StackPanel { Spacing = 10, MinWidth = 270 };
-
-        if (_facts.FontName is not null) BuildTextProperties(panel);
-        if (_facts.Barcode is not null) BuildBarcodeProperties(panel);
-        if (_facts.Shape is not null) BuildShapeProperties(panel);
-
-        var flyout = new Flyout
-        {
-            Content = panel,
-            Placement = FlyoutPlacementMode.Bottom,
-        };
-        flyout.ShowAt(SelectionMoreButton);
-    }
 
     // A label on the left, its control on the right — the settings-card shape,
     // shrunk to fit over a label.

@@ -83,6 +83,7 @@ public sealed partial class PreviewPage : Page
         RebuildToolbar(); // place the toolbar groups per the saved layout
         InitModeSwitch();
         InitEditGestures();
+        InitEditTools();
         PreviewScrollViewer.PointerWheelChanged += PreviewScrollViewer_PointerWheelChanged;
         RotateSplitButton.Click += RotateButton_Click;
         PreviewScrollViewer.PointerPressed      += PreviewScrollViewer_PointerPressed;
@@ -1800,11 +1801,22 @@ public sealed partial class PreviewPage : Page
 
     private void UpdatePreviewCursor()
     {
+        // A tool is armed: the next click puts something down, and the crosshair is
+        // what says so. It wins over the pan cursor — panning is not what this
+        // click is going to do.
+        if (_tool != EditTool.None)
+        {
+            PreviewCursorHost.SetCursor(CrosshairCursor);
+            return;
+        }
         // Hand only when the document overflows the viewport; the grab cursor
         // needs both: panning a fully visible document keeps the normal arrow.
         bool pannable = PreviewScrollViewer.ScrollableWidth > 0.5 || PreviewScrollViewer.ScrollableHeight > 0.5;
         PreviewCursorHost.SetCursor(!pannable ? null! : _isPanning ? PanGrabCursor : PanHandCursor);
     }
+
+    private static readonly Microsoft.UI.Input.InputCursor CrosshairCursor =
+        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Cross);
 
     private void PreviewScrollViewer_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -2996,6 +3008,13 @@ public sealed partial class PreviewPage : Page
             CloseSettings();
         };
         Root.KeyboardAccelerators.Add(escape);
+        // Undo/redo. Monaco owns the history — a drag on the preview is an edit
+        // like any other (see PreviewPage.Edit.cs) — but the keystroke only reaches
+        // it when the caret is inside it. From anywhere else on the page it comes
+        // through here and is forwarded.
+        Add(VirtualKey.Z, Ctrl, "undo");
+        Add(VirtualKey.Y, Ctrl, "redo");
+        Add(VirtualKey.Z, CtrlShift, "redo");
         Add(VirtualKey.B, Ctrl, "toggleToolbar");
         Add(VirtualKey.E, Ctrl, "toggleEditor");
         Add(VirtualKey.G, Ctrl, "toggleGrid");
@@ -3042,6 +3061,15 @@ public sealed partial class PreviewPage : Page
 
         switch (name)
         {
+            case "undo":
+            case "redo":
+                // A text field with the focus keeps its own undo: retyping a label
+                // size should not roll back the document.
+                if (XamlRoot is not null
+                    && Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(XamlRoot)
+                        is TextBox or RichEditBox) break;
+                PostToEditor(name == "redo" ? "{\"type\":\"redo\"}" : "{\"type\":\"undo\"}");
+                break;
             case "closeTab":
                 if (ActiveTabItem() is { Tag: DocTab selTab } sel)
                     _ = RequestCloseSingleAsync(sel, selTab);
@@ -5451,9 +5479,10 @@ public sealed partial class PreviewPage : Page
             ? null
             : ZplColorSchemeService.ParseHexColor(_settings.CustomAccent, Microsoft.UI.Colors.DodgerBlue),
             Root);
-        // The mode switch's outline is a brush we paint ourselves, so it does not
-        // follow the reloaded theme resources on its own.
+        // The mode switch and the tool plate are painted by hand, so they do not
+        // follow the reloaded theme resources on their own.
         ApplyModeButtons();
+        ApplyToolButtons();
     }
 
     private void ApplyEditorTheme()

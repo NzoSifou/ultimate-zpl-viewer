@@ -2130,6 +2130,18 @@
   },
   "mode": {
     "view": "Mode visualisation : le ZPL est affiché en lecture seule",
-    "edit": "Mode édition : modifiez le ZPL et l'étiquette directement dans l'aperçu"
+    "edit": "Mode édition : modifiez le ZPL et l'étiquette directement dans l'aperçu",
+    "tools": {
+      "select": "Sélectionner : cliquez un élément pour le déplacer ou le tourner",
+      "text": "Texte : cliquez sur l'étiquette pour poser une zone de texte",
+      "code": "Code-barres : choisissez une symbologie, puis cliquez sur l'étiquette",
+      "shape": "Forme : choisissez-la, puis cliquez ou faites glisser pour la dimensionner",
+      "fill": "Bloc plein : cliquez ou faites glisser pour le dimensionner",
+      "rect": "Rectangle",
+      "line": "Ligne",
+      "ellipse": "Ellipse",
+      "circle": "Cercle",
+      "sampleText": "Texte"
+    }
   }
 }

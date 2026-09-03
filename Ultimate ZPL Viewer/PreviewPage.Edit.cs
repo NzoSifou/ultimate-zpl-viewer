@@ -73,6 +73,10 @@ public sealed partial class PreviewPage
         if (!_editMode) return;
         if (!e.GetCurrentPoint(PreviewCanvas).Properties.IsLeftButtonPressed) return;
 
+        // A tool is armed: this press puts something down rather than picking
+        // something up.
+        if (BeginPlacement(e)) return;
+
         var hit = DrawableAt(e.GetCurrentPoint(null).Position, e.GetCurrentPoint(PreviewCanvas).Position);
         if (hit is null || hit.SourceStart < 0)
         {
@@ -103,6 +107,7 @@ public sealed partial class PreviewPage
 
     private void PreviewCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
+        if (_placing) { UpdatePlacement(e); return; }
         if (!_dragging) return;
         // The button came back up somewhere we never heard about (outside the
         // window, or swallowed by the manipulation): close the gesture here.
@@ -135,6 +140,7 @@ public sealed partial class PreviewPage
 
     private void PreviewCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
     {
+        if (_placing) { FinishPlacement(e.GetCurrentPoint(PreviewCanvas).Position); return; }
         FinishDrag();
     }
 
@@ -195,20 +201,9 @@ public sealed partial class PreviewPage
 
     private void PreviewHost_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (!_editMode) return;
-
-        // Undo has to work from here too. Dragging an element leaves the focus on
-        // the preview, and the history lives in the editor: the keystroke is
-        // forwarded rather than a second history kept on this side.
-        if (IsHeld(VirtualKey.Control) && e.Key is VirtualKey.Z or VirtualKey.Y)
-        {
-            bool redo = e.Key == VirtualKey.Y || IsHeld(VirtualKey.Shift);
-            PostToEditor(redo ? "{\"type\":\"redo\"}" : "{\"type\":\"undo\"}");
-            e.Handled = true;
-            return;
-        }
-
-        if (_selStart < 0 || _dragging) return;
+        // Ctrl+Z is a page-wide accelerator now (RegisterShortcuts): it has to work
+        // whether the focus landed on the preview, the toolbar or nowhere at all.
+        if (!_editMode || _selStart < 0 || _dragging) return;
         double step = IsHeld(VirtualKey.Shift) ? 10 : 1;
         double dx = 0, dy = 0;
         switch (e.Key)

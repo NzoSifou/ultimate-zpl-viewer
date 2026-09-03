@@ -626,6 +626,72 @@
                             Background="{ThemeResource PreviewRulerBrush}"
                             Visibility="Collapsed"/>
 
+                    <!-- Insertion toolbar, edit mode only: a floating plate down
+                         the LEFT edge of the preview, the way every drawing tool
+                         puts it. Clicking a tool arms it; the next click on the
+                         label places the element (drag to size the shapes). The
+                         armed tool is filled with the accent, like the mode plate.
+                         Icons are DRAWN rather than taken from the icon font: there
+                         is no barcode glyph in it, and a half-drawn set would read
+                         worse than a consistent one. -->
+                    <Border x:Name="EditToolbar"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="24,10,0,0"
+                            Canvas.ZIndex="30"
+                            Visibility="Collapsed"
+                            CornerRadius="8"
+                            Padding="4"
+                            Background="{ThemeResource FloatPlateBrush}"
+                            BorderBrush="{ThemeResource SurfaceStrokeBrush}"
+                            BorderThickness="1">
+                        <StackPanel Orientation="Vertical" Spacing="3">
+                            <StackPanel.Resources>
+                                <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>
+                                <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SubtleFillColorSecondaryBrush"/>
+                                <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SubtleFillColorTertiaryBrush"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrush" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
+                            </StackPanel.Resources>
+                            <Button x:Name="ToolSelectButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
+                                <Path x:Name="ToolSelectIcon"
+                                      Width="12" Height="14" Stretch="Uniform"
+                                      Data="M 0,0 L 0,13 L 3.4,9.8 L 5.6,14 L 7.8,12.9 L 5.6,8.9 L 10,8.6 Z"/>
+                            </Button>
+                            <Rectangle Height="1" Margin="5,2"
+                                       Fill="{ThemeResource SurfaceStrokeBrush}"/>
+                            <Button x:Name="ToolTextButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
+                                <TextBlock x:Name="ToolTextIcon" Text="T"
+                                           FontSize="16" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                            <Button x:Name="ToolCodeButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
+                                <StackPanel x:Name="ToolCodeIcon" Orientation="Horizontal"
+                                            Height="13" VerticalAlignment="Center">
+                                    <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
+                                    <Rectangle Width="3" Margin="0,0,1.5,0"/>
+                                    <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
+                                    <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
+                                    <Rectangle Width="3"/>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="ToolShapeButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
+                                <Rectangle x:Name="ToolShapeIcon"
+                                           Width="14" Height="11" StrokeThickness="1.4"
+                                           Fill="Transparent"/>
+                            </Button>
+                            <Button x:Name="ToolFillButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
+                                <Rectangle x:Name="ToolFillIcon"
+                                           Width="14" Height="11" RadiusX="1.5" RadiusY="1.5"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
                     <!-- Tools attached to the current selection in edit mode.
                          They live HERE, in screen space, rather than on the canvas:
                          the canvas is in label dots and the ScrollViewer scales it,

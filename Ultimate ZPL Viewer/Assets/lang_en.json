@@ -2130,6 +2130,18 @@
   },
   "mode": {
     "view": "View mode: the ZPL is shown read-only",
-    "edit": "Edit mode: change the ZPL, or the label straight from the preview"
+    "edit": "Edit mode: change the ZPL, or the label straight from the preview",
+    "tools": {
+      "select": "Select: click an element to move or turn it",
+      "text": "Text: click the label to drop a text field",
+      "code": "Barcode: pick a symbology, then click the label",
+      "shape": "Shape: pick one, then click or drag to size it",
+      "fill": "Solid block: click or drag to size it",
+      "rect": "Rectangle",
+      "line": "Line",
+      "ellipse": "Ellipse",
+      "circle": "Circle",
+      "sampleText": "Text"
+    }
   }
 }

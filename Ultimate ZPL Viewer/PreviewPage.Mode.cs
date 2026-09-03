@@ -61,6 +61,7 @@ public sealed partial class PreviewPage
     private void ApplyMode()
     {
         ApplyModeButtons();
+        ApplyEditToolbar();
         ApplyEditorOptions();           // carries readOnly
         // Leaving edit mode drops the selection: its frame and its handles have no
         // meaning in a mode where nothing can be moved.

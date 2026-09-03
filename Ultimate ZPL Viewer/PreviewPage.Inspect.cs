@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.UI.Xaml;
@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using Windows.Foundation;
+using System.Numerics;
 using Windows.UI;
 
 namespace Ultimate_ZPL_Viewer;
@@ -43,23 +44,24 @@ public sealed partial class PreviewPage
 
     // ── Preview → code ───────────────────────────────────────────────────────
 
-    private void PreviewCanvas_Tapped(object sender, TappedRoutedEventArgs e)
+    /// <summary>
+    /// The drawable under the pointer, or null. The press handler in
+    /// PreviewPage.Edit.cs is the one caller: picking and starting to drag are the
+    /// same gesture, so both have to happen on the way DOWN.
+    /// </summary>
+    /// <param name="hostPoint">Window coordinates — what the hit test wants.</param>
+    /// <param name="canvasPoint">Label dots — what the fallback box test wants.</param>
+    internal ZplDrawable? DrawableAt(Point hostPoint, Point canvasPoint)
     {
-        if (!InspectOn) return;
-
-        // Host coordinates: what FindElementsInHostCoordinates expects.
         var hit = VisualTreeHelper
-            .FindElementsInHostCoordinates(e.GetPosition(null), PreviewCanvas)
+            .FindElementsInHostCoordinates(hostPoint, PreviewCanvas)
             .OfType<UIElement>()
             .Select(el => _hitMap.TryGetValue(el, out var d) ? d : null)
             .FirstOrDefault(d => d is not null);
 
         // Barcodes are a crowd of thin bars: a click landing in a white gap hits
         // nothing, so fall back to whichever field's box contains the point.
-        hit ??= DrawableAtPoint(e.GetPosition(PreviewCanvas));
-
-        if (hit is null || hit.SourceStart < 0) { ClearInspectSelection(); return; }
-        SelectSpan(hit.SourceStart, hit.SourceEnd, revealInEditor: true);
+        return hit ?? DrawableAtPoint(canvasPoint);
     }
 
     // Smallest field box containing the point — the tie-break when a click misses
@@ -168,6 +170,7 @@ public sealed partial class PreviewPage
     {
         _selStart = _selEnd = -1;
         if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
+        UpdateSelectionTools();
         PostToEditor("{\"type\":\"clearHighlight\"}");
     }
 
@@ -178,6 +181,7 @@ public sealed partial class PreviewPage
         if (!InspectOn || _selStart < 0)
         {
             if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
+            UpdateSelectionTools();
             return;
         }
 
@@ -194,10 +198,14 @@ public sealed partial class PreviewPage
         {
             // The edit removed the element the selection pointed at.
             if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
+            UpdateSelectionTools();
             return;
         }
 
         EnsureInspectFrame();
+        // The frame survives a redraw (it is re-parented, not rebuilt), so the
+        // offset a drag left on it has to be cleared or it would be applied twice.
+        if (!_dragging) _inspectFrame!.Translation = default;
         // A couple of dots of air, so the frame reads as around the element rather
         // than as part of it.
         const double pad = 2;
@@ -207,6 +215,7 @@ public sealed partial class PreviewPage
         Canvas.SetTop(_inspectFrame, box.Y - pad);
         _inspectFrame.Visibility = Visibility.Visible;
         UpdateInspectFrameThickness();
+        UpdateSelectionTools();
     }
 
     private void EnsureInspectFrame()

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -403,6 +403,28 @@
                         editor.updateOptions(o);
                         if (typeof msg.minimap === 'boolean') window._minimapWanted = msg.minimap;
                         updateMinimap();
+                    } else if (msg.type === 'undo' || msg.type === 'redo') {
+                        // Asked for from the PREVIEW, where the focus sits after an
+                        // element has been dragged. The history is Monaco's, so the
+                        // request has to come back here rather than be kept twice.
+                        editor.trigger('app', msg.type, null);
+                    } else if (msg.type === 'applyEdit') {
+                        // An edit made from the PREVIEW (dragging an element,
+                        // turning it). It goes through executeEdits rather than
+                        // setValue so it lands on Monaco's own undo stack: Ctrl+Z
+                        // then undoes a drag exactly like it undoes typing, and
+                        // there is only ever one history for the document.
+                        var em = editor.getModel();
+                        if (em) {
+                            var ps = em.getPositionAt(msg.start);
+                            var pe = em.getPositionAt(msg.end);
+                            editor.executeEdits('zpl-canvas', [{
+                                range: new monaco.Range(ps.lineNumber, ps.column, pe.lineNumber, pe.column),
+                                text: msg.text,
+                                forceMoveMarkers: true
+                            }]);
+                            editor.pushUndoStop();
+                        }
                     } else if (msg.type === 'applyDecorations') {
                         window._lastRuns = msg.runs;
                         reapplyDecorations();

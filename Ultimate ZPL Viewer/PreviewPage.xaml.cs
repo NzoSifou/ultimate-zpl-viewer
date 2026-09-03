@@ -82,7 +82,7 @@ public sealed partial class PreviewPage : Page
         ApplyPreviewCaptionVisibility();
         RebuildToolbar(); // place the toolbar groups per the saved layout
         InitModeSwitch();
-        PreviewCanvas.Tapped += PreviewCanvas_Tapped;
+        InitEditGestures();
         PreviewScrollViewer.PointerWheelChanged += PreviewScrollViewer_PointerWheelChanged;
         RotateSplitButton.Click += RotateButton_Click;
         PreviewScrollViewer.PointerPressed      += PreviewScrollViewer_PointerPressed;
@@ -99,6 +99,9 @@ public sealed partial class PreviewPage : Page
             // and pinch/native zoom never goes through our own code).
             if (!e.IsIntermediate) CaptureSettledZoom();
             UpdateInspectFrameThickness();
+            // The tools bar is in screen space: zooming or scrolling moves the
+            // element under it without moving it.
+            UpdateSelectionTools();
             UpdatePreviewCaption();
             DrawRulers();
         };
@@ -1805,6 +1808,9 @@ public sealed partial class PreviewPage : Page
 
     private void PreviewScrollViewer_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
+        // Edit mode took this press to drag an element: panning would fight it for
+        // the same gesture.
+        if (_dragging) return;
         if (!e.GetCurrentPoint(PreviewScrollViewer).Properties.IsLeftButtonPressed) return;
         _isPanning = true;
         _panStart  = e.GetCurrentPoint(PreviewScrollViewer).Position;

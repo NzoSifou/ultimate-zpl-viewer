@@ -2840,6 +2840,13 @@ public static partial class ZplRenderer
         return s.Trim();
     }
 
+    /// <summary>
+    /// The command stream, for code that edits the ZPL rather than draws it
+    /// (ZplPatcher). Exposed so the editor splits commands exactly the way the
+    /// renderer does — a second scanner would drift away from this one.
+    /// </summary>
+    internal static IReadOnlyList<ZplToken> TokenizeForEditing(string zpl) => Tokenize(zpl);
+
     private static IReadOnlyList<ZplToken> Tokenize(string zpl)
     {
         var tokens = new List<ZplToken>();

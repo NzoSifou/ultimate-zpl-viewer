@@ -2142,6 +2142,32 @@
       "ellipse": "Ellipse",
       "circle": "Circle",
       "sampleText": "Text"
+    },
+    "props": {
+      "textSection": "Text",
+      "codeSection": "Code",
+      "shapeSection": "Shape",
+      "font": "Font",
+      "fontScalable": "0 (scalable)",
+      "height": "Height",
+      "width": "Width",
+      "lockAspect": "Tie the width to the height",
+      "reverse": "Reversed (^FR)",
+      "barHeight": "Bar height",
+      "module": "Module size",
+      "moduleWidth": "Bar width (^BY)",
+      "humanReadable": "Readable text",
+      "shapeWidth": "Width",
+      "shapeHeight": "Height",
+      "diameter": "Diameter",
+      "thickness": "Thickness",
+      "invalid": {
+        "empty": "This code has no content: nothing will print.",
+        "digits": "This symbology expects {n} digits.",
+        "digitsOnly": "This symbology only accepts digits.",
+        "even": "This symbology expects an even number of digits.",
+        "charset": "This content has characters the symbology will not take."
+      }
     }
   }
 }

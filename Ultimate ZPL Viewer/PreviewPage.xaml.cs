@@ -84,6 +84,7 @@ public sealed partial class PreviewPage : Page
         InitModeSwitch();
         InitEditGestures();
         InitEditTools();
+        InitSelectionProperties();
         PreviewScrollViewer.PointerWheelChanged += PreviewScrollViewer_PointerWheelChanged;
         RotateSplitButton.Click += RotateButton_Click;
         PreviewScrollViewer.PointerPressed      += PreviewScrollViewer_PointerPressed;

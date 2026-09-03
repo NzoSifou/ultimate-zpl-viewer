@@ -416,14 +416,23 @@
                         // there is only ever one history for the document.
                         var em = editor.getModel();
                         if (em) {
-                            var ps = em.getPositionAt(msg.start);
-                            var pe = em.getPositionAt(msg.end);
-                            editor.executeEdits('zpl-canvas', [{
-                                range: new monaco.Range(ps.lineNumber, ps.column, pe.lineNumber, pe.column),
-                                text: msg.text,
-                                forceMoveMarkers: true
-                            }]);
-                            editor.pushUndoStop();
+                            // Several at once when one change touches two commands
+                            // (swapping a symbology rewrites its data too). Monaco
+                            // resolves every range against the ORIGINAL document and
+                            // makes them one undo step, which is what we want.
+                            var ops = (msg.edits || []).map(function (ed) {
+                                var ps = em.getPositionAt(ed.start);
+                                var pe = em.getPositionAt(ed.end);
+                                return {
+                                    range: new monaco.Range(ps.lineNumber, ps.column, pe.lineNumber, pe.column),
+                                    text: ed.text,
+                                    forceMoveMarkers: true
+                                };
+                            });
+                            if (ops.length) {
+                                editor.executeEdits('zpl-canvas', ops);
+                                editor.pushUndoStop();
+                            }
                         }
                     } else if (msg.type === 'applyDecorations') {
                         window._lastRuns = msg.runs;

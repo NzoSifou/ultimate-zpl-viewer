@@ -2142,6 +2142,32 @@
       "ellipse": "Ellipse",
       "circle": "Cercle",
       "sampleText": "Texte"
+    },
+    "props": {
+      "textSection": "Texte",
+      "codeSection": "Code",
+      "shapeSection": "Forme",
+      "font": "Police",
+      "fontScalable": "0 (échelonnable)",
+      "height": "Hauteur",
+      "width": "Largeur",
+      "lockAspect": "Lier la largeur à la hauteur",
+      "reverse": "Inversé (^FR)",
+      "barHeight": "Hauteur des barres",
+      "module": "Taille du module",
+      "moduleWidth": "Largeur de barre (^BY)",
+      "humanReadable": "Texte lisible",
+      "shapeWidth": "Largeur",
+      "shapeHeight": "Hauteur",
+      "diameter": "Diamètre",
+      "thickness": "Épaisseur",
+      "invalid": {
+        "empty": "Ce code n'a aucun contenu : rien ne sera imprimé.",
+        "digits": "Cette symbologie attend {n} chiffres.",
+        "digitsOnly": "Cette symbologie n'accepte que des chiffres.",
+        "even": "Cette symbologie attend un nombre pair de chiffres.",
+        "charset": "Ce contenu contient des caractères que cette symbologie refuse."
+      }
     }
   }
 }

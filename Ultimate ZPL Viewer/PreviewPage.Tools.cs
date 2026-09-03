@@ -51,33 +51,17 @@ public sealed partial class PreviewPage
 
     // ── The two menus ───────────────────────────────────────────────────────
 
-    // One button for every symbology rather than one per code: a dozen buttons
-    // down the side would bury the four that get used.
-    private static readonly (string Key, string Label)[] BarcodeKinds =
-    {
-        ("code128",  "Code 128"),
-        ("gs1-128",  "GS1-128"),
-        ("code39",   "Code 39"),
-        ("code93",   "Code 93"),
-        ("ean13",    "EAN-13"),
-        ("ean8",     "EAN-8"),
-        ("upca",     "UPC-A"),
-        ("itf",      "ITF (2 sur 5)"),
-        ("codabar",  "Codabar"),
-        ("",         ""),               // separator
-        ("qr",       "QR Code"),
-        ("datamatrix", "Data Matrix"),
-        ("aztec",    "Aztec"),
-        ("pdf417",   "PDF417"),
-    };
-
+    // The symbologies live in BarcodeCatalog, shared with the properties bar: a
+    // code offered here that the picker did not know would be a trap.
     private MenuFlyout BuildCodeFlyout()
     {
         var flyout = new MenuFlyout { Placement = FlyoutPlacementMode.Right };
-        foreach (var (key, label) in BarcodeKinds)
+        bool separated = false;
+        foreach (var spec in BarcodeCatalog.All)
         {
-            if (key.Length == 0) { flyout.Items.Add(new MenuFlyoutSeparator()); continue; }
-            var item = new MenuFlyoutItem { Text = label, Tag = key };
+            // One rule between the linear symbols and the two-dimensional ones.
+            if (spec.TwoD && !separated) { flyout.Items.Add(new MenuFlyoutSeparator()); separated = true; }
+            var item = new MenuFlyoutItem { Text = spec.Label, Tag = spec.Key };
             item.Click += (s, _) =>
             {
                 _barcodeKind = (string)((MenuFlyoutItem)s).Tag;
@@ -138,7 +122,7 @@ public sealed partial class PreviewPage
         Dress(ToolCodeButton, _tool == EditTool.Barcode, ToolCodeIcon.Children.OfType<Shape>().ToArray());
         Dress(ToolShapeButton,
             _tool is EditTool.Rect or EditTool.Line or EditTool.Ellipse or EditTool.Circle,
-            ToolShapeIcon);
+            ToolShapeIconRect, ToolShapeIconEllipse);
         Dress(ToolFillButton, _tool == EditTool.Fill, ToolFillIcon);
 
         ToolTipService.SetToolTip(ToolSelectButton, TipBlock(SL2("select")));
@@ -282,31 +266,13 @@ public sealed partial class PreviewPage
         }
     }
 
-    // Sample data per symbology: what each one actually accepts. An EAN-13 seeded
-    // with letters would draw nothing and read as a broken tool.
     private string BuildBarcodeSnippet(string origin, int height, double dpmm)
     {
-        int mag = Math.Max(2, (int)Math.Round(dpmm / 2));   // 2D module size
-        string h = height.ToString(CultureInfo.InvariantCulture);
-        string m = mag.ToString(CultureInfo.InvariantCulture);
-        return _barcodeKind switch
-        {
-            "code128" => $"{origin}^BY2^BCN,{h},Y,N,N^FD1234567890^FS",
-            // AI (01) + a full 14-digit GTIN, in the >; >8 form the printers expect.
-            "gs1-128" => $"{origin}^BY2^BCN,{h},Y,N,Y^FD>;>80112345678901231^FS",
-            "code39"  => $"{origin}^BY2^B3N,N,{h},Y,N^FDABC123^FS",
-            "code93"  => $"{origin}^BY2^BAN,{h},Y,N^FDABC123^FS",
-            "ean13"   => $"{origin}^BY2^BEN,{h},Y,N^FD123456789012^FS",
-            "ean8"    => $"{origin}^BY2^B8N,{h},Y,N^FD1234567^FS",
-            "upca"    => $"{origin}^BY2^BUN,{h},Y,N^FD12345678901^FS",
-            "itf"     => $"{origin}^BY2^B2N,{h},Y,N,N^FD12345678^FS",
-            "codabar" => $"{origin}^BY2^BKN,N,{h},Y,N,A,A^FD12345^FS",
-            "qr"          => $"{origin}^BQN,2,{m}^FDQA,https://example.com^FS",
-            "datamatrix"  => $"{origin}^BXN,{m},200^FDDATA-MATRIX^FS",
-            "aztec"       => $"{origin}^BON,{m}^FDAZTEC^FS",
-            "pdf417"      => $"{origin}^B7N,{m},5^FDPDF417^FS",
-            _ => $"{origin}^BY2^BCN,{h},Y,N,N^FD1234567890^FS",
-        };
+        var spec = BarcodeCatalog.ByKey(_barcodeKind) ?? BarcodeCatalog.All[0];
+        int module = Math.Max(2, (int)Math.Round(dpmm / 2));
+        // ^BY only means anything to the linear symbols.
+        string by = spec.TwoD ? "" : "^BY2";
+        return $"{origin}{by}^{spec.Command}{spec.Args(height, module)}^FD{spec.Sample}^FS";
     }
 
     /// <summary>

@@ -225,26 +225,53 @@ public sealed partial class PreviewPage
     /// and comes back as an ordinary text change, so the dirty flag, the
     /// highlighting, the analysis and the redraw all react as if it were typed.
     /// </summary>
-    private void ApplyEdit(ZplPatcher.Edit edit)
+    private void ApplyEdit(ZplPatcher.Edit edit) => ApplyEdits(new[] { edit });
+
+    /// <summary>
+    /// Applies several replacements as ONE change. Every range is measured against
+    /// the document as it stands now — Monaco resolves them together — so callers
+    /// never have to compensate for each other's offsets.
+    /// </summary>
+    private void ApplyEdits(IReadOnlyList<ZplPatcher.Edit> edits)
     {
-        if (edit.Start < 0 || edit.End > _currentText.Length || edit.Start > edit.End) return;
+        var valid = edits
+            .Where(e => e.Start >= 0 && e.End <= _currentText.Length && e.Start <= e.End)
+            .OrderBy(e => e.Start)
+            .ToList();
+        if (valid.Count == 0) return;
 
         // The selection is remembered as a span of the text: an edit inside it that
         // changes its length moves its end.
-        int delta = edit.Text.Length - (edit.End - edit.Start);
-        if (_selStart >= 0 && edit.Start >= _selStart && edit.End <= _selEnd) _selEnd += delta;
+        foreach (var edit in valid)
+        {
+            int delta = edit.Text.Length - (edit.End - edit.Start);
+            if (_selStart >= 0 && edit.Start >= _selStart && edit.End <= _selEnd) _selEnd += delta;
+        }
 
+        // The same edits are applied HERE as well, right away, rather than waiting
+        // for Monaco to echo the document back. Two changes in quick succession —
+        // a spinner clicked twice, a height that drags its width along — would
+        // otherwise both be computed against a text one round trip out of date, and
+        // the second would cut at the wrong offset. It also puts the change on the
+        // label immediately instead of a frame later.
+        var text = _currentText;
+        foreach (var edit in valid.OrderByDescending(e => e.Start))
+            text = text[..edit.Start] + edit.Text + text[edit.End..];
+        _currentText = text;
+        if (!_isDirty) { _isDirty = true; UpdateDocumentTitle(); }
+        RefreshPreview(SizeUpdate.TextEdited);
+        ScheduleHighlighting();
+
+        // Monaco gets the same edits, for its undo stack and its own view of the
+        // document. What comes back matches what is already here, so the echo is
+        // recognised as ours and changes nothing a second time.
         if (_editorReady)
         {
-            PostToEditor("{\"type\":\"applyEdit\"," +
-                         $"\"start\":{edit.Start},\"end\":{edit.End}," +
-                         $"\"text\":{System.Text.Json.JsonSerializer.Serialize(edit.Text)}}}");
-            return;
+            var parts = valid.Select(e =>
+                $"{{\"start\":{e.Start},\"end\":{e.End}," +
+                $"\"text\":{System.Text.Json.JsonSerializer.Serialize(e.Text)}}}");
+            PostToEditor("{\"type\":\"applyEdit\",\"edits\":[" + string.Join(",", parts) + "]}");
         }
-        // No editor to route through (it is still loading): splice directly. The
-        // step is lost to undo, which is the lesser of the two evils.
-        SetEditorText(_currentText[..edit.Start] + edit.Text + _currentText[edit.End..],
-                      SizeUpdate.TextEdited);
     }
 
     // ── The moving picture ──────────────────────────────────────────────────
@@ -334,10 +361,13 @@ public sealed partial class PreviewPage
         SelectionCoords.Text = SelectionPositionText();
         SelectionCoords.Visibility = SelectionCoords.Text.Length > 0
             ? Visibility.Visible : Visibility.Collapsed;
+        // The content field, the symbology picker and the "…" button (Props.cs).
+        RefreshSelectionProperties();
 
         // Nothing left to show (a field with neither a rotation nor an origin).
         if (RotateElementButton.Visibility == Visibility.Collapsed
-            && SelectionCoords.Visibility == Visibility.Collapsed)
+            && SelectionCoords.Visibility == Visibility.Collapsed
+            && SelectionData.Visibility == Visibility.Collapsed)
         {
             SelectionTools.Visibility = Visibility.Collapsed;
             return;

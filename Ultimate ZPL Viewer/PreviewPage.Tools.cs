@@ -381,9 +381,10 @@ public sealed partial class PreviewPage
         ApplyEdit(new ZplPatcher.Edit(at, at, text));
 
         // Point the selection at what was just written, so the element comes up
-        // framed and ready to be moved (the redraw that follows finds it by span).
-        _selStart = at + prefix.Length;
-        _selEnd = _selStart + snippet.Length;
+        // framed and ready to be moved. Through SelectSpan, so the editor highlights
+        // the new field as well as the label framing it.
+        int at2 = at + prefix.Length;
+        SelectSpan(at2, at2 + snippet.Length, revealInEditor: false);
         PreviewCursorHost.Focus(FocusState.Programmatic);
     }
 

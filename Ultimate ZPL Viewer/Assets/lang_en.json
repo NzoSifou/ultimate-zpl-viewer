@@ -2175,7 +2175,9 @@
     "act": {
       "rotate": "Turn a quarter turn",
       "duplicate": "Duplicate the element",
-      "delete": "Delete the element (Del)"
+      "delete": "Delete the element (Del)",
+      "forward": "Bring forward (drawn over the next one)",
+      "backward": "Send backward (drawn under the previous one)"
     }
   }
 }

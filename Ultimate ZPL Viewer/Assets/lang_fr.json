@@ -2175,7 +2175,9 @@
     "act": {
       "rotate": "Tourner d'un quart de tour",
       "duplicate": "Dupliquer l'élément",
-      "delete": "Supprimer l'élément (Suppr)"
+      "delete": "Supprimer l'élément (Suppr)",
+      "forward": "Avancer d'un rang (dessiné par-dessus le suivant)",
+      "backward": "Reculer d'un rang (dessiné sous le précédent)"
     }
   }
 }

@@ -390,6 +390,8 @@ public sealed partial class PreviewPage
         RefreshSelectionProperties();
         // The corner handles, for what ZPL can actually resize (Resize.cs).
         UpdateResizeHandles(box);
+        // Forward / backward, when there is a neighbour to step past (Order.cs).
+        UpdateOrderButtons();
 
         // Nothing left to show (a field with neither a rotation nor an origin).
         if (!typing

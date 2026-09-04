@@ -2141,7 +2141,9 @@
       "line": "Ligne",
       "ellipse": "Ellipse",
       "circle": "Cercle",
-      "sampleText": "Texte"
+      "sampleText": "Texte",
+      "linear": "Linéaires",
+      "twoD": "Codes 2D"
     },
     "props": {
       "textSection": "Texte",

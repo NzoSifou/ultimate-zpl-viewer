@@ -89,6 +89,11 @@ public sealed partial class PreviewPage
         ToolTipService.SetToolTip(EditModeButton, TipBlock(LocalizationService.Get("mode.edit")));
     }
 
+    // Air between the plate and the window's right edge. Wider than the gap above
+    // it: that edge is a hard boundary, and the preview's vertical scrollbar
+    // appears in the same strip.
+    private const double ModeSwitchRightMargin = 24;
+
     /// <summary>
     /// Keeps the switch clear of the horizontal ruler, which overlays the top of
     /// the preview rather than taking layout space: without this the plate sits on
@@ -97,7 +102,9 @@ public sealed partial class PreviewPage
     private void UpdateModeSwitchMargin()
     {
         double top = 10 + (_settings.ShowRulerHorizontal ? RulerBandDip : 0);
-        ModeSwitch.Margin = new Thickness(0, top, 0, 0);
+        // The right margin has to be repeated here. This assignment REPLACES the one
+        // the XAML set, and leaving it at zero is what glued the plate to the edge.
+        ModeSwitch.Margin = new Thickness(0, top, ModeSwitchRightMargin, 0);
     }
 
     // WinUI never shows a ToolTip instance handed straight to ToolTipService, and

@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Collections.Generic;
@@ -43,8 +44,14 @@ public sealed partial class PreviewPage
     {
         ToolSelectButton.Click += (_, _) => SetTool(EditTool.None);
         ToolTextButton.Click += (_, _) => SetTool(EditTool.Text);
-        ToolCodeButton.Flyout = BuildCodeFlyout();
-        ToolShapeButton.Flyout = BuildShapeFlyout();
+        var codes = BuildCodeFlyout();
+        var shapes = BuildShapeFlyout();
+        ToolCodeButton.Flyout = codes;
+        ToolShapeButton.Flyout = shapes;
+        // Picker() remembers the last one BUILT; remember the last one OPENED, so a
+        // tile closes the flyout it actually belongs to.
+        codes.Opening += (_, _) => _openPicker = codes;
+        shapes.Opening += (_, _) => _openPicker = shapes;
         ToolFillButton.Click += (_, _) => SetTool(EditTool.Fill);
         ApplyToolButtons();
     }
@@ -53,39 +60,105 @@ public sealed partial class PreviewPage
 
     // The symbologies live in BarcodeCatalog, shared with the properties bar: a
     // code offered here that the picker did not know would be a trap.
-    private MenuFlyout BuildCodeFlyout()
+    private Flyout BuildCodeFlyout()
     {
-        var flyout = new MenuFlyout { Placement = FlyoutPlacementMode.Right };
-        bool separated = false;
-        foreach (var spec in BarcodeCatalog.All)
+        var panel = new StackPanel { Spacing = 6 };
+        panel.Children.Add(Section(SL2("linear")));
+        panel.Children.Add(Tiles(BarcodeCatalog.All.Where(s => !s.TwoD),
+            s => s.Label, s => SymbolPreview.Barcode(s.Key), s => PickBarcode(s.Key)));
+        panel.Children.Add(Section(SL2("twoD")));
+        panel.Children.Add(Tiles(BarcodeCatalog.All.Where(s => s.TwoD),
+            s => s.Label, s => SymbolPreview.Barcode(s.Key), s => PickBarcode(s.Key)));
+        return Picker(panel);
+    }
+
+    private void PickBarcode(string key)
+    {
+        _barcodeKind = key;
+        SetTool(EditTool.Barcode);
+    }
+
+    private Flyout BuildShapeFlyout()
+    {
+        var shapes = new[]
         {
-            // One rule between the linear symbols and the two-dimensional ones.
-            if (spec.TwoD && !separated) { flyout.Items.Add(new MenuFlyoutSeparator()); separated = true; }
-            var item = new MenuFlyoutItem { Text = spec.Label, Tag = spec.Key };
-            item.Click += (s, _) =>
-            {
-                _barcodeKind = (string)((MenuFlyoutItem)s).Tag;
-                SetTool(EditTool.Barcode);
-            };
-            flyout.Items.Add(item);
-        }
+            ("rect", EditTool.Rect), ("line", EditTool.Line),
+            ("ellipse", EditTool.Ellipse), ("circle", EditTool.Circle),
+        };
+        var panel = new StackPanel { Spacing = 6 };
+        panel.Children.Add(Tiles(shapes,
+            t => SL2(t.Item1), t => SymbolPreview.Shape(t.Item1), t => SetTool(t.Item2),
+            wrapAtFive: false));
+        return Picker(panel);
+    }
+
+    // ── The picker's furniture ──────────────────────────────────────────────
+
+    // A flyout rather than a menu: a menu is a column of words, and what these
+    // choices need is a picture of the thing being placed. Laid out across, so a
+    // dozen symbologies fit in a glance instead of a scroll.
+    private Flyout Picker(FrameworkElement content)
+    {
+        var flyout = new Flyout
+        {
+            Content = content,
+            Placement = FlyoutPlacementMode.Right,
+        };
+        _openPicker = flyout;
         return flyout;
     }
 
-    private MenuFlyout BuildShapeFlyout()
+    private FlyoutBase? _openPicker;
+
+    private static TextBlock Section(string text) => new()
     {
-        var flyout = new MenuFlyout { Placement = FlyoutPlacementMode.Right };
-        void Add(string key, EditTool tool)
+        Text = text,
+        FontSize = 11,
+        Opacity = 0.7,
+        Margin = new Thickness(2, 2, 0, 0),
+    };
+
+    // Five tiles to a row. The width has to be SET: a flyout sizes itself to its
+    // content, so it offers infinite width and the panel never wraps — the tail of
+    // the list simply ran off the side.
+    private const double TileWidth = 74;
+    private const double TilesPerRow = 5;
+
+    /// <summary>A grid of picture-and-name tiles, five across.</summary>
+    private ToolbarWrapPanel Tiles<T>(IEnumerable<T> items,
+                                      Func<T, string> label,
+                                      Func<T, FrameworkElement> preview,
+                                      Action<T> pick,
+                                      bool wrapAtFive = true)
+    {
+        var wrap = new ToolbarWrapPanel { HorizontalSpacing = 4, VerticalSpacing = 4 };
+        if (wrapAtFive)
+            wrap.Width = TilesPerRow * (TileWidth + 10) + (TilesPerRow - 1) * 4;
+        foreach (var item in items)
         {
-            var item = new MenuFlyoutItem { Text = LocalizationService.Get("mode.tools." + key) };
-            item.Click += (_, _) => SetTool(tool);
-            flyout.Items.Add(item);
+            var stack = new StackPanel { Spacing = 4, Width = TileWidth };
+            stack.Children.Add(preview(item));
+            stack.Children.Add(new TextBlock
+            {
+                Text = label(item),
+                FontSize = 11,
+                TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+            });
+
+            var button = new Button
+            {
+                Content = stack,
+                Padding = new Thickness(5, 6, 5, 6),
+                CornerRadius = new CornerRadius(6),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                BorderThickness = new Thickness(0),
+            };
+            var captured = item;
+            button.Click += (_, _) => { _openPicker?.Hide(); pick(captured); };
+            wrap.Children.Add(button);
         }
-        Add("rect", EditTool.Rect);
-        Add("line", EditTool.Line);
-        Add("ellipse", EditTool.Ellipse);
-        Add("circle", EditTool.Circle);
-        return flyout;
+        return wrap;
     }
 
     // ── Arming a tool ───────────────────────────────────────────────────────

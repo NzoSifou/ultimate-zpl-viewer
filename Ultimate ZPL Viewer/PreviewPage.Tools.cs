@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Collections.Generic;
@@ -23,9 +22,22 @@ namespace Ultimate_ZPL_Viewer;
 // same edit path a drag uses: Monaco's undo stack, then the ordinary redraw.
 public sealed partial class PreviewPage
 {
-    private enum EditTool { None, Text, Barcode, Rect, Line, Ellipse, Circle, Fill }
+    // None = the arrow: pick an element, read it, change its properties — but a
+    // drag does nothing. Move adds the dragging, the handles and the arrow keys.
+    // The rest put something new on the label.
+    private enum EditTool { None, Move, Text, Barcode, Rect, Line, Ellipse, Circle, Fill }
 
-    private EditTool _tool = EditTool.None;
+    // Moving is what the tool started out doing, so that is what it opens on; the
+    // arrow is the safety you reach for, not the state you are dropped into.
+    private const EditTool DefaultTool = EditTool.Move;
+
+    private EditTool _tool = DefaultTool;
+
+    /// <summary>True while a tool that PLACES something is armed.</summary>
+    private bool IsPlacementTool => _tool is not (EditTool.None or EditTool.Move);
+
+    /// <summary>True when a drag on the label is allowed to change it.</summary>
+    internal bool CanMoveElements => _tool == EditTool.Move;
     private string _barcodeKind = "code128";
 
     // The placement gesture, which is separate from dragging an existing element.
@@ -43,6 +55,7 @@ public sealed partial class PreviewPage
     private void InitEditTools()
     {
         ToolSelectButton.Click += (_, _) => SetTool(EditTool.None);
+        ToolMoveButton.Click += (_, _) => SetTool(EditTool.Move);
         ToolTextButton.Click += (_, _) => SetTool(EditTool.Text);
         var codes = BuildCodeFlyout();
         var shapes = BuildShapeFlyout();
@@ -166,9 +179,13 @@ public sealed partial class PreviewPage
     private void SetTool(EditTool tool)
     {
         _tool = tool;
-        if (tool != EditTool.None) ClearInspectSelection();
+        // Arming a tool that places something drops the selection; switching
+        // between the arrow and the cross-arrows keeps it — they are two ways of
+        // handling the SAME element.
+        if (IsPlacementTool) ClearInspectSelection();
         ApplyToolButtons();
         UpdatePreviewCursor();
+        UpdateSelectionTools();     // the handles come and go with the tool
     }
 
     private void ApplyToolButtons()
@@ -191,6 +208,7 @@ public sealed partial class PreviewPage
         }
 
         Dress(ToolSelectButton, _tool == EditTool.None, ToolSelectIcon);
+        Dress(ToolMoveButton, _tool == EditTool.Move, ToolMoveIcon);
         Dress(ToolTextButton, _tool == EditTool.Text);
         Dress(ToolCodeButton, _tool == EditTool.Barcode, ToolCodeIcon.Children.OfType<Shape>().ToArray());
         Dress(ToolShapeButton,
@@ -199,6 +217,7 @@ public sealed partial class PreviewPage
         Dress(ToolFillButton, _tool == EditTool.Fill, ToolFillIcon);
 
         ToolTipService.SetToolTip(ToolSelectButton, TipBlock(SL2("select")));
+        ToolTipService.SetToolTip(ToolMoveButton, TipBlock(SL2("move")));
         ToolTipService.SetToolTip(ToolTextButton, TipBlock(SL2("text")));
         ToolTipService.SetToolTip(ToolCodeButton, TipBlock(SL2("code")));
         ToolTipService.SetToolTip(ToolShapeButton, TipBlock(SL2("shape")));
@@ -211,7 +230,7 @@ public sealed partial class PreviewPage
     private void ApplyEditToolbar()
     {
         EditToolbar.Visibility = _editMode ? Visibility.Visible : Visibility.Collapsed;
-        if (!_editMode && _tool != EditTool.None) SetTool(EditTool.None);
+        if (!_editMode && _tool != DefaultTool) SetTool(DefaultTool);
     }
 
     // ── Placing ─────────────────────────────────────────────────────────────
@@ -219,7 +238,7 @@ public sealed partial class PreviewPage
     /// <summary>True when the press was consumed to place something.</summary>
     private bool BeginPlacement(PointerRoutedEventArgs e)
     {
-        if (_tool == EditTool.None) return false;
+        if (!IsPlacementTool) return false;
         _placing = true;
         _placeStart = e.GetCurrentPoint(PreviewCanvas).Position;
         PreviewScrollViewer.CapturePointer(e.Pointer);
@@ -265,7 +284,7 @@ public sealed partial class PreviewPage
         int H = dragged ? Math.Max(1, Round(h)) : Round(DefaultBoxHeightMm * dpmm);
 
         var snippet = BuildSnippet(X, Y, W, H, dpmm);
-        SetTool(EditTool.None);
+        SetTool(DefaultTool);
         if (snippet is not null) InsertSnippet(snippet);
     }
 

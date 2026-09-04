@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
@@ -45,6 +45,9 @@ public sealed partial class PreviewPage
     /// <summary>Which handles this field offers, if any.</summary>
     private Grip[] GripsFor()
     {
+        // Pulling a corner changes the label, so it belongs to the move tool for the
+        // same reason dragging does.
+        if (!CanMoveElements) return Array.Empty<Grip>();
         // The canvas is turned: a handle dragged right would resize downwards, and
         // guessing wrong is worse than not offering the handle.
         if (Math.Abs(_rotationDegrees) > 0.5) return Array.Empty<Grip>();

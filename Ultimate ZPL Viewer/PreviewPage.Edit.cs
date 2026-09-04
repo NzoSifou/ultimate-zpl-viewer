@@ -89,6 +89,9 @@ public sealed partial class PreviewPage
         SelectSpan(hit.SourceStart, hit.SourceEnd, revealInEditor: true);
         PreviewCursorHost.Focus(FocusState.Pointer);
 
+        // The arrow selects and stops there. Dragging the label around is what the
+        // move tool is for — the whole point of having two.
+        if (!CanMoveElements) return;
         if (!ZplPatcher.CanMove(_currentText, _selStart, _selEnd)) return;
 
         _dragging = true;
@@ -208,10 +211,12 @@ public sealed partial class PreviewPage
         double dx = 0, dy = 0;
         switch (e.Key)
         {
-            case VirtualKey.Left: dx = -step; break;
-            case VirtualKey.Right: dx = step; break;
-            case VirtualKey.Up: dy = -step; break;
-            case VirtualKey.Down: dy = step; break;
+            // Nudging is moving: the arrow tool does not do it either. Deleting
+            // is not, so Del keeps working whichever of the two is held.
+            case VirtualKey.Left: if (!CanMoveElements) return; dx = -step; break;
+            case VirtualKey.Right: if (!CanMoveElements) return; dx = step; break;
+            case VirtualKey.Up: if (!CanMoveElements) return; dy = -step; break;
+            case VirtualKey.Down: if (!CanMoveElements) return; dy = step; break;
             case VirtualKey.Delete:
             case VirtualKey.Back:
                 e.Handled = true;

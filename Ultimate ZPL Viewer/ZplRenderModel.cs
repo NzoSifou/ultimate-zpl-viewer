@@ -1753,10 +1753,17 @@ public static partial class ZplRenderer
         return new TextLayout(fontSize, renderFontSize, condense, anchorY, weight, textW);
     }
 
-    /// <summary>Where that field sits on the canvas. Shared with the in-place editor.</summary>
-    internal static Transform TextTransform(ZplText text, TextLayout m, double extraX)
+    /// <summary>
+    /// Where that field sits on the canvas. Shared with the in-place editor, which
+    /// passes a <paramref name="first"/> transform of its own: a TextBox lays its
+    /// line out at the font's natural height, and it has to be squeezed onto the ZPL
+    /// cell before any of this applies to it.
+    /// </summary>
+    internal static Transform TextTransform(ZplText text, TextLayout m, double extraX,
+                                            Transform? first = null)
     {
         var transforms = new TransformGroup();
+        if (first is not null) transforms.Children.Add(first);
         if (Math.Abs(m.Condense - 1.0) > 0.001)
             transforms.Children.Add(new ScaleTransform { ScaleX = m.Condense, ScaleY = 1.0, CenterX = 0, CenterY = m.AnchorY });
 

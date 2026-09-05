@@ -79,14 +79,11 @@ public sealed partial class PreviewPage
         // than on the lost focus, because the canvas is about to be rebuilt.
         if (IsEditingInPlace)
         {
-            if (PressIsInsideInPlace(e))
-            {
-                // Handled, so the press stops here: left to bubble on, the
-                // ScrollViewer underneath takes the focus for its own panning and
-                // the box loses the caret the click was meant to place.
-                e.Handled = true;
-                return;
-            }
+            // A press ON the words places the caret and may open a selection; the
+            // event stops here, or the ScrollViewer under it would take over the
+            // gesture. Anywhere else finishes the typing — here rather than on the
+            // lost focus, because the canvas is about to be rebuilt.
+            if (InPlacePointerPressed(e)) { e.Handled = true; return; }
             EndInPlace();
             return;
         }
@@ -145,6 +142,7 @@ public sealed partial class PreviewPage
 
     private void PreviewCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
+        if (IsEditingInPlace) { InPlacePointerMoved(e); return; }
         if (_placing) { UpdatePlacement(e); return; }
         if (!_dragging) return;
         // The button came back up somewhere we never heard about (outside the
@@ -178,6 +176,7 @@ public sealed partial class PreviewPage
 
     private void PreviewCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
     {
+        if (IsEditingInPlace) { InPlacePointerReleased(); return; }
         if (_placing) { FinishPlacement(e.GetCurrentPoint(PreviewCanvas).Position); return; }
         FinishDrag();
 
@@ -250,6 +249,11 @@ public sealed partial class PreviewPage
         // Ctrl+Z is a page-wide accelerator now (RegisterShortcuts): it has to work
         // whether the focus landed on the preview, the toolbar or nowhere at all.
         if (!_editMode || _selStart < 0 || _dragging) return;
+        // This handler sits on an ancestor of the preview, so every key pressed
+        // inside the in-place box passes through it on its way up. While there is a
+        // caret in the words, the keys are the caret's: Backspace rubs out a letter
+        // rather than the whole element, and the arrows move through the text.
+        if (IsEditingInPlace) return;
         double step = IsHeld(VirtualKey.Shift) ? 10 : 1;
         double dx = 0, dy = 0;
         switch (e.Key)

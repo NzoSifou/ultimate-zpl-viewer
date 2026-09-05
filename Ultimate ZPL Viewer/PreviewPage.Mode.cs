@@ -66,7 +66,7 @@ public sealed partial class PreviewPage
         // Leaving edit mode drops the selection: its frame and its handles have no
         // meaning in a mode where nothing can be moved.
         if (_editMode) UpdateInspectFrame();
-        else ClearInspectSelection();
+        else { EndInPlace(); ClearInspectSelection(); }
     }
 
     // The active icon is FILLED with the accent colour. The accent button style is

@@ -300,9 +300,10 @@ public sealed partial class PreviewPage
             return;
         }
 
+        var placed = _tool;
         var snippet = BuildSnippet(X, Y, W, H, dpmm);
         SetTool(DefaultTool);
-        if (snippet is not null) InsertSnippet(snippet);
+        if (snippet is not null) InsertSnippet(snippet, placed);
     }
 
     private void CancelPlacement()
@@ -389,7 +390,7 @@ public sealed partial class PreviewPage
     /// at ^XZ rather than at the caret keeps the field order matching the drawing
     /// order: the newest element is the one on top.
     /// </summary>
-    private void InsertSnippet(string snippet)
+    private void InsertSnippet(string snippet, EditTool tool = EditTool.None)
     {
         int at = EndOfLabelOffset();
         string prefix = at > 0 && _currentText[at - 1] == '\n' ? "" : "\n";
@@ -403,6 +404,16 @@ public sealed partial class PreviewPage
         int at2 = at + prefix.Length;
         SelectSpan(at2, at2 + snippet.Length, revealInEditor: false, moveCaret: true);
         PreviewCursorHost.Focus(FocusState.Programmatic);
+
+        // A text field is placed to be written in, and what it holds until then is
+        // the word "Text". Open the caret on it with that word selected, so the
+        // first thing typed replaces it.
+        if (tool == EditTool.Text)
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                RefreshSelectionProperties();
+                BeginInPlace(selectAll: true);
+            });
     }
 
     /// <summary>Offset of the closing ^XZ, or the end of the text when there is none.</summary>

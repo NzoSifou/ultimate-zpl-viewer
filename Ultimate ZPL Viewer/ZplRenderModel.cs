@@ -1700,7 +1700,20 @@ public static partial class ZplRenderer
     // alignment padding at the reference width instead of our narrower space glyph.
     private const double ZebraSpaceEmRatio = 0.30;
 
-    private static void DrawText(Canvas canvas, ZplText text)
+    /// <summary>
+    /// Everything needed to put a text field on the canvas, computed once. The
+    /// in-place editor asks for the same numbers, so the box it types into lands
+    /// exactly where the glyphs are: ONE geometry rather than two that drift.
+    /// </summary>
+    internal readonly record struct TextLayout(
+        double CellHeight,      // the ZPL cell, in dots
+        double FontSize,        // what XAML has to be told to get that ink height
+        double Condense,        // ^A0 width < height squeezes the glyphs
+        double AnchorY,         // the baseline offset for ^FT
+        Windows.UI.Text.FontWeight Weight,
+        double TextWidth);      // rendered width, only needed for rotated ^FO
+
+    internal static TextLayout MeasureText(ZplText text)
     {
         var fontSize = Math.Max(8, text.Height);
         // Scale FontSize so the ink height equals the ZPL dot height.
@@ -1737,6 +1750,48 @@ public static partial class ZplRenderer
             textW = probe.DesiredSize.Width * condense;
         }
 
+        return new TextLayout(fontSize, renderFontSize, condense, anchorY, weight, textW);
+    }
+
+    /// <summary>Where that field sits on the canvas. Shared with the in-place editor.</summary>
+    internal static Transform TextTransform(ZplText text, TextLayout m, double extraX)
+    {
+        var transforms = new TransformGroup();
+        if (Math.Abs(m.Condense - 1.0) > 0.001)
+            transforms.Children.Add(new ScaleTransform { ScaleX = m.Condense, ScaleY = 1.0, CenterX = 0, CenterY = m.AnchorY });
+
+        double tx, ty;
+        if (text.Baseline || text.Rotation == 0)
+        {
+            // ^FT: rotate around the baseline anchor, anchor lands at (X, Y).
+            if (text.Rotation != 0)
+                transforms.Children.Add(new RotateTransform { Angle = text.Rotation, CenterX = 0, CenterY = m.AnchorY });
+            tx = text.X; ty = text.Y - m.AnchorY;
+        }
+        else
+        {
+            // ^FO + rotation: rotate around the block's top-left, then place the
+            // rotated bounding box's top-left corner at (X, Y).
+            transforms.Children.Add(new RotateTransform { Angle = text.Rotation, CenterX = 0, CenterY = 0 });
+            (tx, ty) = text.Rotation switch
+            {
+                90  => (text.X + m.CellHeight, text.Y),
+                180 => (text.X + m.TextWidth, text.Y + m.CellHeight),
+                270 => (text.X, text.Y + m.TextWidth),
+                _   => (text.X, text.Y),
+            };
+        }
+        transforms.Children.Add(new TranslateTransform { X = tx + extraX, Y = ty });
+        return transforms;
+    }
+
+    private static void DrawText(Canvas canvas, ZplText text)
+    {
+        var m = MeasureText(text);
+        double fontSize = m.CellHeight, condense = m.Condense;
+        bool restoreWeight = text.Bold && condense < 0.9
+            && text.Font.StartsWith("Bitstream Vera", StringComparison.OrdinalIgnoreCase);
+
         TextBlock MakeBlock(double extraX)
         {
             var block = new TextBlock
@@ -1744,40 +1799,14 @@ public static partial class ZplRenderer
                 Text = text.Text,
                 Foreground = new SolidColorBrush(text.Reverse ? Colors.White : Colors.Black),
                 FontFamily = new FontFamily(text.Font),
-                FontSize = renderFontSize,
-                FontWeight = weight,
+                FontSize = m.FontSize,
+                FontWeight = m.Weight,
                 TextWrapping = TextWrapping.NoWrap,
                 LineHeight = fontSize,
                 LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
                 Padding = new Thickness(0),
             };
-            var transforms = new TransformGroup();
-            if (Math.Abs(condense - 1.0) > 0.001)
-                transforms.Children.Add(new ScaleTransform { ScaleX = condense, ScaleY = 1.0, CenterX = 0, CenterY = anchorY });
-
-            double tx, ty;
-            if (text.Baseline || text.Rotation == 0)
-            {
-                // ^FT: rotate around the baseline anchor, anchor lands at (X, Y).
-                if (text.Rotation != 0)
-                    transforms.Children.Add(new RotateTransform { Angle = text.Rotation, CenterX = 0, CenterY = anchorY });
-                tx = text.X; ty = text.Y - anchorY;
-            }
-            else
-            {
-                // ^FO + rotation: rotate around the block's top-left, then place the
-                // rotated bounding box's top-left corner at (X, Y).
-                transforms.Children.Add(new RotateTransform { Angle = text.Rotation, CenterX = 0, CenterY = 0 });
-                (tx, ty) = text.Rotation switch
-                {
-                    90  => (text.X + fontSize, text.Y),
-                    180 => (text.X + textW, text.Y + fontSize),
-                    270 => (text.X, text.Y + textW),
-                    _   => (text.X, text.Y),
-                };
-            }
-            transforms.Children.Add(new TranslateTransform { X = tx + extraX, Y = ty });
-            block.RenderTransform = transforms;
+            block.RenderTransform = TextTransform(text, m, extraX);
             Canvas.SetLeft(block, 0);
             Canvas.SetTop(block, 0);
             return block;
@@ -1798,7 +1827,7 @@ public static partial class ZplRenderer
         // overlapping passes across the width the bold stems would have covered.
         if (restoreWeight)
         {
-            double spread = 0.05 * renderFontSize * condense; // bold-vs-regular stem gain
+            double spread = 0.05 * m.FontSize * condense; // bold-vs-regular stem gain
             for (double dx = 0.5; dx <= spread + 0.01; dx += 0.5)
                 canvas.Children.Add(MakeBlock(dx));
         }

@@ -25,6 +25,8 @@ public sealed partial class PreviewPage
 {
     private bool _dragging;
     private bool _dragMoved;                       // passed the slop threshold
+    private DateTime _lastFieldPress = DateTime.MinValue;
+    private bool _openInPlaceOnRelease;
     private Point _dragStart;                      // in canvas space (label dots)
     private double _dragDx, _dragDy;               // applied offset, label dots
     private (double X, double Y)? _dragOrigin;     // the field's ^FO as written
@@ -72,6 +74,9 @@ public sealed partial class PreviewPage
     {
         if (!_editMode) return;
         if (!e.GetCurrentPoint(PreviewCanvas).Properties.IsLeftButtonPressed) return;
+        // A press outside the box ends the typing. It reaches here BEFORE the box
+        // loses focus, and the canvas is about to be rebuilt under it.
+        if (IsEditingInPlace) { EndInPlace(); return; }
 
         // A tool is armed: this press puts something down rather than picking
         // something up.
@@ -86,7 +91,24 @@ public sealed partial class PreviewPage
             return;
         }
 
+        // Twice on the same field, quickly: that is "let me type in it". Counted
+        // here rather than through DoubleTapped, which never arrives — the press is
+        // marked handled to keep the panning off the drag gesture.
+        bool again = hit.SourceStart == _selStart
+                     && (DateTime.UtcNow - _lastFieldPress).TotalMilliseconds < 450;
+        _lastFieldPress = DateTime.UtcNow;
+
         SelectSpan(hit.SourceStart, hit.SourceEnd, revealInEditor: true);
+
+        if (again)
+        {
+            // Opened on the RELEASE, not here: the button coming back up hands the
+            // focus to whatever is under the pointer, which took it straight back
+            // off the box and closed it again forty milliseconds after it opened.
+            _openInPlaceOnRelease = true;
+            e.Handled = true;
+            return;
+        }
         PreviewCursorHost.Focus(FocusState.Pointer);
 
         // The arrow selects and stops there. Dragging the label around is what the
@@ -145,6 +167,14 @@ public sealed partial class PreviewPage
     {
         if (_placing) { FinishPlacement(e.GetCurrentPoint(PreviewCanvas).Position); return; }
         FinishDrag();
+
+        if (!_openInPlaceOnRelease) return;
+        _openInPlaceOnRelease = false;     // the release reaches here twice
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        {
+            RefreshSelectionProperties();  // BeginInPlace reads the field from these
+            BeginInPlace(selectAll: true);
+        });
     }
 
     /// <summary>Closes the gesture and writes the move, if there was one.</summary>
@@ -222,6 +252,13 @@ public sealed partial class PreviewPage
                 e.Handled = true;
                 DeleteSelection();
                 return;
+            // The two keys every list and every spreadsheet uses to start editing
+            // the thing that is selected.
+            case VirtualKey.F2:
+            case VirtualKey.Enter:
+                e.Handled = true;
+                BeginInPlace(selectAll: true);
+                return;
             default: return;
         }
         e.Handled = true;
@@ -269,14 +306,19 @@ public sealed partial class PreviewPage
             text = text[..edit.Start] + edit.Text + text[edit.End..];
         _currentText = text;
         if (!_isDirty) { _isDirty = true; UpdateDocumentTitle(); }
-        RefreshPreview(SizeUpdate.TextEdited);
+        // Not while the caret is in the words: the canvas is rebuilt whole, and the
+        // box being typed into is one of its children. The box is showing the field
+        // in its own font at its own size, so there is nothing to catch up on until
+        // the caret leaves (PreviewPage.InPlace.cs).
+        if (!IsEditingInPlace) RefreshPreview(SizeUpdate.TextEdited);
         ScheduleHighlighting();
         // And ask the frame to find its element again once the new canvas has been
         // measured. RefreshPreview posts that itself, but it declines to run at all
         // when one redraw is already under way — which is exactly what happens when
         // edits arrive one after another, a character at a time.
-        DispatcherQueue.TryEnqueue(
-            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, UpdateInspectFrame);
+        if (!IsEditingInPlace)
+            DispatcherQueue.TryEnqueue(
+                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, UpdateInspectFrame);
 
         // Monaco gets the same edits, for its undo stack and its own view of the
         // document. What comes back matches what is already here, so the echo is
@@ -361,6 +403,15 @@ public sealed partial class PreviewPage
         // While it holds the caret it stays, even if the element it belongs to
         // momentarily has nothing to frame — emptying a field does exactly that.
         bool typing = SelectionToolsHasFocus();
+
+        // The caret is in the words themselves: the bar would sit right on top of
+        // what is being typed, and the frame belongs to an element being moved.
+        if (IsEditingInPlace)
+        {
+            ClearHandles();
+            SelectionTools.Visibility = Visibility.Collapsed;
+            return;
+        }
 
         if (!_editMode || _selStart < 0 || _inspectFrame is null
             || _inspectFrame.Visibility != Visibility.Visible)

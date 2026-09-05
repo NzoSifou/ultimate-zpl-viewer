@@ -2134,7 +2134,7 @@
     "tools": {
       "select": "Select: click an element to see and change its properties, without moving it",
       "move": "Move: select, drag, resize",
-      "text": "Text: click the label to drop a text field",
+      "text": "Text: click the label and start typing. Double-click any text (or press F2) to edit it where it prints; Enter when done, Shift+Enter for a new line.",
       "code": "Barcode: pick a symbology, then click the label",
       "shape": "Shape: pick one, then click or drag to size it",
       "fill": "Solid block: click or drag to size it",

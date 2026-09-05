@@ -2134,7 +2134,7 @@
     "tools": {
       "select": "Sélectionner : cliquez un élément pour voir et modifier ses propriétés, sans le déplacer",
       "move": "Déplacer : sélectionner, faire glisser, redimensionner",
-      "text": "Texte : cliquez sur l'étiquette pour poser une zone de texte",
+      "text": "Texte : cliquez sur l’étiquette et écrivez. Double-cliquez un texte (ou F2) pour le modifier là où il s’imprime ; Entrée pour terminer, Maj+Entrée pour aller à la ligne.",
       "code": "Code-barres : choisissez une symbologie, puis cliquez sur l'étiquette",
       "shape": "Forme : choisissez-la, puis cliquez ou faites glisser pour la dimensionner",
       "fill": "Bloc plein : cliquez ou faites glisser pour le dimensionner",

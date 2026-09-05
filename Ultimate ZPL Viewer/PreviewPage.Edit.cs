@@ -74,9 +74,22 @@ public sealed partial class PreviewPage
     {
         if (!_editMode) return;
         if (!e.GetCurrentPoint(PreviewCanvas).Properties.IsLeftButtonPressed) return;
-        // A press outside the box ends the typing. It reaches here BEFORE the box
-        // loses focus, and the canvas is about to be rebuilt under it.
-        if (IsEditingInPlace) { EndInPlace(); return; }
+        // A press INSIDE the words being typed is the caret being placed, and none
+        // of this applies to it. Anywhere else finishes the typing — here rather
+        // than on the lost focus, because the canvas is about to be rebuilt.
+        if (IsEditingInPlace)
+        {
+            if (PressIsInsideInPlace(e))
+            {
+                // Handled, so the press stops here: left to bubble on, the
+                // ScrollViewer underneath takes the focus for its own panning and
+                // the box loses the caret the click was meant to place.
+                e.Handled = true;
+                return;
+            }
+            EndInPlace();
+            return;
+        }
 
         // A tool is armed: this press puts something down rather than picking
         // something up.

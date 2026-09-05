@@ -71,7 +71,11 @@ public sealed partial class PreviewPage
         _fillingProps = true;
         try
         {
-            bool hasData = _facts.DataStart >= 0;
+            // A text field is typed into on the label itself now, so the copy of it
+            // in this bar has nothing left to do: two places showing the same words
+            // is two places to look and two ways for them to disagree. A barcode
+            // keeps its field — bars cannot be typed into.
+            bool hasData = _facts.DataStart >= 0 && EditableText() is null;
             SelectionData.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
             if (hasData && SelectionData.FocusState == FocusState.Unfocused)
                 SelectionData.Text = _facts.Data ?? "";

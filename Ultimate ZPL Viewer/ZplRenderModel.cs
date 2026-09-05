@@ -1787,6 +1787,17 @@ public static partial class ZplRenderer
 
     private static void DrawText(Canvas canvas, ZplText text)
     {
+        foreach (var block in TextBlocksFor(text)) canvas.Children.Add(block);
+    }
+
+    /// <summary>
+    /// Every block this field is drawn with — the ink pass, plus the overlapping
+    /// passes that rebuild a weight DirectWrite renders too lightly. The in-place
+    /// editor draws the SAME blocks, which is what makes the words under the caret
+    /// the words that will print rather than an approximation of them.
+    /// </summary>
+    internal static IReadOnlyList<TextBlock> TextBlocksFor(ZplText text)
+    {
         var m = MeasureText(text);
         double fontSize = m.CellHeight, condense = m.Condense;
         bool restoreWeight = text.Bold && condense < 0.9
@@ -1812,7 +1823,7 @@ public static partial class ZplRenderer
             return block;
         }
 
-        canvas.Children.Add(MakeBlock(0));
+        var blocks = new List<TextBlock> { MakeBlock(0) };
         // DirectWrite renders Swiss 721 Condensed "Bold" lighter than Zebra/Labelary.
         // Faux-embolden non-condensed bold text with a sub-pixel second pass so it matches
         // (e.g. "S F", the Contact/Note block). Condensed text (w<h) already narrows its
@@ -1822,15 +1833,16 @@ public static partial class ZplRenderer
         // small text (h≤~24: DPD's "Destinataire", Contact/Tél/Ref labels, agency
         // block…) which came out visibly heavier than Labelary — quarter it there.
         if (text.Bold && condense > 0.95 && text.Height >= 28)
-            canvas.Children.Add(MakeBlock(0.5));
+            blocks.Add(MakeBlock(0.5));
         // Squeezed Vera Mono lost its real bold face above: put the weight back with
         // overlapping passes across the width the bold stems would have covered.
         if (restoreWeight)
         {
             double spread = 0.05 * m.FontSize * condense; // bold-vs-regular stem gain
             for (double dx = 0.5; dx <= spread + 0.01; dx += 0.5)
-                canvas.Children.Add(MakeBlock(dx));
+                blocks.Add(MakeBlock(dx));
         }
+        return blocks;
     }
 
     // Renders a pre-built 1D barcode (bars + labels) with the ^FO rotation rule:

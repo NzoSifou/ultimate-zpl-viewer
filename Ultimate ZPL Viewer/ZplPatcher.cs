@@ -191,6 +191,33 @@ public static class ZplPatcher
         int GraphicStart = -1,  // the whole ^GF command, caret included
         int GraphicEnd = -1);
 
+    /// <summary>
+    /// The bar width and the fallback bar height in force at a point in the label.
+    /// ^BY is MODAL: set once, it governs every barcode after it until the next one,
+    /// and it is very often written outside the field it applies to — so a field's
+    /// real bar width, and the height it falls back on when its own command leaves
+    /// that out, are frequently written nowhere inside it.
+    /// </summary>
+    public static (double Width, double Height) BarDefaults(string zpl, int before)
+    {
+        double width = 2, height = 10;              // what a printer starts from
+        foreach (var token in ZplRenderer.TokenizeForEditing(zpl ?? ""))
+        {
+            if (token.Start >= before) break;
+            if (token.Command != "BY") continue;
+            // Split by POSITION, not by "the numbers in it": an empty ratio would
+            // otherwise shift the height along one place (^BY3,,150).
+            var parts = token.Args.Split(',');
+            if (parts.Length > 0 && double.TryParse(parts[0].Trim(), NumberStyles.Float,
+                                                   CultureInfo.InvariantCulture, out var w) && w > 0)
+                width = w;
+            if (parts.Length > 2 && double.TryParse(parts[2].Trim(), NumberStyles.Float,
+                                                   CultureInfo.InvariantCulture, out var h) && h > 0)
+                height = h;
+        }
+        return (width, height);
+    }
+
     public static FieldFacts Read(string zpl, int start, int end)
     {
         var tokens = InSpan(zpl, start, end).ToList();
@@ -214,13 +241,22 @@ public static class ZplPatcher
             if (parts.Count > 2 && Number(parts[2]) > 0) fontW = Number(parts[2]);
         }
 
+        // Everything the running ^BY carries into this field, read up to the
+        // barcode command itself — a ^BY after it belongs to the NEXT barcode.
+        var bars = BarDefaults(zpl, code?.Start ?? end);
+
         double? codeH = null; bool? hrt = null;
         if (code is not null)
         {
             var parts = Parts(code.Args);
             int hi = HeightIndex(code.Command);
             if (hi < 0) hi = MagnificationIndex(code.Command);
-            if (hi >= 0 && hi < parts.Count) codeH = Number(parts[hi]);
+            if (hi >= 0 && hi < parts.Count && parts[hi].Trim().Length > 0)
+                codeH = Number(parts[hi]);
+            // ^BCN,,N,N — the height left out. It is not "nothing": it is whatever
+            // ^BY is carrying, which is what the printer will use and what the
+            // preview already draws.
+            if (codeH is null && HeightIndex(code.Command) >= 0) codeH = bars.Height;
             int fi = TextIndex(code.Command);
             if (fi >= 0 && fi < parts.Count)
                 hrt = !parts[fi].Trim().StartsWith("N", StringComparison.OrdinalIgnoreCase);
@@ -234,7 +270,9 @@ public static class ZplPatcher
             Barcode: code?.Command,
             BarcodeHeight: codeH,
             HumanReadable: hrt,
-            ModuleWidth: by is null ? null : Numbers(by.Args).Cast<double?>().FirstOrDefault(),
+            // Read from the running ^BY rather than from the one inside the field:
+            // there usually is none inside, and the width still is not 2.
+            ModuleWidth: code is null ? null : bars.Width,
             Reverse: tokens.Any(t => t.Command == "FR"),
             Shape: shape?.Command,
             ShapeArgs: shape is null ? null : Numbers(shape.Args),

@@ -215,7 +215,11 @@ public sealed partial class PreviewPage
     {
         var box = new NumberBox
         {
-            Value = value ?? double.NaN,
+            // Clamped before it is handed over: a NumberBox given a value outside
+            // its limits corrects it, and that correction arrives as a change the
+            // user never made — which is how a barcode with no height of its own
+            // ended up with a height of one the moment its properties were opened.
+            Value = value is null ? double.NaN : Math.Clamp(value.Value, min, max),
             Minimum = min,
             Maximum = max,
             SmallChange = 1,

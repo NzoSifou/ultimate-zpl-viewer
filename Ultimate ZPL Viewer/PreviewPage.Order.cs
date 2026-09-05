@@ -91,7 +91,7 @@ public sealed partial class PreviewPage
         // frame on the label and leaves the code pointing at the field that was
         // stepped over.
         int start = forward ? first.Start + b.Length + between.Length : first.Start;
-        SelectSpan(start, start + (forward ? a.Length : b.Length), revealInEditor: false);
+        SelectSpan(start, start + (forward ? a.Length : b.Length), revealInEditor: false, moveCaret: true);
         PreviewCursorHost.Focus(FocusState.Programmatic);
     }
 }

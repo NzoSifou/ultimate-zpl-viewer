@@ -1,4 +1,4 @@
-{
+﻿{
   "language": "fr",
   "displayName": "Français",
   "titlebar": {
@@ -2144,7 +2144,25 @@
       "circle": "Cercle",
       "sampleText": "Texte",
       "linear": "Linéaires",
-      "twoD": "Codes 2D"
+      "twoD": "Codes 2D",
+      "image": "Image : cliquez sur l'étiquette, puis choisissez un fichier"
+    },
+    "image": {
+      "title": "Ajouter une image",
+      "add": "Ajouter",
+      "cancel": "Annuler",
+      "width": "Largeur",
+      "height": "Hauteur",
+      "lock": "Conserver les proportions",
+      "rendering": "Noir et blanc",
+      "flat": "Seuil : net, pour un logo ou un dessin",
+      "dither": "Tramage : des nuances, pour une photographie",
+      "threshold": "Seuil",
+      "invert": "Inverser le noir et le blanc",
+      "info": "{0} × {1} points — {2} de ZPL",
+      "bytes": "{0} octets",
+      "kilobytes": "{0} ko",
+      "unreadable": "Ce fichier n’a pas pu être lu comme une image."
     },
     "props": {
       "textSection": "Texte",

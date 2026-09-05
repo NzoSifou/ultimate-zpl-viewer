@@ -148,7 +148,13 @@ public sealed partial class PreviewPage
 
     // ── Selection ────────────────────────────────────────────────────────────
 
-    private void SelectSpan(int start, int end, bool revealInEditor)
+    /// <summary>
+    /// Frames a field and lights it up in the code. <paramref name="moveCaret"/> is
+    /// for a field the app has just WRITTEN: an edit leaves Monaco's caret past the
+    /// end of what it inserted, and the report of that move would immediately drop
+    /// this selection again, so the caret is sent back inside the field.
+    /// </summary>
+    private void SelectSpan(int start, int end, bool revealInEditor, bool moveCaret = false)
     {
         _selStart = start;
         _selEnd = end;
@@ -166,6 +172,7 @@ public sealed partial class PreviewPage
         PostToEditor("{\"type\":\"highlightRange\",\"start\":" + start +
                      ",\"end\":" + end +
                      ",\"reveal\":" + (revealInEditor ? "true" : "false") +
+                     ",\"caret\":" + (moveCaret ? "true" : "false") +
                      ",\"color\":\"" + colour + "\"}");
     }
 

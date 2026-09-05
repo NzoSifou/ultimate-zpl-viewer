@@ -25,7 +25,7 @@ public sealed partial class PreviewPage
     // None = the arrow: pick an element, read it, change its properties — but a
     // drag does nothing. Move adds the dragging, the handles and the arrow keys.
     // The rest put something new on the label.
-    private enum EditTool { None, Move, Text, Barcode, Rect, Line, Ellipse, Circle, Fill }
+    private enum EditTool { None, Move, Text, Barcode, Rect, Line, Ellipse, Circle, Fill, Image }
 
     // Moving is what the tool started out doing, so that is what it opens on; the
     // arrow is the safety you reach for, not the state you are dropped into.
@@ -66,6 +66,7 @@ public sealed partial class PreviewPage
         codes.Opening += (_, _) => _openPicker = codes;
         shapes.Opening += (_, _) => _openPicker = shapes;
         ToolFillButton.Click += (_, _) => SetTool(EditTool.Fill);
+        ToolImageButton.Click += (_, _) => SetTool(EditTool.Image);
         ApplyToolButtons();
     }
 
@@ -215,6 +216,8 @@ public sealed partial class PreviewPage
             _tool is EditTool.Rect or EditTool.Line or EditTool.Ellipse or EditTool.Circle,
             ToolShapeIconRect, ToolShapeIconEllipse);
         Dress(ToolFillButton, _tool == EditTool.Fill, ToolFillIcon);
+        Dress(ToolImageButton, _tool == EditTool.Image,
+              ToolImageIconFrame, ToolImageIconSun, ToolImageIconHill);
 
         ToolTipService.SetToolTip(ToolSelectButton, TipBlock(SL2("select")));
         ToolTipService.SetToolTip(ToolMoveButton, TipBlock(SL2("move")));
@@ -222,6 +225,7 @@ public sealed partial class PreviewPage
         ToolTipService.SetToolTip(ToolCodeButton, TipBlock(SL2("code")));
         ToolTipService.SetToolTip(ToolShapeButton, TipBlock(SL2("shape")));
         ToolTipService.SetToolTip(ToolFillButton, TipBlock(SL2("fill")));
+        ToolTipService.SetToolTip(ToolImageButton, TipBlock(SL2("image")));
     }
 
     private static string SL2(string key) => LocalizationService.Get("mode.tools." + key);
@@ -259,8 +263,11 @@ public sealed partial class PreviewPage
         DrawPlacementBand(_placeStart, e.GetCurrentPoint(PreviewCanvas).Position);
     }
 
+    // An image is in here for its WIDTH only: the box that gets dragged sets how
+    // wide the picture prints, and its own proportions decide the rest.
     private bool SizeableTool =>
-        _tool is EditTool.Rect or EditTool.Line or EditTool.Ellipse or EditTool.Circle or EditTool.Fill;
+        _tool is EditTool.Rect or EditTool.Line or EditTool.Ellipse or EditTool.Circle
+              or EditTool.Fill or EditTool.Image;
 
     private void FinishPlacement(Point end)
     {
@@ -282,6 +289,16 @@ public sealed partial class PreviewPage
         int X = Round(x0), Y = Round(y0);
         int W = dragged ? Math.Max(1, Round(w)) : Round(DefaultBoxWidthMm * dpmm);
         int H = dragged ? Math.Max(1, Round(h)) : Round(DefaultBoxHeightMm * dpmm);
+
+        // An image asks two questions before it can be written — which file, and how
+        // it should be turned into black and white — so it leaves the synchronous
+        // path here and comes back through InsertSnippet when the dialog closes.
+        if (_tool == EditTool.Image)
+        {
+            SetTool(DefaultTool);
+            _ = PlaceImageAsync(X, Y, dragged ? W : 0);
+            return;
+        }
 
         var snippet = BuildSnippet(X, Y, W, H, dpmm);
         SetTool(DefaultTool);
@@ -384,7 +401,7 @@ public sealed partial class PreviewPage
         // framed and ready to be moved. Through SelectSpan, so the editor highlights
         // the new field as well as the label framing it.
         int at2 = at + prefix.Length;
-        SelectSpan(at2, at2 + snippet.Length, revealInEditor: false);
+        SelectSpan(at2, at2 + snippet.Length, revealInEditor: false, moveCaret: true);
         PreviewCursorHost.Focus(FocusState.Programmatic);
     }
 

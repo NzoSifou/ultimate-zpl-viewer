@@ -264,7 +264,7 @@ public sealed partial class PreviewPage
         // Follow the copy: it is the one the user is about to move.
         int at = value.Start + 1;                // past the newline the copy opens with
         ApplyEdit(value);
-        SelectSpan(at, at + (value.Text.Length - 1), revealInEditor: false);
+        SelectSpan(at, at + (value.Text.Length - 1), revealInEditor: false, moveCaret: true);
         PreviewCursorHost.Focus(FocusState.Programmatic);
     }
 

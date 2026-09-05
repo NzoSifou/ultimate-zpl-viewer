@@ -357,6 +357,14 @@
                                 marginClassName: 'zpl-inspect-line'
                             }
                         }]);
+                        if (msg.caret) {
+                            // The app just wrote this field in. executeEdits leaves
+                            // the caret at the END of what it inserted, which is
+                            // outside the field, and the caret report that follows
+                            // would drop the very selection we are making here.
+                            // Putting it back inside says what we mean.
+                            editor.setPosition(from);
+                        }
                         if (msg.reveal) {
                             editor.revealRangeInCenterIfOutsideViewport(
                                 new monaco.Range(from.lineNumber, 1, to.lineNumber, 1));

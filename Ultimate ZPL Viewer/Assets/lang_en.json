@@ -1,4 +1,4 @@
-{
+﻿{
   "language": "en",
   "displayName": "English",
   "titlebar": {
@@ -2144,7 +2144,25 @@
       "circle": "Circle",
       "sampleText": "Text",
       "linear": "Linear",
-      "twoD": "2D codes"
+      "twoD": "2D codes",
+      "image": "Image: click the label, then pick a file"
+    },
+    "image": {
+      "title": "Add an image",
+      "add": "Add",
+      "cancel": "Cancel",
+      "width": "Width",
+      "height": "Height",
+      "lock": "Keep the proportions",
+      "rendering": "Black and white",
+      "flat": "Threshold: crisp, for a logo or a drawing",
+      "dither": "Dithering: shades, for a photograph",
+      "threshold": "Threshold",
+      "invert": "Invert black and white",
+      "info": "{0} × {1} dots — {2} of ZPL",
+      "bytes": "{0} bytes",
+      "kilobytes": "{0} kB",
+      "unreadable": "This file could not be read as an image."
     },
     "props": {
       "textSection": "Text",

@@ -119,7 +119,12 @@ public static class ZplPatcher
     private static IEnumerable<ZplToken> InSpan(string zpl, int start, int end)
     {
         if (zpl is null || start < 0 || end > zpl.Length || start >= end) return Enumerable.Empty<ZplToken>();
-        return ZplRenderer.TokenizeForEditing(zpl).Where(t => t.Start >= start && t.End <= end);
+        // A token belongs to the field it STARTS in. Its arguments run to the next
+        // command — the line break included — so the last command of a field ends
+        // past the field's own span once the trailing whitespace is trimmed off it,
+        // and asking for the whole token to fit dropped it. That is what hid a
+        // graphic's ^GF from the properties when no ^FS followed it.
+        return ZplRenderer.TokenizeForEditing(zpl).Where(t => t.Start >= start && t.Start < end);
     }
 
     /// <summary>The field's own ^FO / ^FT, which is where its position lives.</summary>
@@ -181,7 +186,10 @@ public static class ZplPatcher
         double? ModuleWidth,    // ^BY
         bool Reverse,           // ^FR
         string? Shape,          // "GB", "GE", "GC", "GD"
-        double[]? ShapeArgs);
+        double[]? ShapeArgs,
+        string? Graphic = null, // the ^GF payload, arguments included
+        int GraphicStart = -1,  // the whole ^GF command, caret included
+        int GraphicEnd = -1);
 
     public static FieldFacts Read(string zpl, int start, int end)
     {
@@ -192,6 +200,7 @@ public static class ZplPatcher
         var code = tokens.FirstOrDefault(t => t.Command.Length == 2 && t.Command[0] == 'B' && t.Command != "BY");
         var by = tokens.FirstOrDefault(t => t.Command == "BY");
         var shape = tokens.FirstOrDefault(t => t.Command is "GB" or "GE" or "GC" or "GD");
+        var graphic = tokens.FirstOrDefault(t => t.Command is "GF" or "GFA");
 
         string? fontName = null; double? fontH = null, fontW = null;
         if (font is not null)
@@ -228,7 +237,10 @@ public static class ZplPatcher
             ModuleWidth: by is null ? null : Numbers(by.Args).Cast<double?>().FirstOrDefault(),
             Reverse: tokens.Any(t => t.Command == "FR"),
             Shape: shape?.Command,
-            ShapeArgs: shape is null ? null : Numbers(shape.Args));
+            ShapeArgs: shape is null ? null : Numbers(shape.Args),
+            Graphic: graphic?.Args,
+            GraphicStart: graphic?.Start ?? -1,
+            GraphicEnd: graphic?.End ?? -1);
     }
 
     // ── Changing them ───────────────────────────────────────────────────────
@@ -241,6 +253,18 @@ public static class ZplPatcher
         int at = fd.End - fd.Args.Length;
         var (_, _, trail) = SplitArgs(fd.Args);
         return new Edit(at, fd.End, value + trail);
+    }
+
+    /// <summary>
+    /// Swaps the whole ^GF for another one — a picture re-imported at a different
+    /// size, or converted a different way. Only that command is touched: the ^FO
+    /// beside it keeps the graphic exactly where the user put it.
+    /// </summary>
+    public static Edit? SetGraphic(string zpl, int start, int end, string command)
+    {
+        var gf = InSpan(zpl, start, end).FirstOrDefault(t => t.Command is "GF" or "GFA");
+        if (gf is null) return null;
+        return new Edit(gf.Start, gf.End, command);
     }
 
     /// <summary>Rewrites the ^A that dresses a text field.</summary>

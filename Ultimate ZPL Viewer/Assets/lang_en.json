@@ -2162,7 +2162,16 @@
       "info": "{0} × {1} dots — {2} of ZPL",
       "bytes": "{0} bytes",
       "kilobytes": "{0} kB",
-      "unreadable": "This file could not be read as an image."
+      "unreadable": "This file could not be read as an image.",
+      "pick": "Click to choose an image",
+      "editTitle": "Change the image",
+      "apply": "Apply",
+      "fmtSection": "How it is written in the ZPL",
+      "fmtHex": "ASCII hex",
+      "fmtHexInfo": "Read by every Zebra printer ever made. Two characters per byte, so the ZPL is bulkier — run-length compression takes most of that back on a logo.",
+      "fmtZ64": ":Z64: (compressed)",
+      "fmtZ64Info": "Roughly half the size of the hex form on a real label, and better still on a photograph. Deflated, Base64-encoded and checksummed — which the printer's firmware has to know how to read.",
+      "fmtZ64Link": "Zebra: ZB64 encoding and compression"
     },
     "props": {
       "textSection": "Text",
@@ -2195,7 +2204,8 @@
       "duplicate": "Duplicate the element",
       "delete": "Delete the element (Del)",
       "forward": "Bring forward (drawn over the next one)",
-      "backward": "Send backward (drawn under the previous one)"
+      "backward": "Send backward (drawn under the previous one)",
+      "image": "Change the image (size, black and white, encoding)"
     }
   }
 }

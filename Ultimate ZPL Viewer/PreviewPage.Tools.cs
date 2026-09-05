@@ -296,7 +296,7 @@ public sealed partial class PreviewPage
         if (_tool == EditTool.Image)
         {
             SetTool(DefaultTool);
-            _ = PlaceImageAsync(X, Y, dragged ? W : 0);
+            _ = PlaceImageAsync(X, Y, dragged ? W : 0, dragged ? H : 0);
             return;
         }
 

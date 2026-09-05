@@ -92,6 +92,11 @@ public sealed partial class PreviewPage
             SelectionMoreButton.Visibility = expandable ? Visibility.Visible : Visibility.Collapsed;
             if (!expandable) SelectionMoreButton.IsChecked = false;
 
+            // A graphic has no properties to spin; it is re-imported instead.
+            EditImageButton.Visibility = _facts.Graphic is not null
+                ? Visibility.Visible : Visibility.Collapsed;
+            ToolTipService.SetToolTip(EditImageButton, TipBlock(LocalizationService.Get("mode.act.image")));
+
             ShowWarning(spec is null ? null : BarcodeCatalog.Validate(spec.Key, _facts.Data ?? ""));
         }
         finally { _fillingProps = false; }

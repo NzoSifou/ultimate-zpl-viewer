@@ -2162,7 +2162,16 @@
       "info": "{0} × {1} points — {2} de ZPL",
       "bytes": "{0} octets",
       "kilobytes": "{0} ko",
-      "unreadable": "Ce fichier n’a pas pu être lu comme une image."
+      "unreadable": "Ce fichier n’a pas pu être lu comme une image.",
+      "pick": "Cliquez pour choisir une image",
+      "editTitle": "Modifier l’image",
+      "apply": "Appliquer",
+      "fmtSection": "Écriture dans le ZPL",
+      "fmtHex": "Hexadécimal ASCII",
+      "fmtHexInfo": "Lu par toutes les Zebra, sans exception. Deux caractères par octet, donc un ZPL plus lourd — la compression par répétition en reprend l’essentiel sur un logo.",
+      "fmtZ64": ":Z64: (compressé)",
+      "fmtZ64Info": "Environ deux fois plus compact que l’hexadécimal sur une vraie étiquette, davantage sur une photo. Compressé, encodé en Base64 et vérifié par une somme de contrôle — encore faut-il que le firmware de l’imprimante sache le lire.",
+      "fmtZ64Link": "Zebra : encodage et compression ZB64"
     },
     "props": {
       "textSection": "Texte",
@@ -2195,7 +2204,8 @@
       "duplicate": "Dupliquer l'élément",
       "delete": "Supprimer l'élément (Suppr)",
       "forward": "Avancer d'un rang (dessiné par-dessus le suivant)",
-      "backward": "Reculer d'un rang (dessiné sous le précédent)"
+      "backward": "Reculer d'un rang (dessiné sous le précédent)",
+      "image": "Modifier l’image (taille, noir et blanc, écriture)"
     }
   }
 }

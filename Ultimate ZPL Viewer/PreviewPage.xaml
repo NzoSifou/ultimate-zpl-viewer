@@ -820,6 +820,17 @@
                                               VerticalAlignment="Center"
                                               FontSize="12"
                                               Visibility="Collapsed"/>
+                                    <!-- A graphic has nothing to change in a row of
+                                         spinners: it is re-imported. The button
+                                         reopens the import with the settings that
+                                         made it, so a size or a threshold can be
+                                         reconsidered without starting over. -->
+                                    <Button x:Name="EditImageButton"
+                                            Width="28" Height="26" MinWidth="0" Padding="0"
+                                            CornerRadius="5"
+                                            Visibility="Collapsed">
+                                        <FontIcon Glyph="&#xE712;" FontSize="13"/>
+                                    </Button>
                                     <!-- Opens the rest of the properties INSIDE the
                                          plate, as a second row. A flyout put them on
                                          top of the very element being edited. -->

@@ -996,6 +996,11 @@ public static partial class ZplRenderer
                         double topY = typeset ? fy - g.Height : fy;
                         fieldBuf.Add(new ZplImage(fx, topY, g.Width, g.Height, g.Bits));
                         Grow(fx + g.Width, topY + g.Height);
+                        // The span has to be widened HERE. Every other command is
+                        // taken in after the switch, but this one closes the field
+                        // before that runs, and the graphic would end up pointing at
+                        // the ^FO in front of it and nothing else.
+                        if (token.End > fieldEnd) fieldEnd = token.End;
                         // ^GF is complete in itself: it prints even without a closing
                         // ^FS (DPD's logo/Predict graphics are followed directly by the
                         // next ^FT — Labelary renders them; the abandon-on-new-field
@@ -1148,6 +1153,25 @@ public static partial class ZplRenderer
                 }
                 case "FS":
                     fieldEnd = token.End;
+                    // A ^GF closed its field the moment it was read — it prints with
+                    // no ^FS at all — so the ^FS that does follow one would be left
+                    // outside every span, and deleting the graphic would leave it
+                    // behind. Hand it to the field that just closed, when nothing but
+                    // whitespace separates them.
+                    if (fieldBuf.Count == 0 && drawables.Count > 0)
+                    {
+                        var closed = drawables[^1];
+                        bool adjacent = closed.SourceStart >= 0 && closed.SourceEnd >= 0
+                                        && closed.SourceEnd <= token.Start;
+                        for (int i = closed.SourceEnd; adjacent && i < token.Start; i++)
+                            if (!char.IsWhiteSpace(src[i])) adjacent = false;
+                        if (adjacent)
+                            for (int i = drawables.Count - 1; i >= 0; i--)
+                            {
+                                if (drawables[i].SourceStart != closed.SourceStart) break;
+                                drawables[i].SourceEnd = token.End;
+                            }
+                    }
                     CommitField();
                     pendingBarcode = false;
                     pending2D = false;

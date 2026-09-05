@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Globalization;
+using System.IO;
 using System.Text;
 
 namespace Ultimate_ZPL_Viewer;
@@ -15,14 +16,26 @@ namespace Ultimate_ZPL_Viewer;
 // two ways of making it: a threshold, which keeps a logo crisp, and dithering,
 // which trades crispness for the shades a photograph needs.
 //
-// The result is written as ^GFA — plain ASCII hex, which every Zebra reads —
-// compressed with the standard ACS run-length scheme. Compression matters here:
-// a logo is mostly blank, and uncompressed hex would put a hundred kilobytes of
-// "0" into the editor for a picture worth two.
+// The result is written as ^GFA, in one of two encodings the user picks between.
+// ASCII hex with the standard ACS run-length scheme is read by every Zebra ever
+// made; :Z64: deflates the bytes and Base64s them, which is far smaller but needs
+// firmware recent enough to know the encoding. Compression matters either way: a
+// logo is mostly blank, and raw hex would put a hundred kilobytes of "0" into the
+// editor for a picture worth two.
 internal static class ZplImageImport
 {
     /// <summary>A 1-bit image, rows padded to whole bytes; a set bit prints.</summary>
     public sealed record Mono(int Width, int Height, byte[] Bits);
+
+    /// <summary>How the bitmap is written into the ZPL.</summary>
+    public enum GraphicFormat
+    {
+        /// <summary>ASCII hex with the standard ACS run-length scheme. Every Zebra reads it.</summary>
+        AcsHex,
+
+        /// <summary>:Z64: — deflated then Base64, with a CRC. Far smaller, newer firmware.</summary>
+        Z64,
+    }
 
     // A guard, not a preference: a 300 dpi label is ~2400 dots across, and the
     // hex for anything past this would be unusable in an editor long before the
@@ -39,6 +52,39 @@ internal static class ZplImageImport
         // from a path; copying it frees the user's file immediately.
         using var original = new Bitmap(path);
         return new Bitmap(original);
+    }
+
+    /// <summary>
+    /// Rebuilds a picture from a graphic already on the label — what re-editing an
+    /// image falls back on once the file it came from is out of reach. It is black
+    /// and white by then, so a threshold has little left to decide; the size, the
+    /// inversion and the encoding still do.
+    /// </summary>
+    public static Bitmap FromBits(int width, int height, byte[] bits)
+    {
+        var bitmap = new Bitmap(Math.Max(1, width), Math.Max(1, height), PixelFormat.Format32bppArgb);
+        int bytesPerRow = (width + 7) / 8;
+        var data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                                   ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+        try
+        {
+            var row = new byte[bitmap.Width * 4];
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    int index = y * bytesPerRow + x / 8;
+                    bool black = index < bits.Length && ((bits[index] >> (7 - (x & 7))) & 1) == 1;
+                    byte value = black ? (byte)0 : (byte)255;
+                    row[x * 4] = value; row[x * 4 + 1] = value; row[x * 4 + 2] = value;
+                    row[x * 4 + 3] = 255;
+                }
+                System.Runtime.InteropServices.Marshal.Copy(
+                    row, 0, data.Scan0 + y * data.Stride, row.Length);
+            }
+        }
+        finally { bitmap.UnlockBits(data); }
+        return bitmap;
     }
 
     /// <summary>
@@ -137,11 +183,64 @@ internal static class ZplImageImport
     // ── The ZPL ─────────────────────────────────────────────────────────────
 
     /// <summary>The complete ^GFA command for this bitmap.</summary>
-    public static string ToGraphicField(Mono mono)
+    public static string ToGraphicField(Mono mono, GraphicFormat format = GraphicFormat.AcsHex)
     {
         int bytesPerRow = (mono.Width + 7) / 8;
         int total = bytesPerRow * mono.Height;
-        var body = new StringBuilder(total);
+        string n(int v) => v.ToString(CultureInfo.InvariantCulture);
+        string body = format == GraphicFormat.Z64 ? Z64Body(mono.Bits) : AcsBody(mono, bytesPerRow);
+        return $"^GFA,{n(total)},{n(total)},{n(bytesPerRow)},{body}";
+    }
+
+    /// <summary>Which encoding a ^GF payload already uses.</summary>
+    public static GraphicFormat FormatOf(string? graphicArgs)
+    {
+        var parts = (graphicArgs ?? "").Split(',', 5);
+        return parts.Length >= 5
+               && parts[4].TrimStart().StartsWith(":Z64:", StringComparison.OrdinalIgnoreCase)
+            ? GraphicFormat.Z64
+            : GraphicFormat.AcsHex;
+    }
+
+    // ── :Z64: ───────────────────────────────────────────────────────────────
+
+    // The bytes deflated and then Base64'd, which is what Zebra calls Z64. Base64
+    // costs a third over the raw bytes where hex costs double, and the deflate in
+    // front of it does the rest: the blank half of a label collapses to nothing.
+    private static string Z64Body(byte[] bits)
+    {
+        using var packed = new MemoryStream();
+        using (var deflate = new System.IO.Compression.ZLibStream(
+                   packed, System.IO.Compression.CompressionLevel.SmallestSize, leaveOpen: true))
+            deflate.Write(bits, 0, bits.Length);
+
+        // System.Convert, spelled out: this class has a Convert of its own.
+        string encoded = System.Convert.ToBase64String(packed.ToArray());
+        // The CRC covers the ENCODED text, not the picture: it is there to catch a
+        // download that arrived damaged, and the printer refuses the object when it
+        // does not match.
+        return ":Z64:" + encoded + ":" + Crc16(encoded).ToString("X4", CultureInfo.InvariantCulture);
+    }
+
+    // CRC-16/CCITT as the ZB64 downloads use it: polynomial 0x1021, starting at
+    // zero, no reflection.
+    private static ushort Crc16(string text)
+    {
+        ushort crc = 0;
+        foreach (char c in text)
+        {
+            crc ^= (ushort)(c << 8);
+            for (int bit = 0; bit < 8; bit++)
+                crc = (ushort)((crc & 0x8000) != 0 ? (crc << 1) ^ 0x1021 : crc << 1);
+        }
+        return crc;
+    }
+
+    // ── ASCII hex ───────────────────────────────────────────────────────────
+
+    private static string AcsBody(Mono mono, int bytesPerRow)
+    {
+        var body = new StringBuilder(bytesPerRow * mono.Height);
         string? previous = null;
 
         var row = new StringBuilder(bytesPerRow * 2);
@@ -160,9 +259,7 @@ internal static class ZplImageImport
             previous = hex;
             Compress(body, hex);
         }
-
-        string n(int v) => v.ToString(CultureInfo.InvariantCulture);
-        return $"^GFA,{n(total)},{n(total)},{n(bytesPerRow)},{body}";
+        return body.ToString();
     }
 
     private static char Nibble(int value) => "0123456789ABCDEF"[value & 0xF];

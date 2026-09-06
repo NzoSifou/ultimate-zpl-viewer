@@ -1759,8 +1759,8 @@
           "desc": "A column or a row. In a row, the code and shape menus open downwards, in columns."
         },
         "elementSide": {
-          "title": "Side of the strip",
-          "desc": "Which side of the selected element its strip of tools rests against."
+          "title": "Where the strip sits",
+          "desc": "Where the strip of tools comes to rest in relation to the selected element."
         }
       },
       "opt": {
@@ -1780,7 +1780,7 @@
         "belowInfo": "The strip sits under the element and the chevron points down: the properties unfold downwards, clear of what you are editing.",
         "above": "Above the element",
         "aboveInfo": "The strip sits above the element and the chevron points up: the properties unfold upwards, clear of what you are editing.",
-        "sideFallback": "When there is no room on that side, the strip goes to the other one.",
+        "sideFallback": "When there is no room below, the strip goes above — and the other way round.",
         "stackTop": "This plate above, the other below",
         "stackBottom": "This plate below, the other above"
       }

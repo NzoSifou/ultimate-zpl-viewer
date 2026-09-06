@@ -503,6 +503,22 @@ public sealed partial class PreviewPage
         }
         catch { ClearHandles(); SelectionTools.Visibility = Visibility.Collapsed; return; }
 
+        // Scrolled or zoomed out of sight, the element has no edge to lean on: the
+        // strip was landing wherever the clamp left it, which for anything above
+        // the view is the top of the preview - in among the two standing plates,
+        // looking for all the world as though it belonged to them. A strip whose
+        // element cannot be seen is not attached to anything, so it goes too.
+        // Unless it holds the caret: what is being typed is not thrown away for a
+        // scroll.
+        if (!typing
+            && (box.Right <= 0 || box.Bottom <= 0
+                || box.Left >= EditOverlay.ActualWidth || box.Top >= EditOverlay.ActualHeight))
+        {
+            ClearHandles();
+            SelectionTools.Visibility = Visibility.Collapsed;
+            return;
+        }
+
         // A group is moved, copied and deleted; everything else — the turn, the
         // order, the properties — is about one element and waits for one.
         RotateElementButton.Visibility = !HasMultiSelection

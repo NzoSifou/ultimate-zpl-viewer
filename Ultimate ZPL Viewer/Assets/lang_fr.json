@@ -1759,8 +1759,8 @@
           "desc": "En colonne ou en ligne. En ligne, les menus des codes et des formes se déplient vers le bas, en colonnes."
         },
         "elementSide": {
-          "title": "Côté de la barre",
-          "desc": "De quel côté de l'élément sélectionné la barre d'outils vient se poser."
+          "title": "Emplacement de la barre",
+          "desc": "Où la barre d'outils vient se poser par rapport à l'élément sélectionné."
         }
       },
       "opt": {
@@ -1780,7 +1780,7 @@
         "belowInfo": "La barre se pose sous l'élément et la flèche pointe vers le bas : les paramètres se déplient vers le bas, à l'écart de ce que vous modifiez.",
         "above": "Au-dessus de l'élément",
         "aboveInfo": "La barre se pose au-dessus de l'élément et la flèche pointe vers le haut : les paramètres se déplient vers le haut, à l'écart de ce que vous modifiez.",
-        "sideFallback": "Quand il n'y a pas la place de ce côté-là, la barre passe de l'autre côté.",
+        "sideFallback": "Quand il n'y a pas la place en dessous, la barre passe au-dessus — et inversement.",
         "stackTop": "Cette plaque au-dessus, l'autre en dessous",
         "stackBottom": "Cette plaque en dessous, l'autre au-dessus"
       }

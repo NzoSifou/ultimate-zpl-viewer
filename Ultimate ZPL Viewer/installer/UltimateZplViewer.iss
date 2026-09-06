@@ -1,4 +1,4 @@
-; ============================================================================
+﻿; ============================================================================
 ;  Ultimate ZPL Viewer - script d'installation Inno Setup
 ;  Genere un Setup.exe classique (installation dans Program Files, raccourcis,
 ;  desinstalleur). L'application est "non packagee" (pas de MSIX) et self-contained
@@ -14,7 +14,7 @@
 ; ============================================================================
 
 #define MyAppName "Ultimate ZPL Viewer"
-#define MyAppVersion "1.4.1"
+#define MyAppVersion "1.5.0"
 #define MyAppPublisher "Enzo Monchanin (NzoSifou)"
 #define MyAppExeName "Ultimate ZPL Viewer.exe"
 ; Dossier de publication (relatif a ce .iss). Genere par :

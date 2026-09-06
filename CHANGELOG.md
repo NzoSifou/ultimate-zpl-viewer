@@ -6,6 +6,175 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.5.0] — 2026-09-07 — mode édition : dessiner l'étiquette
+
+L'application savait montrer une étiquette ; elle sait maintenant la faire. Un
+interrupteur en haut de l'aperçu ouvre un **mode édition** où l'étiquette se
+dessine à la souris — poser du texte, un code-barres, une forme, une image, les
+déplacer, les redimensionner, les empiler, les copier.
+
+Rien n'est régénéré : chaque geste réécrit **uniquement les chiffres de la
+commande concernée**, à sa place dans le fichier. Le ZPL que vous aviez écrit
+reste le ZPL que vous aviez écrit, commentaires et mise en forme compris, et
+chaque modification passe par la pile d'annulation de l'éditeur — Ctrl+Z défait
+un déplacement comme il défait une frappe.
+
+### ✨ Ajouté
+
+- **Deux modes, un interrupteur** 👁️✏️
+  *Visualisation* est ce que l'application a toujours fait : le ZPL est affiché en
+  lecture seule et un clic sur l'aperçu pointe le code derrière un élément.
+  *Édition* déverrouille le texte et transforme l'aperçu en plan de travail. Le
+  mode appartient au **document** : un onglet peut être ouvert en lecture pendant
+  qu'un autre se dessine. Un réglage décide du mode d'ouverture — toujours en
+  lecture, toujours en édition, ou celui qui servait la dernière fois.
+
+- **Placer un élément sur l'étiquette** 🧰
+  Une plaque d'outils flottante : texte, code-barres (treize symbologies, avec un
+  aperçu de chacune avant de choisir), formes (rectangle, ligne, ellipse, cercle,
+  bloc plein), image. On arme l'outil, on clique — ou on fait glisser pour
+  dimensionner la forme. **Maj enfoncée**, l'outil reste armé : on pose autant
+  d'éléments qu'on veut sans revenir à la plaque entre chacun.
+
+- **Déplacer, redimensionner, tourner, dupliquer, supprimer** ✋
+  À la souris ou aux flèches du clavier (un point, dix points avec Maj, aligné au
+  millimètre avec Ctrl). Les poignées d'angle redimensionnent ce que ZPL sait
+  redimensionner. Sélectionner et déplacer sont **deux outils distincts** : la
+  flèche prend un élément pour le lire sans risquer de le bouger.
+
+- **Écrire le texte là où il s'imprime** ⌨️
+  Double-clic (ou F2) sur un texte et le curseur s'ouvre **dans les mots eux-mêmes**,
+  dans la police, la taille et l'orientation réelles du champ — pas dans une boîte
+  à côté. Double-clic pour un mot, triple-clic pour tout, glisser pour sélectionner.
+  Entrée termine, Maj+Entrée passe à la ligne, Échap abandonne.
+
+- **Les propriétés de l'élément sélectionné** 🎛️
+  Une barre flottante se pose contre l'élément et se déplie sur ses réglages :
+  police, hauteur, largeur, inversion vidéo pour un texte ; contenu, symbologie,
+  hauteur des barres, largeur de barre, texte lisible pour un code ; dimensions et
+  épaisseur pour une forme. Chaque valeur est lue dans le ZPL réel, y compris
+  quand elle vient d'un `^BY` posé ailleurs dans le fichier.
+
+- **Poser une image** 🖼️
+  N'importe quel PNG, JPEG ou BMP devient un `^GF` monochrome. Deux encodages au
+  choix : hexadécimal ACS, compatible avec toutes les imprimantes, ou `:Z64:`,
+  environ quatre fois plus compact mais qui demande un firmware Zebra récent.
+  Seuillage ou tramage Floyd–Steinberg, seuil réglable, inversion, taille libre —
+  et un bouton rouvre la fenêtre plus tard avec les réglages qui ont servi.
+
+- **Plusieurs éléments à la fois** 🗂️
+  Ctrl+clic pour ajouter ou retirer, un lasso depuis une zone vide, Ctrl+A pour
+  tout prendre. Le groupe se déplace et se supprime d'un bloc.
+
+- **Copier, couper, coller** 📋
+  Ce qui voyage est **le ZPL lui-même**, en texte : une copie se colle dans le
+  code, dans une autre étiquette, dans un e-mail — et ce qu'on a copié depuis
+  n'importe où se colle sur l'étiquette.
+
+- **Décider quel élément est dessiné au-dessus** 🔃
+  Deux boutons montent ou descendent l'élément d'un cran, en déplaçant son champ
+  dans le fichier : l'ordre de dessin de ZPL est l'ordre du texte.
+
+- **Une catégorie de paramètres pour le mode édition** ⚙️
+  Où se posent les plaques flottantes et dans quel sens elles se déplient. Chaque
+  plaque prend une position — accrochée à l'un des huit bords et coins, choisie en
+  pointant une image de l'aperçu, ou libre et déplaçable par ses poignées — et une
+  orientation, en colonne ou en ligne. Deux plaques visant le même endroit se
+  partagent la place, l'une au-dessus de l'autre. La barre de l'élément se pose au
+  choix au-dessus ou en dessous de ce qu'elle sert.
+
+- **Un bandeau d'état pour les travaux longs** ⏳
+  Export PDF, export PNG, impression, rendu d'un gros document, recherche de mise
+  à jour : une ligne en bas de la fenêtre, avec un bouton d'abandon quand la tâche
+  peut être abandonnée.
+
+- **Les mises à jour s'installent depuis l'application** ⬇️
+  La recherche interroge GitHub, propose la version trouvée avec ses notes, et
+  installe. La fenêtre reparaît à la fermeture si la mise à jour a été remise à
+  plus tard.
+
+### 🔄 Modifié
+
+- **Le curseur dit ce que le clic va faire** 🖱️
+  Une croix quand un outil va poser quelque chose, les quatre flèches sur un
+  élément qu'un glisser déplacerait, la main ouverte quand l'étiquette dépasse de
+  la vue, le curseur de texte sur les mots qu'on est en train de taper. Chaque cas
+  a été vérifié en lisant le curseur que Windows affiche réellement.
+
+- **Les menus des codes et des formes tiennent en une ligne par famille** 📐
+  Neuf codes linéaires, puis quatre codes 2D, puis les cinq formes sur une ligne.
+  Ils se repliaient sur trois lignes de cinq quelle que soit la place disponible :
+  une fenêtre volante fait 456 points de large quoi qu'on lui donne.
+
+- **La feuille des raccourcis couvre l'aperçu** ⌨️
+  Trois sections de plus — mode visualisation, mode édition, saisie de texte sur
+  l'étiquette. La moitié de ce à quoi l'aperçu répond est un modificateur maintenu
+  pendant un clic, donc clics, double-clics, glissers et molette y ont leur propre
+  touche dessinée.
+
+- **La catégorie Impression est mise en page comme les autres** 🖨️
+  Un tiers de fenêtre par carte, comme Général et Document.
+
+- **La version n'affiche plus que trois nombres** 🔢
+  Le quatrième est un compteur de compilation qui n'apprend rien à personne.
+
+### 🐛 Corrigé
+
+- **Le thème clair laissait les plaques vides** 🌗
+  Les icônes dessinées comme des formes sont peintes depuis le code, et le code
+  demandait la couleur d'encre à l'**application**, dont le thème n'est pas
+  forcément celui de la page — « Sombre & aperçu clair » est exactement ce cas.
+  L'encre revenait blanche : blanc sur blanc. Les icônes se repeignent aussi quand
+  le thème change sous elles, ce que rien ne faisait.
+
+- **L'aperçu se déplaçait pendant la saisie d'un texte** 🧷
+  Glisser sur les lettres pour les sélectionner faisait défiler l'étiquette. La
+  zone de saisie est un enfant du canevas comme un autre, garée hors champ pour ne
+  pas avaler les clics, et tout ce qui décidait de « l'amener à l'écran » faisait
+  défiler l'étiquette entière pour l'atteindre. La vue est notée à l'ouverture du
+  curseur et remise en place dès que quoi que ce soit la déplace.
+
+- **La hauteur et la largeur des barres étaient mal lues** 📏
+  `^BY` est modal et souvent écrit **avant** le champ qu'il gouverne, parfois
+  plusieurs lignes plus haut : une hauteur affichée à 1 sur un code-barres
+  visiblement plus grand. Les valeurs en cours sont maintenant suivies depuis le
+  début du fichier.
+
+- **Un bloc plein ne pouvait pas être plus haut que large** ⬛
+  Il se carrait. ZPL élargit une boîte à au moins l'épaisseur de sa bordure, et
+  c'est la hauteur qui lui était donnée comme bordure pour la remplir. Le côté le
+  plus **court** la remplit aussi bien sans rien gonfler.
+
+- **Ouvrir puis refermer les propriétés d'un code-barres faisait planter** 💥
+  Un contrôle gardé d'une reconstruction à l'autre reste enfant de la ligne où il
+  était, et l'ajouter à un second parent lève une exception. Plus rien n'est
+  conservé entre deux reconstructions.
+
+- **La barre de l'élément fuyait vers le bord** ↔️
+  Elle s'écartait toujours vers la droite de la plaque d'outils, ce qui suivait
+  cette plaque au bord droit dès qu'on l'y mettait. Elle ne s'écarte plus que
+  quand elle passe réellement sous une plaque, et du côté dont elle est déjà la
+  plus proche.
+
+- **Une plaque libre revenait dans le coin quand on la verrouillait** 📍
+  Sa position était relue à l'écran à la fin du glisser — une question qui peut
+  rester sans réponse, auquel cas le repli était le coin haut-gauche. C'est le
+  calcul du glisser qui est retenu.
+
+### 🔧 Détails
+
+- Les modifications passent par la pile d'annulation de Monaco : un déplacement,
+  un redimensionnement ou une frappe sur l'étiquette s'annulent avec Ctrl+Z comme
+  n'importe quelle édition de texte.
+- Les encodeurs `^GF` ont été vérifiés par 300 allers-retours dans les deux
+  encodages contre les décodeurs de l'application : aucun octet de différence.
+- 313 clés de langue utilisées dans le code, toutes présentes dans les deux
+  fichiers de langue, qui comptent 1593 clés chacun sans divergence.
+- Vérifié sans régression sur les jeux de test DPD, Mondial Relay et GLS : taille,
+  rendu et légende identiques.
+
+---
+
 ## [1.4.1] — 2026-09-02 — volet éditeur et tenue sous charge
 
 Deux chantiers : trois retouches d'ergonomie sur le volet éditeur, puis une passe

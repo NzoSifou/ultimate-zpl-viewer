@@ -996,6 +996,11 @@ public static partial class ZplRenderer
                         double topY = typeset ? fy - g.Height : fy;
                         fieldBuf.Add(new ZplImage(fx, topY, g.Width, g.Height, g.Bits));
                         Grow(fx + g.Width, topY + g.Height);
+                        // The span has to be widened HERE. Every other command is
+                        // taken in after the switch, but this one closes the field
+                        // before that runs, and the graphic would end up pointing at
+                        // the ^FO in front of it and nothing else.
+                        if (token.End > fieldEnd) fieldEnd = token.End;
                         // ^GF is complete in itself: it prints even without a closing
                         // ^FS (DPD's logo/Predict graphics are followed directly by the
                         // next ^FT — Labelary renders them; the abandon-on-new-field
@@ -1148,6 +1153,25 @@ public static partial class ZplRenderer
                 }
                 case "FS":
                     fieldEnd = token.End;
+                    // A ^GF closed its field the moment it was read — it prints with
+                    // no ^FS at all — so the ^FS that does follow one would be left
+                    // outside every span, and deleting the graphic would leave it
+                    // behind. Hand it to the field that just closed, when nothing but
+                    // whitespace separates them.
+                    if (fieldBuf.Count == 0 && drawables.Count > 0)
+                    {
+                        var closed = drawables[^1];
+                        bool adjacent = closed.SourceStart >= 0 && closed.SourceEnd >= 0
+                                        && closed.SourceEnd <= token.Start;
+                        for (int i = closed.SourceEnd; adjacent && i < token.Start; i++)
+                            if (!char.IsWhiteSpace(src[i])) adjacent = false;
+                        if (adjacent)
+                            for (int i = drawables.Count - 1; i >= 0; i--)
+                            {
+                                if (drawables[i].SourceStart != closed.SourceStart) break;
+                                drawables[i].SourceEnd = token.End;
+                            }
+                    }
                     CommitField();
                     pendingBarcode = false;
                     pending2D = false;
@@ -1676,7 +1700,20 @@ public static partial class ZplRenderer
     // alignment padding at the reference width instead of our narrower space glyph.
     private const double ZebraSpaceEmRatio = 0.30;
 
-    private static void DrawText(Canvas canvas, ZplText text)
+    /// <summary>
+    /// Everything needed to put a text field on the canvas, computed once. The
+    /// in-place editor asks for the same numbers, so the box it types into lands
+    /// exactly where the glyphs are: ONE geometry rather than two that drift.
+    /// </summary>
+    internal readonly record struct TextLayout(
+        double CellHeight,      // the ZPL cell, in dots
+        double FontSize,        // what XAML has to be told to get that ink height
+        double Condense,        // ^A0 width < height squeezes the glyphs
+        double AnchorY,         // the baseline offset for ^FT
+        Windows.UI.Text.FontWeight Weight,
+        double TextWidth);      // rendered width, only needed for rotated ^FO
+
+    internal static TextLayout MeasureText(ZplText text)
     {
         var fontSize = Math.Max(8, text.Height);
         // Scale FontSize so the ink height equals the ZPL dot height.
@@ -1713,6 +1750,66 @@ public static partial class ZplRenderer
             textW = probe.DesiredSize.Width * condense;
         }
 
+        return new TextLayout(fontSize, renderFontSize, condense, anchorY, weight, textW);
+    }
+
+    /// <summary>
+    /// Where that field sits on the canvas. Shared with the in-place editor, which
+    /// passes a <paramref name="first"/> transform of its own: a TextBox lays its
+    /// line out at the font's natural height, and it has to be squeezed onto the ZPL
+    /// cell before any of this applies to it.
+    /// </summary>
+    internal static Transform TextTransform(ZplText text, TextLayout m, double extraX,
+                                            Transform? first = null)
+    {
+        var transforms = new TransformGroup();
+        if (first is not null) transforms.Children.Add(first);
+        if (Math.Abs(m.Condense - 1.0) > 0.001)
+            transforms.Children.Add(new ScaleTransform { ScaleX = m.Condense, ScaleY = 1.0, CenterX = 0, CenterY = m.AnchorY });
+
+        double tx, ty;
+        if (text.Baseline || text.Rotation == 0)
+        {
+            // ^FT: rotate around the baseline anchor, anchor lands at (X, Y).
+            if (text.Rotation != 0)
+                transforms.Children.Add(new RotateTransform { Angle = text.Rotation, CenterX = 0, CenterY = m.AnchorY });
+            tx = text.X; ty = text.Y - m.AnchorY;
+        }
+        else
+        {
+            // ^FO + rotation: rotate around the block's top-left, then place the
+            // rotated bounding box's top-left corner at (X, Y).
+            transforms.Children.Add(new RotateTransform { Angle = text.Rotation, CenterX = 0, CenterY = 0 });
+            (tx, ty) = text.Rotation switch
+            {
+                90  => (text.X + m.CellHeight, text.Y),
+                180 => (text.X + m.TextWidth, text.Y + m.CellHeight),
+                270 => (text.X, text.Y + m.TextWidth),
+                _   => (text.X, text.Y),
+            };
+        }
+        transforms.Children.Add(new TranslateTransform { X = tx + extraX, Y = ty });
+        return transforms;
+    }
+
+    private static void DrawText(Canvas canvas, ZplText text)
+    {
+        foreach (var block in TextBlocksFor(text)) canvas.Children.Add(block);
+    }
+
+    /// <summary>
+    /// Every block this field is drawn with — the ink pass, plus the overlapping
+    /// passes that rebuild a weight DirectWrite renders too lightly. The in-place
+    /// editor draws the SAME blocks, which is what makes the words under the caret
+    /// the words that will print rather than an approximation of them.
+    /// </summary>
+    internal static IReadOnlyList<TextBlock> TextBlocksFor(ZplText text)
+    {
+        var m = MeasureText(text);
+        double fontSize = m.CellHeight, condense = m.Condense;
+        bool restoreWeight = text.Bold && condense < 0.9
+            && text.Font.StartsWith("Bitstream Vera", StringComparison.OrdinalIgnoreCase);
+
         TextBlock MakeBlock(double extraX)
         {
             var block = new TextBlock
@@ -1720,46 +1817,20 @@ public static partial class ZplRenderer
                 Text = text.Text,
                 Foreground = new SolidColorBrush(text.Reverse ? Colors.White : Colors.Black),
                 FontFamily = new FontFamily(text.Font),
-                FontSize = renderFontSize,
-                FontWeight = weight,
+                FontSize = m.FontSize,
+                FontWeight = m.Weight,
                 TextWrapping = TextWrapping.NoWrap,
                 LineHeight = fontSize,
                 LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
                 Padding = new Thickness(0),
             };
-            var transforms = new TransformGroup();
-            if (Math.Abs(condense - 1.0) > 0.001)
-                transforms.Children.Add(new ScaleTransform { ScaleX = condense, ScaleY = 1.0, CenterX = 0, CenterY = anchorY });
-
-            double tx, ty;
-            if (text.Baseline || text.Rotation == 0)
-            {
-                // ^FT: rotate around the baseline anchor, anchor lands at (X, Y).
-                if (text.Rotation != 0)
-                    transforms.Children.Add(new RotateTransform { Angle = text.Rotation, CenterX = 0, CenterY = anchorY });
-                tx = text.X; ty = text.Y - anchorY;
-            }
-            else
-            {
-                // ^FO + rotation: rotate around the block's top-left, then place the
-                // rotated bounding box's top-left corner at (X, Y).
-                transforms.Children.Add(new RotateTransform { Angle = text.Rotation, CenterX = 0, CenterY = 0 });
-                (tx, ty) = text.Rotation switch
-                {
-                    90  => (text.X + fontSize, text.Y),
-                    180 => (text.X + textW, text.Y + fontSize),
-                    270 => (text.X, text.Y + textW),
-                    _   => (text.X, text.Y),
-                };
-            }
-            transforms.Children.Add(new TranslateTransform { X = tx + extraX, Y = ty });
-            block.RenderTransform = transforms;
+            block.RenderTransform = TextTransform(text, m, extraX);
             Canvas.SetLeft(block, 0);
             Canvas.SetTop(block, 0);
             return block;
         }
 
-        canvas.Children.Add(MakeBlock(0));
+        var blocks = new List<TextBlock> { MakeBlock(0) };
         // DirectWrite renders Swiss 721 Condensed "Bold" lighter than Zebra/Labelary.
         // Faux-embolden non-condensed bold text with a sub-pixel second pass so it matches
         // (e.g. "S F", the Contact/Note block). Condensed text (w<h) already narrows its
@@ -1769,15 +1840,16 @@ public static partial class ZplRenderer
         // small text (h≤~24: DPD's "Destinataire", Contact/Tél/Ref labels, agency
         // block…) which came out visibly heavier than Labelary — quarter it there.
         if (text.Bold && condense > 0.95 && text.Height >= 28)
-            canvas.Children.Add(MakeBlock(0.5));
+            blocks.Add(MakeBlock(0.5));
         // Squeezed Vera Mono lost its real bold face above: put the weight back with
         // overlapping passes across the width the bold stems would have covered.
         if (restoreWeight)
         {
-            double spread = 0.05 * renderFontSize * condense; // bold-vs-regular stem gain
+            double spread = 0.05 * m.FontSize * condense; // bold-vs-regular stem gain
             for (double dx = 0.5; dx <= spread + 0.01; dx += 0.5)
-                canvas.Children.Add(MakeBlock(dx));
+                blocks.Add(MakeBlock(dx));
         }
+        return blocks;
     }
 
     // Renders a pre-built 1D barcode (bars + labels) with the ^FO rotation rule:
@@ -2839,6 +2911,13 @@ public static partial class ZplRenderer
         if (dot >= 0) s = s[..dot];
         return s.Trim();
     }
+
+    /// <summary>
+    /// The command stream, for code that edits the ZPL rather than draws it
+    /// (ZplPatcher). Exposed so the editor splits commands exactly the way the
+    /// renderer does — a second scanner would drift away from this one.
+    /// </summary>
+    internal static IReadOnlyList<ZplToken> TokenizeForEditing(string zpl) => Tokenize(zpl);
 
     private static IReadOnlyList<ZplToken> Tokenize(string zpl)
     {

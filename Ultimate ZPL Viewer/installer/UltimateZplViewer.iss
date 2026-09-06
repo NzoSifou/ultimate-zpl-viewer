@@ -1,4 +1,4 @@
-; ============================================================================
+﻿; ============================================================================
 ;  Ultimate ZPL Viewer - script d'installation Inno Setup
 ;  Genere un Setup.exe classique (installation dans Program Files, raccourcis,
 ;  desinstalleur). L'application est "non packagee" (pas de MSIX) et self-contained
@@ -14,7 +14,7 @@
 ; ============================================================================
 
 #define MyAppName "Ultimate ZPL Viewer"
-#define MyAppVersion "1.4.1"
+#define MyAppVersion "1.5.0"
 #define MyAppPublisher "Enzo Monchanin (NzoSifou)"
 #define MyAppExeName "Ultimate ZPL Viewer.exe"
 ; Dossier de publication (relatif a ce .iss). Genere par :
@@ -80,6 +80,9 @@ Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedType
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+; Mise a jour lancee depuis l'application : elle passe /UPDATED et l'installation
+; est silencieuse, donc la ligne ci-dessus est ignoree. L'app doit revenir seule.
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: LaunchedByUpdater
 
 [UninstallDelete]
 ; Le marqueur du premier demarrage : une reinstallation doit reproposer l'assistant.
@@ -91,3 +94,37 @@ Type: files; Name: "{localappdata}\Ultimate ZPL Viewer\onboarding.json"
 ; Nettoyage a la desinstallation : retire l'imprimante virtuelle, son port et la
 ; tache de capture si elles avaient ete installees depuis l'app (best-effort).
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command ""Remove-Printer -Name 'Ultimate ZPL Viewer' -EA SilentlyContinue; Remove-PrinterPort -Name (Join-Path $env:ProgramData 'UltimateZplViewer\spool.prn') -EA SilentlyContinue; Unregister-ScheduledTask -TaskName 'UltimateZplViewer_PrintCapture' -Confirm:$false -EA SilentlyContinue"""; RunOnceId: "RemoveVirtualPrinter"; Flags: runhidden
+
+[Code]
+// True quand Setup a ete lance par l'updater interne de l'application.
+function LaunchedByUpdater: Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 1 to ParamCount do
+    if CompareText(ParamStr(I), '/UPDATED') = 0 then
+    begin
+      Result := True;
+      Exit;
+    end;
+end;
+
+// Empreinte SHA-256 du Setup.exe qui vient de s'executer, ecrite a cote des
+// reglages. C'est elle que l'application compare a celle que GitHub publie pour
+// chaque fichier de release : deux empreintes differentes = deux binaires
+// differents, quel que soit le nom donne aux versions. Rien ici ne depend d'un
+// numero, donc renommer le schema de versions plus tard ne casse pas la detection.
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  Dir, Payload: string;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    Dir := ExpandConstant('{localappdata}\Ultimate ZPL Viewer');
+    ForceDirectories(Dir);
+    Payload := '{"setupSha256": "' + Lowercase(GetSHA256OfFile(ExpandConstant('{srcexe}'))) +
+               '", "version": "{#MyAppVersion}"}';
+    SaveStringToFile(Dir + '\install.json', Payload, False);
+  end;
+end;

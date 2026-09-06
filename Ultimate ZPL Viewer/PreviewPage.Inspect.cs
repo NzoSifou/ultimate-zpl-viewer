@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.UI.Xaml;
@@ -7,19 +7,21 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using Windows.Foundation;
+using System.Numerics;
 using Windows.UI;
 
 namespace Ultimate_ZPL_Viewer;
 
-// Inspect mode: the preview and the code point at each other.
+// Selection: the preview and the code point at each other.
 //
 // Clicking an element on the label frames it and highlights the ZPL that produced
 // it; putting the caret on that ZPL frames the element back. Both directions read
 // the same thing — the source span each drawable carries out of the parser (see
 // ZplDrawable.SourceStart/SourceEnd) — so neither side has to guess.
 //
-// The mode is off by default: while it is on, a click on the preview selects rather
-// than doing nothing, and that is a change the user opts into from the toolbar.
+// This used to be a toolbar toggle of its own. It is now simply what EDIT mode
+// does: there is no reason to pick an element while nothing can be changed, and
+// no reason to have to ask for it once something can (see PreviewPage.Mode.cs).
 public sealed partial class PreviewPage
 {
     // Every element on the canvas and the drawable it came from, filled by
@@ -32,61 +34,37 @@ public sealed partial class PreviewPage
 
     private Rectangle? _inspectFrame;
 
+    // Set while a second attempt at finding the selected element is pending.
+    private bool _frameRetry;
+
     // Set while WE move the caret, so the caret move that follows is not read back
     // as the user picking a line — which would bounce the selection between the two
     // sides for as long as the editor kept reporting.
     private bool _syncingCaret;
 
-    private bool InspectOn => _settings.InspectMode;
-
-    // ── Toolbar toggle ───────────────────────────────────────────────────────
-
-    private void InspectButton_Click(object sender, RoutedEventArgs e)
-    {
-        _settings.InspectMode = !_settings.InspectMode;
-        _settings.Save();
-        ApplyInspectButtonState();
-        if (!InspectOn) ClearInspectSelection();
-    }
-
-    // Lit = on. The accent button style is swapped in rather than a hand-painted
-    // background: it tracks a custom accent colour on its own, and keeps the hover
-    // and pressed states that a locally-set Background would flatten.
-    private void ApplyInspectButtonState()
-    {
-        // Both states get a REAL style. Setting Style to null instead of the default
-        // one drops every value the style carried - CornerRadius among them, which
-        // falls back to 0 - while the template already applied keeps drawing: the
-        // button rendered with square corners only when it was off.
-        InspectButton.Style = (Style)Application.Current.Resources[
-            InspectOn ? "AccentButtonStyle" : "DefaultButtonStyle"];
-        // The marquee is a Rectangle, not a glyph, so its stroke has to be told
-        // which foreground it sits on.
-        InspectIcon.Stroke = (Brush)Application.Current.Resources[
-            InspectOn ? "TextOnAccentFillColorPrimaryBrush" : "TextFillColorPrimaryBrush"];
-        ToolTipService.SetToolTip(InspectButton,
-            LocalizationService.Get(InspectOn ? "toolbar.inspectOn" : "toolbar.inspectOff"));
-    }
+    // Selecting is edit mode's business, and nothing else's.
+    private bool InspectOn => _editMode;
 
     // ── Preview → code ───────────────────────────────────────────────────────
 
-    private void PreviewCanvas_Tapped(object sender, TappedRoutedEventArgs e)
+    /// <summary>
+    /// The drawable under the pointer, or null. The press handler in
+    /// PreviewPage.Edit.cs is the one caller: picking and starting to drag are the
+    /// same gesture, so both have to happen on the way DOWN.
+    /// </summary>
+    /// <param name="hostPoint">Window coordinates — what the hit test wants.</param>
+    /// <param name="canvasPoint">Label dots — what the fallback box test wants.</param>
+    internal ZplDrawable? DrawableAt(Point hostPoint, Point canvasPoint)
     {
-        if (!InspectOn) return;
-
-        // Host coordinates: what FindElementsInHostCoordinates expects.
         var hit = VisualTreeHelper
-            .FindElementsInHostCoordinates(e.GetPosition(null), PreviewCanvas)
+            .FindElementsInHostCoordinates(hostPoint, PreviewCanvas)
             .OfType<UIElement>()
             .Select(el => _hitMap.TryGetValue(el, out var d) ? d : null)
             .FirstOrDefault(d => d is not null);
 
         // Barcodes are a crowd of thin bars: a click landing in a white gap hits
         // nothing, so fall back to whichever field's box contains the point.
-        hit ??= DrawableAtPoint(e.GetPosition(PreviewCanvas));
-
-        if (hit is null || hit.SourceStart < 0) { ClearInspectSelection(); return; }
-        SelectSpan(hit.SourceStart, hit.SourceEnd, revealInEditor: true);
+        return hit ?? DrawableAtPoint(canvasPoint);
     }
 
     // Smallest field box containing the point — the tie-break when a click misses
@@ -170,10 +148,20 @@ public sealed partial class PreviewPage
 
     // ── Selection ────────────────────────────────────────────────────────────
 
-    private void SelectSpan(int start, int end, bool revealInEditor)
+    /// <summary>
+    /// Frames a field and lights it up in the code. <paramref name="moveCaret"/> is
+    /// for a field the app has just WRITTEN: an edit leaves Monaco's caret past the
+    /// end of what it inserted, and the report of that move would immediately drop
+    /// this selection again, so the caret is sent back inside the field.
+    /// </summary>
+    private void SelectSpan(int start, int end, bool revealInEditor, bool moveCaret = false)
     {
         _selStart = start;
         _selEnd = end;
+        // Picking one element is picking ONE element: whatever else was held goes.
+        // Ctrl+click and the band are the two ways to keep more (PreviewPage.Multi.cs).
+        _selected.Clear();
+        _selected.Add(start);
         UpdateInspectFrame();
 
         var colour = AccentHex();
@@ -188,13 +176,18 @@ public sealed partial class PreviewPage
         PostToEditor("{\"type\":\"highlightRange\",\"start\":" + start +
                      ",\"end\":" + end +
                      ",\"reveal\":" + (revealInEditor ? "true" : "false") +
+                     ",\"caret\":" + (moveCaret ? "true" : "false") +
                      ",\"color\":\"" + colour + "\"}");
     }
 
     private void ClearInspectSelection()
     {
         _selStart = _selEnd = -1;
+        _selected.Clear();
+        UpdateExtraFrames();
         if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
+        ClearHandles();
+        UpdateSelectionTools();
         PostToEditor("{\"type\":\"clearHighlight\"}");
     }
 
@@ -205,26 +198,59 @@ public sealed partial class PreviewPage
         if (!InspectOn || _selStart < 0)
         {
             if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
+            UpdateExtraFrames();
+            UpdateSelectionTools();
             return;
         }
 
+        // The element's box is read from the live visual, so the canvas has to have
+        // been measured. Several redraws in a row — a character typed into the
+        // content box — outrun the layout pass, and every element then reports a
+        // size of zero. Forcing the pass here is what makes the frame keep up.
+        try { PreviewCanvas.UpdateLayout(); } catch { }
+
+        // Matched on the field's START alone. Its end moves with every edit inside
+        // it — a character typed into the content box — and tracking that by
+        // arithmetic drifts sooner or later; the start does not move unless the text
+        // BEFORE the field changes, and then the selection is meant to be lost. The
+        // end is taken from whatever was found, which also repairs any drift.
         Rect box = Rect.Empty;
+        int end = _selEnd;
         foreach (var (element, drawable) in _hitMap)
         {
-            if (drawable.SourceStart != _selStart || drawable.SourceEnd != _selEnd) continue;
+            if (drawable.SourceStart != _selStart) continue;
+            end = drawable.SourceEnd;
             var b = BoundsInCanvas(element);
             if (b.IsEmpty) continue;
             box = box.IsEmpty ? b : Union(box, b);
         }
+        _selEnd = end;
 
         if (box.IsEmpty)
         {
-            // The edit removed the element the selection pointed at.
+            // Either the edit removed the element, or the canvas simply has not been
+            // measured yet: redraws coming one after another — a character typed into
+            // the content field — outrun the layout pass, and every element reports a
+            // size of zero until it catches up. Ask once more before concluding the
+            // element is gone.
+            if (!_frameRetry)
+            {
+                _frameRetry = true;
+                DispatcherQueue.TryEnqueue(
+                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, UpdateInspectFrame);
+                return;
+            }
+            _frameRetry = false;
             if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
+            UpdateSelectionTools();
             return;
         }
+        _frameRetry = false;
 
         EnsureInspectFrame();
+        // The frame survives a redraw (it is re-parented, not rebuilt), so the
+        // offset a drag left on it has to be cleared or it would be applied twice.
+        if (!_dragging) _inspectFrame!.Translation = default;
         // A couple of dots of air, so the frame reads as around the element rather
         // than as part of it.
         const double pad = 2;
@@ -234,6 +260,8 @@ public sealed partial class PreviewPage
         Canvas.SetTop(_inspectFrame, box.Y - pad);
         _inspectFrame.Visibility = Visibility.Visible;
         UpdateInspectFrameThickness();
+        UpdateExtraFrames();
+        UpdateSelectionTools();
     }
 
     private void EnsureInspectFrame()

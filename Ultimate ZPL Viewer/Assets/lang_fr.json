@@ -1,4 +1,4 @@
-{
+﻿{
   "language": "fr",
   "displayName": "Français",
   "titlebar": {
@@ -28,9 +28,6 @@
     "zoomReset": "Réinitialiser le zoom (100 %)",
     "widthTooLarge": "La largeur dépasse 50 cm : l'aperçu est limité à 50 cm.",
     "heightTooLarge": "La hauteur dépasse 50 cm : l'aperçu est limité à 50 cm.",
-    "inspectOn": "Inspection active : cliquez un élément de l'aperçu pour voir son code, ou une ligne de code pour voir son élément",
-    "inspectOff": "Activer l'inspection : relier un élément de l'aperçu au code qui le produit",
-    "rendering": "Rendu de l’aperçu…",
     "sizeCapped": "limité"
   },
   "editor": {
@@ -1474,6 +1471,7 @@
       "general": "Général",
       "document": "Document",
       "editor": "Éditeur et aperçu",
+      "editMode": "Mode édition",
       "print": "Impression",
       "appearance": "Apparence et langue",
       "toolbar": "Barre d'outils",
@@ -1611,7 +1609,8 @@
         "coloring": "Coloration syntaxique",
         "preview": "Aperçu",
         "rulers": "Règles",
-        "layout": "Disposition"
+        "layout": "Disposition",
+        "mode": "Mode"
       },
       "cards": {
         "fontSize": {
@@ -1702,6 +1701,10 @@
         "selWidth": {
           "title": "Taille de la sélection",
           "desc": "Épaisseur du cadre d'inspection sur l'aperçu, en pixels."
+        },
+        "startMode": {
+          "title": "Mode au démarrage",
+          "desc": "Dans quel mode un document s'ouvre. « Dernier utilisé » rouvre le logiciel dans le mode que vous aviez quitté."
         }
       },
       "lbl": {
@@ -1722,7 +1725,74 @@
           "Fine",
           "Normale",
           "Large"
+        ],
+        "startMode": [
+          "Visualisation",
+          "Édition",
+          "Dernier utilisé"
         ]
+      }
+    },
+    "editMode": {
+      "title": "Mode édition",
+      "subtitle": "Où se placent les plaques flottantes de l'aperçu, et dans quel sens elles se déplient.",
+      "sec": {
+        "modePlate": "Plaque de changement de mode",
+        "toolPlate": "Plaque d'outils (mode édition)",
+        "elementPlate": "Barre de l'élément sélectionné"
+      },
+      "cards": {
+        "modePos": {
+          "title": "Position de la plaque",
+          "desc": "Accrochée à un bord de l'aperçu, ou libre et déplaçable par ses poignées. Si les deux plaques visent le même endroit, le bouton se coupe en deux : la moitié haute et la moitié basse disent laquelle passe au-dessus."
+        },
+        "modeDir": {
+          "title": "Orientation de la plaque",
+          "desc": "Les deux boutons l'un au-dessus de l'autre, ou côte à côte."
+        },
+        "toolPos": {
+          "title": "Position de la plaque d'outils",
+          "desc": "Accrochée à un bord de l'aperçu, ou libre et déplaçable par ses poignées. Si les deux plaques visent le même endroit, le bouton se coupe en deux : la moitié haute et la moitié basse disent laquelle passe au-dessus."
+        },
+        "toolDir": {
+          "title": "Orientation de la plaque d'outils",
+          "desc": "En colonne ou en ligne. En ligne, les menus des codes et des formes se déplient vers le bas, en colonnes."
+        },
+        "elementSide": {
+          "title": "Emplacement de la barre",
+          "desc": "Où la barre d'outils vient se poser par rapport à l'élément sélectionné."
+        }
+      },
+      "opt": {
+        "orientation": [
+          "Verticale",
+          "Horizontale"
+        ]
+      },
+      "pos": {
+        "topLeft": "En haut à gauche",
+        "topCenter": "En haut au milieu",
+        "topRight": "En haut à droite",
+        "middleLeft": "À gauche, au milieu",
+        "middleRight": "À droite, au milieu",
+        "bottomLeft": "En bas à gauche",
+        "bottomCenter": "En bas au milieu",
+        "bottomRight": "En bas à droite"
+      },
+      "lbl": {
+        "fixed": "Position fixe",
+        "free": "Position libre",
+        "handles": "Poignées de déplacement",
+        "unlocked": "Déverrouillée : les poignées sont affichées",
+        "locked": "Verrouillée : la plaque reste où elle est",
+        "dragPlate": "Faites glisser pour déplacer la plaque",
+        "below": "En dessous de l'élément",
+        "belowInfo": "La barre se pose sous l'élément et la flèche pointe vers le bas : les paramètres se déplient vers le bas, à l'écart de ce que vous modifiez.",
+        "above": "Au-dessus de l'élément",
+        "aboveInfo": "La barre se pose au-dessus de l'élément et la flèche pointe vers le haut : les paramètres se déplient vers le haut, à l'écart de ce que vous modifiez.",
+        "sideFallback": "Quand il n'y a pas la place en dessous, la barre passe au-dessus — et inversement.",
+        "stackTop": "Cette plaque au-dessus, l'autre en dessous",
+        "stackBottom": "Cette plaque en dessous, l'autre au-dessus"
       }
     },
     "print": {
@@ -1914,12 +1984,23 @@
         },
         "copyright": {
           "title": "Copyright"
+        },
+        "updates": {
+          "title": "Mises à jour",
+          "desc": "Vérifie les versions publiées sur GitHub et installe la nouvelle depuis l’application."
+        },
+        "autoUpdate": {
+          "title": "Vérifier au démarrage",
+          "desc": "Interroge GitHub au lancement et prévient seulement si une version plus récente existe."
         }
       },
       "lbl": {
         "copy": "Copier",
         "unknownVersion": "inconnue",
-        "copyrightText": "© {year} Enzo Monchanin. Tous droits réservés."
+        "copyrightText": "© {year} Enzo Monchanin. Tous droits réservés.",
+        "checkUpdates": "Rechercher",
+        "checking": "Recherche…",
+        "lastCheck": "Dernière vérification : {date}."
       }
     },
     "png": {
@@ -1935,25 +2016,63 @@
         "step4": "Qualité améliorée",
         "step5": "Meilleure qualité — Plus lourde"
       }
+    },
+    "update": {
+      "title": "Mise à jour disponible",
+      "available": "Nouvelle version : {version}",
+      "current": "Version installée : {version}",
+      "notes": "Nouveautés",
+      "install": "Mettre à jour",
+      "later": "Plus tard",
+      "skip": "Ignorer cette version",
+      "cancel": "Annuler",
+      "close": "Fermer",
+      "openPage": "Ouvrir la page de la version",
+      "downloading": "Téléchargement ({size})…",
+      "installing": "Installation en cours. L’application va se fermer, puis se rouvrir.",
+      "unsaved": "Des documents ont des modifications non enregistrées. Enregistrez-les avant de mettre à jour : l’installation ferme l’application.",
+      "upToDate": {
+        "title": "Aucune mise à jour",
+        "desc": "Vous utilisez déjà la dernière version publiée ({version})."
+      },
+      "failed": {
+        "title": "Vérification impossible",
+        "desc": "La dernière version n’a pas pu être récupérée : {error}"
+      },
+      "closeTitle": "Mettre à jour",
+      "onExit": "À la fermeture",
+      "armed": "La mise à jour sera installée quand vous fermerez l’application. Le téléchargement se poursuit en arrière-plan.",
+      "published": "publiée le {date}",
+      "onExitHint": "L’application se mettra à jour quand vous la fermerez, sans se rouvrir."
     }
   },
   "shortcuts": {
     "title": "Raccourcis clavier",
-    "subtitle": "Toutes les commandes accessibles au clavier dans Ultimate ZPL Viewer.",
+    "subtitle": "Toutes les commandes accessibles au clavier et à la souris dans Ultimate ZPL Viewer.",
     "close": "Fermer",
     "key": {
       "ctrl": "Ctrl",
       "shift": "Maj",
       "alt": "Alt",
       "esc": "Échap",
-      "tab": "Tab"
+      "tab": "Tab",
+      "enter": "Entrée",
+      "del": "Suppr",
+      "arrows": "Flèches",
+      "click": "Clic",
+      "dblclick": "Double-clic",
+      "drag": "Glisser",
+      "wheel": "Molette"
     },
     "section": {
       "tabs": "Onglets et fenêtres",
       "file": "Fichier",
       "view": "Affichage",
       "preview": "Aperçu",
-      "editor": "Éditeur de code"
+      "editor": "Éditeur de code",
+      "modeView": "Mode visualisation",
+      "modeEdit": "Mode édition",
+      "modeText": "Mode édition : texte sur l'étiquette"
     },
     "row": {
       "newTab": "Nouveau document dans un onglet",
@@ -1991,7 +2110,24 @@
       "undoRedo": "Annuler / Rétablir",
       "gotoLine": "Aller à la ligne",
       "selectLine": "Sélectionner la ligne",
-      "nextMatch": "Sélectionner l'occurrence suivante"
+      "nextMatch": "Sélectionner l'occurrence suivante",
+      "zoomWheel": "Zoomer / dézoomer à la molette",
+      "inspect": "Pointer le code de l'élément cliqué",
+      "pan": "Déplacer l'aperçu (quand il dépasse)",
+      "selectAll": "Tout sélectionner sur l'étiquette",
+      "addSelect": "Ajouter ou retirer un élément de la sélection",
+      "bandSelect": "Sélectionner au lasso depuis une zone vide",
+      "copyCut": "Copier / couper les éléments sélectionnés",
+      "paste": "Coller des éléments sur l'étiquette",
+      "nudge": "Déplacer la sélection d'un point",
+      "nudgeFar": "Déplacer la sélection de dix points",
+      "snapDrag": "Aligner sur le millimètre pendant le déplacement",
+      "deleteOne": "Supprimer la sélection",
+      "placeAgain": "Reposer le même élément sans réarmer l'outil",
+      "editText": "Écrire dans le texte, là où il s'imprime",
+      "endText": "Terminer la saisie",
+      "breakLine": "Aller à la ligne dans le texte",
+      "cancelText": "Annuler la saisie en cours"
     }
   },
   "onboarding": {
@@ -2069,6 +2205,103 @@
       "later": "Tous ces choix restent modifiables dans les paramètres.",
       "openApp": "Accéder à l'application",
       "openSettings": "Ouvrir les paramètres"
+    }
+  },
+  "status": {
+    "loading": "Chargement de {file}…",
+    "downloadingUpdate": "Téléchargement de la mise à jour…",
+    "cancel": "Annuler",
+    "rendering": "Rendu de l’aperçu…",
+    "exportPng": "Export PNG…",
+    "exportPdf": "Export PDF…",
+    "printing": "Envoi à {printer}…",
+    "saving": "Enregistrement de {file}…",
+    "capturing": "Réception depuis l’imprimante virtuelle…"
+  },
+  "mode": {
+    "view": "Mode visualisation : le ZPL est affiché en lecture seule",
+    "edit": "Mode édition : modifiez le ZPL et l'étiquette directement dans l'aperçu",
+    "tools": {
+      "select": "Sélectionner : cliquez un élément pour voir et modifier ses propriétés, sans le déplacer",
+      "move": "Déplacer : sélectionner, faire glisser, redimensionner",
+      "text": "Texte : cliquez sur l’étiquette et écrivez. Double-cliquez un texte (ou F2) pour le modifier là où il s’imprime ; Entrée pour terminer, Maj+Entrée pour aller à la ligne.",
+      "code": "Code-barres : choisissez une symbologie, puis cliquez sur l'étiquette",
+      "shape": "Forme : choisissez-la, puis cliquez ou faites glisser pour la dimensionner",
+      "fill": "Bloc plein : cliquez ou faites glisser pour le dimensionner",
+      "rect": "Rectangle",
+      "line": "Ligne",
+      "ellipse": "Ellipse",
+      "circle": "Cercle",
+      "fillShape": "Bloc plein",
+      "sampleText": "Texte",
+      "linear": "Linéaires",
+      "twoD": "Codes 2D",
+      "image": "Image : cliquez sur l'étiquette, puis choisissez un fichier"
+    },
+    "image": {
+      "title": "Ajouter une image",
+      "add": "Ajouter",
+      "cancel": "Annuler",
+      "width": "Largeur",
+      "height": "Hauteur",
+      "lock": "Conserver les proportions",
+      "rendering": "Noir et blanc",
+      "flat": "Seuil : net, pour un logo ou un dessin",
+      "dither": "Tramage : des nuances, pour une photographie",
+      "threshold": "Seuil",
+      "invert": "Inverser le noir et le blanc",
+      "info": "{0} × {1} points — {2} de ZPL",
+      "bytes": "{0} octets",
+      "kilobytes": "{0} ko",
+      "unreadable": "Ce fichier n’a pas pu être lu comme une image.",
+      "pick": "Cliquez pour choisir une image",
+      "editTitle": "Modifier l’image",
+      "apply": "Appliquer",
+      "fmtSection": "Écriture dans le ZPL",
+      "fmtHex": "Hexadécimal ASCII",
+      "fmtHexInfo": "Lu par toutes les Zebra, sans exception. Deux caractères par octet, donc un ZPL plus lourd — la compression par répétition en reprend l’essentiel sur un logo.",
+      "fmtZ64": ":Z64: (compressé)",
+      "fmtZ64Info": "Environ deux fois plus compact que l’hexadécimal sur une vraie étiquette, davantage sur une photo. Compressé, encodé en Base64 et vérifié par une somme de contrôle — encore faut-il que le firmware de l’imprimante sache le lire.",
+      "fmtZ64Link": "Zebra : encodage et compression ZB64"
+    },
+    "props": {
+      "textSection": "Texte",
+      "codeSection": "Code",
+      "shapeSection": "Forme",
+      "font": "Police",
+      "fontScalable": "0 (échelonnable)",
+      "height": "Hauteur",
+      "width": "Largeur",
+      "lockAspect": "Lier la largeur à la hauteur",
+      "reverse": "Inversé (^FR)",
+      "barHeight": "Hauteur des barres",
+      "module": "Taille du module",
+      "moduleWidth": "Largeur de barre (^BY)",
+      "humanReadable": "Texte lisible",
+      "symbology": "Symbologie",
+      "content": "Contenu",
+      "expand": "Plus de place pour le lire",
+      "reverseNothing": "L’inversion ne se voit qu’au-dessus du noir — et rien de noir ne se trouve sous ce champ.",
+      "shapeWidth": "Largeur",
+      "shapeHeight": "Hauteur",
+      "diameter": "Diamètre",
+      "thickness": "Épaisseur",
+      "invalid": {
+        "empty": "Ce code n'a aucun contenu : rien ne sera imprimé.",
+        "digits": "Cette symbologie attend {n} chiffres.",
+        "digitsOnly": "Cette symbologie n'accepte que des chiffres.",
+        "even": "Cette symbologie attend un nombre pair de chiffres.",
+        "charset": "Ce contenu contient des caractères que cette symbologie refuse."
+      }
+    },
+    "act": {
+      "rotate": "Tourner d'un quart de tour",
+      "duplicate": "Dupliquer l'élément",
+      "delete": "Supprimer l'élément (Suppr)",
+      "forward": "Avancer d'un rang (dessiné par-dessus le suivant)",
+      "backward": "Reculer d'un rang (dessiné sous le précédent)",
+      "image": "Modifier l’image (taille, noir et blanc, écriture)",
+      "several": "{0} éléments"
     }
   }
 }

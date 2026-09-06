@@ -1,4 +1,4 @@
-{
+﻿{
   "language": "en",
   "displayName": "English",
   "titlebar": {
@@ -28,9 +28,6 @@
     "zoomReset": "Reset zoom (100 %)",
     "widthTooLarge": "Width exceeds 50 cm: the preview is capped at 50 cm.",
     "heightTooLarge": "Height exceeds 50 cm: the preview is capped at 50 cm.",
-    "inspectOn": "Inspect on: click an element in the preview to see its code, or a line of code to see its element",
-    "inspectOff": "Turn on inspect: link an element in the preview to the code that makes it",
-    "rendering": "Rendering preview…",
     "sizeCapped": "capped"
   },
   "editor": {
@@ -1474,6 +1471,7 @@
       "general": "General",
       "document": "Document",
       "editor": "Editor & preview",
+      "editMode": "Edit mode",
       "print": "Printing",
       "appearance": "Appearance & language",
       "toolbar": "Toolbar",
@@ -1611,7 +1609,8 @@
         "coloring": "Syntax highlighting",
         "preview": "Preview",
         "rulers": "Rulers",
-        "layout": "Layout"
+        "layout": "Layout",
+        "mode": "Mode"
       },
       "cards": {
         "fontSize": {
@@ -1702,6 +1701,10 @@
         "selWidth": {
           "title": "Selection size",
           "desc": "Thickness of the inspect frame on the preview, in pixels."
+        },
+        "startMode": {
+          "title": "Start-up mode",
+          "desc": "Which mode a document opens in. “Last used” reopens the application in whichever mode you left it."
         }
       },
       "lbl": {
@@ -1722,7 +1725,74 @@
           "Thin",
           "Normal",
           "Large"
+        ],
+        "startMode": [
+          "View",
+          "Edit",
+          "Last used"
         ]
+      }
+    },
+    "editMode": {
+      "title": "Edit mode",
+      "subtitle": "Where the preview's floating plates sit, and which way they unfold.",
+      "sec": {
+        "modePlate": "Mode switch plate",
+        "toolPlate": "Tool plate (edit mode)",
+        "elementPlate": "Selected element's strip"
+      },
+      "cards": {
+        "modePos": {
+          "title": "Plate position",
+          "desc": "Pinned to an edge of the preview, or free and dragged by its grips. When both plates aim at the same place the button splits in two: the top and bottom halves say which one goes above."
+        },
+        "modeDir": {
+          "title": "Plate orientation",
+          "desc": "The two buttons one above the other, or side by side."
+        },
+        "toolPos": {
+          "title": "Tool plate position",
+          "desc": "Pinned to an edge of the preview, or free and dragged by its grips. When both plates aim at the same place the button splits in two: the top and bottom halves say which one goes above."
+        },
+        "toolDir": {
+          "title": "Tool plate orientation",
+          "desc": "A column or a row. In a row, the code and shape menus open downwards, in columns."
+        },
+        "elementSide": {
+          "title": "Where the strip sits",
+          "desc": "Where the strip of tools comes to rest in relation to the selected element."
+        }
+      },
+      "opt": {
+        "orientation": [
+          "Vertical",
+          "Horizontal"
+        ]
+      },
+      "pos": {
+        "topLeft": "Top left",
+        "topCenter": "Top centre",
+        "topRight": "Top right",
+        "middleLeft": "Middle left",
+        "middleRight": "Middle right",
+        "bottomLeft": "Bottom left",
+        "bottomCenter": "Bottom centre",
+        "bottomRight": "Bottom right"
+      },
+      "lbl": {
+        "fixed": "Fixed position",
+        "free": "Free position",
+        "handles": "Drag grips",
+        "unlocked": "Unlocked: the grips are shown",
+        "locked": "Locked: the plate stays where it is",
+        "dragPlate": "Drag to move the plate",
+        "below": "Below the element",
+        "belowInfo": "The strip sits under the element and the chevron points down: the properties unfold downwards, clear of what you are editing.",
+        "above": "Above the element",
+        "aboveInfo": "The strip sits above the element and the chevron points up: the properties unfold upwards, clear of what you are editing.",
+        "sideFallback": "When there is no room below, the strip goes above — and the other way round.",
+        "stackTop": "This plate above, the other below",
+        "stackBottom": "This plate below, the other above"
       }
     },
     "print": {
@@ -1914,12 +1984,23 @@
         },
         "copyright": {
           "title": "Copyright"
+        },
+        "updates": {
+          "title": "Updates",
+          "desc": "Checks the releases published on GitHub and installs the new one from the application."
+        },
+        "autoUpdate": {
+          "title": "Check at startup",
+          "desc": "Asks GitHub at launch and speaks up only when a newer version exists."
         }
       },
       "lbl": {
         "copy": "Copy",
         "unknownVersion": "unknown",
-        "copyrightText": "© {year} Enzo Monchanin. All rights reserved."
+        "copyrightText": "© {year} Enzo Monchanin. All rights reserved.",
+        "checkUpdates": "Check",
+        "checking": "Checking…",
+        "lastCheck": "Last checked: {date}."
       }
     },
     "png": {
@@ -1935,25 +2016,63 @@
         "step4": "Improved quality",
         "step5": "Higher quality — Heavier"
       }
+    },
+    "update": {
+      "title": "Update available",
+      "available": "New version: {version}",
+      "current": "Installed version: {version}",
+      "notes": "What's new",
+      "install": "Update now",
+      "later": "Later",
+      "skip": "Skip this version",
+      "cancel": "Cancel",
+      "close": "Close",
+      "openPage": "Open the release page",
+      "downloading": "Downloading ({size})…",
+      "installing": "Installing. The application will close, then reopen.",
+      "unsaved": "Some documents have unsaved changes. Save them before updating: installing closes the application.",
+      "upToDate": {
+        "title": "No update",
+        "desc": "You are already on the latest published version ({version})."
+      },
+      "failed": {
+        "title": "Check failed",
+        "desc": "The latest version could not be retrieved: {error}"
+      },
+      "closeTitle": "Update",
+      "onExit": "On exit",
+      "armed": "The update will be installed when you close the application. The download continues in the background.",
+      "published": "published {date}",
+      "onExitHint": "The application updates itself when you close it, and does not reopen."
     }
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
-    "subtitle": "Every command Ultimate ZPL Viewer answers to from the keyboard.",
+    "subtitle": "Every command Ultimate ZPL Viewer answers to, from the keyboard and the mouse.",
     "close": "Close",
     "key": {
       "ctrl": "Ctrl",
       "shift": "Shift",
       "alt": "Alt",
       "esc": "Esc",
-      "tab": "Tab"
+      "tab": "Tab",
+      "enter": "Enter",
+      "del": "Del",
+      "arrows": "Arrows",
+      "click": "Click",
+      "dblclick": "Double-click",
+      "drag": "Drag",
+      "wheel": "Wheel"
     },
     "section": {
       "tabs": "Tabs and windows",
       "file": "File",
       "view": "View",
       "preview": "Preview",
-      "editor": "Code editor"
+      "editor": "Code editor",
+      "modeView": "View mode",
+      "modeEdit": "Edit mode",
+      "modeText": "Edit mode: text on the label"
     },
     "row": {
       "newTab": "New document in a tab",
@@ -1991,7 +2110,24 @@
       "undoRedo": "Undo / Redo",
       "gotoLine": "Go to line",
       "selectLine": "Select the line",
-      "nextMatch": "Select the next occurrence"
+      "nextMatch": "Select the next occurrence",
+      "zoomWheel": "Zoom in / out with the wheel",
+      "inspect": "Point at the code behind the element clicked",
+      "pan": "Pan the preview (when it overflows)",
+      "selectAll": "Select everything on the label",
+      "addSelect": "Add an element to the selection, or take it out",
+      "bandSelect": "Select with a band, starting on empty label",
+      "copyCut": "Copy / cut the selected elements",
+      "paste": "Paste elements onto the label",
+      "nudge": "Move the selection by one dot",
+      "nudgeFar": "Move the selection by ten dots",
+      "snapDrag": "Snap to the millimetre while dragging",
+      "deleteOne": "Delete the selection",
+      "placeAgain": "Place the same element again without re-arming the tool",
+      "editText": "Type in the text, where it prints",
+      "endText": "Finish typing",
+      "breakLine": "Start a new line in the text",
+      "cancelText": "Give up the text being typed"
     }
   },
   "onboarding": {
@@ -2069,6 +2205,103 @@
       "later": "All of these choices stay changeable in the settings.",
       "openApp": "Go to the application",
       "openSettings": "Open the settings"
+    }
+  },
+  "status": {
+    "loading": "Loading {file}…",
+    "downloadingUpdate": "Downloading the update…",
+    "cancel": "Cancel",
+    "rendering": "Rendering the preview…",
+    "exportPng": "Exporting PNG…",
+    "exportPdf": "Exporting PDF…",
+    "printing": "Sending to {printer}…",
+    "saving": "Saving {file}…",
+    "capturing": "Receiving from the virtual printer…"
+  },
+  "mode": {
+    "view": "View mode: the ZPL is shown read-only",
+    "edit": "Edit mode: change the ZPL, or the label straight from the preview",
+    "tools": {
+      "select": "Select: click an element to see and change its properties, without moving it",
+      "move": "Move: select, drag, resize",
+      "text": "Text: click the label and start typing. Double-click any text (or press F2) to edit it where it prints; Enter when done, Shift+Enter for a new line.",
+      "code": "Barcode: pick a symbology, then click the label",
+      "shape": "Shape: pick one, then click or drag to size it",
+      "fill": "Solid block: click or drag to size it",
+      "rect": "Rectangle",
+      "line": "Line",
+      "ellipse": "Ellipse",
+      "circle": "Circle",
+      "fillShape": "Solid block",
+      "sampleText": "Text",
+      "linear": "Linear",
+      "twoD": "2D codes",
+      "image": "Image: click the label, then pick a file"
+    },
+    "image": {
+      "title": "Add an image",
+      "add": "Add",
+      "cancel": "Cancel",
+      "width": "Width",
+      "height": "Height",
+      "lock": "Keep the proportions",
+      "rendering": "Black and white",
+      "flat": "Threshold: crisp, for a logo or a drawing",
+      "dither": "Dithering: shades, for a photograph",
+      "threshold": "Threshold",
+      "invert": "Invert black and white",
+      "info": "{0} × {1} dots — {2} of ZPL",
+      "bytes": "{0} bytes",
+      "kilobytes": "{0} kB",
+      "unreadable": "This file could not be read as an image.",
+      "pick": "Click to choose an image",
+      "editTitle": "Change the image",
+      "apply": "Apply",
+      "fmtSection": "How it is written in the ZPL",
+      "fmtHex": "ASCII hex",
+      "fmtHexInfo": "Read by every Zebra printer ever made. Two characters per byte, so the ZPL is bulkier — run-length compression takes most of that back on a logo.",
+      "fmtZ64": ":Z64: (compressed)",
+      "fmtZ64Info": "Roughly half the size of the hex form on a real label, and better still on a photograph. Deflated, Base64-encoded and checksummed — which the printer's firmware has to know how to read.",
+      "fmtZ64Link": "Zebra: ZB64 encoding and compression"
+    },
+    "props": {
+      "textSection": "Text",
+      "codeSection": "Code",
+      "shapeSection": "Shape",
+      "font": "Font",
+      "fontScalable": "0 (scalable)",
+      "height": "Height",
+      "width": "Width",
+      "lockAspect": "Tie the width to the height",
+      "reverse": "Reversed (^FR)",
+      "barHeight": "Bar height",
+      "module": "Module size",
+      "moduleWidth": "Bar width (^BY)",
+      "humanReadable": "Readable text",
+      "symbology": "Symbology",
+      "content": "Content",
+      "expand": "More room to read it",
+      "reverseNothing": "Reversing only shows over black — and there is nothing black under this field.",
+      "shapeWidth": "Width",
+      "shapeHeight": "Height",
+      "diameter": "Diameter",
+      "thickness": "Thickness",
+      "invalid": {
+        "empty": "This code has no content: nothing will print.",
+        "digits": "This symbology expects {n} digits.",
+        "digitsOnly": "This symbology only accepts digits.",
+        "even": "This symbology expects an even number of digits.",
+        "charset": "This content has characters the symbology will not take."
+      }
+    },
+    "act": {
+      "rotate": "Turn a quarter turn",
+      "duplicate": "Duplicate the element",
+      "delete": "Delete the element (Del)",
+      "forward": "Bring forward (drawn over the next one)",
+      "backward": "Send backward (drawn under the previous one)",
+      "several": "{0} elements",
+      "image": "Change the image (size, black and white, encoding)"
     }
   }
 }

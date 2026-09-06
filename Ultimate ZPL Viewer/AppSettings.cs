@@ -73,11 +73,45 @@ public sealed class AppSettings
     public string Language { get; set; } = "fr";
     public bool ShowLineNumbers { get; set; } = true;
     public bool ShowPreviewGrid { get; set; } = true;
-    // Thickness, in screen pixels, of the inspect-mode selection frame (1..10).
+    // Thickness, in screen pixels, of the selection frame drawn in edit mode (1..10).
     public int InspectFrameThickness { get; set; } = 2;
-    // Inspect mode: clicking an element in the preview highlights the ZPL that
-    // produced it, and vice versa. Off by default - it changes what a click does.
-    public bool InspectMode { get; set; }
+
+    // ---- View / edit mode -------------------------------------------------
+    // Which mode a document opens in: 0 = view (default), 1 = edit,
+    // 2 = whichever mode was in use when the application last closed. Someone who
+    // only ever writes labels should not have to flip the switch every morning.
+    public int StartMode { get; set; }
+    // Remembered for StartMode == 2 only; written whenever the mode changes.
+    public bool LastModeEdit { get; set; }
+
+    // ---- The floating plates over the preview -----------------------------
+    // Where each plate sits, and which way it is stacked. An anchor is one of
+    // the eight edge/corner positions ("topLeft" … "bottomRight"); "free" means
+    // the plate keeps the exact spot it was dragged to (X/Y, in dips from the
+    // preview's top-left corner, -1 until it has been dragged once). Locked
+    // hides the drag grips without giving the free position up.
+    public string ModePlateAnchor { get; set; } = "topRight";
+    public bool ModePlateFree { get; set; }
+    public double ModePlateX { get; set; } = -1;
+    public double ModePlateY { get; set; } = -1;
+    public bool ModePlateLocked { get; set; }
+    public bool ModePlateHorizontal { get; set; }
+
+    public string ToolPlateAnchor { get; set; } = "topLeft";
+    public bool ToolPlateFree { get; set; }
+    public double ToolPlateX { get; set; } = -1;
+    public double ToolPlateY { get; set; } = -1;
+    public bool ToolPlateLocked { get; set; }
+    public bool ToolPlateHorizontal { get; set; }
+
+    // Which of the two comes first when both are pinned to the SAME place: they
+    // stand one above the other rather than on top of each other, and this says
+    // which one is above. The mode switch, by default.
+    public bool ModePlateFirst { get; set; } = true;
+
+    // Which side of the selected element its strip of tools prefers. The other
+    // side is still used when there is no room on this one.
+    public bool ElementPlateAbove { get; set; }
     // Grid colour: default (faint, theme-based) or a custom ARGB (#AARRGGBB).
     public bool UseCustomGridColor { get; set; }
     public string CustomGridColor { get; set; } = "#40808080";
@@ -145,6 +179,15 @@ public sealed class AppSettings
     public bool ShowPathInTabTooltip { get; set; } = true;
     // Show the size/dpi/zoom caption at the bottom-right of the preview.
     public bool ShowPreviewCaption { get; set; } = true;
+
+    // Updates
+    // Looks at the project's GitHub releases at startup. The only network call the
+    // application makes; switching it off leaves the manual button in "À propos".
+    public bool CheckUpdatesOnStartup { get; set; } = true;
+    // A release the user chose to ignore — its asset hash, or its name when the
+    // release publishes no hash. Cleared as soon as a newer one appears.
+    public string SkippedUpdate { get; set; } = string.Empty;
+    public string LastUpdateCheck { get; set; } = string.Empty;
 
     // Layout
     public bool SwapEditorPreview { get; set; }

@@ -81,8 +81,31 @@ public sealed partial class PreviewPage : Page
         ApplyToolbarStrings(); // localize the toolbar button labels/tooltips
         ApplyPreviewCaptionVisibility();
         RebuildToolbar(); // place the toolbar groups per the saved layout
-        ApplyInspectButtonState();
-        PreviewCanvas.Tapped += PreviewCanvas_Tapped;
+        InitModeSwitch();
+        // A plate dragged to a free spot has to stay inside a preview that just
+        // got narrower, and an anchored one has to follow the edge it is pinned to.
+        PreviewLayoutGrid.SizeChanged += (_, _) => ApplyPlatePlacement();
+        InitEditGestures();
+        InitEditTools();
+        InitSelectionProperties();
+        InitResize();
+        InitElementOrder();
+        InitImageEditing();
+        // The cursor is worked out from the state, but the state is not the only
+        // thing that changes it: redrawing the label replaces the very element the
+        // pointer is over, and the framework re-resolves the cursor from scratch
+        // when it does. Re-applied on every move over the preview, which is the
+        // only time a cursor is looked at anyway. Handled events too - panning
+        // marks its moves handled.
+        PreviewCursorHost.AddHandler(UIElement.PointerMovedEvent,
+            new PointerEventHandler((_, e) =>
+            {
+                _previewPointer = e.GetCurrentPoint(PreviewCanvas).Position;
+                _pointerInPreview = true;
+                UpdatePreviewCursor();
+            }), true);
+        PreviewCursorHost.AddHandler(UIElement.PointerExitedEvent,
+            new PointerEventHandler((_, _) => { _pointerInPreview = false; UpdatePreviewCursor(); }), true);
         PreviewScrollViewer.PointerWheelChanged += PreviewScrollViewer_PointerWheelChanged;
         RotateSplitButton.Click += RotateButton_Click;
         PreviewScrollViewer.PointerPressed      += PreviewScrollViewer_PointerPressed;
@@ -94,11 +117,21 @@ public sealed partial class PreviewPage : Page
         PreviewScrollViewer.SizeChanged += (_, _) => { ApplyDefaultZoom(); DrawRulers(); };
         PreviewScrollViewer.ViewChanged += (_, e) =>
         {
+            // Typing on the label: the view is nailed down. A drag across the words
+            // is selecting them and the letters have to stay where they are, and
+            // there are more ways than the obvious one for a ScrollViewer to move
+            // on its own - the box that holds the text is a child of the canvas
+            // like any other, and anything that decides to bring it into view
+            // scrolls the whole label. One rule covers every one of them.
+            if (IsEditingInPlace && PutViewBack()) return;
             // Settled view: this is the only place that knows the zoom the
             // ScrollViewer actually landed on (a requested factor can drift,
             // and pinch/native zoom never goes through our own code).
             if (!e.IsIntermediate) CaptureSettledZoom();
             UpdateInspectFrameThickness();
+            // The tools bar is in screen space: zooming or scrolling moves the
+            // element under it without moving it.
+            UpdateSelectionTools();
             UpdatePreviewCaption();
             DrawRulers();
         };
@@ -137,6 +170,11 @@ public sealed partial class PreviewPage : Page
         {
             if (_editorReady) ApplyEditorTheme();
             ApplyPreviewTheme(); // background + grid + rulers + caption
+            // The plates' icons are shapes, painted once from code: nothing repaints
+            // them on its own, and in the wrong theme they are white on white.
+            ApplyModeButtons();
+            ApplyToolButtons();
+            UpdateOrderButtons();
         };
         // Startup accent is applied in the App constructor (before any control
         // resolves the colors) — nothing to do here.
@@ -671,7 +709,10 @@ public sealed partial class PreviewPage : Page
         ApplyToolbarVisibility();
         ApplyEditorLayout();
         Loaded += (_, _) =>
+        {
             (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.SetToolbarToggleGlyph(_toolbarVisible);
+            ScheduleStartupUpdateCheck();
+        };
 
         _rotationDegrees = Math.Clamp(_settings.DefaultRotation, 0, 359.99);
 
@@ -793,7 +834,6 @@ public sealed partial class PreviewPage : Page
         ("size", "Taille", "", null),
         ("rotate", "Tourner", "", null),
         ("zoom", "Zoom", "", null),
-        ("inspect", "Inspecter", "", null),
         ("download", "Téléchargement", "", new[]
             { ("", "PDF"), ("", "PNG") }),
         ("print", "Imprimer", "", null),
@@ -806,7 +846,6 @@ public sealed partial class PreviewPage : Page
         "size"     => SizeGroup,
         "rotate"   => RotateGroup,
         "zoom"     => ZoomGroup,
-        "inspect"  => InspectGroup,
         "download" => DownloadGroup,
         "print"    => PrintGroup,
         _          => null,
@@ -1188,16 +1227,22 @@ public sealed partial class PreviewPage : Page
         if (_model.Drawables.Count < HeavyDrawableCount) { DrawPreviewNow(); return; }
 
         // The notice has to reach the screen BEFORE the draw blocks the thread,
-        // which is exactly what queueing the draw behind this frame buys.
-        PreviewBusyText.Text = LocalizationService.Get("toolbar.rendering");
-        PreviewBusy.Visibility = Visibility.Visible;
+        // which is exactly what queueing the draw behind this frame buys. One job
+        // for the whole burst: the superseded passes return without ending it, so
+        // the line stays up until the pass that actually paints is done.
+        _renderStatus ??= BeginStatus(LocalizationService.Get("status.rendering"), showBar: false);
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
         {
             if (generation != _drawGeneration) return;   // a newer request won
             try { DrawPreviewNow(); }
-            finally { PreviewBusy.Visibility = Visibility.Collapsed; }
+            finally
+            {
+                if (_renderStatus is { } status) { EndStatus(status); _renderStatus = null; }
+            }
         });
     }
+
+    private StatusJob? _renderStatus;
 
     private void DrawPreviewNow()
     {
@@ -1339,6 +1384,7 @@ public sealed partial class PreviewPage : Page
         RulerLeftCanvas.Visibility = v ? Visibility.Visible : Visibility.Collapsed;
         // The corner only shows where both bands cross.
         RulerCorner.Visibility = h && v ? Visibility.Visible : Visibility.Collapsed;
+        UpdateModeSwitchMargin();
         DrawRulers();
     }
 
@@ -1787,16 +1833,147 @@ public sealed partial class PreviewPage : Page
         }
     }
 
+    // What the pointer says it is about to do, in the order the answers override
+    // each other. Everything below the first line that matches is a less specific
+    // account of the same click.
     private void UpdatePreviewCursor()
     {
-        // Hand only when the document overflows the viewport; the grab cursor
-        // needs both: panning a fully visible document keeps the normal arrow.
+        // Typing on the label: an I-beam over the words being typed, and nothing
+        // in particular anywhere else - the rest of the label is not text.
+        if (IsEditingInPlace)
+        {
+            PreviewCursorHost.SetCursor(PointerOverInPlaceText() ? TextCursor : null!);
+            return;
+        }
+        // A tool that PLACES something: the next click puts it down, and the
+        // crosshair is what says so. It wins over panning and over moving, neither
+        // of which is what this click is going to do. The arrow and the
+        // cross-arrows place nothing, so neither of them claims the crosshair.
+        if (IsPlacementTool)
+        {
+            PreviewCursorHost.SetCursor(CrosshairCursor);
+            return;
+        }
+        // Hand only when the document overflows the viewport: there is nothing to
+        // take hold of in a label that is entirely on screen.
         bool pannable = PreviewScrollViewer.ScrollableWidth > 0.5 || PreviewScrollViewer.ScrollableHeight > 0.5;
-        PreviewCursorHost.SetCursor(!pannable ? null! : _isPanning ? PanGrabCursor : PanHandCursor);
+        if (_isPanning && pannable)
+        {
+            PreviewCursorHost.SetCursor(PanGrabCursor);
+            return;
+        }
+        // Something is held, the tool that moves things is armed, and the pointer
+        // is ON it: a drag from here moves it. Only from here - everywhere else a
+        // drag pans the label or starts a new selection, and the four arrows would
+        // be promising something the click does not do.
+        if (_editMode && CanMoveElements && _selStart >= 0 && PointerOverSelection())
+        {
+            PreviewCursorHost.SetCursor(MoveCursor);
+            return;
+        }
+        PreviewCursorHost.SetCursor(pannable ? PanHandCursor : null!);
     }
+
+    // Where the view was when the caret opened on the words.
+    private double _frozenH, _frozenV;
+
+    /// <summary>Puts a view that moved during in-place typing back. True if it had.</summary>
+    private bool PutViewBack()
+    {
+        if (Math.Abs(PreviewScrollViewer.HorizontalOffset - _frozenH) < 0.5
+            && Math.Abs(PreviewScrollViewer.VerticalOffset - _frozenV) < 0.5) return false;
+        PreviewScrollViewer.ChangeView(_frozenH, _frozenV, null, disableAnimation: true);
+        return true;
+    }
+
+    // Re-applied once the frame this call belongs to has been laid out, and at
+    // most once per turn however many times it is asked for.
+    private bool _cursorPending;
+
+    private void ScheduleCursorUpdate()
+    {
+        if (_cursorPending) return;
+        _cursorPending = true;
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        {
+            _cursorPending = false;
+            UpdatePreviewCursor();
+        });
+    }
+
+    // The four-way arrows: what every drawing application shows over something it
+    // is willing to move.
+    private static readonly Microsoft.UI.Input.InputCursor MoveCursor =
+        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeAll);
+
+    private static readonly Microsoft.UI.Input.InputCursor TextCursor =
+        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.IBeam);
+
+    // Where the pointer last was, in the label's own coordinates, and whether it
+    // is over the preview at all.
+    private Windows.Foundation.Point _previewPointer;
+    private bool _pointerInPreview;
+
+    /// <summary>
+    /// Whether the pointer is over the words being typed. Their own blocks, not
+    /// the field's box from the last render: the renderer's blocks for this field
+    /// are gone while it is being edited, replaced by the ones the caret is
+    /// rebuilding on every keystroke.
+    /// </summary>
+    private bool PointerOverInPlaceText()
+    {
+        if (!_pointerInPreview) return false;
+        double zoom = PreviewScrollViewer.ZoomFactor;
+        double tol = zoom > 0 ? 4.0 / zoom : 4.0;
+        foreach (FrameworkElement? shape in _inPlaceInk.Cast<FrameworkElement>().Append(_caret))
+        {
+            if (shape is null) continue;
+            var box = BoundsInCanvas(shape);
+            if (box.IsEmpty) continue;
+            if (new Windows.Foundation.Rect(box.X - tol, box.Y - tol, box.Width + 2 * tol, box.Height + 2 * tol)
+                    .Contains(_previewPointer)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Whether the pointer is over one of the held elements. The boxes are the
+    /// ones a press is tested against (DrawableAtPoint), widened by the same few
+    /// screen pixels - so the cursor promises a move exactly where a press starts
+    /// one, and nowhere else.
+    /// </summary>
+    private bool PointerOverSelection()
+    {
+        if (!_pointerInPreview || _selStart < 0) return false;
+        var held = SelectedSpans();
+        if (held.Count == 0) return false;
+
+        double zoom = PreviewScrollViewer.ZoomFactor;
+        double tol = zoom > 0 ? 4.0 / zoom : 4.0;
+        foreach (var (span, box) in FieldBoxes())
+        {
+            bool ours = false;
+            foreach (var (start, _) in held) if (start == span.Start) { ours = true; break; }
+            if (!ours) continue;
+            if (new Windows.Foundation.Rect(box.X - tol, box.Y - tol, box.Width + 2 * tol, box.Height + 2 * tol)
+                    .Contains(_previewPointer)) return true;
+        }
+        return false;
+    }
+
+    private static readonly Microsoft.UI.Input.InputCursor CrosshairCursor =
+        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Cross);
 
     private void PreviewScrollViewer_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
+        // Edit mode took this press to drag an element: panning would fight it for
+        // the same gesture.
+        if (_dragging) return;
+        // Typing on the label: a drag across the words is selecting them, and the
+        // label has to hold still under the caret. The ScrollViewer's own scrolling
+        // is already off while this lasts; this is the hand-rolled panning, which
+        // moves the view itself and never asked it.
+        if (IsEditingInPlace) return;
         if (!e.GetCurrentPoint(PreviewScrollViewer).Properties.IsLeftButtonPressed) return;
         _isPanning = true;
         _panStart  = e.GetCurrentPoint(PreviewScrollViewer).Position;
@@ -2207,7 +2384,9 @@ public sealed partial class PreviewPage : Page
         var widthDots = (int)Math.Round(widthMm * SelectedDpmm);
         var heightDots = (int)Math.Round(heightMm * SelectedDpmm);
         AddTabAndActivate(null); // a new document opens in its own tab
-        SetEditorText($"^XA\n^PW{widthDots}\n^LL{heightDots}\n^FO20,20^GB{Math.Max(1, widthDots - 40)},{Math.Max(1, heightDots - 40)},2^FS\n^XZ");
+        // Empty on purpose: the guide frame it used to carry was a hint for a
+        // viewer, and is one more element to delete for someone drawing.
+        SetEditorText($"^XA\n^PW{widthDots}\n^LL{heightDots}\n^XZ");
         _isDirty = true; // a new document has never been saved
         UpdateDocumentTitle();
     }
@@ -2274,23 +2453,46 @@ public sealed partial class PreviewPage : Page
             return;
         }
 
-        string text;
-        try { text = await File.ReadAllTextAsync(path); }
-        catch (Exception ex)
-        {
-            await ShowMessageAsync("Ouvrir un fichier", $"Lecture impossible :\n{ex.Message}");
-            return;
-        }
+        // Big documents spend seconds in the parser, the renderer and the analyser,
+        // all on the UI thread. The strip is only raised for those: a small file is
+        // open before anyone could read the label, and a flash is worse than silence.
+        StatusJob? job = null;
+        try { if (new FileInfo(path).Length >= StatusWorthyFileSize) job = BeginStatus(
+            LocalizationService.Get("status.loading").Replace("{file}", Path.GetFileName(path))); }
+        catch { }
 
-        _settings.LastFilePath = path;
-        AddRecentFile(path);
-        _settings.Save();
-        ApplyOpenDensity();           // density-on-open (does not rewrite ^PW/^LL)
-        AddTabAndActivate(path);      // an opened file gets its own tab
-        SetEditorText(text);
-        _isDirty = false;
-        UpdateDocumentTitle();
+        try
+        {
+            string text;
+            try { text = await File.ReadAllTextAsync(path); }
+            catch (Exception ex)
+            {
+                await ShowMessageAsync("Ouvrir un fichier", $"Lecture impossible :\n{ex.Message}");
+                return;
+            }
+
+            _settings.LastFilePath = path;
+            AddRecentFile(path);
+            _settings.Save();
+            ApplyOpenDensity();           // density-on-open (does not rewrite ^PW/^LL)
+
+            if (job is not null)
+            {
+                UpdateStatus(job, 0.35);
+                await YieldToUiAsync();   // let the strip reach the screen first
+            }
+
+            AddTabAndActivate(path);      // an opened file gets its own tab
+            SetEditorText(text);          // parse, render and analyse
+            _isDirty = false;
+            UpdateDocumentTitle();
+            if (job is not null) UpdateStatus(job, 1.0);
+        }
+        finally { if (job is not null) EndStatus(job); }
     }
+
+    // Below this, opening is instantaneous and the strip would only blink.
+    private const long StatusWorthyFileSize = 128 * 1024;
 
     // The tab holding a given file, if any. Paths are compared in their full form
     // and case-insensitively: "a.zpl" reached from the recent list, from Explorer
@@ -2356,6 +2558,13 @@ public sealed partial class PreviewPage : Page
     private async Task SaveAsync()
     {
         if (_currentFilePath is null) { await SaveAsAsync(); return; }
+        // Only worth a line for a document big enough that the write can be felt —
+        // on a network share, mostly. A local save of a small file is over before
+        // the strip could be read.
+        var saving = _currentText.Length >= StatusWorthyFileSize
+            ? BeginStatus(LocalizationService.Get("status.saving")
+                .Replace("{file}", Path.GetFileName(_currentFilePath)))
+            : null;
         try
         {
             await File.WriteAllTextAsync(_currentFilePath, _currentText);
@@ -2366,6 +2575,7 @@ public sealed partial class PreviewPage : Page
         {
             await ShowMessageAsync("Enregistrement", $"L'enregistrement a échoué : {ex.Message}");
         }
+        finally { if (saving is not null) EndStatus(saving); }
     }
 
     private async Task SaveAsAsync()
@@ -2515,6 +2725,7 @@ public sealed partial class PreviewPage : Page
         _activeTab.FilePath = _currentFilePath;
         _activeTab.Text = _currentText;
         _activeTab.IsDirty = _isDirty;
+        _activeTab.EditMode = _editMode;
     }
 
     // Opens a fresh tab (for a new or just-opened document) and makes it active.
@@ -2522,11 +2733,12 @@ public sealed partial class PreviewPage : Page
     private void AddTabAndActivate(string? filePath)
     {
         CaptureActiveTab();
-        var tab = new DocTab { FilePath = filePath };
+        var tab = new DocTab { FilePath = filePath, EditMode = InitialEditMode };
         _activeTab = tab;
         _currentFilePath = filePath;
         _currentText = "";
         _isDirty = false;
+        RestoreTabMode();
         var item = MakeTabItem(tab);
         _suppressTabEvents = true;
         DocTabs.TabItems.Add(item);
@@ -2554,6 +2766,7 @@ public sealed partial class PreviewPage : Page
         _currentFilePath = tab.FilePath;
         _currentText = tab.Text;
         _isDirty = tab.IsDirty;
+        RestoreTabMode();
         if (_editorReady) PostToEditor(BuildSwitchDocMessage(tab.Id, tab.Text));
         // Bring this document back to its own zoom right away, so the incoming
         // tab never flashes at the outgoing tab's level (the redraw below
@@ -2946,6 +3159,13 @@ public sealed partial class PreviewPage : Page
             CloseSettings();
         };
         Root.KeyboardAccelerators.Add(escape);
+        // Undo/redo. Monaco owns the history — a drag on the preview is an edit
+        // like any other (see PreviewPage.Edit.cs) — but the keystroke only reaches
+        // it when the caret is inside it. From anywhere else on the page it comes
+        // through here and is forwarded.
+        Add(VirtualKey.Z, Ctrl, "undo");
+        Add(VirtualKey.Y, Ctrl, "redo");
+        Add(VirtualKey.Z, CtrlShift, "redo");
         Add(VirtualKey.B, Ctrl, "toggleToolbar");
         Add(VirtualKey.E, Ctrl, "toggleEditor");
         Add(VirtualKey.G, Ctrl, "toggleGrid");
@@ -2992,6 +3212,15 @@ public sealed partial class PreviewPage : Page
 
         switch (name)
         {
+            case "undo":
+            case "redo":
+                // A text field with the focus keeps its own undo: retyping a label
+                // size should not roll back the document.
+                if (XamlRoot is not null
+                    && Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(XamlRoot)
+                        is TextBox or RichEditBox) break;
+                PostToEditor(name == "redo" ? "{\"type\":\"redo\"}" : "{\"type\":\"undo\"}");
+                break;
             case "closeTab":
                 if (ActiveTabItem() is { Tag: DocTab selTab } sel)
                     _ = RequestCloseSingleAsync(sel, selTab);
@@ -3441,8 +3670,21 @@ public sealed partial class PreviewPage : Page
             step = chosen.Value;
         }
 
-        var snapshot = await RenderSnapshotAsync();
-        var bytes = await EncodePngAsync(snapshot, PngScaleForStep(step));
+        // Rasterising and encoding happen before the picker opens, so this is where
+        // the wait is. The strip is dropped before the file dialog: a status line
+        // under a modal picker reports on nothing.
+        byte[] bytes;
+        var render = BeginStatus(LocalizationService.Get("status.exportPng"));
+        try
+        {
+            await YieldToUiAsync();
+            var snapshot = await RenderSnapshotAsync();
+            UpdateStatus(render, 0.5);
+            bytes = await EncodePngAsync(snapshot, PngScaleForStep(step));
+            UpdateStatus(render, 1.0);
+        }
+        finally { EndStatus(render); }
+
         var picker = new FileSavePicker();
         InitializeWithWindow.Initialize(picker, GetWindowHandle());
         picker.SuggestedFileName = _currentFilePath is null ? "label" : Path.GetFileNameWithoutExtension(_currentFilePath);
@@ -3519,7 +3761,17 @@ public sealed partial class PreviewPage : Page
     private async Task ExportPdfAsync()
     {
         // Vector PDF built from the render model (crisp at any zoom), not a raster.
-        var pdf = ZplRenderer.ToPdf(_model, SelectedDpmm, _rotationDegrees);
+        // Embedding the fonts is the slow part, and it holds the UI thread — hence
+        // the label without a bar, and the frame handed back before it starts.
+        byte[] pdf;
+        var building = BeginStatus(LocalizationService.Get("status.exportPdf"), showBar: false);
+        try
+        {
+            await YieldToUiAsync();
+            pdf = ZplRenderer.ToPdf(_model, SelectedDpmm, _rotationDegrees);
+        }
+        finally { EndStatus(building); }
+
         var picker = new FileSavePicker();
         InitializeWithWindow.Initialize(picker, GetWindowHandle());
         picker.SuggestedFileName = _currentFilePath is null ? "label" : Path.GetFileNameWithoutExtension(_currentFilePath);
@@ -3658,8 +3910,11 @@ public sealed partial class PreviewPage : Page
             // Full width, not a third: the print defaults carry a mode selector
             // AND a value side by side, and a third-width card crushes the label
             // column down to one word per line.
-            ["print"]      = BuildPrintSettingsSection(),
+            ["print"]      = WithThirdWidthCards(BuildPrintSettingsSection()),
             ["editor"]     = BuildEditorSettings(),
+            // Full width: the position cards carry a picture of the screen with
+            // eight buttons in it, which a third of the window crushes.
+            ["editmode"]   = BuildEditModeSettings(),
             ["appearance"] = WithThirdWidthCards(BuildAppearanceSettings()),
             ["toolbar"]    = BuildToolbarDesignerSettings(), // designer card: not applicable
             ["screen"]     = WithThirdWidthCards(BuildScreenSettings()),
@@ -3677,6 +3932,7 @@ public sealed partial class PreviewPage : Page
     {
         ["general"] = "general", ["doc"] = "document", ["editor"] = "editor",
         ["print"] = "print", ["appearance"] = "appearance", ["toolbar"] = "toolbar",
+        ["editmode"] = "editMode",
         ["screen"] = "screen", ["printer"] = "virtualPrinter", ["about"] = "about",
     };
 
@@ -4018,6 +4274,31 @@ public sealed partial class PreviewPage : Page
         _lineToggle = lineToggle;
         var lowWarn = MakeToggle(_settings.ShowLowWarnings);
         lowWarn.Toggled += (_, _) => { _settings.ShowLowWarnings = lowWarn.IsOn; _settings.Save(); RunStaticAnalysis(); };
+
+        // ── Mode ────────────────────────────────────────────────────────────
+        // A language file the user edited can be missing the options entirely, and
+        // a ComboBox with an empty ItemsSource THROWS on SelectedIndex — which would
+        // take the whole settings page down. Fall back to the shipped wording.
+        var startModeOpts = SA("editor.opt.startMode");
+        if (startModeOpts.Length < 3)
+            startModeOpts = new[] { "Visualisation", "Édition", "Dernier utilisé" };
+        var startMode = new ComboBox { MinWidth = 200, ItemsSource = startModeOpts };
+        startMode.SelectedIndex = Math.Clamp(_settings.StartMode, 0, startModeOpts.Length - 1);
+        startMode.SelectionChanged += (_, _) =>
+        {
+            _settings.StartMode = Math.Clamp(startMode.SelectedIndex, 0, 2);
+            // Seed the remembered mode with what is on screen, so picking "last
+            // used" does not send the next launch back to a mode from long ago.
+            _settings.LastModeEdit = _editMode;
+            _settings.Save();
+        };
+
+        panel.Children.Add(SubHeader(SL("editor.sub.mode")));
+        // Added straight to the panel rather than through Row(): the height
+        // equalisation the column grid does needs a row with SEVERAL cards, and a
+        // solo one grows without bound and pushes the rest of the page off screen.
+        panel.Children.Add(MakeCard("", SL("editor.cards.startMode.title"),
+            SL("editor.cards.startMode.desc"), startMode));
 
         panel.Children.Add(SubHeader(SL("editor.sub.editor")));
         panel.Children.Add(Row(
@@ -4994,6 +5275,14 @@ public sealed partial class PreviewPage : Page
         return panel;
     }
 
+    // Three numbers, not four. The fourth is a build counter that says nothing to
+    // anyone reading it here; it goes straight back the day it has something to say.
+    private static string ThreeNumbers(string version)
+    {
+        var parts = version.Split('.');
+        return parts.Length > 3 ? string.Join('.', parts.Take(3)) : version;
+    }
+
     private UIElement BuildAboutSettings()
     {
         var panel = SettingsPanel();
@@ -5006,7 +5295,7 @@ public sealed partial class PreviewPage : Page
         {
             var v = System.Diagnostics.FileVersionInfo
                 .GetVersionInfo(Environment.ProcessPath!).FileVersion;
-            version = string.IsNullOrWhiteSpace(v) ? SL("about.lbl.unknownVersion") : v!;
+            version = string.IsNullOrWhiteSpace(v) ? SL("about.lbl.unknownVersion") : ThreeNumbers(v!);
         }
         catch { version = SL("about.lbl.unknownVersion"); }
 
@@ -5014,6 +5303,31 @@ public sealed partial class PreviewPage : Page
         copyVersion.Click += (_, _) => CopyTextToClipboard($"Ultimate ZPL Viewer {version}");
         panel.Children.Add(MakeCard("\uE946", SL("about.cards.version.title"),
             $"Ultimate ZPL Viewer {version}", copyVersion));
+
+        // Updates: a button that always answers (including "you are up to date",
+        // which is what pressing it is for) and the switch for the startup check.
+        var checkNow = new Button { Content = SL("about.lbl.checkUpdates") };
+        checkNow.Click += async (_, _) =>
+        {
+            checkNow.IsEnabled = false;
+            checkNow.Content = SL("about.lbl.checking");
+            try { await CheckForUpdatesAsync(silent: false); }
+            finally { checkNow.IsEnabled = true; checkNow.Content = SL("about.lbl.checkUpdates"); }
+        };
+        var updatesDesc = SL("about.cards.updates.desc");
+        if (!string.IsNullOrEmpty(_settings.LastUpdateCheck)
+            && DateTime.TryParse(_settings.LastUpdateCheck, out var last))
+            updatesDesc += " " + SL("about.lbl.lastCheck").Replace("{date}", last.ToString("g"));
+        panel.Children.Add(MakeCard("\uE895", SL("about.cards.updates.title"), updatesDesc, checkNow));
+
+        var autoUpdate = MakeToggle(_settings.CheckUpdatesOnStartup);
+        autoUpdate.Toggled += (_, _) =>
+        {
+            _settings.CheckUpdatesOnStartup = autoUpdate.IsOn;
+            _settings.Save();
+        };
+        panel.Children.Add(MakeCard("\uE117", SL("about.cards.autoUpdate.title"),
+            SL("about.cards.autoUpdate.desc"), autoUpdate));
 
         panel.Children.Add(MakeCard("\uE77B", SL("about.cards.developer.title"),
             SL("about.cards.developer.desc"), null));
@@ -5195,12 +5509,25 @@ public sealed partial class PreviewPage : Page
 
     // Loads a ZPL job captured from the virtual printer into a new tab, so it
     // never overwrites the document being edited.
-    public void LoadCapturedZpl(string zpl)
+    public void LoadCapturedZpl(string zpl) => _ = LoadCapturedZplAsync(zpl);
+
+    // A job arriving from the virtual printer is the one case where the application
+    // starts working without anyone asking it to, so saying what is happening
+    // matters more here than anywhere else.
+    private async Task LoadCapturedZplAsync(string zpl)
     {
-        AddTabAndActivate(null); // captured from the printer, never saved
-        SetEditorText(zpl);
-        _isDirty = true;
-        UpdateDocumentTitle();
+        var job = zpl.Length >= StatusWorthyFileSize
+            ? BeginStatus(LocalizationService.Get("status.capturing"))
+            : null;
+        try
+        {
+            if (job is not null) await YieldToUiAsync();
+            AddTabAndActivate(null); // captured from the printer, never saved
+            SetEditorText(zpl);
+            _isDirty = true;
+            UpdateDocumentTitle();
+        }
+        finally { if (job is not null) EndStatus(job); }
     }
 
     // Reports that a non-ZPL document was sent to the virtual printer.
@@ -5310,10 +5637,16 @@ public sealed partial class PreviewPage : Page
     // Replaces the SystemAccentColor* resources and reloads the theme so the
     // whole application (buttons, hover states, checkboxes, …) re-resolves them.
     private void ApplyAccentFromSettings()
-        => AccentColorService.Apply(_settings.UseSystemAccent
+    {
+        AccentColorService.Apply(_settings.UseSystemAccent
             ? null
             : ZplColorSchemeService.ParseHexColor(_settings.CustomAccent, Microsoft.UI.Colors.DodgerBlue),
             Root);
+        // The mode switch and the tool plate are painted by hand, so they do not
+        // follow the reloaded theme resources on their own.
+        ApplyModeButtons();
+        ApplyToolButtons();
+    }
 
     private void ApplyEditorTheme()
     {
@@ -5380,6 +5713,10 @@ public sealed partial class PreviewPage : Page
             "{\"type\":\"setEditorOptions\"," +
             $"\"fontSize\":{_settings.EditorFontSize}," +
             $"\"wordWrap\":{(_settings.EditorWordWrap ? "true" : "false")}," +
+            // View mode shows the ZPL without letting it be touched. Monaco's own
+            // readOnly keeps selection, copy, Ctrl+F and folding working — it only
+            // refuses edits, which is exactly the line we want.
+            $"\"readOnly\":{(_editMode ? "false" : "true")}," +
             $"\"minimap\":{(_settings.EditorMinimap ? "true" : "false")}}}");
     }
 
@@ -5632,6 +5969,10 @@ public sealed class DocTab
     public string? FilePath { get; set; }
     public string Text { get; set; } = "";
     public bool IsDirty { get; set; }
+
+    // View (false) or edit (true). Per document: one tab can be open for reading
+    // while another is being drawn. Seeded from the StartMode setting.
+    public bool EditMode { get; set; }
 
     // Display zoom the user picked for THIS document, in percent. Null while the
     // document still follows the default-zoom setting. Lives only as long as the

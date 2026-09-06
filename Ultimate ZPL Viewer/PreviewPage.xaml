@@ -13,6 +13,10 @@
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Default">
                     <SolidColorBrush x:Key="EditorSurfaceBrush" Color="#131313"/>
+                    <!-- Floating bars over the preview: a light grey plate in dark
+                         mode (the editor surface would vanish into the preview
+                         background), white in light mode. -->
+                    <SolidColorBrush x:Key="FloatPlateBrush" Color="#2C2C2C"/>
                     <SolidColorBrush x:Key="PreviewSurfaceBrush" Color="#151515"/>
                     <SolidColorBrush x:Key="PreviewGridLineBrush" Color="#12FFFFFF"/>
                     <SolidColorBrush x:Key="SurfaceStrokeBrush" Color="#1FFFFFFF"/>
@@ -22,6 +26,7 @@
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <SolidColorBrush x:Key="EditorSurfaceBrush" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="FloatPlateBrush" Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="PreviewSurfaceBrush" Color="#F3F3F3"/>
                     <SolidColorBrush x:Key="PreviewGridLineBrush" Color="#12000000"/>
                     <SolidColorBrush x:Key="SurfaceStrokeBrush" Color="#40000000"/>
@@ -120,7 +125,22 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <!-- Status strip: takes no room at all until something has progress
+                 to report. The overlays above still span rows 0-2 only, so a
+                 background download stays visible from the settings screen. -->
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+
+        <!-- Two probes, and nothing else. Icons drawn as shapes are painted from
+             code, and asking Application.Current for a theme brush answers for the
+             APPLICATION's theme - which this page does not necessarily wear: it
+             carries its own, and "Dark & light preview" is exactly that. An element
+             inside the page is the only thing that knows which theme is in force,
+             so these two carry the answer for the rest of the code to read. -->
+        <TextBlock x:Name="ThemeInk" Visibility="Collapsed"
+                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+        <TextBlock x:Name="ThemeInkOnAccent" Visibility="Collapsed"
+                   Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"/>
 
         <Border x:Name="ToolbarBorder" Grid.Row="0"
                 BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
@@ -281,29 +301,6 @@
                         VerticalAlignment="Center"
                         ToolTipService.ToolTip="Réinitialiser le zoom (100 %)">
                     <FontIcon Glyph="&#xE72C;" FontSize="13"/>
-                </Button>
-            </StackPanel>
-
-            <!-- Inspect mode: an icon that is either lit (active) or plain. The
-                 accent style is swapped in from code rather than a custom checked
-                 brush, so a custom accent colour follows for free. -->
-            <StackPanel x:Name="InspectGroup" Orientation="Horizontal" VerticalAlignment="Center">
-                <!-- Square, the same 32 px the other toolbar buttons come out at,
-                     so a lit icon reads as a button and not as a stray badge. -->
-                <Button x:Name="InspectButton" Click="InspectButton_Click"
-                        Width="32" Height="32" MinWidth="0" Padding="0"
-                        CornerRadius="{ThemeResource ControlCornerRadius}"
-                        VerticalAlignment="Center">
-                    <!-- Paint's rectangular-selection marquee. Drawn rather than
-                         taken from the icon font: the nearest glyph (SelectAll)
-                         carries four squares inside the dashes. Stroke colour is
-                         set from code, so it follows the lit/unlit foreground. -->
-                    <Rectangle x:Name="InspectIcon"
-                               Width="15" Height="15"
-                               Fill="Transparent"
-                               StrokeThickness="1.2"
-                               StrokeDashArray="2,2"
-                               StrokeDashCap="Flat"/>
                 </Button>
             </StackPanel>
 
@@ -621,23 +618,6 @@
                               IsHitTestVisible="False"/>
                     </local:CursorGrid>
 
-                    <!-- Shown while a heavy document is being drawn. The draw runs on
-                         the UI thread, so nothing can animate during it: this is a
-                         plain static notice, painted one frame BEFORE the draw starts
-                         (see DrawPreviewModel). -->
-                    <Border x:Name="PreviewBusy"
-                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                            Visibility="Collapsed"
-                            IsHitTestVisible="False"
-                            Canvas.ZIndex="30"
-                            CornerRadius="8"
-                            Padding="20,14"
-                            Background="{ThemeResource EditorSurfaceBrush}"
-                            BorderBrush="{ThemeResource SurfaceStrokeBrush}"
-                            BorderThickness="1">
-                        <TextBlock x:Name="PreviewBusyText" FontSize="14"/>
-                    </Border>
-
                     <!-- Rulers, drawn ON TOP of the preview at the top / left edges.
                          Sized/positioned in code (ApplyRulerVisibility). -->
                     <Canvas x:Name="RulerTopCanvas"
@@ -656,9 +636,366 @@
                             Width="22" Height="22"
                             Background="{ThemeResource PreviewRulerBrush}"
                             Visibility="Collapsed"/>
+
+                    <!-- Insertion toolbar, edit mode only: a floating plate down
+                         the LEFT edge of the preview, the way every drawing tool
+                         puts it. Clicking a tool arms it; the next click on the
+                         label places the element (drag to size the shapes). The
+                         armed tool is filled with the accent, like the mode plate.
+                         Icons are DRAWN rather than taken from the icon font: there
+                         is no barcode glyph in it, and a half-drawn set would read
+                         worse than a consistent one. -->
+                    <Border x:Name="EditToolbar"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="24,10,0,0"
+                            Canvas.ZIndex="30"
+                            Visibility="Collapsed"
+                            CornerRadius="8"
+                            Padding="4"
+                            Background="{ThemeResource FloatPlateBrush}"
+                            BorderBrush="{ThemeResource SurfaceStrokeBrush}"
+                            BorderThickness="1">
+                        <StackPanel x:Name="ToolPlateStack" Orientation="Vertical" Spacing="3">
+                            <StackPanel.Resources>
+                                <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>
+                                <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SubtleFillColorSecondaryBrush"/>
+                                <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SubtleFillColorTertiaryBrush"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrush" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
+                            </StackPanel.Resources>
+                            <Button x:Name="ToolSelectButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
+                                <Path x:Name="ToolSelectIcon"
+                                      Width="13" Height="15" Stretch="Uniform"
+                                      StrokeThickness="1.5"
+                                      StrokeLineJoin="Round"
+                                      Fill="Transparent"
+                                      Data="M 4,3 L 4,18 L 8,14.2 L 10.6,20 L 13.2,18.8 L 10.7,13.2 L 16,12.9 Z"/>
+                            </Button>
+                            <!-- Selecting and moving are two tools, not one. The
+                                 arrow only picks things up to look at them; the
+                                 cross-arrows are what lets a drag change the label.
+                                 A guard against nudging an element while reading it. -->
+                            <Button x:Name="ToolMoveButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
+                                <Path x:Name="ToolMoveIcon"
+                                      Width="16" Height="16" Stretch="Uniform"
+                                      StrokeThickness="1.6"
+                                      StrokeLineJoin="Round"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Fill="Transparent"
+                                      Data="M12,2 L12,22 M2,12 L22,12
+                                            M9,5 L12,2 L15,5 M9,19 L12,22 L15,19
+                                            M5,9 L2,12 L5,15 M19,9 L22,12 L19,15"/>
+                            </Button>
+                            <Rectangle x:Name="ToolPlateSeparator"
+                                       Height="1" Margin="5,2"
+                                       Fill="{ThemeResource SurfaceStrokeBrush}"/>
+                            <Button x:Name="ToolTextButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
+                                <TextBlock x:Name="ToolTextIcon" Text="T"
+                                           FontSize="16" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                            <!-- The little wedge in the corner is the standard way
+                                 of saying "there is a menu behind this": both of
+                                 these open one rather than arming a tool. -->
+                            <Button x:Name="ToolCodeButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch">
+                                <Grid>
+                                    <StackPanel x:Name="ToolCodeIcon" Orientation="Horizontal"
+                                                Height="13" VerticalAlignment="Center"
+                                                HorizontalAlignment="Center">
+                                        <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
+                                        <Rectangle Width="3" Margin="0,0,1.5,0"/>
+                                        <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
+                                        <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
+                                        <Rectangle Width="3"/>
+                                    </StackPanel>
+                                    <Path x:Name="ToolCodeMore"
+                                          HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                          Margin="0,0,2,2" StrokeThickness="0"
+                                          Data="M0,4 L4,4 L4,0 Z"/>
+                                </Grid>
+                            </Button>
+                            <!-- Two overlapping outlines rather than a rectangle:
+                                 the button covers rectangles, lines, ellipses and
+                                 circles, and a single rectangle claimed only one. -->
+                            <Button x:Name="ToolShapeButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch">
+                                <Grid>
+                                    <Canvas Width="15" Height="14">
+                                        <Ellipse x:Name="ToolShapeIconEllipse"
+                                                 Canvas.Left="5" Canvas.Top="0"
+                                                 Width="10" Height="10" StrokeThickness="1.3"
+                                                 Fill="Transparent"/>
+                                        <Rectangle x:Name="ToolShapeIconRect"
+                                                   Canvas.Left="0" Canvas.Top="4"
+                                                   Width="10" Height="10" StrokeThickness="1.3"
+                                                   Fill="Transparent"/>
+                                    </Canvas>
+                                    <Path x:Name="ToolShapeMore"
+                                          HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                          Margin="0,0,2,2" StrokeThickness="0"
+                                          Data="M0,4 L4,4 L4,0 Z"/>
+                                </Grid>
+                            </Button>
+                            <!-- A frame with a sun and a hill in it: the picture
+                                 everybody reads as "an image", drawn rather than
+                                 borrowed so it matches the rest of the plate. -->
+                            <Button x:Name="ToolImageButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
+                                <Canvas Width="16" Height="13">
+                                    <Rectangle x:Name="ToolImageIconFrame"
+                                               Width="16" Height="13" RadiusX="1.5" RadiusY="1.5"
+                                               StrokeThickness="1.3" Fill="Transparent"/>
+                                    <Ellipse x:Name="ToolImageIconSun"
+                                             Canvas.Left="3.2" Canvas.Top="2.8"
+                                             Width="2.6" Height="2.6" StrokeThickness="0"/>
+                                    <Path x:Name="ToolImageIconHill"
+                                          Canvas.Left="1.6" Canvas.Top="4.6" StrokeThickness="0"
+                                          Data="M0,6.4 L3.4,1.6 L6.2,5.2 L8.2,3.2 L12.8,6.4 Z"/>
+                                </Canvas>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Tools attached to the current selection in edit mode.
+                         They live HERE, in screen space, rather than on the canvas:
+                         the canvas is in label dots and the ScrollViewer scales it,
+                         so a button parented there would grow and shrink with the
+                         zoom. Placed by UpdateSelectionTools. -->
+                    <Canvas x:Name="EditOverlay" Canvas.ZIndex="25">
+                        <!-- Resize handles. Filled at run time (PreviewPage.Resize.cs)
+                             and kept HERE, in screen space, so they stay the same
+                             size to the eye however far the preview is zoomed. -->
+                        <Canvas x:Name="ResizeHandles"/>
+                        <Border x:Name="SelectionTools"
+                                Visibility="Collapsed"
+                                CornerRadius="6"
+                                Padding="3"
+                                Background="{ThemeResource FloatPlateBrush}"
+                                BorderBrush="{ThemeResource SurfaceStrokeBrush}"
+                                BorderThickness="1">
+                            <StackPanel x:Name="SelectionStack" Orientation="Vertical" Spacing="3">
+                                <StackPanel.Resources>
+                                    <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>
+                                    <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SubtleFillColorSecondaryBrush"/>
+                                    <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SubtleFillColorTertiaryBrush"/>
+                                    <SolidColorBrush x:Key="ButtonBorderBrush" Color="Transparent"/>
+                                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+                                    <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
+                                </StackPanel.Resources>
+                                <StackPanel x:Name="SelectionToolsRow"
+                                            Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                    <Button x:Name="RotateElementButton"
+                                            Width="28" Height="26" MinWidth="0" Padding="0"
+                                            CornerRadius="5">
+                                        <FontIcon Glyph="&#xE7AD;" FontSize="13"/>
+                                    </Button>
+                                    <!-- Z-order. Two overlapping squares, the one in
+                                         front filled: the idiom every drawing tool
+                                         uses, and there is no icon-font glyph for it. -->
+                                    <!-- A stack with an arrow out of it: two squares
+                                         swapping fill read as the same icon twice at
+                                         this size, which is what they were. -->
+                                    <Button x:Name="ForwardElementButton"
+                                            Width="28" Height="26" MinWidth="0" Padding="0"
+                                            CornerRadius="5">
+                                        <Canvas Width="15" Height="15">
+                                            <Rectangle x:Name="ForwardIconBack"
+                                                       Canvas.Left="0" Canvas.Top="8"
+                                                       Width="15" Height="3" RadiusX="1" RadiusY="1"/>
+                                            <Rectangle x:Name="ForwardIconBack2"
+                                                       Canvas.Left="0" Canvas.Top="12"
+                                                       Width="15" Height="3" RadiusX="1" RadiusY="1"/>
+                                            <Path x:Name="ForwardIconFront"
+                                                  Canvas.Left="3" Canvas.Top="0"
+                                                  StrokeThickness="1.6"
+                                                  StrokeLineJoin="Round"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Fill="Transparent"
+                                                  Data="M4.5,6 L4.5,0 M1,3 L4.5,0 L8,3"/>
+                                        </Canvas>
+                                    </Button>
+                                    <Button x:Name="BackwardElementButton"
+                                            Width="28" Height="26" MinWidth="0" Padding="0"
+                                            CornerRadius="5">
+                                        <Canvas Width="15" Height="15">
+                                            <Rectangle x:Name="BackwardIconBack"
+                                                       Canvas.Left="0" Canvas.Top="0"
+                                                       Width="15" Height="3" RadiusX="1" RadiusY="1"/>
+                                            <Rectangle x:Name="BackwardIconBack2"
+                                                       Canvas.Left="0" Canvas.Top="4"
+                                                       Width="15" Height="3" RadiusX="1" RadiusY="1"/>
+                                            <Path x:Name="BackwardIconFront"
+                                                  Canvas.Left="3" Canvas.Top="9"
+                                                  StrokeThickness="1.6"
+                                                  StrokeLineJoin="Round"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Fill="Transparent"
+                                                  Data="M4.5,0 L4.5,6 M1,3 L4.5,6 L8,3"/>
+                                        </Canvas>
+                                    </Button>
+                                    <Button x:Name="DuplicateElementButton"
+                                            Width="28" Height="26" MinWidth="0" Padding="0"
+                                            CornerRadius="5">
+                                        <FontIcon Glyph="&#xE8C8;" FontSize="13"/>
+                                    </Button>
+                                    <Button x:Name="DeleteElementButton"
+                                            Width="28" Height="26" MinWidth="0" Padding="0"
+                                            CornerRadius="5">
+                                        <FontIcon Glyph="&#xE74D;" FontSize="13"/>
+                                    </Button>
+                                    <!-- A graphic has nothing to change in a row of
+                                         spinners: it is re-imported. The button
+                                         reopens the import with the settings that
+                                         made it, so a size or a threshold can be
+                                         reconsidered without starting over. -->
+                                    <Button x:Name="EditImageButton"
+                                            Width="28" Height="26" MinWidth="0" Padding="0"
+                                            CornerRadius="5"
+                                            Visibility="Collapsed">
+                                        <FontIcon Glyph="&#xE712;" FontSize="13"/>
+                                    </Button>
+                                    <!-- Opens the rest of the properties INSIDE the
+                                         plate, as a second row. A flyout put them on
+                                         top of the very element being edited. -->
+                                    <ToggleButton x:Name="SelectionMoreButton"
+                                                  Width="28" Height="28" MinWidth="0" Padding="0"
+                                                  CornerRadius="5"
+                                                  Visibility="Collapsed">
+                                        <FontIcon x:Name="SelectionMoreIcon" Glyph="&#xE70D;" FontSize="12"/>
+                                    </ToggleButton>
+                                    <TextBlock x:Name="SelectionCoords"
+                                               FontSize="11"
+                                               Margin="2,0,4,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                                <!-- The rest of the properties. Part of the plate,
+                                     so opening them pushes it further up and never
+                                     covers what is being edited. -->
+                                <StackPanel x:Name="SelectionProps"
+                                            Visibility="Collapsed"
+                                            Spacing="8"
+                                            Margin="6,2,6,4"/>
+                                <!-- Why the symbology refuses the content, when it
+                                     does. One line, under the field it is about. -->
+                                <TextBlock x:Name="SelectionWarning"
+                                           Visibility="Collapsed"
+                                           FontSize="11"
+                                           MaxWidth="320"
+                                           TextWrapping="Wrap"
+                                           Margin="4,0,4,2"
+                                           Foreground="#FFB900"/>
+                            </StackPanel>
+                        </Border>
+                    </Canvas>
+
+                    <!-- View / edit switch: a floating plate at the top RIGHT of
+                         the preview, stacked vertically — view above, edit below.
+                         Two icons, no text; the active one is FILLED with the
+                         accent colour (ApplyModeButtons swaps the accent button
+                         style in, so a custom accent and the hover/pressed states
+                         both follow for free). Its top margin clears the
+                         horizontal ruler when that one is shown; the right one is
+                         wider than the top one because the window edge is a harder
+                         boundary than the toolbar above, and because the preview's
+                         vertical scrollbar appears in that same strip. -->
+                    <Border x:Name="ModeSwitch"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,10,24,0"
+                            Canvas.ZIndex="30"
+                            CornerRadius="8"
+                            Padding="4"
+                            Background="{ThemeResource FloatPlateBrush}"
+                            BorderBrush="{ThemeResource SurfaceStrokeBrush}"
+                            BorderThickness="1">
+                        <StackPanel x:Name="ModePlateStack" Orientation="Vertical" Spacing="3">
+                            <StackPanel.Resources>
+                                <!-- The UNSELECTED button is flat: the plate is the
+                                     surface, and it only lights up under the
+                                     pointer. The selected one wears the accent
+                                     style, whose own AccentButton* brushes are
+                                     untouched by these overrides. -->
+                                <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>
+                                <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SubtleFillColorSecondaryBrush"/>
+                                <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SubtleFillColorTertiaryBrush"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrush" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
+                            </StackPanel.Resources>
+                            <Button x:Name="ViewModeButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0"
+                                    CornerRadius="6">
+                                <FontIcon x:Name="ViewModeIcon" Glyph="&#xE7B3;" FontSize="15"/>
+                            </Button>
+                            <Button x:Name="EditModeButton"
+                                    Width="34" Height="30" MinWidth="0" Padding="0"
+                                    CornerRadius="6">
+                                <FontIcon x:Name="EditModeIcon" Glyph="&#xE70F;" FontSize="15"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- One line at the very bottom, shown only while something is running:
+             a label, a thin bar, the percentage, and a cancel button when the
+             task can be given up. Driven by PreviewPage.Status.cs. -->
+        <Border x:Name="StatusStrip"
+                Grid.Row="3"
+                Visibility="Collapsed"
+                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                Padding="12,5">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusText"
+                           FontSize="12"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="420"/>
+                <ProgressBar x:Name="StatusProgress"
+                             Grid.Column="1"
+                             Height="3"
+                             VerticalAlignment="Center"
+                             Minimum="0" Maximum="1"/>
+                <TextBlock x:Name="StatusPercent"
+                           Grid.Column="2"
+                           FontSize="12"
+                           MinWidth="38"
+                           TextAlignment="Right"
+                           VerticalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                <Button x:Name="StatusCancel"
+                        Grid.Column="3"
+                        Visibility="Collapsed"
+                        Padding="6,0"
+                        MinWidth="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="StatusCancel_Click">
+                    <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                </Button>
+            </Grid>
+        </Border>
 
         <!-- First-run wizard. Covers the whole page (toolbar, tabs, editor and
              preview) so nothing of the application shows behind it; the window
@@ -700,6 +1037,9 @@
                     </NavigationViewItem>
                     <NavigationViewItem Content="Éditeur et aperçu" Tag="editor">
                         <NavigationViewItem.Icon><FontIcon Glyph="&#xE70F;"/></NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                    <NavigationViewItem Content="Mode édition" Tag="editmode">
+                        <NavigationViewItem.Icon><FontIcon Glyph="&#xE7C4;"/></NavigationViewItem.Icon>
                     </NavigationViewItem>
                     <NavigationViewItem Content="Impression" Tag="print">
                         <NavigationViewItem.Icon><FontIcon Glyph="&#xE749;"/></NavigationViewItem.Icon>

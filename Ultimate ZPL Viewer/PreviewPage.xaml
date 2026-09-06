@@ -656,8 +656,11 @@
                             <Button x:Name="ToolSelectButton"
                                     Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
                                 <Path x:Name="ToolSelectIcon"
-                                      Width="12" Height="14" Stretch="Uniform"
-                                      Data="M 0,0 L 0,13 L 3.4,9.8 L 5.6,14 L 7.8,12.9 L 5.6,8.9 L 10,8.6 Z"/>
+                                      Width="13" Height="15" Stretch="Uniform"
+                                      StrokeThickness="1.5"
+                                      StrokeLineJoin="Round"
+                                      Fill="Transparent"
+                                      Data="M 4,3 L 4,18 L 8,14.2 L 10.6,20 L 13.2,18.8 L 10.7,13.2 L 16,12.9 Z"/>
                             </Button>
                             <!-- Selecting and moving are two tools, not one. The
                                  arrow only picks things up to look at them; the
@@ -666,8 +669,15 @@
                             <Button x:Name="ToolMoveButton"
                                     Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
                                 <Path x:Name="ToolMoveIcon"
-                                      Width="15" Height="15" Stretch="Uniform"
-                                      Data="M8,0 L11,3 L9,3 L9,7 L13,7 L13,5 L16,8 L13,11 L13,9 L9,9 L9,13 L11,13 L8,16 L5,13 L7,13 L7,9 L3,9 L3,11 L0,8 L3,5 L3,7 L7,7 L7,3 L5,3 Z"/>
+                                      Width="16" Height="16" Stretch="Uniform"
+                                      StrokeThickness="1.6"
+                                      StrokeLineJoin="Round"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Fill="Transparent"
+                                      Data="M12,2 L12,22 M2,12 L22,12
+                                            M9,5 L12,2 L15,5 M9,19 L12,22 L15,19
+                                            M5,9 L2,12 L5,15 M19,9 L22,12 L19,15"/>
                             </Button>
                             <Rectangle Height="1" Margin="5,2"
                                        Fill="{ThemeResource SurfaceStrokeBrush}"/>
@@ -677,36 +687,51 @@
                                            FontSize="16" FontWeight="SemiBold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Button>
+                            <!-- The little wedge in the corner is the standard way
+                                 of saying "there is a menu behind this": both of
+                                 these open one rather than arming a tool. -->
                             <Button x:Name="ToolCodeButton"
-                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
-                                <StackPanel x:Name="ToolCodeIcon" Orientation="Horizontal"
-                                            Height="13" VerticalAlignment="Center">
-                                    <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
-                                    <Rectangle Width="3" Margin="0,0,1.5,0"/>
-                                    <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
-                                    <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
-                                    <Rectangle Width="3"/>
-                                </StackPanel>
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch">
+                                <Grid>
+                                    <StackPanel x:Name="ToolCodeIcon" Orientation="Horizontal"
+                                                Height="13" VerticalAlignment="Center">
+                                        <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
+                                        <Rectangle Width="3" Margin="0,0,1.5,0"/>
+                                        <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
+                                        <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
+                                        <Rectangle Width="3"/>
+                                    </StackPanel>
+                                    <Path x:Name="ToolCodeMore"
+                                          HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                          Margin="0,0,2,2" StrokeThickness="0"
+                                          Data="M0,4 L4,4 L4,0 Z"/>
+                                </Grid>
                             </Button>
                             <!-- Two overlapping outlines rather than a rectangle:
                                  the button covers rectangles, lines, ellipses and
                                  circles, and a single rectangle claimed only one. -->
                             <Button x:Name="ToolShapeButton"
-                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
-                                <Canvas Width="15" Height="14">
-                                    <Ellipse x:Name="ToolShapeIconEllipse"
-                                             Canvas.Left="5" Canvas.Top="0"
-                                             Width="10" Height="10" StrokeThickness="1.3"
-                                             Fill="Transparent"/>
-                                    <Rectangle x:Name="ToolShapeIconRect"
-                                               Canvas.Left="0" Canvas.Top="4"
-                                               Width="10" Height="10" StrokeThickness="1.3"
-                                               Fill="Transparent"/>
-                                </Canvas>
-                            </Button>
-                            <Button x:Name="ToolFillButton"
-                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6">
-                                <Rectangle x:Name="ToolFillIcon" Width="14" Height="11" StrokeThickness="0"/>
+                                    Width="34" Height="30" MinWidth="0" Padding="0" CornerRadius="6"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch">
+                                <Grid>
+                                    <Canvas Width="15" Height="14">
+                                        <Ellipse x:Name="ToolShapeIconEllipse"
+                                                 Canvas.Left="5" Canvas.Top="0"
+                                                 Width="10" Height="10" StrokeThickness="1.3"
+                                                 Fill="Transparent"/>
+                                        <Rectangle x:Name="ToolShapeIconRect"
+                                                   Canvas.Left="0" Canvas.Top="4"
+                                                   Width="10" Height="10" StrokeThickness="1.3"
+                                                   Fill="Transparent"/>
+                                    </Canvas>
+                                    <Path x:Name="ToolShapeMore"
+                                          HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                          Margin="0,0,2,2" StrokeThickness="0"
+                                          Data="M0,4 L4,4 L4,0 Z"/>
+                                </Grid>
                             </Button>
                             <!-- A frame with a sun and a hill in it: the picture
                                  everybody reads as "an image", drawn rather than
@@ -763,30 +788,47 @@
                                     <!-- Z-order. Two overlapping squares, the one in
                                          front filled: the idiom every drawing tool
                                          uses, and there is no icon-font glyph for it. -->
+                                    <!-- A stack with an arrow out of it: two squares
+                                         swapping fill read as the same icon twice at
+                                         this size, which is what they were. -->
                                     <Button x:Name="ForwardElementButton"
                                             Width="28" Height="26" MinWidth="0" Padding="0"
                                             CornerRadius="5">
-                                        <Canvas Width="14" Height="14">
+                                        <Canvas Width="15" Height="15">
                                             <Rectangle x:Name="ForwardIconBack"
-                                                       Canvas.Left="4" Canvas.Top="0"
-                                                       Width="9" Height="9"
-                                                       StrokeThickness="1.2" Fill="Transparent"/>
-                                            <Rectangle x:Name="ForwardIconFront"
-                                                       Canvas.Left="0" Canvas.Top="4"
-                                                       Width="9" Height="9"/>
+                                                       Canvas.Left="0" Canvas.Top="8"
+                                                       Width="15" Height="3" RadiusX="1" RadiusY="1"/>
+                                            <Rectangle x:Name="ForwardIconBack2"
+                                                       Canvas.Left="0" Canvas.Top="12"
+                                                       Width="15" Height="3" RadiusX="1" RadiusY="1"/>
+                                            <Path x:Name="ForwardIconFront"
+                                                  Canvas.Left="3" Canvas.Top="0"
+                                                  StrokeThickness="1.6"
+                                                  StrokeLineJoin="Round"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Fill="Transparent"
+                                                  Data="M4.5,6 L4.5,0 M1,3 L4.5,0 L8,3"/>
                                         </Canvas>
                                     </Button>
                                     <Button x:Name="BackwardElementButton"
                                             Width="28" Height="26" MinWidth="0" Padding="0"
                                             CornerRadius="5">
-                                        <Canvas Width="14" Height="14">
+                                        <Canvas Width="15" Height="15">
                                             <Rectangle x:Name="BackwardIconBack"
-                                                       Canvas.Left="4" Canvas.Top="0"
-                                                       Width="9" Height="9"/>
-                                            <Rectangle x:Name="BackwardIconFront"
+                                                       Canvas.Left="0" Canvas.Top="0"
+                                                       Width="15" Height="3" RadiusX="1" RadiusY="1"/>
+                                            <Rectangle x:Name="BackwardIconBack2"
                                                        Canvas.Left="0" Canvas.Top="4"
-                                                       Width="9" Height="9"
-                                                       StrokeThickness="1.2" Fill="Transparent"/>
+                                                       Width="15" Height="3" RadiusX="1" RadiusY="1"/>
+                                            <Path x:Name="BackwardIconFront"
+                                                  Canvas.Left="3" Canvas.Top="9"
+                                                  StrokeThickness="1.6"
+                                                  StrokeLineJoin="Round"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Fill="Transparent"
+                                                  Data="M4.5,0 L4.5,6 M1,3 L4.5,6 L8,3"/>
                                         </Canvas>
                                     </Button>
                                     <Button x:Name="DuplicateElementButton"
@@ -813,13 +855,6 @@
                                              VerticalAlignment="Center"
                                              FontSize="12"
                                              Visibility="Collapsed"/>
-                                    <ComboBox x:Name="SelectionKind"
-                                              MinWidth="118" Height="28" MinHeight="0"
-                                              Padding="9,0,0,0"
-                                              VerticalContentAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              FontSize="12"
-                                              Visibility="Collapsed"/>
                                     <!-- A graphic has nothing to change in a row of
                                          spinners: it is re-imported. The button
                                          reopens the import with the settings that

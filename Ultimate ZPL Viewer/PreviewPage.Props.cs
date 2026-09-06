@@ -33,12 +33,6 @@ public sealed partial class PreviewPage
         SelectionData.TextChanged += (_, _) => { if (!_fillingProps) CommitData(); };
         SelectionData.LostFocus += (_, _) => CommitData();
 
-        SelectionKind.SelectionChanged += (_, _) =>
-        {
-            if (_fillingProps) return;
-            ChangeSymbology();
-        };
-
         SelectionMoreButton.Checked += (_, _) =>
         {
             _propsBuiltFor = -1;
@@ -71,7 +65,6 @@ public sealed partial class PreviewPage
             // Nothing in this row means anything for several elements at once.
             _facts = null;
             SelectionData.Visibility = Visibility.Collapsed;
-            SelectionKind.Visibility = Visibility.Collapsed;
             SelectionMoreButton.Visibility = Visibility.Collapsed;
             SelectionMoreButton.IsChecked = false;
             EditImageButton.Visibility = Visibility.Collapsed;
@@ -93,14 +86,6 @@ public sealed partial class PreviewPage
                 SelectionData.Text = _facts.Data ?? "";
 
             var spec = BarcodeCatalog.ByCommand(_facts.Barcode, _facts.Data);
-            SelectionKind.Visibility = spec is null ? Visibility.Collapsed : Visibility.Visible;
-            if (spec is not null)
-            {
-                if (SelectionKind.Items.Count == 0)
-                    foreach (var s in BarcodeCatalog.All)
-                        SelectionKind.Items.Add(new ComboBoxItem { Content = s.Label, Tag = s.Key });
-                SelectionKind.SelectedIndex = Array.FindIndex(BarcodeCatalog.All, s => s.Key == spec.Key);
-            }
 
             // Only worth offering when there is something to open.
             bool expandable = _facts.FontName is not null
@@ -113,7 +98,10 @@ public sealed partial class PreviewPage
                 ? Visibility.Visible : Visibility.Collapsed;
             ToolTipService.SetToolTip(EditImageButton, TipBlock(LocalizationService.Get("mode.act.image")));
 
-            ShowWarning(spec is null ? null : BarcodeCatalog.Validate(spec.Key, _facts.Data ?? ""));
+            // ^FR prints white where the label is already black. Over white it does
+            // exactly nothing, which reads as a broken switch — so say so.
+            ShowWarning((spec is null ? null : BarcodeCatalog.Validate(spec.Key, _facts.Data ?? ""))
+                        ?? (NothingBlackUnder() ? PL("reverseNothing") : null));
         }
         finally { _fillingProps = false; }
 
@@ -145,6 +133,36 @@ public sealed partial class PreviewPage
             ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// True when the field is reversed and there is nothing black beneath it to
+    /// reverse out of — the one case where ^FR is on and the label shows no change.
+    /// </summary>
+    private bool NothingBlackUnder()
+    {
+        if (_facts is null || !_facts.Reverse || _selStart < 0) return false;
+
+        Windows.Foundation.Rect field = Windows.Foundation.Rect.Empty;
+        foreach (var (element, drawable) in _hitMap)
+        {
+            if (drawable.SourceStart != _selStart) continue;
+            var b = BoundsInCanvas(element);
+            if (!b.IsEmpty) field = field.IsEmpty ? b : Union(field, b);
+        }
+        if (field.IsEmpty) return false;
+
+        foreach (var (element, drawable) in _hitMap)
+        {
+            if (drawable is not ZplBox box || box.SourceStart == _selStart) continue;
+            if (box.WhiteFill || box.Reverse) continue;
+            // A frame leaves its middle white; only a solid block gives ^FR anything
+            // to work against.
+            if (box.Thickness < Math.Min(box.Width, box.Height) / 2.0) continue;
+            var b = BoundsInCanvas(element);
+            if (!b.IsEmpty && Intersects(b, field)) return false;
+        }
+        return true;
+    }
+
     private void ShowWarning(string? message)
     {
         SelectionWarning.Text = message ?? "";
@@ -172,7 +190,7 @@ public sealed partial class PreviewPage
     private void ChangeSymbology()
     {
         if (_facts is null || _selStart < 0) return;
-        if (SelectionKind.SelectedItem is not ComboBoxItem { Tag: string key }) return;
+        if (_kindBox?.SelectedItem is not ComboBoxItem { Tag: string key }) return;
         var spec = BarcodeCatalog.ByKey(key);
         if (spec is null) return;
 
@@ -247,6 +265,20 @@ public sealed partial class PreviewPage
         return box;
     }
 
+    // A ToggleSwitch keeps room for the words "On"/"Off" even when there are none,
+    // and that reserved strip is what left every switch short of the right edge
+    // while every other control reached it.
+    private static ToggleSwitch Switch(bool on) => new()
+    {
+        IsOn = on,
+        OnContent = null,
+        OffContent = null,
+        MinWidth = 0,
+        HorizontalAlignment = HorizontalAlignment.Right,
+    };
+
+    private ComboBox? _kindBox;
+
     private static string PL(string key) => LocalizationService.Get("mode.props." + key);
 
     private void BuildTextProperties(StackPanel panel)
@@ -312,13 +344,22 @@ public sealed partial class PreviewPage
         widthRow.Children.Add(lockToggle);
         panel.Children.Add(Row(PL("width"), widthRow));
 
-        var reverse = new ToggleSwitch { IsOn = _facts.Reverse, OnContent = "", OffContent = "" };
+        var reverse = Switch(_facts.Reverse);
         reverse.Toggled += (_, _) =>
         {
             var edit = ZplPatcher.SetReverse(_currentText, _selStart, _selEnd, reverse.IsOn);
             if (edit is { } e) ApplyEdit(e);
         };
         panel.Children.Add(Row(PL("reverse"), reverse));
+    }
+
+    private ComboBox NewKindBox()
+    {
+        var box = new ComboBox { MinWidth = 128, FontSize = 12 };
+        foreach (var s in BarcodeCatalog.All)
+            box.Items.Add(new ComboBoxItem { Content = s.Label, Tag = s.Key });
+        box.SelectionChanged += (_, _) => { if (!_fillingProps) ChangeSymbology(); };
+        return box;
     }
 
     private void BuildBarcodeProperties(StackPanel panel)
@@ -330,6 +371,18 @@ public sealed partial class PreviewPage
         {
             Text = PL("codeSection"), FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
         });
+
+        // Which symbology it is, where the rest of its properties are — beside the
+        // content field it was one more thing crowding the strip that sits on top of
+        // the element being edited.
+        if (spec is not null)
+        {
+            _kindBox ??= NewKindBox();
+            _fillingProps = true;
+            try { _kindBox.SelectedIndex = Array.FindIndex(BarcodeCatalog.All, s => s.Key == spec.Key); }
+            finally { _fillingProps = false; }
+            panel.Children.Add(Row(PL("symbology"), _kindBox));
+        }
 
         // A 1D symbol is sized by the height of its bars, a 2D one by the size of
         // its modules: the same control, a different meaning.
@@ -351,7 +404,7 @@ public sealed partial class PreviewPage
 
         if (_facts.HumanReadable is { } hrt)
         {
-            var toggle = new ToggleSwitch { IsOn = hrt, OnContent = "", OffContent = "" };
+            var toggle = Switch(hrt);
             toggle.Toggled += (_, _) =>
             {
                 var edit = ZplPatcher.SetHumanReadable(_currentText, _selStart, _selEnd, toggle.IsOn);

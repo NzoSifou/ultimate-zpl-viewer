@@ -191,7 +191,13 @@ public sealed partial class PreviewPage
 
         if (_facts.Shape is "GB" or "GE")
         {
-            if (ZplPatcher.SetShape(_currentText, _selStart, _selEnd, w, h, null) is { } size)
+            // A ^GB is solid when its border is at least half the SHORTER side. Pull
+            // a solid block wider and taller and the border it was given stops
+            // covering the middle, which opens a hole in it — so a block that was
+            // solid is given a border that keeps it solid at its new size.
+            double? thickness = null;
+            if (_facts.Shape == "GB" && WasSolid(_facts.ShapeArgs)) thickness = Math.Max(1, h);
+            if (ZplPatcher.SetShape(_currentText, _selStart, _selEnd, w, h, thickness) is { } size)
                 edits.Add(size);
         }
         else if (_facts.Shape == "GC")
@@ -214,6 +220,10 @@ public sealed partial class PreviewPage
 
         if (edits.Count > 0) ApplyEdits(edits);
     }
+
+    /// <summary>True when this ^GB was drawn as a solid block rather than a frame.</summary>
+    private static bool WasSolid(double[]? args)
+        => args is { Length: >= 3 } && args[2] >= Math.Min(args[0], args[1]) / 2.0;
 
     // ── The dashed preview ──────────────────────────────────────────────────
 

@@ -51,7 +51,10 @@ public sealed partial class PreviewPage
 
         var ink = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
         foreach (var shape in new Shape[]
-                 { ForwardIconBack, ForwardIconFront, BackwardIconBack, BackwardIconFront })
+                 {
+                     ForwardIconBack, ForwardIconBack2, ForwardIconFront,
+                     BackwardIconBack, BackwardIconBack2, BackwardIconFront,
+                 })
         {
             if (shape.StrokeThickness > 0) shape.Stroke = ink; else shape.Fill = ink;
         }

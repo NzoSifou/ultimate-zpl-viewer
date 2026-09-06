@@ -65,7 +65,6 @@ public sealed partial class PreviewPage
         // tile closes the flyout it actually belongs to.
         codes.Opening += (_, _) => _openPicker = codes;
         shapes.Opening += (_, _) => _openPicker = shapes;
-        ToolFillButton.Click += (_, _) => SetTool(EditTool.Fill);
         ToolImageButton.Click += (_, _) => SetTool(EditTool.Image);
         ApplyToolButtons();
     }
@@ -92,19 +91,26 @@ public sealed partial class PreviewPage
         SetTool(EditTool.Barcode);
     }
 
+    // The solid block is a shape like the others — it was a button of its own,
+    // which is one more thing in the plate for no reason anyone could name.
     private Flyout BuildShapeFlyout()
     {
         var shapes = new[]
         {
             ("rect", EditTool.Rect), ("line", EditTool.Line),
             ("ellipse", EditTool.Ellipse), ("circle", EditTool.Circle),
+            ("fill", EditTool.Fill),
         };
         var panel = new StackPanel { Spacing = 6 };
         panel.Children.Add(Tiles(shapes,
-            t => SL2(t.Item1), t => SymbolPreview.Shape(t.Item1), t => SetTool(t.Item2),
+            t => SL2(t.Item1 == "fill" ? "fillShape" : t.Item1),
+            t => Miniature(t.Item1), t => SetTool(t.Item2),
             wrapAtFive: false));
         return Picker(panel);
     }
+
+    private static FrameworkElement Miniature(string key)
+        => key == "fill" ? SymbolPreview.Fill() : SymbolPreview.Shape(key);
 
     // ── The picker's furniture ──────────────────────────────────────────────
 
@@ -211,11 +217,12 @@ public sealed partial class PreviewPage
         Dress(ToolSelectButton, _tool == EditTool.None, ToolSelectIcon);
         Dress(ToolMoveButton, _tool == EditTool.Move, ToolMoveIcon);
         Dress(ToolTextButton, _tool == EditTool.Text);
-        Dress(ToolCodeButton, _tool == EditTool.Barcode, ToolCodeIcon.Children.OfType<Shape>().ToArray());
+        Dress(ToolCodeButton, _tool == EditTool.Barcode,
+              ToolCodeIcon.Children.OfType<Shape>().Append(ToolCodeMore).ToArray());
         Dress(ToolShapeButton,
-            _tool is EditTool.Rect or EditTool.Line or EditTool.Ellipse or EditTool.Circle,
-            ToolShapeIconRect, ToolShapeIconEllipse);
-        Dress(ToolFillButton, _tool == EditTool.Fill, ToolFillIcon);
+            _tool is EditTool.Rect or EditTool.Line or EditTool.Ellipse or EditTool.Circle
+                  or EditTool.Fill,
+            ToolShapeIconRect, ToolShapeIconEllipse, ToolShapeMore);
         Dress(ToolImageButton, _tool == EditTool.Image,
               ToolImageIconFrame, ToolImageIconSun, ToolImageIconHill);
 
@@ -224,7 +231,6 @@ public sealed partial class PreviewPage
         ToolTipService.SetToolTip(ToolTextButton, TipBlock(SL2("text")));
         ToolTipService.SetToolTip(ToolCodeButton, TipBlock(SL2("code")));
         ToolTipService.SetToolTip(ToolShapeButton, TipBlock(SL2("shape")));
-        ToolTipService.SetToolTip(ToolFillButton, TipBlock(SL2("fill")));
         ToolTipService.SetToolTip(ToolImageButton, TipBlock(SL2("image")));
     }
 

@@ -57,33 +57,74 @@ public sealed partial class PreviewPage
         ToolSelectButton.Click += (_, _) => SetTool(EditTool.None);
         ToolMoveButton.Click += (_, _) => SetTool(EditTool.Move);
         ToolTextButton.Click += (_, _) => SetTool(EditTool.Text);
-        var codes = BuildCodeFlyout();
-        var shapes = BuildShapeFlyout();
+        var codes = Picker();
+        var shapes = Picker();
         ToolCodeButton.Flyout = codes;
         ToolShapeButton.Flyout = shapes;
-        // Picker() remembers the last one BUILT; remember the last one OPENED, so a
-        // tile closes the flyout it actually belongs to.
-        codes.Opening += (_, _) => _openPicker = codes;
-        shapes.Opening += (_, _) => _openPicker = shapes;
+        // Filled when it opens, not when it is built: how many tiles fit on a line
+        // depends on how wide the window is right now, and which way they run
+        // depends on which way the plate is turned.
+        codes.Opening += (_, _) =>
+        {
+            _openPicker = codes;
+            codes.Placement = PickerPlacement();
+            codes.Content = BuildCodePanel();
+        };
+        shapes.Opening += (_, _) =>
+        {
+            _openPicker = shapes;
+            shapes.Placement = PickerPlacement();
+            shapes.Content = BuildShapePanel();
+        };
         ToolImageButton.Click += (_, _) => SetTool(EditTool.Image);
         ApplyToolButtons();
     }
 
-    // ── The two menus ───────────────────────────────────────────────────────
+    // ── The two menus ───────────────────────────────────────────────────────────
 
     // The symbologies live in BarcodeCatalog, shared with the properties bar: a
     // code offered here that the picker did not know would be a trap.
-    private Flyout BuildCodeFlyout()
+    //
+    // One line per family - the linear codes, then the 2D ones - rather than a
+    // paragraph of tiles that wraps wherever it happens to run out: the two kinds
+    // answer different questions, and a line each says so without a word. When the
+    // window is too narrow for a family to fit on one line it wraps, because the
+    // alternative is a menu running off the side of the screen.
+    private FrameworkElement BuildCodePanel()
     {
+        var linear = BarcodeCatalog.All.Where(s => !s.TwoD).ToList();
+        var twoD = BarcodeCatalog.All.Where(s => s.TwoD).ToList();
+
+        if (_settings.ToolPlateHorizontal)
+        {
+            // A plate lying across the top drops its menu downwards, so the families
+            // stand side by side and each one runs down the screen.
+            var side = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+            side.Children.Add(TitledColumn(SL2("linear"), linear));
+            side.Children.Add(TitledColumn(SL2("twoD"), twoD));
+            return side;
+        }
+
+        int perRow = Math.Max(FitAcross(linear.Count), FitAcross(twoD.Count));
         var panel = new StackPanel { Spacing = 6 };
         panel.Children.Add(Section(SL2("linear")));
-        panel.Children.Add(Tiles(BarcodeCatalog.All.Where(s => !s.TwoD),
-            s => s.Label, s => SymbolPreview.Barcode(s.Key), s => PickBarcode(s.Key)));
+        panel.Children.Add(CodeTiles(linear, perRow));
         panel.Children.Add(Section(SL2("twoD")));
-        panel.Children.Add(Tiles(BarcodeCatalog.All.Where(s => s.TwoD),
-            s => s.Label, s => SymbolPreview.Barcode(s.Key), s => PickBarcode(s.Key)));
-        return Picker(panel);
+        panel.Children.Add(CodeTiles(twoD, perRow));
+        return panel;
     }
+
+    private StackPanel TitledColumn(string title, IReadOnlyList<BarcodeSpec> specs)
+    {
+        var column = new StackPanel { Spacing = 6 };
+        column.Children.Add(Section(title));
+        column.Children.Add(TileColumns(specs, FitDown(specs.Count),
+            s => s.Label, s => SymbolPreview.Barcode(s.Key), s => PickBarcode(s.Key)));
+        return column;
+    }
+
+    private ToolbarWrapPanel CodeTiles(IEnumerable<BarcodeSpec> specs, int perRow)
+        => Tiles(specs, perRow, s => s.Label, s => SymbolPreview.Barcode(s.Key), s => PickBarcode(s.Key));
 
     private void PickBarcode(string key)
     {
@@ -91,9 +132,10 @@ public sealed partial class PreviewPage
         SetTool(EditTool.Barcode);
     }
 
-    // The solid block is a shape like the others — it was a button of its own,
-    // which is one more thing in the plate for no reason anyone could name.
-    private Flyout BuildShapeFlyout()
+    // The solid block is a shape like the others - it was a button of its own,
+    // which is one more thing in the plate for no reason anyone could name. All
+    // five on ONE line: they are five ways of doing the same thing.
+    private FrameworkElement BuildShapePanel()
     {
         var shapes = new[]
         {
@@ -101,35 +143,36 @@ public sealed partial class PreviewPage
             ("ellipse", EditTool.Ellipse), ("circle", EditTool.Circle),
             ("fill", EditTool.Fill),
         };
-        var panel = new StackPanel { Spacing = 6 };
-        panel.Children.Add(Tiles(shapes,
-            t => SL2(t.Item1 == "fill" ? "fillShape" : t.Item1),
-            t => Miniature(t.Item1), t => SetTool(t.Item2),
-            wrapAtFive: false));
-        return Picker(panel);
+        string Name((string Key, EditTool Tool) t) => SL2(t.Key == "fill" ? "fillShape" : t.Key);
+        FrameworkElement Picture((string Key, EditTool Tool) t) => Miniature(t.Key);
+        void Pick((string Key, EditTool Tool) t) => SetTool(t.Tool);
+
+        if (_settings.ToolPlateHorizontal)
+            return TileColumns(shapes, FitDown(shapes.Length), Name, Picture, Pick);
+        return Tiles(shapes, FitAcross(shapes.Length), Name, Picture, Pick);
     }
 
     private static FrameworkElement Miniature(string key)
         => key == "fill" ? SymbolPreview.Fill() : SymbolPreview.Shape(key);
 
-    // ── The picker's furniture ──────────────────────────────────────────────
+    // ── The picker's furniture ──────────────────────────────────────────────────
 
     // A flyout rather than a menu: a menu is a column of words, and what these
-    // choices need is a picture of the thing being placed. Laid out across, so a
-    // dozen symbologies fit in a glance instead of a scroll.
-    private Flyout Picker(FrameworkElement content)
+    // choices need is a picture of the thing being placed.
+    private Flyout Picker()
     {
-        var flyout = new Flyout
-        {
-            Content = content,
-            Placement = FlyoutPlacementMode.Right,
-        };
+        var flyout = new Flyout { Placement = FlyoutPlacementMode.Right };
         // A flyout wraps whatever it is given in a scroller, and a grid of tiles
         // that fits exactly still earns itself a pair of scrollbars along the edges.
         // There is nothing here to scroll.
         var bare = new Style(typeof(FlyoutPresenter));
         foreach (var (property, value) in new (DependencyProperty, object)[]
                  {
+                     // A presenter is 456 dips wide out of the box, whatever it holds:
+                     // that ceiling is what was folding a family of nine codes onto two
+                     // lines however much room the window had.
+                     (FrameworkElement.MaxWidthProperty, double.PositiveInfinity),
+                     (FrameworkElement.MaxHeightProperty, double.PositiveInfinity),
                      (ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled),
                      (ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled),
                      (ScrollViewer.HorizontalScrollModeProperty, ScrollMode.Disabled),
@@ -137,8 +180,27 @@ public sealed partial class PreviewPage
                  })
             bare.Setters.Add(new Setter(property, value));
         flyout.FlyoutPresenterStyle = bare;
-        _openPicker = flyout;
         return flyout;
+    }
+
+    /// <summary>Which way the menu opens: away from the edge the plate is against.</summary>
+    private FlyoutPlacementMode PickerPlacement()
+    {
+        bool far, low;
+        if (_settings.ToolPlateFree)
+        {
+            var origin = PlateOrigin(EditToolbar);
+            far = origin.X > PreviewLayoutGrid.ActualWidth / 2;
+            low = origin.Y > PreviewLayoutGrid.ActualHeight / 2;
+        }
+        else
+        {
+            far = _settings.ToolPlateAnchor.EndsWith("Right", StringComparison.Ordinal);
+            low = _settings.ToolPlateAnchor.StartsWith("bottom", StringComparison.Ordinal);
+        }
+        if (_settings.ToolPlateHorizontal)
+            return low ? FlyoutPlacementMode.Top : FlyoutPlacementMode.Bottom;
+        return far ? FlyoutPlacementMode.Left : FlyoutPlacementMode.Right;
     }
 
     private FlyoutBase? _openPicker;
@@ -151,47 +213,89 @@ public sealed partial class PreviewPage
         Margin = new Thickness(2, 2, 0, 0),
     };
 
-    // Five tiles to a row. The width has to be SET: a flyout sizes itself to its
-    // content, so it offers infinite width and the panel never wraps — the tail of
-    // the list simply ran off the side.
+    // A tile and the air around it. The width has to be SET on the panel: a flyout
+    // sizes itself to its content, so it offers infinite width and a wrap panel
+    // never wraps - the tail of the list simply ran off the side.
     private const double TileWidth = 74;
-    private const double TilesPerRow = 5;
+    private const double TileCell = TileWidth + 10;   // plus the button's own padding
+    private const double TileRow = 68;                // picture + name + padding
+    private const double TileGap = 4;
 
-    /// <summary>A grid of picture-and-name tiles, five across.</summary>
+    /// <summary>How many tiles fit across the preview, never more than asked for.</summary>
+    private int FitAcross(int wanted)
+    {
+        double room = PreviewLayoutGrid.ActualWidth > 0 ? PreviewLayoutGrid.ActualWidth : 900;
+        room -= EditToolbar.ActualWidth + 60;         // the plate, and the menu's own frame
+        return Math.Clamp((int)((room + TileGap) / (TileCell + TileGap)), 1, Math.Max(1, wanted));
+    }
+
+    /// <summary>How many tiles fit down the preview, never more than asked for.</summary>
+    private int FitDown(int wanted)
+    {
+        double room = PreviewLayoutGrid.ActualHeight > 0 ? PreviewLayoutGrid.ActualHeight : 700;
+        room -= EditToolbar.ActualHeight + 80;        // the plate, the frame, the title
+        return Math.Clamp((int)((room + TileGap) / (TileRow + TileGap)), 1, Math.Max(1, wanted));
+    }
+
+    /// <summary>A grid of picture-and-name tiles, so many across.</summary>
     private ToolbarWrapPanel Tiles<T>(IEnumerable<T> items,
+                                      int perRow,
                                       Func<T, string> label,
                                       Func<T, FrameworkElement> preview,
-                                      Action<T> pick,
-                                      bool wrapAtFive = true)
+                                      Action<T> pick)
     {
-        var wrap = new ToolbarWrapPanel { HorizontalSpacing = 4, VerticalSpacing = 4 };
-        if (wrapAtFive)
-            wrap.Width = TilesPerRow * (TileWidth + 10) + (TilesPerRow - 1) * 4;
-        foreach (var item in items)
-        {
-            var stack = new StackPanel { Spacing = 4, Width = TileWidth };
-            stack.Children.Add(preview(item));
-            stack.Children.Add(new TextBlock
-            {
-                Text = label(item),
-                FontSize = 11,
-                TextAlignment = TextAlignment.Center,
-                TextWrapping = TextWrapping.Wrap,
-            });
-
-            var button = new Button
-            {
-                Content = stack,
-                Padding = new Thickness(5, 6, 5, 6),
-                CornerRadius = new CornerRadius(6),
-                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                BorderThickness = new Thickness(0),
-            };
-            var captured = item;
-            button.Click += (_, _) => { _openPicker?.Hide(); pick(captured); };
-            wrap.Children.Add(button);
-        }
+        var wrap = new ToolbarWrapPanel { HorizontalSpacing = TileGap, VerticalSpacing = TileGap };
+        wrap.Width = perRow * TileCell + (perRow - 1) * TileGap;
+        foreach (var item in items) wrap.Children.Add(Tile(item, label, preview, pick));
         return wrap;
+    }
+
+    /// <summary>The same tiles running DOWN instead of across, so many to a column.</summary>
+    private StackPanel TileColumns<T>(IReadOnlyList<T> items,
+                                      int perColumn,
+                                      Func<T, string> label,
+                                      Func<T, FrameworkElement> preview,
+                                      Action<T> pick)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = TileGap };
+        StackPanel? column = null;
+        for (int i = 0; i < items.Count; i++)
+        {
+            if (i % perColumn == 0)
+            {
+                column = new StackPanel { Spacing = TileGap };
+                row.Children.Add(column);
+            }
+            column!.Children.Add(Tile(items[i], label, preview, pick));
+        }
+        return row;
+    }
+
+    private Button Tile<T>(T item,
+                           Func<T, string> label,
+                           Func<T, FrameworkElement> preview,
+                           Action<T> pick)
+    {
+        var stack = new StackPanel { Spacing = 4, Width = TileWidth };
+        stack.Children.Add(preview(item));
+        stack.Children.Add(new TextBlock
+        {
+            Text = label(item),
+            FontSize = 11,
+            TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap,
+        });
+
+        var button = new Button
+        {
+            Content = stack,
+            Padding = new Thickness(5, 6, 5, 6),
+            CornerRadius = new CornerRadius(6),
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            BorderThickness = new Thickness(0),
+        };
+        button.Click += (_, _) => { _openPicker?.Hide(); pick(item); };
+        return button;
     }
 
     // ── Arming a tool ───────────────────────────────────────────────────────

@@ -83,6 +83,30 @@ public sealed class AppSettings
     public int StartMode { get; set; }
     // Remembered for StartMode == 2 only; written whenever the mode changes.
     public bool LastModeEdit { get; set; }
+
+    // ---- The floating plates over the preview -----------------------------
+    // Where each plate sits, and which way it is stacked. An anchor is one of
+    // the eight edge/corner positions ("topLeft" … "bottomRight"); "free" means
+    // the plate keeps the exact spot it was dragged to (X/Y, in dips from the
+    // preview's top-left corner, -1 until it has been dragged once). Locked
+    // hides the drag grips without giving the free position up.
+    public string ModePlateAnchor { get; set; } = "topRight";
+    public bool ModePlateFree { get; set; }
+    public double ModePlateX { get; set; } = -1;
+    public double ModePlateY { get; set; } = -1;
+    public bool ModePlateLocked { get; set; }
+    public bool ModePlateHorizontal { get; set; }
+
+    public string ToolPlateAnchor { get; set; } = "topLeft";
+    public bool ToolPlateFree { get; set; }
+    public double ToolPlateX { get; set; } = -1;
+    public double ToolPlateY { get; set; } = -1;
+    public bool ToolPlateLocked { get; set; }
+    public bool ToolPlateHorizontal { get; set; }
+
+    // Which side of the selected element its strip of tools prefers. The other
+    // side is still used when there is no room on this one.
+    public bool ElementPlateAbove { get; set; }
     // Grid colour: default (faint, theme-based) or a custom ARGB (#AARRGGBB).
     public bool UseCustomGridColor { get; set; }
     public string CustomGridColor { get; set; } = "#40808080";

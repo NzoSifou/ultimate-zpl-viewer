@@ -82,6 +82,9 @@ public sealed partial class PreviewPage : Page
         ApplyPreviewCaptionVisibility();
         RebuildToolbar(); // place the toolbar groups per the saved layout
         InitModeSwitch();
+        // A plate dragged to a free spot has to stay inside a preview that just
+        // got narrower, and an anchored one has to follow the edge it is pinned to.
+        PreviewLayoutGrid.SizeChanged += (_, _) => ApplyPlatePlacement();
         InitEditGestures();
         InitEditTools();
         InitSelectionProperties();
@@ -3765,6 +3768,9 @@ public sealed partial class PreviewPage : Page
             // column down to one word per line.
             ["print"]      = BuildPrintSettingsSection(),
             ["editor"]     = BuildEditorSettings(),
+            // Full width: the position cards carry a picture of the screen with
+            // eight buttons in it, which a third of the window crushes.
+            ["editmode"]   = BuildEditModeSettings(),
             ["appearance"] = WithThirdWidthCards(BuildAppearanceSettings()),
             ["toolbar"]    = BuildToolbarDesignerSettings(), // designer card: not applicable
             ["screen"]     = WithThirdWidthCards(BuildScreenSettings()),
@@ -3782,6 +3788,7 @@ public sealed partial class PreviewPage : Page
     {
         ["general"] = "general", ["doc"] = "document", ["editor"] = "editor",
         ["print"] = "print", ["appearance"] = "appearance", ["toolbar"] = "toolbar",
+        ["editmode"] = "editMode",
         ["screen"] = "screen", ["printer"] = "virtualPrinter", ["about"] = "about",
     };
 

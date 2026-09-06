@@ -1471,6 +1471,7 @@
       "general": "Général",
       "document": "Document",
       "editor": "Éditeur et aperçu",
+      "editMode": "Mode édition",
       "print": "Impression",
       "appearance": "Apparence et langue",
       "toolbar": "Barre d'outils",
@@ -1730,6 +1731,56 @@
           "Édition",
           "Dernier utilisé"
         ]
+      }
+    },
+    "editMode": {
+      "title": "Mode édition",
+      "subtitle": "Où se placent les plaques flottantes de l'aperçu, et dans quel sens elles se déplient.",
+      "sec": {
+        "modePlate": "Plaque de changement de mode",
+        "toolPlate": "Plaque d'outils (mode édition)",
+        "elementPlate": "Barre de l'élément sélectionné"
+      },
+      "cards": {
+        "modePos": {
+          "title": "Position de la plaque",
+          "desc": "Accrochée à un bord de l'aperçu, ou libre et déplaçable par ses poignées."
+        },
+        "modeDir": {
+          "title": "Orientation de la plaque",
+          "desc": "Les deux boutons l'un au-dessus de l'autre, ou côte à côte."
+        },
+        "toolPos": {
+          "title": "Position de la plaque d'outils",
+          "desc": "Accrochée à un bord de l'aperçu, ou libre et déplaçable par ses poignées."
+        },
+        "toolDir": {
+          "title": "Orientation de la plaque d'outils",
+          "desc": "En colonne ou en ligne. En ligne, les menus des codes et des formes se déplient vers le bas, en colonnes."
+        },
+        "elementSide": {
+          "title": "Côté de la barre",
+          "desc": "De quel côté de l'élément sélectionné la barre d'outils vient se poser."
+        }
+      },
+      "opt": {
+        "orientation": [
+          "Verticale",
+          "Horizontale"
+        ]
+      },
+      "lbl": {
+        "fixed": "Position fixe",
+        "free": "Position libre",
+        "handles": "Poignées de déplacement",
+        "unlocked": "Déverrouillée : les poignées sont affichées",
+        "locked": "Verrouillée : la plaque reste où elle est",
+        "dragPlate": "Faites glisser pour déplacer la plaque",
+        "below": "En dessous de l'élément",
+        "belowInfo": "La barre se pose sous l'élément et la flèche pointe vers le bas : les paramètres se déplient vers le bas, à l'écart de ce que vous modifiez.",
+        "above": "Au-dessus de l'élément",
+        "aboveInfo": "La barre se pose au-dessus de l'élément et la flèche pointe vers le haut : les paramètres se déplient vers le haut, à l'écart de ce que vous modifiez.",
+        "sideFallback": "Quand il n'y a pas la place de ce côté-là, la barre passe de l'autre côté."
       }
     },
     "print": {

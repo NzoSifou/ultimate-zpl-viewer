@@ -538,13 +538,21 @@ public sealed partial class PreviewPage
         double w = SelectionTools.DesiredSize.Width, h = SelectionTools.DesiredSize.Height;
 
         const double gap = 8;
-        // Underneath the element, leaning on its bottom edge — so the properties
-        // unfold downwards, into empty label, instead of over what is being edited,
-        // and nothing that has just been clicked moves out from under the pointer.
-        // Above only when there is no room below, and then the whole bar goes above:
-        // either way it leans on an edge and grows away from the element.
-        double below = box.Bottom + gap, above = box.Top - h - gap;
-        double top = below + h <= EditOverlay.ActualHeight || above < 0 ? below : above;
+        // The strip leans on one edge of the element and unfolds AWAY from it, so
+        // the properties never cover what is being edited and the row of buttons
+        // never moves out from under the pointer. Which edge is the user's to
+        // choose; the other one is still used when there is no room on this one.
+        double belowTop = box.Bottom + gap, aboveTop = box.Top - h - gap;
+        bool roomBelow = belowTop + h <= EditOverlay.ActualHeight;
+        bool roomAbove = aboveTop >= 0;
+        bool goAbove = _settings.ElementPlateAbove ? roomAbove || !roomBelow : !roomBelow && roomAbove;
+        // Above, the properties hang over the buttons rather than under them: it is
+        // what keeps the buttons against the element whatever the panel does.
+        SetPropsSide(goAbove);
+        SelectionTools.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        h = SelectionTools.DesiredSize.Height;
+        aboveTop = box.Top - h - gap;
+        double top = goAbove ? aboveTop : belowTop;
         double left = box.Left + (box.Width - w) / 2;
         left = Math.Max(0, Math.Min(left, Math.Max(0, EditOverlay.ActualWidth - w)));
         top = Math.Max(0, Math.Min(top, Math.Max(0, EditOverlay.ActualHeight - h)));

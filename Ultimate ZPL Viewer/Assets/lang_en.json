@@ -1471,6 +1471,7 @@
       "general": "General",
       "document": "Document",
       "editor": "Editor & preview",
+      "editMode": "Edit mode",
       "print": "Printing",
       "appearance": "Appearance & language",
       "toolbar": "Toolbar",
@@ -1730,6 +1731,56 @@
           "Edit",
           "Last used"
         ]
+      }
+    },
+    "editMode": {
+      "title": "Edit mode",
+      "subtitle": "Where the preview's floating plates sit, and which way they unfold.",
+      "sec": {
+        "modePlate": "Mode switch plate",
+        "toolPlate": "Tool plate (edit mode)",
+        "elementPlate": "Selected element's strip"
+      },
+      "cards": {
+        "modePos": {
+          "title": "Plate position",
+          "desc": "Pinned to an edge of the preview, or free and dragged by its grips."
+        },
+        "modeDir": {
+          "title": "Plate orientation",
+          "desc": "The two buttons one above the other, or side by side."
+        },
+        "toolPos": {
+          "title": "Tool plate position",
+          "desc": "Pinned to an edge of the preview, or free and dragged by its grips."
+        },
+        "toolDir": {
+          "title": "Tool plate orientation",
+          "desc": "A column or a row. In a row, the code and shape menus open downwards, in columns."
+        },
+        "elementSide": {
+          "title": "Side of the strip",
+          "desc": "Which side of the selected element its strip of tools rests against."
+        }
+      },
+      "opt": {
+        "orientation": [
+          "Vertical",
+          "Horizontal"
+        ]
+      },
+      "lbl": {
+        "fixed": "Fixed position",
+        "free": "Free position",
+        "handles": "Drag grips",
+        "unlocked": "Unlocked: the grips are shown",
+        "locked": "Locked: the plate stays where it is",
+        "dragPlate": "Drag to move the plate",
+        "below": "Below the element",
+        "belowInfo": "The strip sits under the element and the chevron points down: the properties unfold downwards, clear of what you are editing.",
+        "above": "Above the element",
+        "aboveInfo": "The strip sits above the element and the chevron points up: the properties unfold upwards, clear of what you are editing.",
+        "sideFallback": "When there is no room on that side, the strip goes to the other one."
       }
     },
     "print": {

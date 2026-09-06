@@ -42,10 +42,42 @@ public sealed partial class PreviewPage
         {
             SelectionProps.Children.Clear();
             SelectionProps.Visibility = Visibility.Collapsed;
-            SelectionMoreIcon.Glyph = "";
+            SetMoreGlyph(open: false);
             UpdateSelectionTools();
         };
     }
+
+    // Which way the plate is stacked over its element: the properties hang under
+    // the buttons when the plate is below it, and over them when it is above, so
+    // the buttons always touch the element and the panel always opens away from it.
+    private bool _propsAbove;
+
+    /// <summary>Puts the properties on the far side of the buttons from the element.</summary>
+    private void SetPropsSide(bool above)
+    {
+        if (above == _propsAbove && SelectionStack.Children.Count > 0) return;
+        _propsAbove = above;
+        SelectionStack.Children.Clear();
+        if (above)
+        {
+            SelectionStack.Children.Add(SelectionProps);
+            SelectionStack.Children.Add(SelectionWarning);
+            SelectionStack.Children.Add(SelectionToolsRow);
+        }
+        else
+        {
+            SelectionStack.Children.Add(SelectionToolsRow);
+            SelectionStack.Children.Add(SelectionProps);
+            SelectionStack.Children.Add(SelectionWarning);
+        }
+        SetMoreGlyph(SelectionMoreButton.IsChecked == true);
+    }
+
+    // The chevron says which way the panel will move, not which way it is: down
+    // when it will unfold downwards, up when upwards, and the other way round once
+    // it is open and the click would fold it back.
+    private void SetMoreGlyph(bool open)
+        => SelectionMoreIcon.Glyph = _propsAbove ^ open ? "" : "";
 
     // ── Filling the bar ─────────────────────────────────────────────────────
 
@@ -104,7 +136,7 @@ public sealed partial class PreviewPage
     {
         if (SelectionMoreButton.IsChecked != true || _facts is null || _selStart < 0)
             return;
-        SelectionMoreIcon.Glyph = "";
+        SetMoreGlyph(open: true);
         if (_propsBuiltFor == _selStart && SelectionProps.Children.Count > 0)
         {
             SelectionProps.Visibility = Visibility.Visible;

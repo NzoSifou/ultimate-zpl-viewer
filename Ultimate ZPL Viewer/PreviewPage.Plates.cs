@@ -37,6 +37,7 @@ public sealed partial class PreviewPage
     private const double PlateEdgeY = 10;
 
     private readonly Dictionary<Border, List<UIElement>> _plateGrips = new();
+    private readonly Dictionary<Border, (bool Show, bool Horizontal)> _gripState = new();
 
     /// <summary>Applies both plates' position and orientation from the settings.</summary>
     private void ApplyPlatePlacement()
@@ -114,7 +115,34 @@ public sealed partial class PreviewPage
     private Point PlateOrigin(Border plate)
     {
         try { return plate.TransformToVisual(PreviewLayoutGrid).TransformPoint(new Point(0, 0)); }
-        catch { return new Point(PlateEdgeX, PlateEdgeY); }
+        catch { return AnchoredOrigin(plate == ModeSwitch); }
+    }
+
+    /// <summary>
+    /// Where the plate's anchor puts it, worked out rather than measured. Used to
+    /// start a free position off: a plate that has never been dragged has to keep
+    /// the spot it was already in, and asking the visual tree for it is a question
+    /// that can go unanswered.
+    /// </summary>
+    private Point AnchoredOrigin(bool mode)
+    {
+        var plate = mode ? ModeSwitch : EditToolbar;
+        string anchor = mode ? _settings.ModePlateAnchor : _settings.ToolPlateAnchor;
+        if (!PlateAnchors.Contains(anchor)) anchor = mode ? "topRight" : "topLeft";
+
+        double w = plate.ActualWidth > 0 ? plate.ActualWidth : plate.DesiredSize.Width;
+        double h = plate.ActualHeight > 0 ? plate.ActualHeight : plate.DesiredSize.Height;
+        double gw = PreviewLayoutGrid.ActualWidth, gh = PreviewLayoutGrid.ActualHeight;
+        double top = PlateEdgeY + (_settings.ShowRulerHorizontal ? RulerBandDip : 0);
+        double left = PlateEdgeX + (_settings.ShowRulerVertical ? RulerBandDip : 0);
+
+        double x = anchor.EndsWith("Left", StringComparison.Ordinal) ? left
+                 : anchor.EndsWith("Right", StringComparison.Ordinal) ? gw - PlateEdgeX - w
+                 : (gw - w) / 2;
+        double y = anchor.StartsWith("top", StringComparison.Ordinal) ? top
+                 : anchor.StartsWith("bottom", StringComparison.Ordinal) ? gh - PlateEdgeY - h
+                 : (gh - h) / 2;
+        return new Point(Math.Max(0, x), Math.Max(0, y));
     }
 
     private (double X, double Y) ClampPlate(Border plate, double x, double y)
@@ -149,6 +177,13 @@ public sealed partial class PreviewPage
 
     private void ApplyGrips(Border plate, StackPanel stack, bool mode, bool show, bool horizontal)
     {
+        // Left alone when they are already what they should be. Placement is
+        // re-applied on every resize, and a resize can happen mid-drag: tearing the
+        // grip out of the tree and building a new one loses the pointer capture,
+        // and with it the rest of the gesture.
+        if (_gripState.TryGetValue(plate, out var was) && was == (show, horizontal)) return;
+        _gripState[plate] = (show, horizontal);
+
         if (_plateGrips.TryGetValue(plate, out var old))
         {
             foreach (var grip in old) stack.Children.Remove(grip);
@@ -189,8 +224,10 @@ public sealed partial class PreviewPage
             _dragGrip = grip;
             _dragPlate = plate;
             _dragPlateIsMode = mode;
+            _gripMoved = false;
             var at = e.GetCurrentPoint(PreviewLayoutGrid).Position;
             var origin = PlateOrigin(plate);
+            _dragPlateAt = origin;
             _dragPlateGrab = new Point(at.X - origin.X, at.Y - origin.Y);
             grip.CapturePointer(e.Pointer);
             e.Handled = true;
@@ -203,18 +240,28 @@ public sealed partial class PreviewPage
             _dragPlate.HorizontalAlignment = HorizontalAlignment.Left;
             _dragPlate.VerticalAlignment = VerticalAlignment.Top;
             _dragPlate.Margin = new Thickness(x, y, 0, 0);
+            // What the drag WORKED OUT, kept as it goes. Reading the position back
+            // off the screen at the end asks the visual tree a question it cannot
+            // always answer - and the answer it gives when it cannot is the
+            // top-left corner, which is where the plate then went.
+            _dragPlateAt = new Point(x, y);
+            _gripMoved = true;
             e.Handled = true;
         };
         void Drop(PointerRoutedEventArgs e)
         {
             if (_dragGrip != grip || _dragPlate is null) return;
             grip.ReleasePointerCapture(e.Pointer);
-            var origin = PlateOrigin(_dragPlate);
-            if (_dragPlateIsMode) { _settings.ModePlateX = origin.X; _settings.ModePlateY = origin.Y; }
-            else { _settings.ToolPlateX = origin.X; _settings.ToolPlateY = origin.Y; }
-            _settings.Save();
+            bool moved = _gripMoved;
+            var at = _dragPlateAt;
             _dragGrip = null;
             _dragPlate = null;
+            _gripMoved = false;
+            // A press that went nowhere is not a move: it must not write a position.
+            if (!moved) return;
+            if (_dragPlateIsMode) { _settings.ModePlateX = at.X; _settings.ModePlateY = at.Y; }
+            else { _settings.ToolPlateX = at.X; _settings.ToolPlateY = at.Y; }
+            _settings.Save();
         }
         grip.PointerReleased += (_, e) => Drop(e);
         grip.PointerCaptureLost += (_, e) => Drop(e);
@@ -224,7 +271,9 @@ public sealed partial class PreviewPage
     private CursorGrid? _dragGrip;
     private Border? _dragPlate;
     private bool _dragPlateIsMode;
+    private bool _gripMoved;
     private Point _dragPlateGrab;
+    private Point _dragPlateAt;
 
     // ── The settings page ───────────────────────────────────────────────────
 

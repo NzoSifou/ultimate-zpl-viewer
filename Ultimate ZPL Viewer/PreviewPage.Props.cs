@@ -30,9 +30,6 @@ public sealed partial class PreviewPage
         // moment to keep the undo history tidy, and that read as lag on the one
         // thing that should feel immediate; one undo step per letter is the price,
         // and it is the right way round.
-        SelectionData.TextChanged += (_, _) => { if (!_fillingProps) CommitData(); };
-        SelectionData.LostFocus += (_, _) => CommitData();
-
         SelectionMoreButton.Checked += (_, _) =>
         {
             _propsBuiltFor = -1;
@@ -64,7 +61,6 @@ public sealed partial class PreviewPage
         {
             // Nothing in this row means anything for several elements at once.
             _facts = null;
-            SelectionData.Visibility = Visibility.Collapsed;
             SelectionMoreButton.Visibility = Visibility.Collapsed;
             SelectionMoreButton.IsChecked = false;
             EditImageButton.Visibility = Visibility.Collapsed;
@@ -76,15 +72,6 @@ public sealed partial class PreviewPage
         _fillingProps = true;
         try
         {
-            // A text field is typed into on the label itself now, so the copy of it
-            // in this bar has nothing left to do: two places showing the same words
-            // is two places to look and two ways for them to disagree. A barcode
-            // keeps its field — bars cannot be typed into.
-            bool hasData = _facts.DataStart >= 0 && EditableText() is null;
-            SelectionData.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
-            if (hasData && SelectionData.FocusState == FocusState.Unfocused)
-                SelectionData.Text = _facts.Data ?? "";
-
             var spec = BarcodeCatalog.ByCommand(_facts.Barcode, _facts.Data);
 
             // Only worth offering when there is something to open.
@@ -175,7 +162,8 @@ public sealed partial class PreviewPage
     private void CommitData()
     {
         if (_facts is null || _selStart < 0) return;
-        var value = SelectionData.Text;
+        if (_dataBox is null) return;
+        var value = _dataBox.Text;
         if (value == (_facts.Data ?? "")) return;
         var edit = ZplPatcher.SetData(_currentText, _selStart, _selEnd, value);
         if (edit is { } e) ApplyEdit(e);
@@ -268,14 +256,28 @@ public sealed partial class PreviewPage
     // A ToggleSwitch keeps room for the words "On"/"Off" even when there are none,
     // and that reserved strip is what left every switch short of the right edge
     // while every other control reached it.
-    private static ToggleSwitch Switch(bool on) => new()
+    private static ToggleSwitch Switch(bool on)
     {
-        IsOn = on,
-        OnContent = null,
-        OffContent = null,
-        MinWidth = 0,
-        HorizontalAlignment = HorizontalAlignment.Right,
-    };
+        var box = new ToggleSwitch
+        {
+            IsOn = on,
+            OnContent = null,
+            OffContent = null,
+            MinWidth = 0,
+            Padding = new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        // The template keeps a minimum of its own, and it does not answer to the
+        // control's MinWidth. The two "content margin" resources beside it are
+        // DOUBLES, not thicknesses — handing them a Thickness makes the control
+        // throw the moment anything measures it.
+        box.Resources["ToggleSwitchThemeMinWidth"] = 0d;
+        // And it still keeps a strip to the right of the switch for words it does
+        // not have. Eleven dips of it, measured on screen — pulled back so the
+        // control ends where every other one in the column ends.
+        box.Margin = new Thickness(0, 0, -11, 0);
+        return box;
+    }
 
     private ComboBox? _kindBox;
 
@@ -353,6 +355,65 @@ public sealed partial class PreviewPage
         panel.Children.Add(Row(PL("reverse"), reverse));
     }
 
+    // A control kept between rebuilds is still a child of the row it was in — the
+    // panel is cleared, but the row grid it held is not — and adding it to a second
+    // parent throws. Every reused control comes through here first.
+    private static T Detached<T>(T control) where T : FrameworkElement
+    {
+        if (control.Parent is Panel panel) panel.Children.Remove(control);
+        return control;
+    }
+
+    private TextBox NewDataBox()
+    {
+        var box = new TextBox
+        {
+            Width = 150,
+            MinHeight = 0,
+            Padding = new Thickness(8, 5, 8, 5),
+            FontSize = 12,
+            TextWrapping = TextWrapping.NoWrap,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        box.TextChanged += (_, _) => { if (!_fillingProps) CommitData(); };
+        box.LostFocus += (_, _) => CommitData();
+        return box;
+    }
+
+    /// <summary>The field, and a button that opens it out to a few lines.</summary>
+    private FrameworkElement WithExpander(TextBox box)
+    {
+        var open = new ToggleButton
+        {
+            Width = 28,
+            Height = 28,
+            MinWidth = 0,
+            Padding = new Thickness(0),
+            CornerRadius = new CornerRadius(5),
+            IsChecked = _dataExpanded,
+            Content = new FontIcon { Glyph = "\uE740", FontSize = 12 },
+        };
+        ToolTipService.SetToolTip(open, TipBlock(PL("expand")));
+        void Apply(bool wide)
+        {
+            _dataExpanded = wide;
+            box.AcceptsReturn = false;
+            box.TextWrapping = wide ? TextWrapping.Wrap : TextWrapping.NoWrap;
+            box.Height = wide ? 96 : double.NaN;
+        }
+        open.Checked += (_, _) => Apply(true);
+        open.Unchecked += (_, _) => Apply(false);
+        Apply(_dataExpanded);
+
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+        row.Children.Add(box);
+        row.Children.Add(open);
+        return row;
+    }
+
+    private TextBox? _dataBox;
+    private bool _dataExpanded;
+
     private ComboBox NewKindBox()
     {
         var box = new ComboBox { MinWidth = 128, FontSize = 12 };
@@ -372,12 +433,25 @@ public sealed partial class PreviewPage
             Text = PL("codeSection"), FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
         });
 
+        // What it prints. In here rather than in the floating strip for the same
+        // reason as the symbology: that strip lies on top of the element being
+        // edited, and a payload can be long. The button beside it opens the field
+        // out to a few lines when one letter at a time is not enough to read.
+        if (_facts.DataStart >= 0)
+        {
+            _dataBox = Detached(_dataBox ?? NewDataBox());
+            _fillingProps = true;
+            try { if (_dataBox.FocusState == FocusState.Unfocused) _dataBox.Text = _facts.Data ?? ""; }
+            finally { _fillingProps = false; }
+            panel.Children.Add(Row(PL("content"), WithExpander(_dataBox)));
+        }
+
         // Which symbology it is, where the rest of its properties are — beside the
         // content field it was one more thing crowding the strip that sits on top of
         // the element being edited.
         if (spec is not null)
         {
-            _kindBox ??= NewKindBox();
+            _kindBox = Detached(_kindBox ?? NewKindBox());
             _fillingProps = true;
             try { _kindBox.SelectedIndex = Array.FindIndex(BarcodeCatalog.All, s => s.Key == spec.Key); }
             finally { _fillingProps = false; }

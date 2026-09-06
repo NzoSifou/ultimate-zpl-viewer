@@ -283,6 +283,36 @@ public static class ZplPatcher
 
     // ── Changing them ───────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Shifts every origin in a piece of ZPL — used when a copy is pasted back onto
+    /// the label, so it lands beside what it came from rather than exactly on it.
+    /// The text is a fragment, not a document: it is walked for ^FO and ^FT and
+    /// nothing else is touched.
+    /// </summary>
+    public static string Nudge(string zpl, double dx, double dy, double dpmm)
+    {
+        var edits = new List<Edit>();
+        foreach (var token in ZplRenderer.TokenizeForEditing(zpl))
+        {
+            if (token.Command is not ("FO" or "FT")) continue;
+            double scale = UnitScaleAt(zpl, token.Start, dpmm);
+            if (scale <= 0) scale = 1;
+
+            var (lead, body, trail) = SplitArgs(token.Args);
+            var parts = body.Length == 0 ? new List<string> { "", "" } : body.Split(',').ToList();
+            while (parts.Count < 2) parts.Add("");
+            parts[0] = Coord(Number(parts[0]) + dx / scale);
+            parts[1] = Coord(Number(parts[1]) + dy / scale);
+            int at = token.End - token.Args.Length;
+            edits.Add(new Edit(at, token.End, lead + string.Join(",", parts) + trail));
+        }
+
+        var text = zpl;
+        foreach (var edit in edits.OrderByDescending(e => e.Start))
+            text = text[..edit.Start] + edit.Text + text[edit.End..];
+        return text;
+    }
+
     /// <summary>Replaces what the field prints.</summary>
     public static Edit? SetData(string zpl, int start, int end, string value)
     {

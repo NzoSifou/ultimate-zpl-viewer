@@ -290,6 +290,15 @@ public sealed partial class PreviewPage
             SelectAllFields();
             return;
         }
+        // Copy, cut and paste, on the label rather than in the code: what travels is
+        // the ZPL of the held fields, as text.
+        if (IsHeld(VirtualKey.Control) && e.Key is VirtualKey.C or VirtualKey.X or VirtualKey.V)
+        {
+            e.Handled = true;
+            if (e.Key == VirtualKey.V) _ = PasteAsync();
+            else CopySelection(cut: e.Key == VirtualKey.X);
+            return;
+        }
         if (_selStart < 0) return;
         // This handler sits on an ancestor of the preview, so every key pressed
         // inside the in-place box passes through it on its way up. While there is a
@@ -518,7 +527,7 @@ public sealed partial class PreviewPage
         if (!typing
             && RotateElementButton.Visibility == Visibility.Collapsed
             && SelectionCoords.Visibility == Visibility.Collapsed
-            && SelectionData.Visibility == Visibility.Collapsed)
+            && !HasMultiSelection)
         {
             SelectionTools.Visibility = Visibility.Collapsed;
             return;

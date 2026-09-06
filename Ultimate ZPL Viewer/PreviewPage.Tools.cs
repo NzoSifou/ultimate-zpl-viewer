@@ -373,8 +373,10 @@ public sealed partial class PreviewPage
             case EditTool.Circle:
                 return $"{origin}^GC{N(Math.Max(Math.Min(w, h), 1))},2^FS";
             case EditTool.Fill:
-                // Thickness equal to the height is how ZPL fills a box in.
-                return $"{origin}^GB{N(w)},{N(h)},{N(h)}^FS";
+                // A border as thick as the SHORTER side fills the box in, and leaves
+                // both of its dimensions alone: ZPL widens a box to at least its own
+                // border, so a thicker one would square it off.
+                return $"{origin}^GB{N(w)},{N(h)},{N(Math.Max(1, Math.Min(w, h)))}^FS";
             case EditTool.Barcode:
                 return BuildBarcodeSnippet(origin, Math.Max(1, Round(DefaultCodeHeightMm * dpmm)), dpmm);
             default:

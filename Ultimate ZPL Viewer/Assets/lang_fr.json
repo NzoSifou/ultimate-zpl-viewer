@@ -2189,6 +2189,8 @@
       "moduleWidth": "Largeur de barre (^BY)",
       "humanReadable": "Texte lisible",
       "symbology": "Symbologie",
+      "content": "Contenu",
+      "expand": "Plus de place pour le lire",
       "reverseNothing": "L’inversion ne se voit qu’au-dessus du noir — et rien de noir ne se trouve sous ce champ.",
       "shapeWidth": "Largeur",
       "shapeHeight": "Hauteur",

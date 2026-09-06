@@ -195,8 +195,14 @@ public sealed partial class PreviewPage
             // a solid block wider and taller and the border it was given stops
             // covering the middle, which opens a hole in it — so a block that was
             // solid is given a border that keeps it solid at its new size.
+            // The SHORTER side, not the height: a ^GB is widened and heightened to
+            // at least its own border (that is what makes ^GB787,0,5 a line), so a
+            // border as thick as the height squares off anything taller than it is
+            // wide. Half the shorter side is enough to fill it, and the whole of it
+            // still inflates nothing.
             double? thickness = null;
-            if (_facts.Shape == "GB" && WasSolid(_facts.ShapeArgs)) thickness = Math.Max(1, h);
+            if (_facts.Shape == "GB" && WasSolid(_facts.ShapeArgs))
+                thickness = Math.Max(1, Math.Min(w, h));
             if (ZplPatcher.SetShape(_currentText, _selStart, _selEnd, w, h, thickness) is { } size)
                 edits.Add(size);
         }
@@ -218,7 +224,12 @@ public sealed partial class PreviewPage
             && ZplPatcher.Move(_currentText, _selStart, _selEnd, dx * fx, dy * fy, SelectedDpmm) is { } move)
             edits.Add(move);
 
-        if (edits.Count > 0) ApplyEdits(edits);
+        if (edits.Count == 0) return;
+        // The numbers in the properties row are now the old ones. They are not
+        // rebuilt on every redraw — that would tear a spinner out from under the
+        // pointer — but the gesture is over, so this is the moment to.
+        _propsBuiltFor = -1;
+        ApplyEdits(edits);
     }
 
     /// <summary>True when this ^GB was drawn as a solid block rather than a frame.</summary>

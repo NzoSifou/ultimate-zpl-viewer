@@ -2189,6 +2189,8 @@
       "moduleWidth": "Bar width (^BY)",
       "humanReadable": "Readable text",
       "symbology": "Symbology",
+      "content": "Content",
+      "expand": "More room to read it",
       "reverseNothing": "Reversing only shows over black — and there is nothing black under this field.",
       "shapeWidth": "Width",
       "shapeHeight": "Height",

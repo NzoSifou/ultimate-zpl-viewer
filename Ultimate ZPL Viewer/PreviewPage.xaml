@@ -696,7 +696,8 @@
                                     VerticalContentAlignment="Stretch">
                                 <Grid>
                                     <StackPanel x:Name="ToolCodeIcon" Orientation="Horizontal"
-                                                Height="13" VerticalAlignment="Center">
+                                                Height="13" VerticalAlignment="Center"
+                                                HorizontalAlignment="Center">
                                         <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
                                         <Rectangle Width="3" Margin="0,0,1.5,0"/>
                                         <Rectangle Width="1.5" Margin="0,0,1.5,0"/>
@@ -841,20 +842,6 @@
                                             CornerRadius="5">
                                         <FontIcon Glyph="&#xE74D;" FontSize="13"/>
                                     </Button>
-                                    <!-- What the field prints. Shown for anything with
-                                         a ^FD: a text, a barcode, a QR code. -->
-                                    <!-- No fixed Height: the TextBox template puts its
-                                         text at the TOP of the content area and
-                                         ignores VerticalContentAlignment, so forcing
-                                         a height only squeezed it up there. The
-                                         padding gives the line its own room, and the
-                                         box takes the height that follows. -->
-                                    <TextBox x:Name="SelectionData"
-                                             Width="170" MinHeight="0"
-                                             Padding="8,5,8,5"
-                                             VerticalAlignment="Center"
-                                             FontSize="12"
-                                             Visibility="Collapsed"/>
                                     <!-- A graphic has nothing to change in a row of
                                          spinners: it is re-imported. The button
                                          reopens the import with the settings that

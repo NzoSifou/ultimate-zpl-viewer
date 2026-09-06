@@ -1744,7 +1744,7 @@
       "cards": {
         "modePos": {
           "title": "Position de la plaque",
-          "desc": "Accrochée à un bord de l'aperçu, ou libre et déplaçable par ses poignées."
+          "desc": "Accrochée à un bord de l'aperçu, ou libre et déplaçable par ses poignées. Si les deux plaques visent le même endroit, le bouton se coupe en deux : la moitié haute et la moitié basse disent laquelle passe au-dessus."
         },
         "modeDir": {
           "title": "Orientation de la plaque",
@@ -1752,7 +1752,7 @@
         },
         "toolPos": {
           "title": "Position de la plaque d'outils",
-          "desc": "Accrochée à un bord de l'aperçu, ou libre et déplaçable par ses poignées."
+          "desc": "Accrochée à un bord de l'aperçu, ou libre et déplaçable par ses poignées. Si les deux plaques visent le même endroit, le bouton se coupe en deux : la moitié haute et la moitié basse disent laquelle passe au-dessus."
         },
         "toolDir": {
           "title": "Orientation de la plaque d'outils",
@@ -1780,7 +1780,9 @@
         "belowInfo": "La barre se pose sous l'élément et la flèche pointe vers le bas : les paramètres se déplient vers le bas, à l'écart de ce que vous modifiez.",
         "above": "Au-dessus de l'élément",
         "aboveInfo": "La barre se pose au-dessus de l'élément et la flèche pointe vers le haut : les paramètres se déplient vers le haut, à l'écart de ce que vous modifiez.",
-        "sideFallback": "Quand il n'y a pas la place de ce côté-là, la barre passe de l'autre côté."
+        "sideFallback": "Quand il n'y a pas la place de ce côté-là, la barre passe de l'autre côté.",
+        "stackTop": "Cette plaque au-dessus, l'autre en dessous",
+        "stackBottom": "Cette plaque en dessous, l'autre au-dessus"
       }
     },
     "print": {

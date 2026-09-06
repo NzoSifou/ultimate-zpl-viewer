@@ -358,6 +358,10 @@ public sealed partial class PreviewPage
     {
         EditToolbar.Visibility = _editMode ? Visibility.Visible : Visibility.Collapsed;
         if (!_editMode && _tool != DefaultTool) SetTool(DefaultTool);
+        // Two plates pinned to the same place stand one above the other, and one
+        // of them has just appeared or gone: on its own the mode switch takes the
+        // whole spot back.
+        ApplyPlatePlacement();
     }
 
     // ── Placing ─────────────────────────────────────────────────────────────

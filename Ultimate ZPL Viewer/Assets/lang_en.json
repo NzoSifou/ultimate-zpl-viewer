@@ -1744,7 +1744,7 @@
       "cards": {
         "modePos": {
           "title": "Plate position",
-          "desc": "Pinned to an edge of the preview, or free and dragged by its grips."
+          "desc": "Pinned to an edge of the preview, or free and dragged by its grips. When both plates aim at the same place the button splits in two: the top and bottom halves say which one goes above."
         },
         "modeDir": {
           "title": "Plate orientation",
@@ -1752,7 +1752,7 @@
         },
         "toolPos": {
           "title": "Tool plate position",
-          "desc": "Pinned to an edge of the preview, or free and dragged by its grips."
+          "desc": "Pinned to an edge of the preview, or free and dragged by its grips. When both plates aim at the same place the button splits in two: the top and bottom halves say which one goes above."
         },
         "toolDir": {
           "title": "Tool plate orientation",
@@ -1780,7 +1780,9 @@
         "belowInfo": "The strip sits under the element and the chevron points down: the properties unfold downwards, clear of what you are editing.",
         "above": "Above the element",
         "aboveInfo": "The strip sits above the element and the chevron points up: the properties unfold upwards, clear of what you are editing.",
-        "sideFallback": "When there is no room on that side, the strip goes to the other one."
+        "sideFallback": "When there is no room on that side, the strip goes to the other one.",
+        "stackTop": "This plate above, the other below",
+        "stackBottom": "This plate below, the other above"
       }
     },
     "print": {

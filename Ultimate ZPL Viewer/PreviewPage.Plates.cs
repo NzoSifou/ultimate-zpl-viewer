@@ -36,17 +36,26 @@ public sealed partial class PreviewPage
     private const double PlateEdgeX = 24;
     private const double PlateEdgeY = 10;
 
+    // Between two plates sharing one spot.
+    private const double PlateStackGap = 8;
+
     private readonly Dictionary<Border, List<UIElement>> _plateGrips = new();
     private readonly Dictionary<Border, (bool Show, bool Horizontal)> _gripState = new();
 
     /// <summary>Applies both plates' position and orientation from the settings.</summary>
     private void ApplyPlatePlacement()
     {
-        ApplyPlate(mode: true);
-        ApplyPlate(mode: false);
+        // How each plate LOOKS first, both of them, and only then where it goes:
+        // two plates pinned to the same place stand one above the other, and how
+        // far the lower one has to come down is the upper one's height - which is
+        // not known until the upper one has been turned the way it is going to be.
+        ApplyPlateLook(mode: true);
+        ApplyPlateLook(mode: false);
+        ApplyPlatePosition(mode: true);
+        ApplyPlatePosition(mode: false);
     }
 
-    private void ApplyPlate(bool mode)
+    private void ApplyPlateLook(bool mode)
     {
         var plate = mode ? ModeSwitch : EditToolbar;
         var stack = mode ? ModePlateStack : ToolPlateStack;
@@ -57,8 +66,13 @@ public sealed partial class PreviewPage
         stack.Orientation = horizontal ? Orientation.Horizontal : Orientation.Vertical;
         if (!mode) ApplyToolSeparator(horizontal);
         ApplyGrips(plate, stack, mode, show: free && !locked, horizontal);
+    }
 
-        if (free)
+    private void ApplyPlatePosition(bool mode)
+    {
+        var plate = mode ? ModeSwitch : EditToolbar;
+
+        if (mode ? _settings.ModePlateFree : _settings.ToolPlateFree)
         {
             plate.HorizontalAlignment = HorizontalAlignment.Left;
             plate.VerticalAlignment = VerticalAlignment.Top;
@@ -67,8 +81,7 @@ public sealed partial class PreviewPage
             return;
         }
 
-        string anchor = mode ? _settings.ModePlateAnchor : _settings.ToolPlateAnchor;
-        if (!PlateAnchors.Contains(anchor)) anchor = mode ? "topRight" : "topLeft";
+        string anchor = PlateAnchor(mode);
 
         // The rulers are drawn ON TOP of the preview rather than beside it, so a
         // plate pinned to an edge they cover has to step over the band itself.
@@ -86,11 +99,59 @@ public sealed partial class PreviewPage
                 ? VerticalAlignment.Bottom
                 : VerticalAlignment.Center;
 
-        plate.Margin = new Thickness(
-            plate.HorizontalAlignment == HorizontalAlignment.Left ? left : 0,
-            plate.VerticalAlignment == VerticalAlignment.Top ? top : 0,
-            plate.HorizontalAlignment == HorizontalAlignment.Right ? PlateEdgeX : 0,
-            plate.VerticalAlignment == VerticalAlignment.Bottom ? PlateEdgeY : 0);
+        double mLeft = plate.HorizontalAlignment == HorizontalAlignment.Left ? left : 0;
+        double mTop = plate.VerticalAlignment == VerticalAlignment.Top ? top : 0;
+        double mRight = plate.HorizontalAlignment == HorizontalAlignment.Right ? PlateEdgeX : 0;
+        double mBottom = plate.VerticalAlignment == VerticalAlignment.Bottom ? PlateEdgeY : 0;
+
+        // Sharing the spot: the one below is pushed down by the other's height.
+        // Against the top edge the lower plate takes the extra room above it;
+        // against the bottom edge the upper one takes it below; in the middle both
+        // lean away from the centre, half of it each, which is what a margin does
+        // to something that is centred.
+        if (SharesAnchor(mode, out bool onTop, out double otherHeight))
+        {
+            double step = otherHeight + PlateStackGap;
+            if (plate.VerticalAlignment == VerticalAlignment.Top) { if (!onTop) mTop += step; }
+            else if (plate.VerticalAlignment == VerticalAlignment.Bottom) { if (onTop) mBottom += step; }
+            else if (onTop) mBottom += step; else mTop += step;
+        }
+
+        plate.Margin = new Thickness(mLeft, mTop, mRight, mBottom);
+    }
+
+    private string PlateAnchor(bool mode)
+    {
+        string anchor = mode ? _settings.ModePlateAnchor : _settings.ToolPlateAnchor;
+        return PlateAnchors.Contains(anchor) ? anchor : mode ? "topRight" : "topLeft";
+    }
+
+    /// <summary>
+    /// Whether the two plates are pinned to the same place - and if they are,
+    /// which of them is on top and how tall the other one is. Only ever true when
+    /// both are pinned AND both are on screen: a plate that is not shown is not in
+    /// anyone's way, and the tool plate is only there in edit mode.
+    /// </summary>
+    private bool SharesAnchor(bool mode, out bool onTop, out double otherHeight)
+    {
+        onTop = true;
+        otherHeight = 0;
+        if (_settings.ModePlateFree || _settings.ToolPlateFree) return false;
+        if (PlateAnchor(true) != PlateAnchor(false)) return false;
+        if (ModeSwitch.Visibility != Visibility.Visible
+            || EditToolbar.Visibility != Visibility.Visible) return false;
+
+        onTop = mode ? _settings.ModePlateFirst : !_settings.ModePlateFirst;
+        var other = mode ? EditToolbar : ModeSwitch;
+        // Measured rather than read off the screen, so a plate that has just been
+        // turned on its side is already the height it is about to be. Its MARGIN
+        // comes back with it - DesiredSize includes it - and that margin is where
+        // the last answer to this same question was written down: leave it in and
+        // the two plates walk further apart on every pass.
+        other.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        otherHeight = other.DesiredSize.Height - other.Margin.Top - other.Margin.Bottom;
+        if (otherHeight <= 0) otherHeight = other.ActualHeight;
+        return otherHeight > 0;
     }
 
     /// <summary>
@@ -279,6 +340,10 @@ public sealed partial class PreviewPage
 
     private UIElement BuildEditModeSettings()
     {
+        // The page is rebuilt whenever the language changes; the redraw actions of
+        // the pictures that went with the old one belong to controls nobody can
+        // see any more.
+        _anchorScreens.Clear();
         var panel = SettingsPanel();
         panel.Children.Add(LocalizedSettingsHeader("editMode"));
 
@@ -333,17 +398,7 @@ public sealed partial class PreviewPage
         var fixedChoice = new RadioButton { GroupName = group, Content = SL("editMode.lbl.fixed"), IsChecked = !free };
         var freeChoice = new RadioButton { GroupName = group, Content = SL("editMode.lbl.free"), IsChecked = free };
 
-        Action<string>? highlight = null;
-        var screen = AnchorScreen(mode, key =>
-        {
-            if (mode) _settings.ModePlateAnchor = key; else _settings.ToolPlateAnchor = key;
-            // Picking a place is also how the fixed position is chosen.
-            if (mode) _settings.ModePlateFree = false; else _settings.ToolPlateFree = false;
-            fixedChoice.IsChecked = true;
-            _settings.Save();
-            ApplyPlatePlacement();
-            highlight?.Invoke(key);
-        }, out highlight);
+        var screen = AnchorScreen(mode, () => fixedChoice.IsChecked = true);
 
         bool locked = mode ? _settings.ModePlateLocked : _settings.ToolPlateLocked;
         string lockGroup = group + "Lock";
@@ -383,12 +438,14 @@ public sealed partial class PreviewPage
         fixedChoice.Checked += (_, _) =>
         {
             if (mode) _settings.ModePlateFree = false; else _settings.ToolPlateFree = false;
-            _settings.Save(); ApplyPlatePlacement(); Enable();
+            _settings.Save(); ApplyPlatePlacement(); Enable(); RedrawAnchorScreens();
         };
         freeChoice.Checked += (_, _) =>
         {
             if (mode) _settings.ModePlateFree = true; else _settings.ToolPlateFree = true;
-            _settings.Save(); ApplyPlatePlacement(); Enable();
+            // Only one of them pinned is no longer a shared spot: the other plate's
+            // picture has a split button in it that has to go away.
+            _settings.Save(); ApplyPlatePlacement(); Enable(); RedrawAnchorScreens();
         };
 
         var box = new StackPanel { Spacing = 4 };
@@ -400,10 +457,26 @@ public sealed partial class PreviewPage
         return box;
     }
 
+    // Both pictures are redrawn whenever either plate moves: the two of them
+    // landing on the same square is what splits a button in half, and that is a
+    // fact about the pair, not about one of them.
+    private readonly List<Action> _anchorScreens = new();
+
+    private void RedrawAnchorScreens()
+    {
+        foreach (var redraw in _anchorScreens.ToList()) redraw();
+    }
+
     // A picture of the preview with a button in each of its eight places: the
     // position is chosen by pointing at it rather than by reading a list of
     // compass directions.
-    private FrameworkElement AnchorScreen(bool mode, Action<string> pick, out Action<string> highlight)
+    //
+    // The square the OTHER plate is pinned to is split in two, top half and
+    // bottom half, taking between them exactly the room one button had. That is
+    // where they would have sat on top of each other; picking a half says which
+    // one goes above. Choosing a half for this plate necessarily gives the other
+    // half to the other plate - there are two of them and two halves.
+    private FrameworkElement AnchorScreen(bool mode, Action pinned)
     {
         var grid = new Grid { Width = 236, Height = 132, Padding = new Thickness(8) };
         for (int i = 0; i < 3; i++)
@@ -412,38 +485,77 @@ public sealed partial class PreviewPage
             grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         }
 
-        var cells = new Dictionary<string, Button>();
-        foreach (var key in PlateAnchors)
+        void Pick(string key, bool? first)
         {
-            int column = key.EndsWith("Left", StringComparison.Ordinal) ? 0
-                       : key.EndsWith("Right", StringComparison.Ordinal) ? 2 : 1;
-            int row = key.StartsWith("top", StringComparison.Ordinal) ? 0
-                    : key.StartsWith("bottom", StringComparison.Ordinal) ? 2 : 1;
-            var button = new Button
-            {
-                Width = 40, Height = 22, MinWidth = 0, Padding = new Thickness(0),
-                CornerRadius = new CornerRadius(4),
-                HorizontalAlignment = column == 0 ? HorizontalAlignment.Left
-                                    : column == 2 ? HorizontalAlignment.Right : HorizontalAlignment.Center,
-                VerticalAlignment = row == 0 ? VerticalAlignment.Top
-                                  : row == 2 ? VerticalAlignment.Bottom : VerticalAlignment.Center,
-            };
-            Grid.SetColumn(button, column);
-            Grid.SetRow(button, row);
-            var captured = key;
-            button.Click += (_, _) => pick(captured);
-            cells[key] = button;
-            grid.Children.Add(button);
+            if (mode) _settings.ModePlateAnchor = key; else _settings.ToolPlateAnchor = key;
+            // Pointing at a place is also how the fixed position is chosen.
+            if (mode) _settings.ModePlateFree = false; else _settings.ToolPlateFree = false;
+            if (first is { } top) _settings.ModePlateFirst = mode ? top : !top;
+            pinned();
+            _settings.Save();
+            ApplyPlatePlacement();
+            RedrawAnchorScreens();
         }
 
-        void Highlight(string key)
+        void Draw()
         {
             var on = (Style)Application.Current.Resources["AccentButtonStyle"];
             var off = (Style)Application.Current.Resources["DefaultButtonStyle"];
-            foreach (var (name, button) in cells) button.Style = name == key ? on : off;
+            string mine = PlateAnchor(mode);
+            string theirs = PlateAnchor(!mode);
+            bool bothPinned = !_settings.ModePlateFree && !_settings.ToolPlateFree;
+            bool iAmFirst = mode ? _settings.ModePlateFirst : !_settings.ModePlateFirst;
+
+            grid.Children.Clear();
+            foreach (var key in PlateAnchors)
+            {
+                int column = key.EndsWith("Left", StringComparison.Ordinal) ? 0
+                           : key.EndsWith("Right", StringComparison.Ordinal) ? 2 : 1;
+                int row = key.StartsWith("top", StringComparison.Ordinal) ? 0
+                        : key.StartsWith("bottom", StringComparison.Ordinal) ? 2 : 1;
+
+                FrameworkElement cell;
+                if (bothPinned && key == theirs)
+                {
+                    // Two buttons of half the height, the same width, in the room
+                    // of one - so the picture still reads as eight places.
+                    var halves = new StackPanel { Spacing = 2 };
+                    var top = Half(SL("editMode.lbl.stackTop"), new CornerRadius(4, 4, 1, 1));
+                    var bottom = Half(SL("editMode.lbl.stackBottom"), new CornerRadius(1, 1, 4, 4));
+                    top.Style = key == mine && iAmFirst ? on : off;
+                    bottom.Style = key == mine && !iAmFirst ? on : off;
+                    var captured = key;
+                    top.Click += (_, _) => Pick(captured, first: true);
+                    bottom.Click += (_, _) => Pick(captured, first: false);
+                    halves.Children.Add(top);
+                    halves.Children.Add(bottom);
+                    cell = halves;
+                }
+                else
+                {
+                    var button = new Button
+                    {
+                        Width = 40, Height = 22, MinWidth = 0, Padding = new Thickness(0),
+                        CornerRadius = new CornerRadius(4),
+                        Style = key == mine ? on : off,
+                    };
+                    var captured = key;
+                    button.Click += (_, _) => Pick(captured, first: null);
+                    cell = button;
+                }
+
+                cell.HorizontalAlignment = column == 0 ? HorizontalAlignment.Left
+                                         : column == 2 ? HorizontalAlignment.Right : HorizontalAlignment.Center;
+                cell.VerticalAlignment = row == 0 ? VerticalAlignment.Top
+                                       : row == 2 ? VerticalAlignment.Bottom : VerticalAlignment.Center;
+                Grid.SetColumn(cell, column);
+                Grid.SetRow(cell, row);
+                grid.Children.Add(cell);
+            }
         }
-        highlight = Highlight;
-        Highlight(mode ? _settings.ModePlateAnchor : _settings.ToolPlateAnchor);
+
+        Draw();
+        _anchorScreens.Add(Draw);
 
         return new Border
         {
@@ -456,6 +568,18 @@ public sealed partial class PreviewPage
             CornerRadius = new CornerRadius(6),
             Child = grid,
         };
+    }
+
+    private static Button Half(string tip, CornerRadius corners)
+    {
+        var button = new Button
+        {
+            Width = 40, Height = 10, MinWidth = 0, MinHeight = 0,
+            Padding = new Thickness(0),
+            CornerRadius = corners,
+        };
+        ToolTipService.SetToolTip(button, TipBlock(tip));
+        return button;
     }
 
     private FrameworkElement ElementSideEditor()

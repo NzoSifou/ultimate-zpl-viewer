@@ -104,6 +104,11 @@ public sealed class AppSettings
     public bool ToolPlateLocked { get; set; }
     public bool ToolPlateHorizontal { get; set; }
 
+    // Which of the two comes first when both are pinned to the SAME place: they
+    // stand one above the other rather than on top of each other, and this says
+    // which one is above. The mode switch, by default.
+    public bool ModePlateFirst { get; set; } = true;
+
     // Which side of the selected element its strip of tools prefers. The other
     // side is still used when there is no room on this one.
     public bool ElementPlateAbove { get; set; }

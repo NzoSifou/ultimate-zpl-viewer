@@ -49,7 +49,7 @@ public sealed partial class PreviewPage
         ForwardElementButton.Visibility = canForward ? Visibility.Visible : Visibility.Collapsed;
         BackwardElementButton.Visibility = canBackward ? Visibility.Visible : Visibility.Collapsed;
 
-        var ink = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
+        var ink = ThemeInk.Foreground;
         foreach (var shape in new Shape[]
                  {
                      ForwardIconBack, ForwardIconBack2, ForwardIconFront,

@@ -316,8 +316,8 @@ public sealed partial class PreviewPage
     {
         var on = (Style)Application.Current.Resources["AccentButtonStyle"];
         var off = (Style)Application.Current.Resources["DefaultButtonStyle"];
-        var onInk = (Brush)Application.Current.Resources["TextOnAccentFillColorPrimaryBrush"];
-        var offInk = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
+        var onInk = ThemeInkOnAccent.Foreground;
+        var offInk = ThemeInk.Foreground;
 
         void Dress(Button button, bool active, params Shape[] shapes)
         {

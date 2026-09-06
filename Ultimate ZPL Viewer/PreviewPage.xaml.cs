@@ -98,7 +98,14 @@ public sealed partial class PreviewPage : Page
         // only time a cursor is looked at anyway. Handled events too - panning
         // marks its moves handled.
         PreviewCursorHost.AddHandler(UIElement.PointerMovedEvent,
-            new PointerEventHandler((_, _) => UpdatePreviewCursor()), true);
+            new PointerEventHandler((_, e) =>
+            {
+                _previewPointer = e.GetCurrentPoint(PreviewCanvas).Position;
+                _pointerInPreview = true;
+                UpdatePreviewCursor();
+            }), true);
+        PreviewCursorHost.AddHandler(UIElement.PointerExitedEvent,
+            new PointerEventHandler((_, _) => { _pointerInPreview = false; UpdatePreviewCursor(); }), true);
         PreviewScrollViewer.PointerWheelChanged += PreviewScrollViewer_PointerWheelChanged;
         RotateSplitButton.Click += RotateButton_Click;
         PreviewScrollViewer.PointerPressed      += PreviewScrollViewer_PointerPressed;
@@ -110,6 +117,13 @@ public sealed partial class PreviewPage : Page
         PreviewScrollViewer.SizeChanged += (_, _) => { ApplyDefaultZoom(); DrawRulers(); };
         PreviewScrollViewer.ViewChanged += (_, e) =>
         {
+            // Typing on the label: the view is nailed down. A drag across the words
+            // is selecting them and the letters have to stay where they are, and
+            // there are more ways than the obvious one for a ScrollViewer to move
+            // on its own - the box that holds the text is a child of the canvas
+            // like any other, and anything that decides to bring it into view
+            // scrolls the whole label. One rule covers every one of them.
+            if (IsEditingInPlace && PutViewBack()) return;
             // Settled view: this is the only place that knows the zoom the
             // ScrollViewer actually landed on (a requested factor can drift,
             // and pinch/native zoom never goes through our own code).
@@ -156,6 +170,11 @@ public sealed partial class PreviewPage : Page
         {
             if (_editorReady) ApplyEditorTheme();
             ApplyPreviewTheme(); // background + grid + rulers + caption
+            // The plates' icons are shapes, painted once from code: nothing repaints
+            // them on its own, and in the wrong theme they are white on white.
+            ApplyModeButtons();
+            ApplyToolButtons();
+            UpdateOrderButtons();
         };
         // Startup accent is applied in the App constructor (before any control
         // resolves the colors) — nothing to do here.
@@ -1819,11 +1838,11 @@ public sealed partial class PreviewPage : Page
     // account of the same click.
     private void UpdatePreviewCursor()
     {
-        // Typing on the label: the words have the pointer, and the box under it
-        // shows the caret cursor itself.
+        // Typing on the label: an I-beam over the words being typed, and nothing
+        // in particular anywhere else - the rest of the label is not text.
         if (IsEditingInPlace)
         {
-            PreviewCursorHost.SetCursor(null!);
+            PreviewCursorHost.SetCursor(PointerOverInPlaceText() ? TextCursor : null!);
             return;
         }
         // A tool that PLACES something: the next click puts it down, and the
@@ -1843,15 +1862,28 @@ public sealed partial class PreviewPage : Page
             PreviewCursorHost.SetCursor(PanGrabCursor);
             return;
         }
-        // Something is held and the tool that moves things is armed: a drag moves
-        // it. That is true whether or not the label also happens to be pannable, so
-        // this comes before the hand.
-        if (_editMode && CanMoveElements && _selStart >= 0)
+        // Something is held, the tool that moves things is armed, and the pointer
+        // is ON it: a drag from here moves it. Only from here - everywhere else a
+        // drag pans the label or starts a new selection, and the four arrows would
+        // be promising something the click does not do.
+        if (_editMode && CanMoveElements && _selStart >= 0 && PointerOverSelection())
         {
             PreviewCursorHost.SetCursor(MoveCursor);
             return;
         }
         PreviewCursorHost.SetCursor(pannable ? PanHandCursor : null!);
+    }
+
+    // Where the view was when the caret opened on the words.
+    private double _frozenH, _frozenV;
+
+    /// <summary>Puts a view that moved during in-place typing back. True if it had.</summary>
+    private bool PutViewBack()
+    {
+        if (Math.Abs(PreviewScrollViewer.HorizontalOffset - _frozenH) < 0.5
+            && Math.Abs(PreviewScrollViewer.VerticalOffset - _frozenV) < 0.5) return false;
+        PreviewScrollViewer.ChangeView(_frozenH, _frozenV, null, disableAnimation: true);
+        return true;
     }
 
     // Re-applied once the frame this call belongs to has been laid out, and at
@@ -1874,6 +1906,61 @@ public sealed partial class PreviewPage : Page
     private static readonly Microsoft.UI.Input.InputCursor MoveCursor =
         Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeAll);
 
+    private static readonly Microsoft.UI.Input.InputCursor TextCursor =
+        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.IBeam);
+
+    // Where the pointer last was, in the label's own coordinates, and whether it
+    // is over the preview at all.
+    private Windows.Foundation.Point _previewPointer;
+    private bool _pointerInPreview;
+
+    /// <summary>
+    /// Whether the pointer is over the words being typed. Their own blocks, not
+    /// the field's box from the last render: the renderer's blocks for this field
+    /// are gone while it is being edited, replaced by the ones the caret is
+    /// rebuilding on every keystroke.
+    /// </summary>
+    private bool PointerOverInPlaceText()
+    {
+        if (!_pointerInPreview) return false;
+        double zoom = PreviewScrollViewer.ZoomFactor;
+        double tol = zoom > 0 ? 4.0 / zoom : 4.0;
+        foreach (FrameworkElement? shape in _inPlaceInk.Cast<FrameworkElement>().Append(_caret))
+        {
+            if (shape is null) continue;
+            var box = BoundsInCanvas(shape);
+            if (box.IsEmpty) continue;
+            if (new Windows.Foundation.Rect(box.X - tol, box.Y - tol, box.Width + 2 * tol, box.Height + 2 * tol)
+                    .Contains(_previewPointer)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Whether the pointer is over one of the held elements. The boxes are the
+    /// ones a press is tested against (DrawableAtPoint), widened by the same few
+    /// screen pixels - so the cursor promises a move exactly where a press starts
+    /// one, and nowhere else.
+    /// </summary>
+    private bool PointerOverSelection()
+    {
+        if (!_pointerInPreview || _selStart < 0) return false;
+        var held = SelectedSpans();
+        if (held.Count == 0) return false;
+
+        double zoom = PreviewScrollViewer.ZoomFactor;
+        double tol = zoom > 0 ? 4.0 / zoom : 4.0;
+        foreach (var (span, box) in FieldBoxes())
+        {
+            bool ours = false;
+            foreach (var (start, _) in held) if (start == span.Start) { ours = true; break; }
+            if (!ours) continue;
+            if (new Windows.Foundation.Rect(box.X - tol, box.Y - tol, box.Width + 2 * tol, box.Height + 2 * tol)
+                    .Contains(_previewPointer)) return true;
+        }
+        return false;
+    }
+
     private static readonly Microsoft.UI.Input.InputCursor CrosshairCursor =
         Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Cross);
 
@@ -1882,6 +1969,11 @@ public sealed partial class PreviewPage : Page
         // Edit mode took this press to drag an element: panning would fight it for
         // the same gesture.
         if (_dragging) return;
+        // Typing on the label: a drag across the words is selecting them, and the
+        // label has to hold still under the caret. The ScrollViewer's own scrolling
+        // is already off while this lasts; this is the hand-rolled panning, which
+        // moves the view itself and never asked it.
+        if (IsEditingInPlace) return;
         if (!e.GetCurrentPoint(PreviewScrollViewer).Properties.IsLeftButtonPressed) return;
         _isPanning = true;
         _panStart  = e.GetCurrentPoint(PreviewScrollViewer).Position;

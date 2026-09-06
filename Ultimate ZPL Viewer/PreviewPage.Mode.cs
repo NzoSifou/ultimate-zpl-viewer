@@ -82,8 +82,8 @@ public sealed partial class PreviewPage
         ViewModeButton.Style = _editMode ? off : on;
         EditModeButton.Style = _editMode ? on : off;
         // The glyph has to be told which foreground it now sits on.
-        var onInk = (Brush)Application.Current.Resources["TextOnAccentFillColorPrimaryBrush"];
-        var offInk = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
+        var onInk = ThemeInkOnAccent.Foreground;
+        var offInk = ThemeInk.Foreground;
         ViewModeIcon.Foreground = _editMode ? offInk : onInk;
         EditModeIcon.Foreground = _editMode ? onInk : offInk;
         ToolTipService.SetToolTip(ViewModeButton, TipBlock(LocalizationService.Get("mode.view")));

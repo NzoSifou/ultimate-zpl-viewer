@@ -1,4 +1,4 @@
-using Microsoft.UI;
+﻿using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -127,6 +127,16 @@ public sealed partial class PreviewPage
         _scrollVertical = PreviewScrollViewer.VerticalScrollMode;
         PreviewScrollViewer.HorizontalScrollMode = ScrollMode.Disabled;
         PreviewScrollViewer.VerticalScrollMode = ScrollMode.Disabled;
+        // The box that holds the text is parked twenty thousand dips off the
+        // canvas, where it cannot swallow a click. A ScrollViewer scrolls to
+        // whatever child has just taken the focus, and that is where it was
+        // scrolling to - the label jumped to its top-left corner the moment the
+        // caret opened. Nothing in the preview ever wants that.
+        PreviewScrollViewer.BringIntoViewOnFocusChange = false;
+        // And where the view is right now, so anything that manages to move it
+        // anyway can be put straight back (ViewChanged, PutViewBack).
+        _frozenH = PreviewScrollViewer.HorizontalOffset;
+        _frozenV = PreviewScrollViewer.VerticalOffset;
 
         // The glyphs underneath would double every letter; they are replaced by the
         // ones drawn here, from the same helper.
@@ -330,6 +340,12 @@ public sealed partial class PreviewPage
         // The same beat watches the selection: a TextBox announces nothing when the
         // caret moves, and the keys that move it are far too many to hook one by one.
         RefreshCaret();
+        // Rebuilding the caret changes the tree under a pointer that may not have
+        // moved, and the framework answers a change like that by going back to the
+        // default cursor. Cleared and set again - setting the same value twice
+        // changes nothing, and both land in the one frame, so nothing is seen.
+        PreviewCursorHost.SetCursor(null!);
+        UpdatePreviewCursor();
         if (++_blinkTicks % 4 != 0 || _caret is null) return;
         _caret.Opacity = _caret.Opacity > 0.5 ? 0 : 1;
     }
@@ -465,6 +481,7 @@ public sealed partial class PreviewPage
 
         PreviewScrollViewer.HorizontalScrollMode = _scrollHorizontal;
         PreviewScrollViewer.VerticalScrollMode = _scrollVertical;
+        PreviewScrollViewer.BringIntoViewOnFocusChange = true;
 
         // The redraws were held back while the caret was in the words; catch up.
         RefreshPreview(SizeUpdate.TextEdited);

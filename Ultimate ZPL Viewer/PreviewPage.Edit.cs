@@ -473,6 +473,16 @@ public sealed partial class PreviewPage
     /// </summary>
     internal void UpdateSelectionTools()
     {
+        // Holding something changes what a drag would do, and the pointer says so.
+        // Here because this runs on every selection change there is. Twice: once
+        // now, and once after the frame has been laid out. Redrawing the label
+        // replaces the element the pointer is standing on, and the framework
+        // re-resolves the cursor from scratch when it does - reaching the default
+        // rather than the one this page put on the preview. Setting it again once
+        // that has happened is what makes it stick.
+        UpdatePreviewCursor();
+        ScheduleCursorUpdate();
+
         // Hiding the bar takes the focus out of whatever is being typed into it.
         // While it holds the caret it stays, even if the element it belongs to
         // momentarily has nothing to frame — emptying a field does exactly that.

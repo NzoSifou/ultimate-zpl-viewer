@@ -427,10 +427,15 @@ public sealed partial class PreviewPage
             return;
         }
 
+        // Shift: keep the tool armed and put another one down. Shift rather than
+        // Ctrl because Ctrl is already three things on this canvas - add to the
+        // selection, snap a drag to the millimetre, zoom with the wheel - and a
+        // modifier that means four things means none of them.
         var placed = _tool;
+        bool again = IsHeld(Windows.System.VirtualKey.Shift);
         var snippet = BuildSnippet(X, Y, W, H, dpmm);
-        SetTool(DefaultTool);
-        if (snippet is not null) InsertSnippet(snippet, placed);
+        if (!again) SetTool(DefaultTool);
+        if (snippet is not null) InsertSnippet(snippet, placed, keepTool: again);
     }
 
     private void CancelPlacement()
@@ -519,7 +524,7 @@ public sealed partial class PreviewPage
     /// at ^XZ rather than at the caret keeps the field order matching the drawing
     /// order: the newest element is the one on top.
     /// </summary>
-    private void InsertSnippet(string snippet, EditTool tool = EditTool.None)
+    private void InsertSnippet(string snippet, EditTool tool = EditTool.None, bool keepTool = false)
     {
         int at = EndOfLabelOffset();
         string prefix = at > 0 && _currentText[at - 1] == '\n' ? "" : "\n";
@@ -530,9 +535,14 @@ public sealed partial class PreviewPage
         // Point the selection at what was just written, so the element comes up
         // framed and ready to be moved. Through SelectSpan, so the editor highlights
         // the new field as well as the label framing it.
+        //
+        // Not while the tool stays armed: the strip of tools would appear over the
+        // element just placed, which is exactly where the next one is about to be
+        // put down, and the click would land on the strip instead of the label.
         int at2 = at + prefix.Length;
-        SelectSpan(at2, at2 + snippet.Length, revealInEditor: false, moveCaret: true);
         PreviewCursorHost.Focus(FocusState.Programmatic);
+        if (keepTool) return;
+        SelectSpan(at2, at2 + snippet.Length, revealInEditor: false, moveCaret: true);
 
         // A text field is placed to be written in, and what it holds until then is
         // the word "Text". Open the caret on it with that word selected, so the

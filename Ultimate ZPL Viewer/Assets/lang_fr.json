@@ -2038,21 +2038,31 @@
   },
   "shortcuts": {
     "title": "Raccourcis clavier",
-    "subtitle": "Toutes les commandes accessibles au clavier dans Ultimate ZPL Viewer.",
+    "subtitle": "Toutes les commandes accessibles au clavier et à la souris dans Ultimate ZPL Viewer.",
     "close": "Fermer",
     "key": {
       "ctrl": "Ctrl",
       "shift": "Maj",
       "alt": "Alt",
       "esc": "Échap",
-      "tab": "Tab"
+      "tab": "Tab",
+      "enter": "Entrée",
+      "del": "Suppr",
+      "arrows": "Flèches",
+      "click": "Clic",
+      "dblclick": "Double-clic",
+      "drag": "Glisser",
+      "wheel": "Molette"
     },
     "section": {
       "tabs": "Onglets et fenêtres",
       "file": "Fichier",
       "view": "Affichage",
       "preview": "Aperçu",
-      "editor": "Éditeur de code"
+      "editor": "Éditeur de code",
+      "modeView": "Mode visualisation",
+      "modeEdit": "Mode édition",
+      "modeText": "Mode édition : texte sur l'étiquette"
     },
     "row": {
       "newTab": "Nouveau document dans un onglet",
@@ -2090,7 +2100,24 @@
       "undoRedo": "Annuler / Rétablir",
       "gotoLine": "Aller à la ligne",
       "selectLine": "Sélectionner la ligne",
-      "nextMatch": "Sélectionner l'occurrence suivante"
+      "nextMatch": "Sélectionner l'occurrence suivante",
+      "zoomWheel": "Zoomer / dézoomer à la molette",
+      "inspect": "Pointer le code de l'élément cliqué",
+      "pan": "Déplacer l'aperçu (quand il dépasse)",
+      "selectAll": "Tout sélectionner sur l'étiquette",
+      "addSelect": "Ajouter ou retirer un élément de la sélection",
+      "bandSelect": "Sélectionner au lasso depuis une zone vide",
+      "copyCut": "Copier / couper les éléments sélectionnés",
+      "paste": "Coller des éléments sur l'étiquette",
+      "nudge": "Déplacer la sélection d'un point",
+      "nudgeFar": "Déplacer la sélection de dix points",
+      "snapDrag": "Aligner sur le millimètre pendant le déplacement",
+      "deleteOne": "Supprimer la sélection",
+      "placeAgain": "Reposer le même élément sans réarmer l'outil",
+      "editText": "Écrire dans le texte, là où il s'imprime",
+      "endText": "Terminer la saisie",
+      "breakLine": "Aller à la ligne dans le texte",
+      "cancelText": "Annuler la saisie en cours"
     }
   },
   "onboarding": {

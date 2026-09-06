@@ -91,6 +91,14 @@ public sealed partial class PreviewPage : Page
         InitResize();
         InitElementOrder();
         InitImageEditing();
+        // The cursor is worked out from the state, but the state is not the only
+        // thing that changes it: redrawing the label replaces the very element the
+        // pointer is over, and the framework re-resolves the cursor from scratch
+        // when it does. Re-applied on every move over the preview, which is the
+        // only time a cursor is looked at anyway. Handled events too - panning
+        // marks its moves handled.
+        PreviewCursorHost.AddHandler(UIElement.PointerMovedEvent,
+            new PointerEventHandler((_, _) => UpdatePreviewCursor()), true);
         PreviewScrollViewer.PointerWheelChanged += PreviewScrollViewer_PointerWheelChanged;
         RotateSplitButton.Click += RotateButton_Click;
         PreviewScrollViewer.PointerPressed      += PreviewScrollViewer_PointerPressed;
@@ -1806,21 +1814,65 @@ public sealed partial class PreviewPage : Page
         }
     }
 
+    // What the pointer says it is about to do, in the order the answers override
+    // each other. Everything below the first line that matches is a less specific
+    // account of the same click.
     private void UpdatePreviewCursor()
     {
-        // A tool is armed: the next click puts something down, and the crosshair is
-        // what says so. It wins over the pan cursor — panning is not what this
-        // click is going to do.
-        if (_tool != EditTool.None)
+        // Typing on the label: the words have the pointer, and the box under it
+        // shows the caret cursor itself.
+        if (IsEditingInPlace)
+        {
+            PreviewCursorHost.SetCursor(null!);
+            return;
+        }
+        // A tool that PLACES something: the next click puts it down, and the
+        // crosshair is what says so. It wins over panning and over moving, neither
+        // of which is what this click is going to do. The arrow and the
+        // cross-arrows place nothing, so neither of them claims the crosshair.
+        if (IsPlacementTool)
         {
             PreviewCursorHost.SetCursor(CrosshairCursor);
             return;
         }
-        // Hand only when the document overflows the viewport; the grab cursor
-        // needs both: panning a fully visible document keeps the normal arrow.
+        // Hand only when the document overflows the viewport: there is nothing to
+        // take hold of in a label that is entirely on screen.
         bool pannable = PreviewScrollViewer.ScrollableWidth > 0.5 || PreviewScrollViewer.ScrollableHeight > 0.5;
-        PreviewCursorHost.SetCursor(!pannable ? null! : _isPanning ? PanGrabCursor : PanHandCursor);
+        if (_isPanning && pannable)
+        {
+            PreviewCursorHost.SetCursor(PanGrabCursor);
+            return;
+        }
+        // Something is held and the tool that moves things is armed: a drag moves
+        // it. That is true whether or not the label also happens to be pannable, so
+        // this comes before the hand.
+        if (_editMode && CanMoveElements && _selStart >= 0)
+        {
+            PreviewCursorHost.SetCursor(MoveCursor);
+            return;
+        }
+        PreviewCursorHost.SetCursor(pannable ? PanHandCursor : null!);
     }
+
+    // Re-applied once the frame this call belongs to has been laid out, and at
+    // most once per turn however many times it is asked for.
+    private bool _cursorPending;
+
+    private void ScheduleCursorUpdate()
+    {
+        if (_cursorPending) return;
+        _cursorPending = true;
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        {
+            _cursorPending = false;
+            UpdatePreviewCursor();
+        });
+    }
+
+    // The four-way arrows: what every drawing application shows over something it
+    // is willing to move.
+    private static readonly Microsoft.UI.Input.InputCursor MoveCursor =
+        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeAll);
 
     private static readonly Microsoft.UI.Input.InputCursor CrosshairCursor =
         Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Cross);

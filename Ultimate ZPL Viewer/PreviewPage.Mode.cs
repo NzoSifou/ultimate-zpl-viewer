@@ -62,6 +62,7 @@ public sealed partial class PreviewPage
     {
         ApplyModeButtons();
         ApplyEditToolbar();
+        UpdatePreviewCursor();      // the same pointer means different things per mode
         ApplyEditorOptions();           // carries readOnly
         // Leaving edit mode drops the selection: its frame and its handles have no
         // meaning in a mode where nothing can be moved.

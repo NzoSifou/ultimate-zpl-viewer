@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.UI.Text;
@@ -27,7 +27,15 @@ internal static class ShortcutsHelp
 
     // Key caps that have a name in the user's language ("Maj", "Échap"…). Anything
     // else — letters, digits, F11, punctuation — is shown as written here.
-    private static readonly string[] Named = { "ctrl", "shift", "alt", "esc", "tab" };
+    private static readonly string[] Named =
+    {
+        "ctrl", "shift", "alt", "esc", "tab",
+        // Keys and gestures whose names are words rather than letters. The mouse
+        // ones earn a cap of their own: half of what the preview answers to is a
+        // modifier held while clicking, and a sheet that left those out would be
+        // describing a different application.
+        "enter", "del", "arrows", "click", "dblclick", "drag", "wheel",
+    };
 
     private static readonly Section[] Catalogue =
     {
@@ -65,10 +73,39 @@ internal static class ShortcutsHelp
         }),
         new("preview", new[]
         {
-            R("zoom",    K("ctrl", "+"), K("ctrl", "−")),
-            R("zoom100", K("ctrl", "shift", "1")),
-            R("zoomFit", K("ctrl", "shift", "9")),
-            R("rotate",  K("ctrl", "shift", "R")),
+            R("zoom",      K("ctrl", "+"), K("ctrl", "−")),
+            R("zoomWheel", K("ctrl", "wheel")),
+            R("zoom100",   K("ctrl", "shift", "1")),
+            R("zoomFit",   K("ctrl", "shift", "9")),
+            R("rotate",    K("ctrl", "shift", "R")),
+        }),
+        // What the preview answers to in each of its two modes. View mode has no
+        // keys of its own - there is nothing to change, so there is nothing to
+        // press - but it does have the two gestures every reader uses.
+        new("modeView", new[]
+        {
+            R("inspect", K("click")),
+            R("pan",     K("drag")),
+        }),
+        new("modeEdit", new[]
+        {
+            R("selectAll",   K("ctrl", "A")),
+            R("addSelect",   K("ctrl", "click")),
+            R("bandSelect",  K("drag")),
+            R("copyCut",     K("ctrl", "C"), K("ctrl", "X")),
+            R("paste",       K("ctrl", "V")),
+            R("nudge",       K("arrows")),
+            R("nudgeFar",    K("shift", "arrows")),
+            R("snapDrag",    K("ctrl", "drag")),
+            R("deleteOne",   K("del")),
+            R("placeAgain",  K("shift", "click")),
+        }),
+        new("modeText", new[]
+        {
+            R("editText",  K("F2"), K("dblclick")),
+            R("endText",   K("enter")),
+            R("breakLine", K("shift", "enter")),
+            R("cancelText", K("esc")),
         }),
         new("editor", new[]
         {

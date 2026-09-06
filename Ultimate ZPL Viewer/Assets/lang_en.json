@@ -1769,6 +1769,16 @@
           "Horizontal"
         ]
       },
+      "pos": {
+        "topLeft": "Top left",
+        "topCenter": "Top centre",
+        "topRight": "Top right",
+        "middleLeft": "Middle left",
+        "middleRight": "Middle right",
+        "bottomLeft": "Bottom left",
+        "bottomCenter": "Bottom centre",
+        "bottomRight": "Bottom right"
+      },
       "lbl": {
         "fixed": "Fixed position",
         "free": "Free position",

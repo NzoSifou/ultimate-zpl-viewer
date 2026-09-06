@@ -520,8 +520,10 @@ public sealed partial class PreviewPage
                     // Two buttons of half the height, the same width, in the room
                     // of one - so the picture still reads as eight places.
                     var halves = new StackPanel { Spacing = 2 };
-                    var top = Half(SL("editMode.lbl.stackTop"), new CornerRadius(4, 4, 1, 1));
-                    var bottom = Half(SL("editMode.lbl.stackBottom"), new CornerRadius(1, 1, 4, 4));
+                    var top = Half(PlaceName(key) + " \u2014 " + SL("editMode.lbl.stackTop"),
+                                   new CornerRadius(4, 4, 1, 1));
+                    var bottom = Half(PlaceName(key) + " \u2014 " + SL("editMode.lbl.stackBottom"),
+                                      new CornerRadius(1, 1, 4, 4));
                     top.Style = key == mine && iAmFirst ? on : off;
                     bottom.Style = key == mine && !iAmFirst ? on : off;
                     var captured = key;
@@ -539,6 +541,7 @@ public sealed partial class PreviewPage
                         CornerRadius = new CornerRadius(4),
                         Style = key == mine ? on : off,
                     };
+                    ToolTipService.SetToolTip(button, TipBlock(PlaceName(key)));
                     var captured = key;
                     button.Click += (_, _) => Pick(captured, first: null);
                     cell = button;
@@ -569,6 +572,9 @@ public sealed partial class PreviewPage
             Child = grid,
         };
     }
+
+    /// <summary>What one of the eight places is called, for the button that is it.</summary>
+    private static string PlaceName(string anchor) => SL("editMode.pos." + anchor);
 
     private static Button Half(string tip, CornerRadius corners)
     {

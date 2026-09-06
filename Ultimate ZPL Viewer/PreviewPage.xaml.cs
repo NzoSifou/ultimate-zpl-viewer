@@ -3910,7 +3910,7 @@ public sealed partial class PreviewPage : Page
             // Full width, not a third: the print defaults carry a mode selector
             // AND a value side by side, and a third-width card crushes the label
             // column down to one word per line.
-            ["print"]      = BuildPrintSettingsSection(),
+            ["print"]      = WithThirdWidthCards(BuildPrintSettingsSection()),
             ["editor"]     = BuildEditorSettings(),
             // Full width: the position cards carry a picture of the screen with
             // eight buttons in it, which a third of the window crushes.
@@ -5275,6 +5275,14 @@ public sealed partial class PreviewPage : Page
         return panel;
     }
 
+    // Three numbers, not four. The fourth is a build counter that says nothing to
+    // anyone reading it here; it goes straight back the day it has something to say.
+    private static string ThreeNumbers(string version)
+    {
+        var parts = version.Split('.');
+        return parts.Length > 3 ? string.Join('.', parts.Take(3)) : version;
+    }
+
     private UIElement BuildAboutSettings()
     {
         var panel = SettingsPanel();
@@ -5287,7 +5295,7 @@ public sealed partial class PreviewPage : Page
         {
             var v = System.Diagnostics.FileVersionInfo
                 .GetVersionInfo(Environment.ProcessPath!).FileVersion;
-            version = string.IsNullOrWhiteSpace(v) ? SL("about.lbl.unknownVersion") : v!;
+            version = string.IsNullOrWhiteSpace(v) ? SL("about.lbl.unknownVersion") : ThreeNumbers(v!);
         }
         catch { version = SL("about.lbl.unknownVersion"); }
 

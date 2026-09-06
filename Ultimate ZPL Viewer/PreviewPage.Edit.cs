@@ -583,23 +583,41 @@ public sealed partial class PreviewPage
         left = Math.Max(0, Math.Min(left, Math.Max(0, EditOverlay.ActualWidth - w)));
         top = Math.Max(0, Math.Min(top, Math.Max(0, EditOverlay.ActualHeight - h)));
 
-        // The tool plate floats over the same corner and is drawn above this bar: a
-        // bar sliding under it loses its first buttons, and an element near the left
-        // edge of the label puts it there every time.
-        if (EditToolbar.Visibility == Visibility.Visible)
-        {
-            try
-            {
-                var plate = EditToolbar.TransformToVisual(EditOverlay).TransformBounds(
-                    new Rect(0, 0, EditToolbar.ActualWidth, EditToolbar.ActualHeight));
-                if (top < plate.Bottom && top + h > plate.Top && left < plate.Right + 8)
-                    left = Math.Min(plate.Right + 8, Math.Max(0, EditOverlay.ActualWidth - w));
-            }
-            catch { }
-        }
+        // The two standing plates are drawn above this strip: one sliding under
+        // either of them loses its first buttons. It steps aside - to whichever
+        // side of the plate it is already nearer, and only when it really is
+        // underneath. Stepping always to the RIGHT was fine while the tools lived
+        // in the left-hand corner and wrong the moment they could be put anywhere:
+        // a plate against the right edge sent the strip off to the right edge too.
+        left = StepAside(left, top, w, h, EditToolbar);
+        left = StepAside(left, top, w, h, ModeSwitch);
 
         Canvas.SetLeft(SelectionTools, left);
         Canvas.SetTop(SelectionTools, top);
+    }
+
+    /// <summary>Moves the strip clear of a plate it would otherwise hide under.</summary>
+    private double StepAside(double left, double top, double w, double h, Border plate)
+    {
+        if (plate.Visibility != Visibility.Visible) return left;
+        Rect box;
+        try
+        {
+            box = plate.TransformToVisual(EditOverlay)
+                .TransformBounds(new Rect(0, 0, plate.ActualWidth, plate.ActualHeight));
+        }
+        catch { return left; }
+        if (box.Width <= 0 || box.Height <= 0) return left;
+        if (top >= box.Bottom || top + h <= box.Top) return left;   // not level with it
+        if (left >= box.Right || left + w <= box.Left) return left;  // already clear
+
+        const double gap = 8;
+        double past = box.Right + gap, before = box.Left - gap - w;
+        bool roomPast = past + w <= EditOverlay.ActualWidth;
+        bool roomBefore = before >= 0;
+        if (!roomPast && !roomBefore) return left;
+        if (roomPast && (!roomBefore || left + w / 2 >= box.Left + box.Width / 2)) return past;
+        return before;
     }
 
     /// <summary>Whether the caret sits somewhere inside the properties bar.</summary>

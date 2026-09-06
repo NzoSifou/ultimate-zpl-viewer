@@ -389,18 +389,66 @@ public sealed partial class PreviewPage
         return offset;
     }
 
+    // Clicks in a row on the words, the way every text field counts them: one
+    // places the caret, two take the word under it, three take the lot.
+    private DateTime _lastInPlaceClick;
+    private int _inPlaceClicks;
+
     /// <summary>True when the press belongs to the caret. Opens a drag-selection.</summary>
     private bool InPlacePointerPressed(PointerRoutedEventArgs e)
     {
         if (_inPlace is null) return false;
         int at = OffsetAt(e.GetCurrentPoint(PreviewCanvas).Position);
         if (at < 0) return false;
+
+        var now = DateTime.UtcNow;
+        _inPlaceClicks = (now - _lastInPlaceClick).TotalMilliseconds < 500 ? _inPlaceClicks + 1 : 1;
+        _lastInPlaceClick = now;
+        PreviewScrollViewer.CapturePointer(e.Pointer);
+
+        if (_inPlaceClicks >= 3)
+        {
+            // Everything, and no drag out of it: a third click is a decision, not
+            // the start of a gesture.
+            _selectingByPointer = false;
+            _selectAnchor = 0;
+            _inPlace.SelectAll();
+            RefreshCaret(force: true);
+            return true;
+        }
+        if (_inPlaceClicks == 2)
+        {
+            var (start, end) = WordAround(_inPlace.Text, at);
+            _selectingByPointer = false;
+            _selectAnchor = start;
+            _inPlace.Select(start, end - start);
+            RefreshCaret(force: true);
+            return true;
+        }
+
         _selectAnchor = at;
         _selectingByPointer = true;
         _inPlace.Select(at, 0);
-        PreviewScrollViewer.CapturePointer(e.Pointer);
         RefreshCaret(force: true);
         return true;
+    }
+
+    /// <summary>
+    /// The run of letters the offset sits in. A click in the white space between
+    /// two words takes that white space rather than nothing, which is what makes
+    /// a double click somewhere harmless feel like it did something.
+    /// </summary>
+    private static (int Start, int End) WordAround(string text, int at)
+    {
+        if (text.Length == 0) return (0, 0);
+        int here = Math.Clamp(at, 0, text.Length - 1);
+        bool space = char.IsWhiteSpace(text[here]);
+        bool Same(char c) => char.IsWhiteSpace(c) == space && c != '\n';
+
+        int start = here, end = here;
+        while (start > 0 && Same(text[start - 1])) start--;
+        while (end < text.Length && Same(text[end])) end++;
+        return (start, end);
     }
 
     private void InPlacePointerMoved(PointerRoutedEventArgs e)

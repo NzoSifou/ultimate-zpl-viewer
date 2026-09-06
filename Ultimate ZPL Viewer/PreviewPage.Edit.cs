@@ -466,8 +466,8 @@ public sealed partial class PreviewPage
     // ── The tools floating over the selection ───────────────────────────────
 
     /// <summary>
-    /// Puts the rotate button and the position readout just above the selection —
-    /// or just below it when the selection is at the very top of the view. Called
+    /// Puts the rotate button and the position readout just below the selection —
+    /// or just above it when there is no room left underneath. Called
     /// on every selection change, redraw, zoom and scroll, so the bar never lags
     /// behind the element it belongs to.
     /// </summary>
@@ -538,16 +538,13 @@ public sealed partial class PreviewPage
         double w = SelectionTools.DesiredSize.Width, h = SelectionTools.DesiredSize.Height;
 
         const double gap = 8;
-        // Placed by the ROW OF BUTTONS, not by the whole bar: the properties hang
-        // below it, and anchoring the whole thing meant the buttons jumped somewhere
-        // else every time the panel was opened or closed — including the very button
-        // that had just been clicked.
-        double panelHeight = SelectionProps.Visibility == Visibility.Visible
-            ? SelectionProps.DesiredSize.Height + 3 : 0;
-        double rowHeight = Math.Max(24, h - panelHeight);
-
-        double top = box.Top - rowHeight - gap;
-        if (top < 0) top = box.Bottom + gap;      // no room above: sit underneath
+        // Underneath the element, leaning on its bottom edge — so the properties
+        // unfold downwards, into empty label, instead of over what is being edited,
+        // and nothing that has just been clicked moves out from under the pointer.
+        // Above only when there is no room below, and then the whole bar goes above:
+        // either way it leans on an edge and grows away from the element.
+        double below = box.Bottom + gap, above = box.Top - h - gap;
+        double top = below + h <= EditOverlay.ActualHeight || above < 0 ? below : above;
         double left = box.Left + (box.Width - w) / 2;
         left = Math.Max(0, Math.Min(left, Math.Max(0, EditOverlay.ActualWidth - w)));
         top = Math.Max(0, Math.Min(top, Math.Max(0, EditOverlay.ActualHeight - h)));

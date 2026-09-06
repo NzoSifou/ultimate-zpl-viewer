@@ -538,7 +538,15 @@ public sealed partial class PreviewPage
         double w = SelectionTools.DesiredSize.Width, h = SelectionTools.DesiredSize.Height;
 
         const double gap = 8;
-        double top = box.Top - h - gap;
+        // Placed by the ROW OF BUTTONS, not by the whole bar: the properties hang
+        // below it, and anchoring the whole thing meant the buttons jumped somewhere
+        // else every time the panel was opened or closed — including the very button
+        // that had just been clicked.
+        double panelHeight = SelectionProps.Visibility == Visibility.Visible
+            ? SelectionProps.DesiredSize.Height + 3 : 0;
+        double rowHeight = Math.Max(24, h - panelHeight);
+
+        double top = box.Top - rowHeight - gap;
         if (top < 0) top = box.Bottom + gap;      // no room above: sit underneath
         double left = box.Left + (box.Width - w) / 2;
         left = Math.Max(0, Math.Min(left, Math.Max(0, EditOverlay.ActualWidth - w)));

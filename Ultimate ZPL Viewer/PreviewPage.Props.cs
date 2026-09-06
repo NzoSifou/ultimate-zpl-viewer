@@ -355,15 +355,6 @@ public sealed partial class PreviewPage
         panel.Children.Add(Row(PL("reverse"), reverse));
     }
 
-    // A control kept between rebuilds is still a child of the row it was in — the
-    // panel is cleared, but the row grid it held is not — and adding it to a second
-    // parent throws. Every reused control comes through here first.
-    private static T Detached<T>(T control) where T : FrameworkElement
-    {
-        if (control.Parent is Panel panel) panel.Children.Remove(control);
-        return control;
-    }
-
     private TextBox NewDataBox()
     {
         var box = new TextBox
@@ -439,7 +430,11 @@ public sealed partial class PreviewPage
         // out to a few lines when one letter at a time is not enough to read.
         if (_facts.DataStart >= 0)
         {
-            _dataBox = Detached(_dataBox ?? NewDataBox());
+            // Built fresh, never carried over: a control kept between rebuilds is
+            // still a child of the row it was in — the panel is cleared, the row grid
+            // it held is not — and adding it to a second parent throws. Detaching it
+            // by hand worked until it did not; not keeping it cannot fail at all.
+            _dataBox = NewDataBox();
             _fillingProps = true;
             try { if (_dataBox.FocusState == FocusState.Unfocused) _dataBox.Text = _facts.Data ?? ""; }
             finally { _fillingProps = false; }
@@ -451,11 +446,12 @@ public sealed partial class PreviewPage
         // the element being edited.
         if (spec is not null)
         {
-            _kindBox = Detached(_kindBox ?? NewKindBox());
+            var kinds = NewKindBox();
             _fillingProps = true;
-            try { _kindBox.SelectedIndex = Array.FindIndex(BarcodeCatalog.All, s => s.Key == spec.Key); }
+            try { kinds.SelectedIndex = Array.FindIndex(BarcodeCatalog.All, s => s.Key == spec.Key); }
             finally { _fillingProps = false; }
-            panel.Children.Add(Row(PL("symbology"), _kindBox));
+            _kindBox = kinds;
+            panel.Children.Add(Row(PL("symbology"), kinds));
         }
 
         // A 1D symbol is sized by the height of its bars, a 2D one by the size of

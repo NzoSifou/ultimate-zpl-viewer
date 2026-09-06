@@ -780,7 +780,8 @@
                                     <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
                                     <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
                                 </StackPanel.Resources>
-                                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                <StackPanel x:Name="SelectionToolsRow"
+                                            Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                                     <Button x:Name="RotateElementButton"
                                             Width="28" Height="26" MinWidth="0" Padding="0"
                                             CornerRadius="5">

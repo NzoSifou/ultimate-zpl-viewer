@@ -124,6 +124,19 @@ public sealed partial class PreviewPage
             Content = content,
             Placement = FlyoutPlacementMode.Right,
         };
+        // A flyout wraps whatever it is given in a scroller, and a grid of tiles
+        // that fits exactly still earns itself a pair of scrollbars along the edges.
+        // There is nothing here to scroll.
+        var bare = new Style(typeof(FlyoutPresenter));
+        foreach (var (property, value) in new (DependencyProperty, object)[]
+                 {
+                     (ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled),
+                     (ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled),
+                     (ScrollViewer.HorizontalScrollModeProperty, ScrollMode.Disabled),
+                     (ScrollViewer.VerticalScrollModeProperty, ScrollMode.Disabled),
+                 })
+            bare.Setters.Add(new Setter(property, value));
+        flyout.FlyoutPresenterStyle = bare;
         _openPicker = flyout;
         return flyout;
     }

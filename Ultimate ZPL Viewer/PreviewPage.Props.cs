@@ -66,6 +66,18 @@ public sealed partial class PreviewPage
     private void RefreshSelectionProperties()
     {
         if (_selStart < 0) { _facts = null; return; }
+        if (HasMultiSelection)
+        {
+            // Nothing in this row means anything for several elements at once.
+            _facts = null;
+            SelectionData.Visibility = Visibility.Collapsed;
+            SelectionKind.Visibility = Visibility.Collapsed;
+            SelectionMoreButton.Visibility = Visibility.Collapsed;
+            SelectionMoreButton.IsChecked = false;
+            EditImageButton.Visibility = Visibility.Collapsed;
+            ShowWarning(null);
+            return;
+        }
         _facts = ZplPatcher.Read(_currentText, _selStart, _selEnd);
 
         _fillingProps = true;

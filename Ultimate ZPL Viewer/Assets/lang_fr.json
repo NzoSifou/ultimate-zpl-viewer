@@ -2205,7 +2205,8 @@
       "delete": "Supprimer l'élément (Suppr)",
       "forward": "Avancer d'un rang (dessiné par-dessus le suivant)",
       "backward": "Reculer d'un rang (dessiné sous le précédent)",
-      "image": "Modifier l’image (taille, noir et blanc, écriture)"
+      "image": "Modifier l’image (taille, noir et blanc, écriture)",
+      "several": "{0} éléments"
     }
   }
 }

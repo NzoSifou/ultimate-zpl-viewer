@@ -58,7 +58,7 @@ public sealed partial class PreviewPage
         // closes the gesture, the others find nothing left to do.
         Root.AddHandler(UIElement.PointerReleasedEvent,
             new PointerEventHandler(PreviewCanvas_PointerReleased), true);
-        PreviewScrollViewer.PointerCaptureLost += (_, _) => FinishDrag();
+        PreviewScrollViewer.PointerCaptureLost += (_, _) => { CancelBand(); FinishDrag(); };
         RotateElementButton.Click += RotateElementButton_Click;
         // Arrow-key nudging only makes sense while the preview itself has focus,
         // which it takes when an element is picked — never while the caret is in
@@ -95,9 +95,32 @@ public sealed partial class PreviewPage
         var hit = DrawableAt(e.GetCurrentPoint(null).Position, e.GetCurrentPoint(PreviewCanvas).Position);
         if (hit is null || hit.SourceStart < 0)
         {
-            // Empty space: drop the selection, and leave the event alone so the
-            // press still pans the view.
+            // Empty label: pull a band across it and take everything it touches.
+            // A press that never travels ends as a click on nothing, which drops
+            // the selection — what this did before.
+            if (BeginBand(e)) return;
             ClearInspectSelection();
+            return;
+        }
+
+        // Ctrl: add this element to what is already held, or take it back out.
+        if (IsHeld(VirtualKey.Control))
+        {
+            e.Handled = true;
+            ToggleSelected(hit.SourceStart, hit.SourceEnd);
+            PreviewCursorHost.Focus(FocusState.Pointer);
+            return;
+        }
+
+        // Pressing INSIDE a selection of several keeps them all: that press is the
+        // start of moving the group, not a new pick.
+        if (HasMultiSelection && _selected.Contains(hit.SourceStart))
+        {
+            e.Handled = true;
+            if (_selStart != hit.SourceStart) PromoteTo(hit.SourceStart);
+            PreviewCursorHost.Focus(FocusState.Pointer);
+            if (CanMoveElements && ZplPatcher.CanMove(_currentText, _selStart, _selEnd))
+                StartDrag(e);
             return;
         }
 
@@ -125,7 +148,12 @@ public sealed partial class PreviewPage
         // move tool is for — the whole point of having two.
         if (!CanMoveElements) return;
         if (!ZplPatcher.CanMove(_currentText, _selStart, _selEnd)) return;
+        StartDrag(e);
+    }
 
+    /// <summary>Opens the move gesture on whatever is held.</summary>
+    private void StartDrag(PointerRoutedEventArgs e)
+    {
         _dragging = true;
         _dragMoved = false;
         _dragDx = _dragDy = 0;
@@ -143,6 +171,7 @@ public sealed partial class PreviewPage
     private void PreviewCanvas_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
         if (IsEditingInPlace) { InPlacePointerMoved(e); return; }
+        if (_banding) { UpdateBand(e); return; }
         if (_placing) { UpdatePlacement(e); return; }
         if (!_dragging) return;
         // The button came back up somewhere we never heard about (outside the
@@ -177,6 +206,7 @@ public sealed partial class PreviewPage
     private void PreviewCanvas_PointerReleased(object sender, PointerRoutedEventArgs e)
     {
         if (IsEditingInPlace) { InPlacePointerReleased(); return; }
+        if (_banding) { FinishBand(e.GetCurrentPoint(PreviewCanvas).Position); return; }
         if (_placing) { FinishPlacement(e.GetCurrentPoint(PreviewCanvas).Position); return; }
         FinishDrag();
 
@@ -228,9 +258,13 @@ public sealed partial class PreviewPage
         // flip, so what the pointer did on screen is the opposite of what the
         // field's own coordinates have to do.
         var (fx, fy) = ContentFlip();
-        var edit = ZplPatcher.Move(_currentText, _selStart, _selEnd,
-                                   dx * fx, dy * fy, SelectedDpmm, snapDots);
-        if (edit is { } value) ApplyEdit(value);
+        // Every held field, in one edit and one step of undo. Each rewrites its own
+        // ^FO, so the ranges never overlap.
+        var edits = new List<ZplPatcher.Edit>();
+        foreach (var (start, end) in SelectedSpans())
+            if (ZplPatcher.Move(_currentText, start, end, dx * fx, dy * fy, SelectedDpmm, snapDots)
+                is { } move) edits.Add(move);
+        if (edits.Count > 0) ApplyEdits(edits);
     }
 
     private void RotateElementButton_Click(object sender, RoutedEventArgs e)
@@ -248,7 +282,15 @@ public sealed partial class PreviewPage
     {
         // Ctrl+Z is a page-wide accelerator now (RegisterShortcuts): it has to work
         // whether the focus landed on the preview, the toolbar or nowhere at all.
-        if (!_editMode || _selStart < 0 || _dragging) return;
+        if (!_editMode || _dragging) return;
+        // Ctrl+A takes everything the label draws, whether or not anything is held.
+        if (e.Key == VirtualKey.A && IsHeld(VirtualKey.Control))
+        {
+            e.Handled = true;
+            SelectAllFields();
+            return;
+        }
+        if (_selStart < 0) return;
         // This handler sits on an ancestor of the preview, so every key pressed
         // inside the in-place box passes through it on its way up. While there is a
         // caret in the words, the keys are the caret's: Backspace rubs out a letter
@@ -274,7 +316,8 @@ public sealed partial class PreviewPage
             case VirtualKey.F2:
             case VirtualKey.Enter:
                 e.Handled = true;
-                BeginInPlace(selectAll: true);
+                // Typing goes into one field; there is no caret for a group.
+                if (!HasMultiSelection) BeginInPlace(selectAll: true);
                 return;
             default: return;
         }
@@ -311,6 +354,8 @@ public sealed partial class PreviewPage
             int delta = edit.Text.Length - (edit.End - edit.Start);
             if (_selStart >= 0 && edit.Start >= _selStart && edit.End <= _selEnd) _selEnd += delta;
         }
+
+        ShiftSelection(valid);
 
         // The same edits are applied HERE as well, right away, rather than waiting
         // for Monaco to echo the document back. Two changes in quick succession —
@@ -354,13 +399,15 @@ public sealed partial class PreviewPage
     private void CollectDragElements()
     {
         _dragElements.Clear();
+        var held = new HashSet<int>(_selected);
         foreach (var (element, drawable) in _hitMap)
         {
-            if (drawable.SourceStart != _selStart || drawable.SourceEnd != _selEnd) continue;
+            if (!held.Contains(drawable.SourceStart)) continue;
             EnableTranslation(element);
             _dragElements.Add(element);
         }
         if (_inspectFrame is not null) EnableTranslation(_inspectFrame);
+        foreach (var frame in _extraFrames) EnableTranslation(frame);
     }
 
     // UIElement.Translation is a composition facade, and a XAML element ignores it
@@ -380,8 +427,9 @@ public sealed partial class PreviewPage
         var (fx, fy) = ContentFlip();
         var shift = new Vector3((float)(_dragDx * fx), (float)(_dragDy * fy), 0);
         foreach (var element in _dragElements) element.Translation = shift;
-        if (_inspectFrame is not null)
-            _inspectFrame.Translation = new Vector3((float)_dragDx, (float)_dragDy, 0);
+        var frameShift = new Vector3((float)_dragDx, (float)_dragDy, 0);
+        if (_inspectFrame is not null) _inspectFrame.Translation = frameShift;
+        foreach (var frame in _extraFrames) frame.Translation = frameShift;
         UpdateSelectionTools();
     }
 
@@ -446,12 +494,17 @@ public sealed partial class PreviewPage
         }
         catch { ClearHandles(); SelectionTools.Visibility = Visibility.Collapsed; return; }
 
-        RotateElementButton.Visibility = ZplPatcher.CanRotate(_currentText, _selStart, _selEnd)
+        // A group is moved, copied and deleted; everything else — the turn, the
+        // order, the properties — is about one element and waits for one.
+        RotateElementButton.Visibility = !HasMultiSelection
+            && ZplPatcher.CanRotate(_currentText, _selStart, _selEnd)
             ? Visibility.Visible : Visibility.Collapsed;
         ToolTipService.SetToolTip(RotateElementButton, TipBlock(LocalizationService.Get("mode.act.rotate")));
         ToolTipService.SetToolTip(DuplicateElementButton, TipBlock(LocalizationService.Get("mode.act.duplicate")));
         ToolTipService.SetToolTip(DeleteElementButton, TipBlock(LocalizationService.Get("mode.act.delete")));
-        SelectionCoords.Text = SelectionPositionText();
+        SelectionCoords.Text = HasMultiSelection
+            ? string.Format(LocalizationService.Get("mode.act.several"), _selected.Count)
+            : SelectionPositionText();
         SelectionCoords.Visibility = SelectionCoords.Text.Length > 0
             ? Visibility.Visible : Visibility.Collapsed;
         // The content field, the symbology picker and the "…" button (Props.cs).
@@ -481,6 +534,21 @@ public sealed partial class PreviewPage
         double left = box.Left + (box.Width - w) / 2;
         left = Math.Max(0, Math.Min(left, Math.Max(0, EditOverlay.ActualWidth - w)));
         top = Math.Max(0, Math.Min(top, Math.Max(0, EditOverlay.ActualHeight - h)));
+
+        // The tool plate floats over the same corner and is drawn above this bar: a
+        // bar sliding under it loses its first buttons, and an element near the left
+        // edge of the label puts it there every time.
+        if (EditToolbar.Visibility == Visibility.Visible)
+        {
+            try
+            {
+                var plate = EditToolbar.TransformToVisual(EditOverlay).TransformBounds(
+                    new Rect(0, 0, EditToolbar.ActualWidth, EditToolbar.ActualHeight));
+                if (top < plate.Bottom && top + h > plate.Top && left < plate.Right + 8)
+                    left = Math.Min(plate.Right + 8, Math.Max(0, EditOverlay.ActualWidth - w));
+            }
+            catch { }
+        }
 
         Canvas.SetLeft(SelectionTools, left);
         Canvas.SetTop(SelectionTools, top);

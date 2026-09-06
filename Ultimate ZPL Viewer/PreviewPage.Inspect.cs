@@ -158,6 +158,10 @@ public sealed partial class PreviewPage
     {
         _selStart = start;
         _selEnd = end;
+        // Picking one element is picking ONE element: whatever else was held goes.
+        // Ctrl+click and the band are the two ways to keep more (PreviewPage.Multi.cs).
+        _selected.Clear();
+        _selected.Add(start);
         UpdateInspectFrame();
 
         var colour = AccentHex();
@@ -179,6 +183,8 @@ public sealed partial class PreviewPage
     private void ClearInspectSelection()
     {
         _selStart = _selEnd = -1;
+        _selected.Clear();
+        UpdateExtraFrames();
         if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
         ClearHandles();
         UpdateSelectionTools();
@@ -192,6 +198,7 @@ public sealed partial class PreviewPage
         if (!InspectOn || _selStart < 0)
         {
             if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
+            UpdateExtraFrames();
             UpdateSelectionTools();
             return;
         }
@@ -253,6 +260,7 @@ public sealed partial class PreviewPage
         Canvas.SetTop(_inspectFrame, box.Y - pad);
         _inspectFrame.Visibility = Visibility.Visible;
         UpdateInspectFrameThickness();
+        UpdateExtraFrames();
         UpdateSelectionTools();
     }
 

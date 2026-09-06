@@ -2205,6 +2205,7 @@
       "delete": "Delete the element (Del)",
       "forward": "Bring forward (drawn over the next one)",
       "backward": "Send backward (drawn under the previous one)",
+      "several": "{0} elements",
       "image": "Change the image (size, black and white, encoding)"
     }
   }

@@ -41,7 +41,8 @@ public sealed partial class PreviewPage
     private void UpdateOrderButtons()
     {
         var order = FieldOrder();
-        int index = _selStart < 0 ? -1 : SelectedFieldIndex(order);
+        // Stepping past a neighbour is a question about one element.
+        int index = _selStart < 0 || HasMultiSelection ? -1 : SelectedFieldIndex(order);
         bool canForward = index >= 0 && index < order.Count - 1;
         bool canBackward = index > 0;
 

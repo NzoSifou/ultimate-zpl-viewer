@@ -47,7 +47,7 @@ public sealed partial class PreviewPage
     {
         // Pulling a corner changes the label, so it belongs to the move tool for the
         // same reason dragging does.
-        if (!CanMoveElements) return Array.Empty<Grip>();
+        if (!CanMoveElements || HasMultiSelection) return Array.Empty<Grip>();
         // The canvas is turned: a handle dragged right would resize downwards, and
         // guessing wrong is worse than not offering the handle.
         if (Math.Abs(_rotationDegrees) > 0.5) return Array.Empty<Grip>();
@@ -258,23 +258,42 @@ public sealed partial class PreviewPage
         if (_selStart < 0) return;
         double dpmm = SelectedDpmm > 0 ? SelectedDpmm : 8;
         double step = Math.Round(2 * dpmm);      // 2 mm, so the copy is visibly its own
-        var edit = ZplPatcher.Duplicate(_currentText, _selStart, _selEnd, step, step, dpmm);
-        if (edit is not { } value) return;
 
-        // Follow the copy: it is the one the user is about to move.
-        int at = value.Start + 1;                // past the newline the copy opens with
-        ApplyEdit(value);
-        SelectSpan(at, at + (value.Text.Length - 1), revealInEditor: false, moveCaret: true);
+        var edits = new List<ZplPatcher.Edit>();
+        foreach (var (start, end) in SelectedSpans())
+            if (ZplPatcher.Duplicate(_currentText, start, end, step, step, dpmm) is { } copy)
+                edits.Add(copy);
+        if (edits.Count == 0) return;
+
+        // Follow the copies: they are what the user is about to move. Each is a pure
+        // insertion, so one lands as far past its own point as everything inserted
+        // before it is long.
+        var starts = new List<int>();
+        int shift = 0;
+        foreach (var edit in edits.OrderBy(e => e.Start))
+        {
+            starts.Add(edit.Start + shift + 1);  // past the newline the copy opens with
+            shift += edit.Text.Length;
+        }
+
+        ApplyEdits(edits);
+        _selected.Clear();
+        _selected.AddRange(starts);
+        _selStart = starts[^1];
+        _selEnd = _selStart + (edits[^1].Text.Length - 1);
+        UpdateInspectFrame();
         PreviewCursorHost.Focus(FocusState.Programmatic);
     }
 
     private void DeleteSelection()
     {
         if (_selStart < 0) return;
-        var edit = ZplPatcher.Delete(_currentText, _selStart, _selEnd);
-        if (edit is not { } value) return;
+        var edits = new List<ZplPatcher.Edit>();
+        foreach (var (start, end) in SelectedSpans())
+            if (ZplPatcher.Delete(_currentText, start, end) is { } cut) edits.Add(cut);
+        if (edits.Count == 0) return;
         ClearInspectSelection();
-        ApplyEdit(value);
+        ApplyEdits(edits);
         PreviewCursorHost.Focus(FocusState.Programmatic);
     }
 }

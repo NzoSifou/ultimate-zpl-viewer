@@ -316,14 +316,19 @@ public sealed partial class PreviewPage
     {
         var on = (Style)Application.Current.Resources["AccentButtonStyle"];
         var off = (Style)Application.Current.Resources["DefaultButtonStyle"];
-        var onInk = ThemeInkOnAccent.Foreground;
-        var offInk = ThemeInk.Foreground;
 
         void Dress(Button button, bool active, params Shape[] shapes)
         {
             button.Style = active ? on : off;
-            var ink = active ? onInk : offInk;
-            button.Foreground = ink;
+            // The ink is the BUTTON's own, read back after the style has been put
+            // on it. Both styles set a foreground - the accent one for words on the
+            // accent colour, the default one for words on the plate - and both do it
+            // with a theme resource, so the answer is right in either theme and
+            // follows a theme change on its own. Asking the application for the
+            // brush instead answers for the APPLICATION's theme, which this page
+            // does not necessarily wear.
+            button.ClearValue(Control.ForegroundProperty);
+            var ink = button.Foreground;
             foreach (var shape in shapes)
             {
                 // An outline shape is drawn by its stroke, a solid one by its fill.

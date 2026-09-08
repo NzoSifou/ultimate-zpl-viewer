@@ -32,9 +32,9 @@
          to be deployed…"). À false, le projet se lance comme un simple .exe. -->
     <EnableMsixTooling>false</EnableMsixTooling>
     <Nullable>enable</Nullable>
-    <Version>1.5.0</Version>
-    <FileVersion>1.5.0.0</FileVersion>
-    <AssemblyVersion>1.5.0.0</AssemblyVersion>
+    <Version>1.5.1</Version>
+    <FileVersion>1.5.1.0</FileVersion>
+    <AssemblyVersion>1.5.1.0</AssemblyVersion>
     <!-- Editeur / auteur, visible dans les proprietes du fichier .exe. -->
     <Authors>Enzo Monchanin (NzoSifou)</Authors>
     <Company>Enzo Monchanin (NzoSifou)</Company>
@@ -133,5 +133,44 @@
     <!-- Never trim: the app serialises AppSettings via reflection and pulls in
          WinUI/Win2D/PDFtoImage native bits that the trimmer would strip. -->
     <PublishTrimmed>false</PublishTrimmed>
+    <!-- CsWinRT's AOT optimiser turns itself on in Release and rewrites the casts
+         the XAML compiler emits in Connect() - the x:Name wiring - to go through
+         statically registered vtables. A type it did not register comes back as a
+         bare IInspectable and the cast throws, killing the app at startup with no
+         window and a stowed exception nobody can catch. It cost 1.5.0 its launch
+         day. The app is not published AOT, so the optimiser buys nothing here. -->
+    <CsWinRTAotOptimizerEnabled>false</CsWinRTAotOptimizerEnabled>
   </PropertyGroup>
+
+  <!-- The compiled XAML has to be published as well.
+
+       The WinUI targets compile every .xaml to a .xbf and index them, with the
+       rest of the resources, in <AssemblyName>.pri. Both land in the BUILD
+       output, and neither is in the list `dotnet publish` copies - so running
+       from bin\ worked and running the published app did not. An unpackaged app
+       reads its XAML from those two files: without them every page came up with
+       nothing in it, the generated x:Name wiring was handed raw IInspectables,
+       the first cast threw, and the process died before showing a window with a
+       stowed exception no handler can catch. It cost 1.5.0 its launch day. -->
+  <Target Name="PublishCompiledXaml" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <_CompiledXaml Include="$(OutDir)*.xbf" />
+      <_CompiledXaml Include="$(OutDir)$(AssemblyName).pri" />
+      <ResolvedFileToPublish Include="@(_CompiledXaml)">
+        <RelativePath>%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+  <!-- And the build fails rather than shipping an application that cannot start.
+       The failure this catches is invisible until the published exe is run on a
+       machine, which is exactly the thing nobody does before handing out an
+       installer. -->
+  <Target Name="CheckPublishedXaml" AfterTargets="Publish">
+    <Error Condition="!Exists('$(PublishDir)$(AssemblyName).pri')"
+           Text="La publication ne contient pas $(AssemblyName).pri : l'application ne demarrerait pas (XAML introuvable)." />
+    <Error Condition="!Exists('$(PublishDir)PreviewPage.xbf')"
+           Text="La publication ne contient pas les .xbf : l'application ne demarrerait pas (XAML compile introuvable)." />
+  </Target>
 </Project>

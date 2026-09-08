@@ -6,6 +6,45 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.5.1] — 2026-09-08 — la 1.5.0 ne démarrait pas
+
+Correctif d'urgence. Le programme d'installation de la 1.5.0 s'installait
+normalement et l'application ne se lançait pas : aucune fenêtre, aucun message,
+sur toutes les machines. Cette version ne contient que la correction, et rien
+d'autre.
+
+### 🐛 Corrigé
+
+- **L'application publiée ne démarrait pas** 🚀
+  Les outils WinUI compilent chaque fichier `.xaml` en `.xbf` et les indexent,
+  avec le reste des ressources, dans un fichier `.pri`. Les deux arrivent bien
+  dans le dossier de **compilation** — et ne font pas partie de la liste que
+  `dotnet publish` recopie. L'application lancée depuis `bin\` fonctionnait donc,
+  celle du programme d'installation non.
+
+  Une application non empaquetée lit son XAML dans ces deux fichiers. Sans eux,
+  chaque page s'ouvrait vide : le code généré qui relie les éléments nommés
+  (`x:Name`) recevait des objets non typés, la première conversion échouait, et le
+  processus mourait avant d'afficher quoi que ce soit — une *stowed exception*
+  qu'aucun gestionnaire ne peut intercepter, d'où le silence complet.
+
+  Les deux fichiers sont maintenant publiés, et **la compilation échoue** si
+  jamais ils venaient à manquer : ce défaut est invisible tant que l'exécutable
+  publié n'est pas réellement lancé, ce que personne ne fait avant de distribuer
+  un installateur.
+
+### 🔧 Détails
+
+- Les icônes des plaques prennent leur couleur du bouton qui les porte, lue après
+  que son style a été posé : les deux styles définissent une couleur de texte avec
+  une ressource de thème, donc la réponse est juste dans les deux thèmes et suit
+  un changement de thème toute seule. Elle passait auparavant par deux éléments
+  nommés dans le XAML, ce qui ajoutait deux conversions à un endroit qui venait
+  précisément de se révéler fragile.
+- Vérifié en lançant l'exécutable **publié**, pas seulement celui de compilation.
+
+---
+
 ## [1.5.0] — 2026-09-07 — mode édition : dessiner l'étiquette
 
 L'application savait montrer une étiquette ; elle sait maintenant la faire. Un

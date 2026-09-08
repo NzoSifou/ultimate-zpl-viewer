@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -64,7 +64,7 @@ public sealed partial class PreviewPage
             {
                 if (!silent)
                     await ShowMessageAsync(SL("update.upToDate.title"),
-                        SL("update.upToDate.desc").Replace("{version}", UpdateService.CurrentVersion()));
+                        SL("update.upToDate.desc").Replace("{version}", ThreeNumbers(UpdateService.CurrentVersion())));
                 return;
             }
 
@@ -118,7 +118,7 @@ public sealed partial class PreviewPage
         });
         var facts = new List<string>
         {
-            SL("update.current").Replace("{version}", UpdateService.CurrentVersion()),
+            SL("update.current").Replace("{version}", ThreeNumbers(UpdateService.CurrentVersion())),
         };
         if (check.Asset is { Size: > 0 } sized) facts.Add(UpdateService.FormatSize(sized.Size));
         if (check.PublishedAt is { } when)

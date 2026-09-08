@@ -1477,6 +1477,7 @@
       "toolbar": "Barre d'outils",
       "screen": "Écran",
       "virtualPrinter": "Imprimante virtuelle",
+      "commandLine": "Ligne de commande",
       "about": "À propos"
     },
     "general": {
@@ -1494,10 +1495,6 @@
         "reset": {
           "title": "Réinitialiser les paramètres",
           "desc": "Rétablit tous les paramètres à leurs valeurs par défaut."
-        },
-        "tabPath": {
-          "title": "Afficher le chemin lors du survol d'un onglet",
-          "desc": "Affiche le chemin complet entre parenthèses dans l'info-bulle d'un onglet."
         },
         "pngQuality": {
           "title": "Qualité de l'export PNG",
@@ -1698,10 +1695,6 @@
           "title": "Taille des règles",
           "desc": "Épaisseur des bandes de règles."
         },
-        "selWidth": {
-          "title": "Taille de la sélection",
-          "desc": "Épaisseur du cadre d'inspection sur l'aperçu, en pixels."
-        },
         "startMode": {
           "title": "Mode au démarrage",
           "desc": "Dans quel mode un document s'ouvre. « Dernier utilisé » rouvre le logiciel dans le mode que vous aviez quitté."
@@ -1739,7 +1732,8 @@
       "sec": {
         "modePlate": "Plaque de changement de mode",
         "toolPlate": "Plaque d'outils (mode édition)",
-        "elementPlate": "Barre de l'élément sélectionné"
+        "elementPlate": "Barre de l'élément sélectionné",
+        "selection": "Cadre de sélection"
       },
       "cards": {
         "modePos": {
@@ -1761,6 +1755,10 @@
         "elementSide": {
           "title": "Emplacement de la barre",
           "desc": "Où la barre d'outils vient se poser par rapport à l'élément sélectionné."
+        },
+        "frameWidth": {
+          "title": "Taille de la sélection",
+          "desc": "Épaisseur du cadre d'inspection sur l'aperçu, en pixels."
         }
       },
       "opt": {
@@ -1904,7 +1902,8 @@
           "Système",
           "Personnalisé"
         ]
-      }
+      },
+      "openLangFile": "Ouvrir le fichier de cette langue"
     },
     "toolbar": {
       "title": "Barre d'outils",
@@ -1959,6 +1958,42 @@
         "dlgTitle": "Imprimante virtuelle"
       }
     },
+    "commandLine": {
+      "title": "Ligne de commande",
+      "subtitle": "Ultimate ZPL Viewer s'ouvre, se règle et convertit des étiquettes depuis un terminal ou un script.",
+      "sec": {
+        "open": "Ouverture",
+        "convert": "Conversion sans interface",
+        "other": "Autre",
+        "examples": "Exemples"
+      },
+      "desc": {
+        "open": "L'application s'ouvre normalement, avec le fichier demandé.",
+        "convert": "Aucune fenêtre ne s'ouvre : le fichier est converti puis le programme se termine. Il faut au moins un --pdf ou un --png.",
+        "other": ""
+      },
+      "opt": {
+        "file": "Ouvre ce fichier ZPL dans l'application.",
+        "hide": "Masque des zones au démarrage : « editor », « toolbar », ou les deux séparées par une virgule. Ce masquage vaut pour ce lancement seulement et n'est pas enregistré.",
+        "pdf": "Convertit l'étiquette en PDF vectoriel, à l'emplacement donné.",
+        "png": "Convertit l'étiquette en image PNG, à l'emplacement donné.",
+        "dpmm": "Densité de rendu en points par millimètre. Par défaut 8, soit 203 dpi.",
+        "rotate": "Rotation appliquée à l'étiquette, en degrés. Par défaut 0.",
+        "margin": "Marge ajoutée sur les quatre côtés. Par défaut 0.",
+        "unit": "Unité de la marge : millimètres, centimètres ou pouces. Par défaut mm.",
+        "output": "Accepté par commodité et sans effet : la destination réelle est celle de --pdf ou --png.",
+        "help": "Affiche cette liste dans le terminal qui a lancé l'application."
+      },
+      "example": {
+        "open": "Ouvrir une étiquette",
+        "hide": "Ouvrir sans le volet de code",
+        "pdf": "Convertir en PDF, sans ouvrir de fenêtre",
+        "png": "Convertir en PNG à 12 points/mm (305 dpi)"
+      },
+      "lbl": {
+        "copy": "Copier la commande"
+      }
+    },
     "about": {
       "title": "À propos",
       "subtitle": "Informations sur l'application.",
@@ -1992,6 +2027,10 @@
         "autoUpdate": {
           "title": "Vérifier au démarrage",
           "desc": "Interroge GitHub au lancement et prévient seulement si une version plus récente existe."
+        },
+        "cli": {
+          "title": "Utilisable en ligne de commande",
+          "desc": "Ouvrir une étiquette, masquer un volet, convertir en PDF ou en PNG sans ouvrir de fenêtre."
         }
       },
       "lbl": {
@@ -2000,7 +2039,8 @@
         "copyrightText": "© {year} Enzo Monchanin. Tous droits réservés.",
         "checkUpdates": "Rechercher",
         "checking": "Recherche…",
-        "lastCheck": "Dernière vérification : {date}."
+        "lastCheck": "Dernière vérification : {date}.",
+        "cliMore": "En savoir plus"
       }
     },
     "png": {

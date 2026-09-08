@@ -54,9 +54,29 @@ public sealed partial class PreviewPage
     // of a fresh installation, and printing straight to a printer nobody has named
     // is not something to do without asking.
     private bool DefaultsAreFixed =>
-        _settings.DefaultPrinter != "last"
+        HasNamedPrinter
         && _settings.CopiesMode == "fixed" && _settings.LayoutMode == "fixed"
         && _settings.MarginsMode == "fixed" && _settings.PerPageMode == "fixed";
+
+    /// <summary>
+    /// Whether the default printer names one that is actually there. A name is not
+    /// enough on its own: a printer chosen once and unplugged since names nothing
+    /// any more, and quick print would send a job into the dark.
+    /// </summary>
+    private bool HasNamedPrinter
+    {
+        get
+        {
+            var chosen = _settings.DefaultPrinter;
+            if (string.IsNullOrWhiteSpace(chosen) || chosen == "last") return false;
+            try
+            {
+                return GetInstalledPrinters()
+                    .Any(p => string.Equals(p, chosen, StringComparison.OrdinalIgnoreCase));
+            }
+            catch { return false; }
+        }
+    }
 
     // The values the dialog opens on: each one either a fixed default or whatever
     // the last print used.
@@ -573,6 +593,11 @@ public sealed partial class PreviewPage
             _settings.DefaultPrinter = printerBox.SelectedIndex <= 0
                 ? "last" : printerBox.SelectedItem?.ToString() ?? "last";
             _settings.Save();
+            // Quick print depends on this one as much as on the four below it, and
+            // nothing was telling it so: the switch was worked out once when the
+            // page was built and never again, so whatever it said when the page
+            // opened is what it went on saying.
+            RefreshQuickAvailability();
             ApplyPrintButtonTooltip();
         };
         panel.Children.Add(MakeCard("", SL("print.cards.printer.title"),

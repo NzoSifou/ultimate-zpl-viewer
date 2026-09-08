@@ -48,7 +48,20 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   d'avance. L'imprimante en fait partie : « dernière imprimante sélectionnée »
   n'est pas une réponse au premier lancement d'une installation neuve, et lancer
   une impression sur une imprimante que personne n'a nommée n'est pas une chose à
-  faire sans demander.
+  faire sans demander. L'imprimante choisie doit aussi être présente : une
+  imprimante sélectionnée un jour et débranchée depuis ne nomme plus rien.
+
+  Et la liste des imprimantes ne prévenait personne quand on en changeait : l'état
+  du bouton était calculé une fois à l'ouverture de la page et plus jamais, si
+  bien que ce qu'il disait en arrivant était ce qu'il disait pour toujours.
+
+- **La mise à jour proposait de revenir en arrière** ⬇️
+  Elle compare d'abord l'empreinte du programme d'installation, ce qui répond à
+  « est-ce le même build ? » — une autre question. Remplacez le fichier d'une
+  version publiée et toutes les machines qui avaient installé l'ancien diffèrent
+  de lui, y compris celles qui font tourner quelque chose de **plus récent** :
+  on leur proposait la version qu'elles avaient déjà quittée. Une version
+  inférieure n'est plus jamais proposée.
 
 - **« Mode au démarrage » avait une largeur à lui** 🧱
   La carte était ajoutée en dehors de la grille de la page et prenait la largeur

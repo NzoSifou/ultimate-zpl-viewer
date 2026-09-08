@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -176,12 +176,20 @@ public static class UpdateService
     /// </summary>
     private static bool IsNewer(ReleaseAsset? asset, string tag, string? name)
     {
+        var local = ParseVersion(CurrentVersion());
+        var remote = ParseVersion(tag) ?? ParseVersion(name ?? "");
+
+        // Never a step backwards, whatever the hashes say. The hash answers "is
+        // this the same build?", which is not the same question: replace a
+        // release's file and every machine that installed the old one differs
+        // from it - including machines running something NEWER, which were then
+        // being offered the version they had already left behind.
+        if (local is not null && remote is not null && remote < local) return false;
+
         var mine = InstalledSetupSha256();
         if (mine is not null && asset?.Sha256 is { } theirs)
             return !string.Equals(mine, theirs, StringComparison.OrdinalIgnoreCase);
 
-        var local = ParseVersion(CurrentVersion());
-        var remote = ParseVersion(tag) ?? ParseVersion(name ?? "");
         return local is not null && remote is not null && remote > local;
     }
 

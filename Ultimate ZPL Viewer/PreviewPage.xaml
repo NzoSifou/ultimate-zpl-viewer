@@ -131,17 +131,6 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Two probes, and nothing else. Icons drawn as shapes are painted from
-             code, and asking Application.Current for a theme brush answers for the
-             APPLICATION's theme - which this page does not necessarily wear: it
-             carries its own, and "Dark & light preview" is exactly that. An element
-             inside the page is the only thing that knows which theme is in force,
-             so these two carry the answer for the rest of the code to read. -->
-        <TextBlock x:Name="ThemeInk" Visibility="Collapsed"
-                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-        <TextBlock x:Name="ThemeInkOnAccent" Visibility="Collapsed"
-                   Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"/>
-
         <Border x:Name="ToolbarBorder" Grid.Row="0"
                 BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                 BorderThickness="0,0,0,1">

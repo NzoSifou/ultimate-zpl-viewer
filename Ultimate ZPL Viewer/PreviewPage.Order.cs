@@ -49,7 +49,9 @@ public sealed partial class PreviewPage
         ForwardElementButton.Visibility = canForward ? Visibility.Visible : Visibility.Collapsed;
         BackwardElementButton.Visibility = canBackward ? Visibility.Visible : Visibility.Collapsed;
 
-        var ink = ThemeInk.Foreground;
+        // The buttons these icons sit in carry the right ink for the theme in
+        // force: it is what their own style put there.
+        var ink = ForwardElementButton.Foreground;
         foreach (var shape in new Shape[]
                  {
                      ForwardIconBack, ForwardIconBack2, ForwardIconFront,

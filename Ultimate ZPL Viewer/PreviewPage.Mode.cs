@@ -81,11 +81,11 @@ public sealed partial class PreviewPage
         var off = (Style)Application.Current.Resources["DefaultButtonStyle"];
         ViewModeButton.Style = _editMode ? off : on;
         EditModeButton.Style = _editMode ? on : off;
-        // The glyph has to be told which foreground it now sits on.
-        var onInk = ThemeInkOnAccent.Foreground;
-        var offInk = ThemeInk.Foreground;
-        ViewModeIcon.Foreground = _editMode ? offInk : onInk;
-        EditModeIcon.Foreground = _editMode ? onInk : offInk;
+        // The glyphs take the foreground of the button they sit in, which each
+        // style has just set with a theme resource: right in either theme, and it
+        // follows a theme change on its own.
+        ViewModeIcon.ClearValue(IconElement.ForegroundProperty);
+        EditModeIcon.ClearValue(IconElement.ForegroundProperty);
         ToolTipService.SetToolTip(ViewModeButton, TipBlock(LocalizationService.Get("mode.view")));
         ToolTipService.SetToolTip(EditModeButton, TipBlock(LocalizationService.Get("mode.edit")));
     }

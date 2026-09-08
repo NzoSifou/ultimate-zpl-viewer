@@ -1804,7 +1804,7 @@
         "quick": {
           "title": "Quick print",
           "desc": "The Print button prints straight away, without opening the window.",
-          "blocked": "Unavailable while one of the settings below reuses the last value: the values would not be known in advance."
+          "blocked": "Unavailable while the printer or one of the settings below is set to the last value used: the values would not be known in advance. The printer chosen also has to be one that is there."
         },
         "copies": {
           "title": "Default copies",

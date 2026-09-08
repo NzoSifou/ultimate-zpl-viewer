@@ -1804,7 +1804,7 @@
         "quick": {
           "title": "Impression rapide",
           "desc": "Le bouton « Imprimer » lance l'impression directement, sans ouvrir la fenêtre.",
-          "blocked": "Indisponible tant qu'un des réglages ci-dessous reprend la dernière valeur utilisée : les valeurs ne seraient pas connues d'avance."
+          "blocked": "Indisponible tant que l'imprimante ou l'un des réglages ci-dessous reprend la dernière valeur utilisée : les valeurs ne seraient pas connues d'avance. L'imprimante choisie doit aussi être présente."
         },
         "copies": {
           "title": "Nombre d'exemplaires par défaut",

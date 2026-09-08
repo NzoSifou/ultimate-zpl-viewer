@@ -32,9 +32,9 @@
          to be deployed…"). À false, le projet se lance comme un simple .exe. -->
     <EnableMsixTooling>false</EnableMsixTooling>
     <Nullable>enable</Nullable>
-    <Version>1.5.1</Version>
-    <FileVersion>1.5.1.0</FileVersion>
-    <AssemblyVersion>1.5.1.0</AssemblyVersion>
+    <Version>1.5.0</Version>
+    <FileVersion>1.5.0.0</FileVersion>
+    <AssemblyVersion>1.5.0.0</AssemblyVersion>
     <!-- Editeur / auteur, visible dans les proprietes du fichier .exe. -->
     <Authors>Enzo Monchanin (NzoSifou)</Authors>
     <Company>Enzo Monchanin (NzoSifou)</Company>
@@ -137,8 +137,8 @@
          the XAML compiler emits in Connect() - the x:Name wiring - to go through
          statically registered vtables. A type it did not register comes back as a
          bare IInspectable and the cast throws, killing the app at startup with no
-         window and a stowed exception nobody can catch. It cost 1.5.0 its launch
-         day. The app is not published AOT, so the optimiser buys nothing here. -->
+         window and a stowed exception nobody can catch. The app is not published
+         AOT, so the optimiser buys nothing here. -->
     <CsWinRTAotOptimizerEnabled>false</CsWinRTAotOptimizerEnabled>
   </PropertyGroup>
 
@@ -151,7 +151,8 @@
        reads its XAML from those two files: without them every page came up with
        nothing in it, the generated x:Name wiring was handed raw IInspectables,
        the first cast threw, and the process died before showing a window with a
-       stowed exception no handler can catch. It cost 1.5.0 its launch day. -->
+       stowed exception no handler can catch - no window, no message, nothing to
+       go on but the crash log. -->
   <Target Name="PublishCompiledXaml" AfterTargets="ComputeFilesToPublish">
     <ItemGroup>
       <_CompiledXaml Include="$(OutDir)*.xbf" />

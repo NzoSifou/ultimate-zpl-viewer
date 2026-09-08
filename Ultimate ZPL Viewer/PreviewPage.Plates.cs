@@ -277,7 +277,7 @@ public sealed partial class PreviewPage
             Height = horizontal ? double.NaN : 12,
         };
         grip.Children.Add(bar);
-        try { grip.SetCursor(InputSystemCursor.Create(InputSystemCursorShape.SizeAll)); } catch { }
+        try { grip.SetCursor(SystemCursor(InputSystemCursorShape.SizeAll)); } catch { }
         ToolTipService.SetToolTip(grip, TipBlock(SL("editMode.lbl.dragPlate")));
 
         grip.PointerPressed += (_, e) =>
@@ -358,6 +358,22 @@ public sealed partial class PreviewPage
             SL("editMode.cards.toolPos.desc"), null, PlacementEditor(mode: false)));
         panel.Children.Add(MakeCard("\uE745", SL("editMode.cards.toolDir.title"),
             SL("editMode.cards.toolDir.desc"), OrientationBox(mode: false)));
+
+        panel.Children.Add(SubHeader(SL("editMode.sec.selection")));
+        var frameWidth = new NumberBox
+        {
+            Value = _settings.InspectFrameThickness, Minimum = 1, Maximum = 10, SmallChange = 1,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact, MinWidth = 96,
+        };
+        frameWidth.ValueChanged += (_, _) =>
+        {
+            if (double.IsNaN(frameWidth.Value)) return;
+            _settings.InspectFrameThickness = (int)Math.Clamp(frameWidth.Value, 1, 10);
+            _settings.Save();
+            UpdateInspectFrameThickness();
+        };
+        panel.Children.Add(MakeCard("\uE8B3", SL("editMode.cards.frameWidth.title"),
+            SL("editMode.cards.frameWidth.desc"), frameWidth));
 
         panel.Children.Add(SubHeader(SL("editMode.sec.elementPlate")));
         panel.Children.Add(MakeCard("\uE8A1", SL("editMode.cards.elementSide.title"),

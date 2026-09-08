@@ -1477,6 +1477,7 @@
       "toolbar": "Toolbar",
       "screen": "Screen",
       "virtualPrinter": "Virtual printer",
+      "commandLine": "Command line",
       "about": "About"
     },
     "general": {
@@ -1494,10 +1495,6 @@
         "reset": {
           "title": "Reset settings",
           "desc": "Restores all settings to their default values."
-        },
-        "tabPath": {
-          "title": "Show path on tab hover",
-          "desc": "Shows the full path in parentheses in a tab's tooltip."
         },
         "pngQuality": {
           "title": "PNG export quality",
@@ -1698,10 +1695,6 @@
           "title": "Ruler size",
           "desc": "Thickness of the ruler bands."
         },
-        "selWidth": {
-          "title": "Selection size",
-          "desc": "Thickness of the inspect frame on the preview, in pixels."
-        },
         "startMode": {
           "title": "Start-up mode",
           "desc": "Which mode a document opens in. “Last used” reopens the application in whichever mode you left it."
@@ -1739,7 +1732,8 @@
       "sec": {
         "modePlate": "Mode switch plate",
         "toolPlate": "Tool plate (edit mode)",
-        "elementPlate": "Selected element's strip"
+        "elementPlate": "Selected element's strip",
+        "selection": "Selection frame"
       },
       "cards": {
         "modePos": {
@@ -1761,6 +1755,10 @@
         "elementSide": {
           "title": "Where the strip sits",
           "desc": "Where the strip of tools comes to rest in relation to the selected element."
+        },
+        "frameWidth": {
+          "title": "Selection thickness",
+          "desc": "Thickness of the inspect frame on the preview, in pixels."
         }
       },
       "opt": {
@@ -1904,7 +1902,8 @@
           "System",
           "Custom"
         ]
-      }
+      },
+      "openLangFile": "Open this language's file"
     },
     "toolbar": {
       "title": "Toolbar",
@@ -1959,6 +1958,42 @@
         "dlgTitle": "Virtual printer"
       }
     },
+    "commandLine": {
+      "title": "Command line",
+      "subtitle": "Ultimate ZPL Viewer opens, is set up and converts labels from a terminal or a script.",
+      "sec": {
+        "open": "Opening",
+        "convert": "Converting, with no window",
+        "other": "Other",
+        "examples": "Examples"
+      },
+      "desc": {
+        "open": "The application opens as usual, with the file asked for.",
+        "convert": "No window opens: the file is converted and the program ends. At least one of --pdf or --png is needed.",
+        "other": ""
+      },
+      "opt": {
+        "file": "Opens this ZPL file in the application.",
+        "hide": "Hides parts of the window at startup: \"editor\", \"toolbar\", or both separated by a comma. It applies to this launch only and is not remembered.",
+        "pdf": "Converts the label to a vector PDF, at the path given.",
+        "png": "Converts the label to a PNG image, at the path given.",
+        "dpmm": "Rendering density in dots per millimetre. 8 by default, which is 203 dpi.",
+        "rotate": "Rotation applied to the label, in degrees. 0 by default.",
+        "margin": "Margin added on all four sides. 0 by default.",
+        "unit": "Unit for the margin: millimetres, centimetres or inches. mm by default.",
+        "output": "Accepted for convenience and does nothing: the real destination is the one --pdf or --png carries.",
+        "help": "Prints this list in the terminal that launched the application."
+      },
+      "example": {
+        "open": "Open a label",
+        "hide": "Open without the code pane",
+        "pdf": "Convert to PDF, with no window",
+        "png": "Convert to PNG at 12 dots/mm (305 dpi)"
+      },
+      "lbl": {
+        "copy": "Copy the command"
+      }
+    },
     "about": {
       "title": "About",
       "subtitle": "Application information.",
@@ -1992,6 +2027,10 @@
         "autoUpdate": {
           "title": "Check at startup",
           "desc": "Asks GitHub at launch and speaks up only when a newer version exists."
+        },
+        "cli": {
+          "title": "Works from the command line",
+          "desc": "Open a label, hide a pane, convert to PDF or PNG without opening a window."
         }
       },
       "lbl": {
@@ -2000,7 +2039,8 @@
         "copyrightText": "© {year} Enzo Monchanin. All rights reserved.",
         "checkUpdates": "Check",
         "checking": "Checking…",
-        "lastCheck": "Last checked: {date}."
+        "lastCheck": "Last checked: {date}.",
+        "cliMore": "Learn more"
       }
     },
     "png": {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -49,8 +49,13 @@ public sealed partial class PreviewPage
         if (chosen is not null) await RunPrintAsync(chosen);
     }
 
+    // Every answer the print dialog would ask for has to be settled in advance,
+    // the printer included: "the last one used" is not an answer on the first run
+    // of a fresh installation, and printing straight to a printer nobody has named
+    // is not something to do without asking.
     private bool DefaultsAreFixed =>
-        _settings.CopiesMode == "fixed" && _settings.LayoutMode == "fixed"
+        _settings.DefaultPrinter != "last"
+        && _settings.CopiesMode == "fixed" && _settings.LayoutMode == "fixed"
         && _settings.MarginsMode == "fixed" && _settings.PerPageMode == "fixed";
 
     // The values the dialog opens on: each one either a fixed default or whatever

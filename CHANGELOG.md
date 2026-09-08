@@ -6,6 +6,64 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.5.1] — 2026-09-08 — la ligne de commande, et huit corrections
+
+### ✨ Ajouté
+
+- **Une page pour la ligne de commande** ⌨️
+  L'application répond à une poignée d'options, et le seul moyen de l'apprendre
+  était de la lancer avec `--help` depuis un terminal — ce que personne ne fait
+  avec un logiciel qu'on ouvre en double-cliquant. La même liste est maintenant
+  dans les paramètres, mise en page pour être lue : une carte par famille
+  d'options, l'option à gauche dans la police d'un terminal, ce qu'elle fait à
+  droite, et quatre exemples que l'on copie d'un bouton. « À propos » y renvoie.
+
+- **Le fichier de langue s'ouvre d'un clic** 🌐
+  Un bouton à côté de la liste des langues ouvre le fichier JSON de celle qui est
+  sélectionnée, pour qui traduit ou corrige.
+
+### 🔄 Modifié
+
+- **Le chemin du fichier s'affiche toujours au survol d'un onglet** 🏷️
+  C'était un réglage. Un réglage est une question qu'il faut poser à quelqu'un, et
+  celle-ci ne coûtait rien à laisser active.
+
+- **« Taille de la sélection » passe dans « Mode édition »** 📐
+  C'est l'épaisseur du cadre qui entoure un élément sélectionné : elle est de ce
+  côté-là.
+
+- **La version n'affiche plus que trois nombres, y compris dans la mise à jour** 🔢
+
+### 🐛 Corrigé
+
+- **« Définir par défaut » restait actif alors que l'application l'était déjà** 📄
+  Windows n'enregistre pas ce choix de la même façon selon la manière dont il a
+  été fait : notre propre identifiant si l'application s'est déclarée, un
+  `Applications\<exe>` si le choix est passé par « Ouvrir avec → Toujours ». Seul
+  le premier était reconnu. La question posée est maintenant celle qui compte :
+  la commande derrière l'identifiant lance-t-elle cet exécutable ?
+
+- **« Impression rapide » restait proposée sans imprimante nommée** 🖨️
+  Elle exige que toutes les réponses de la fenêtre d'impression soient réglées
+  d'avance. L'imprimante en fait partie : « dernière imprimante sélectionnée »
+  n'est pas une réponse au premier lancement d'une installation neuve, et lancer
+  une impression sur une imprimante que personne n'a nommée n'est pas une chose à
+  faire sans demander.
+
+- **« Mode au démarrage » avait une largeur à lui** 🧱
+  La carte était ajoutée en dehors de la grille de la page et prenait la largeur
+  de son contenu, plus étroite qu'une colonne. Elle en fait deux, comme « Zoom par
+  défaut ».
+
+### 🔧 Détails
+
+- Les curseurs système sont créés une fois pour toutes et conservés. `InputCursor`
+  est un objet dont le finaliseur le FERME, et fermer un curseur système libère la
+  poignée que Windows est peut-être en train d'afficher ; les séparateurs en
+  fabriquaient un neuf à chaque passe de mise en page.
+
+---
+
 ## [1.5.0] — 2026-09-07 — mode édition : dessiner l'étiquette
 
 L'application savait montrer une étiquette ; elle sait maintenant la faire. Un

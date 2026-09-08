@@ -228,13 +228,13 @@ public sealed partial class PreviewPage : Page
         EditorSplitter.PointerMoved       += EditorSplitter_PointerMoved;
         EditorSplitter.PointerReleased    += EditorSplitter_PointerReleased;
         EditorSplitter.PointerCaptureLost += (_, _) => _isResizingEditor = false;
-        ErrorPanelSplitter.SetCursor(Microsoft.UI.Input.InputSystemCursor.Create(
+        ErrorPanelSplitter.SetCursor(SystemCursor(
             Microsoft.UI.Input.InputSystemCursorShape.SizeNorthSouth));
         ErrorPanelSplitter.PointerPressed     += ErrorPanelSplitter_PointerPressed;
         ErrorPanelSplitter.PointerMoved       += ErrorPanelSplitter_PointerMoved;
         ErrorPanelSplitter.PointerReleased    += ErrorPanelSplitter_PointerReleased;
         ErrorPanelSplitter.PointerCaptureLost += (_, _) => _isResizingErrorPanel = false;
-        DocPanelSplitter.SetCursor(Microsoft.UI.Input.InputSystemCursor.Create(
+        DocPanelSplitter.SetCursor(SystemCursor(
             Microsoft.UI.Input.InputSystemCursorShape.SizeNorthSouth));
         DocPanelSplitter.PointerPressed     += DocPanelSplitter_PointerPressed;
         DocPanelSplitter.PointerMoved       += DocPanelSplitter_PointerMoved;
@@ -1023,11 +1023,11 @@ public sealed partial class PreviewPage : Page
         EditorCollapseChevron.Glyph = pointLeft ? "" : ""; // ChevronLeft / ChevronRight
         ToolTipService.SetToolTip(EditorCollapseHandle,
             _editorVisible ? "Masquer l'éditeur" : "Afficher l'éditeur");
-        EditorCollapseHandle.SetCursor(Microsoft.UI.Input.InputSystemCursor.Create(
+        EditorCollapseHandle.SetCursor(SystemCursor(
             Microsoft.UI.Input.InputSystemCursorShape.Hand));
 
         // The strip only ever resizes now — the collapse handle owns the toggle.
-        EditorSplitter.SetCursor(Microsoft.UI.Input.InputSystemCursor.Create(
+        EditorSplitter.SetCursor(SystemCursor(
             Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast));
     }
 
@@ -1829,7 +1829,7 @@ public sealed partial class PreviewPage : Page
         }
         catch
         {
-            return Microsoft.UI.Input.InputSystemCursor.Create(fallback);
+            return SystemCursor(fallback);
         }
     }
 
@@ -1904,10 +1904,10 @@ public sealed partial class PreviewPage : Page
     // The four-way arrows: what every drawing application shows over something it
     // is willing to move.
     private static readonly Microsoft.UI.Input.InputCursor MoveCursor =
-        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeAll);
+        SystemCursor(Microsoft.UI.Input.InputSystemCursorShape.SizeAll);
 
     private static readonly Microsoft.UI.Input.InputCursor TextCursor =
-        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.IBeam);
+        SystemCursor(Microsoft.UI.Input.InputSystemCursorShape.IBeam);
 
     // Where the pointer last was, in the label's own coordinates, and whether it
     // is over the preview at all.
@@ -1961,8 +1961,39 @@ public sealed partial class PreviewPage : Page
         return false;
     }
 
+    /// <summary>
+    /// The one cursor for a shape, made once and kept for the life of the process.
+    ///
+    /// InputCursor is a WinRT object whose finaliser CLOSES it, and closing a
+    /// system cursor releases the handle Windows may be showing at that very
+    /// moment: the pointer drops back to the plain arrow - anywhere on screen,
+    /// over this application or another - until something sets a cursor again.
+    /// Making a fresh one on every layout pass, as the splitters did, left a
+    /// stream of them for the collector to close, and the pointer went blank a
+    /// second after it stopped moving. There is one of each now, and nothing to
+    /// collect.
+    /// </summary>
+    internal static Microsoft.UI.Input.InputCursor SystemCursor(
+        Microsoft.UI.Input.InputSystemCursorShape shape)
+    {
+        // Made on demand rather than in a field of its own: the cursors below are
+        // static too, and a static field cannot be relied on to be there when
+        // another static field's initialiser asks for it.
+        var kept = _keptCursors ??= new Dictionary<Microsoft.UI.Input.InputSystemCursorShape,
+                                                   Microsoft.UI.Input.InputCursor>();
+        lock (kept)
+        {
+            if (!kept.TryGetValue(shape, out var cursor))
+                kept[shape] = cursor = Microsoft.UI.Input.InputSystemCursor.Create(shape);
+            return cursor;
+        }
+    }
+
+    private static Dictionary<Microsoft.UI.Input.InputSystemCursorShape,
+                              Microsoft.UI.Input.InputCursor>? _keptCursors;
+
     private static readonly Microsoft.UI.Input.InputCursor CrosshairCursor =
-        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Cross);
+        SystemCursor(Microsoft.UI.Input.InputSystemCursorShape.Cross);
 
     private void PreviewScrollViewer_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
@@ -2669,7 +2700,10 @@ public sealed partial class PreviewPage : Page
         bool active = ReferenceEquals(tab, _activeTab);
         var path = active ? _currentFilePath : tab.FilePath;
         var name = path is null ? LocalizationService.Get("titlebar.untitled") : Path.GetFileName(path);
-        var text = path is not null && _settings.ShowPathInTabTooltip ? $"{name}\n{path}" : name;
+        // Always the full path: it was a setting, and a setting is a question the
+        // person has to answer - this one cost nothing to say yes to and nothing
+        // to leave on.
+        var text = path is not null ? $"{name}\n{path}" : name;
         // A TextBlock, not a ToolTip: the host wraps it in one itself, and a ToolTip
         // handed over ready-made simply never appeared. The width cap is what keeps
         // the box inside the window — anchored on the leftmost tab, a wider one
@@ -3920,6 +3954,9 @@ public sealed partial class PreviewPage : Page
             ["screen"]     = WithThirdWidthCards(BuildScreenSettings()),
             ["printer"]    = WithThirdWidthCards(BuildVirtualPrinterSettings()),
             ["general"]    = WithThirdWidthCards(BuildGeneralSettings()),
+            // Full width: a reference sheet reads as one column of lines, and a
+            // third of the window would wrap every one of them.
+            ["cli"]        = BuildCommandLineSettings(),
             ["about"]      = WithThirdWidthCards(BuildAboutSettings()),
         };
     }
@@ -3933,7 +3970,8 @@ public sealed partial class PreviewPage : Page
         ["general"] = "general", ["doc"] = "document", ["editor"] = "editor",
         ["print"] = "print", ["appearance"] = "appearance", ["toolbar"] = "toolbar",
         ["editmode"] = "editMode",
-        ["screen"] = "screen", ["printer"] = "virtualPrinter", ["about"] = "about",
+        ["screen"] = "screen", ["printer"] = "virtualPrinter",
+        ["cli"] = "commandLine", ["about"] = "about",
     };
 
     private void LocalizeSettingsNav()
@@ -4294,11 +4332,18 @@ public sealed partial class PreviewPage : Page
         };
 
         panel.Children.Add(SubHeader(SL("editor.sub.mode")));
-        // Added straight to the panel rather than through Row(): the height
-        // equalisation the column grid does needs a row with SEVERAL cards, and a
-        // solo one grows without bound and pushes the rest of the page off screen.
-        panel.Children.Add(MakeCard("", SL("editor.cards.startMode.title"),
-            SL("editor.cards.startMode.desc"), startMode));
+        // Two columns wide, like the zoom card, and NOT straight into the panel:
+        // a card added outside the grid takes whatever width its content asks for,
+        // which is narrower than one column and lines up with nothing.
+        var startModeCard = MakeCard("\uE70F", SL("editor.cards.startMode.title"),
+            SL("editor.cards.startMode.desc"), startMode);
+        startModeCard.MaxWidth = double.PositiveInfinity;
+        startModeCard.HorizontalAlignment = HorizontalAlignment.Left;
+        var startModeWrap = new ToolbarWrapPanel();
+        startModeWrap.Children.Add(startModeCard);
+        gridCards.Add((startModeCard, 2));
+        rows.Add(startModeWrap);
+        panel.Children.Add(startModeWrap);
 
         panel.Children.Add(SubHeader(SL("editor.sub.editor")));
         panel.Children.Add(Row(
@@ -4339,19 +4384,6 @@ public sealed partial class PreviewPage : Page
             MakeCard("\uE8A5", SL("editor.cards.editScheme.title"), SL("editor.cards.editScheme.desc"), editSchemeBtn)));
 
         // ── Aperçu ──────────────────────────────────────────────────────────
-        var selWidth = new NumberBox
-        {
-            Value = _settings.InspectFrameThickness, Minimum = 1, Maximum = 10, SmallChange = 1,
-            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact, MinWidth = 96,
-        };
-        selWidth.ValueChanged += (_, _) =>
-        {
-            if (double.IsNaN(selWidth.Value)) return;
-            _settings.InspectFrameThickness = (int)Math.Clamp(selWidth.Value, 1, 10);
-            _settings.Save();
-            UpdateInspectFrameThickness();
-        };
-
         var gridToggle = MakeToggle(_settings.ShowPreviewGrid);
         gridToggle.Toggled += (_, _) => SetPreviewGrid(gridToggle.IsOn);
         _gridToggle = gridToggle;
@@ -4441,8 +4473,7 @@ public sealed partial class PreviewPage : Page
             MakeCard("\uE80A", SL("editor.cards.gridSpacing.title"), SL("editor.cards.gridSpacing.desc"), gridSpacingRow),
             MakeCard("\uE790", SL("editor.cards.gridColor.title"), SL("editor.cards.gridColor.desc"), gridColorBtn),
             MakeCard("\uE7AD", SL("editor.cards.rotation.title"), SL("editor.cards.rotation.desc"), rotation),
-            MakeCard("\uE7B3", SL("editor.cards.previewCaption.title"), SL("editor.cards.previewCaption.desc"), captionToggle),
-            MakeCard("\uE8B3", SL("editor.cards.selWidth.title"), SL("editor.cards.selWidth.desc"), selWidth)));
+            MakeCard("\uE7B3", SL("editor.cards.previewCaption.title"), SL("editor.cards.previewCaption.desc"), captionToggle)));
 
         // \u2500\u2500 R\u00E8gles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         var rulerH = MakeToggle(_settings.ShowRulerHorizontal);
@@ -4690,9 +4721,31 @@ public sealed partial class PreviewPage : Page
         {
             Content = new TextBlock { Text = SL("appearance.languageInfo"), TextWrapping = TextWrapping.Wrap, MaxWidth = 340 },
         });
+        // The file itself, for anyone translating or correcting one: the list
+        // says which language is in force, and this opens exactly its file.
+        var openLang = new Button
+        {
+            Width = 34, Height = 32, MinWidth = 0, Padding = new Thickness(0),
+            Margin = new Thickness(6, 0, 0, 0),
+            Content = new FontIcon { Glyph = "\uE8A7", FontSize = 14 },
+        };
+        ToolTipService.SetToolTip(openLang, TipBlock(SL("appearance.openLangFile")));
+        openLang.Click += (_, _) =>
+        {
+            if (language.SelectedIndex < 0 || language.SelectedIndex >= langs.Count) return;
+            var file = System.IO.Path.Combine(
+                LocalizationService.LanguagesDir, langs[language.SelectedIndex].Code + ".json");
+            try
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(file) { UseShellExecute = true });
+            }
+            catch { /* nothing is associated with .json, or the file went away */ }
+        };
         var langRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         langRow.Children.Add(langInfo);
         langRow.Children.Add(language);
+        langRow.Children.Add(openLang);
         panel.Children.Add(MakeCard("\uE774", LocalizationService.Get("settings.appearance.languageLabel"),
             LocalizationService.Get("settings.appearance.languageDesc"), langRow));
 
@@ -5164,11 +5217,6 @@ public sealed partial class PreviewPage : Page
         panel.Children.Add(MakeCard("\uE7C3", SL("general.cards.showPath.title"),
             SL("general.cards.showPath.desc"), showPath));
 
-        var tabPath = MakeToggle(_settings.ShowPathInTabTooltip);
-        tabPath.Toggled += (_, _) => { _settings.ShowPathInTabTooltip = tabPath.IsOn; _settings.Save(); RefreshAllTabHeaders(); };
-        panel.Children.Add(MakeCard("\uE8A1", SL("general.cards.tabPath.title"),
-            SL("general.cards.tabPath.desc"), tabPath));
-
         // Where a document lands when the app is already running: the two sources
         // are set independently, so opening from Explorer and from the toolbar can
         // behave differently.
@@ -5299,10 +5347,23 @@ public sealed partial class PreviewPage : Page
         }
         catch { version = SL("about.lbl.unknownVersion"); }
 
+        // The command line, where anyone would look for it: in what the
+        // application says about itself.
+        var cliBtn = new Button { Content = SL("about.lbl.cliMore") };
+        cliBtn.Click += (_, _) =>
+        {
+            SettingsNav.SelectedItem = SettingsNav.MenuItems.OfType<NavigationViewItem>()
+                .FirstOrDefault(i => (i.Tag as string) == "cli");
+            ShowSettingsCategory("cli");
+        };
+
         var copyVersion = new Button { Content = SL("about.lbl.copy") };
         copyVersion.Click += (_, _) => CopyTextToClipboard($"Ultimate ZPL Viewer {version}");
         panel.Children.Add(MakeCard("\uE946", SL("about.cards.version.title"),
             $"Ultimate ZPL Viewer {version}", copyVersion));
+
+        panel.Children.Add(MakeCard("\uE756", SL("about.cards.cli.title"),
+            SL("about.cards.cli.desc"), cliBtn));
 
         // Updates: a button that always answers (including "you are up to date",
         // which is what pressing it is for) and the switch for the startup check.
@@ -6118,9 +6179,9 @@ public sealed partial class ToolbarChipView : Grid
 public sealed partial class ChipListViewItem : ListViewItem
 {
     private static readonly Microsoft.UI.Input.InputCursor Hand =
-        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+        PreviewPage.SystemCursor(Microsoft.UI.Input.InputSystemCursorShape.Hand);
     private static readonly Microsoft.UI.Input.InputCursor Grab =
-        Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeAll);
+        PreviewPage.SystemCursor(Microsoft.UI.Input.InputSystemCursorShape.SizeAll);
 
     public ChipListViewItem()
     {

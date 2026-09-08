@@ -1045,6 +1045,9 @@
                     <NavigationViewItem Content="Imprimante virtuelle" Tag="printer">
                         <NavigationViewItem.Icon><FontIcon Glyph="&#xE772;"/></NavigationViewItem.Icon>
                     </NavigationViewItem>
+                    <NavigationViewItem Content="Ligne de commande" Tag="cli">
+                        <NavigationViewItem.Icon><FontIcon Glyph="&#xE756;"/></NavigationViewItem.Icon>
+                    </NavigationViewItem>
                     <NavigationViewItem Content="À propos" Tag="about">
                         <NavigationViewItem.Icon><FontIcon Glyph="&#xE946;"/></NavigationViewItem.Icon>
                     </NavigationViewItem>

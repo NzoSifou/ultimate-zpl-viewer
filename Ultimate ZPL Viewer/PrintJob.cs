@@ -80,10 +80,24 @@ public static class PrintJobService
         return DetectMode(printer);
     }
 
+    /// <summary>
+    /// Whether a type has been chosen for this printer, rather than guessed from
+    /// its driver. A chosen type outranks the guess and does not change again.
+    /// </summary>
+    public static bool IsPinned(AppSettings settings, string printer)
+        => settings.PrinterSendModes.ContainsKey(printer);
+
+    /// <summary>Pins the type of one printer. It holds until it is cleared.</summary>
     public static void RememberMode(AppSettings settings, string printer, SendMode mode)
     {
         settings.PrinterSendModes[printer] = mode == SendMode.Raw ? "raw" : "image";
         settings.Save();
+    }
+
+    /// <summary>Hands the printer back to detection.</summary>
+    public static void ForgetMode(AppSettings settings, string printer)
+    {
+        if (settings.PrinterSendModes.Remove(printer)) settings.Save();
     }
 
     // ── Raw ZPL ──────────────────────────────────────────────────────────────

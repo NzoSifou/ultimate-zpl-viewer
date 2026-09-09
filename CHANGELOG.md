@@ -6,7 +6,7 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
-## [1.5.1] — 2026-09-08 — la ligne de commande, et huit corrections
+## [1.5.1] — 2026-09-09 — la ligne de commande, le type des imprimantes, et huit corrections
 
 ### ✨ Ajouté
 
@@ -17,6 +17,21 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   dans les paramètres, mise en page pour être lue : une carte par famille
   d'options, l'option à gauche dans la police d'un terminal, ce qu'elle fait à
   droite, et quatre exemples que l'on copie d'un bouton. « À propos » y renvoie.
+
+- **Chaque imprimante garde son type** 🖨️
+  Windows ne dit jamais « celle-ci est une imprimante d'étiquettes » : l'application
+  lit le nom du pilote et devine. La devinette se corrigeait à la main à chaque
+  impression, et ce qui était choisi s'écrivait en douce — une réponse d'un jour
+  devenait définitive sans le dire.
+
+  Le choix se fait maintenant exprès. Sous le type, dans la fenêtre d'impression,
+  un bouton texte le fixe pour cette imprimante ; la liste affiche alors la réponse
+  au lieu de reposer la question, et le même bouton rend la main. Imprimer n'écrit
+  plus rien.
+
+  Les paramètres listent toutes les imprimantes avec le type que prend chacune et
+  d'où il vient — choisi, ou détecté. En sélectionner une propose trois réponses :
+  les deux types, et la détection automatique, qui nomme ce qu'elle a deviné.
 
 - **Le fichier de langue s'ouvre d'un clic** 🌐
   Un bouton à côté de la liste des langues ouvre le fichier JSON de celle qui est

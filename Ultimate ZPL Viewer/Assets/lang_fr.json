@@ -1801,6 +1801,10 @@
           "title": "Imprimante par défaut",
           "desc": "Imprimante présélectionnée à l'ouverture de l'application."
         },
+        "types": {
+          "title": "Type de chaque imprimante",
+          "desc": "Comment l'étiquette est envoyée à chaque imprimante. Sans choix ici, le type est déduit du pilote."
+        },
         "quick": {
           "title": "Impression rapide",
           "desc": "Le bouton « Imprimer » lance l'impression directement, sans ouvrir la fenêtre.",
@@ -1824,7 +1828,10 @@
         }
       },
       "lbl": {
-        "lastPrinter": "Dernière imprimante sélectionnée"
+        "lastPrinter": "Dernière imprimante sélectionnée",
+        "setDefault": "Définir par défaut",
+        "clearDefault": "Ne plus définir par défaut",
+        "pinned": "Le type est défini pour cette imprimante. « Ne plus définir par défaut » rend la main, et les paramètres listent toutes les imprimantes."
       },
       "layout": {
         "portrait": "Portrait",
@@ -1852,7 +1859,8 @@
       },
       "send": {
         "raw": "Imprimante thermique (ZPL brut)",
-        "image": "Imprimante classique"
+        "image": "Imprimante classique",
+        "rawPlain": "Imprimante thermique : ZPL brut"
       },
       "msg": {
         "title": "Impression",
@@ -1867,6 +1875,12 @@
       },
       "perPage": {
         "summary": "{0} par page"
+      },
+      "types": {
+        "detected": "{0} · détecté",
+        "pick": "Sélectionnez une imprimante pour choisir son type.",
+        "auto": "Détection automatique ({0})",
+        "autoPlain": "Détection automatique"
       }
     },
     "appearance": {

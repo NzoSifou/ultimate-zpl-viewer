@@ -718,6 +718,13 @@ public sealed partial class PreviewPage
 
     // ── One type per printer ─────────────────────────────────────────────────
 
+    // The type's name written to sit inside a bracket. The usual name for the
+    // thermal road carries brackets of its own, and one pair inside another reads
+    // as a typo.
+    private static string PlainTypeName(SendMode mode)
+        => SL(mode == SendMode.Raw ? "print.send.rawPlain" : "print.send.image");
+
+
     /// <summary>
     /// The type of every printer on the machine, listed. Windows never says "this
     /// one is a label printer", so the application reads the driver name and
@@ -798,10 +805,13 @@ public sealed partial class PreviewPage
             GroupName = "PrinterSendMode", Content = SL("print.send.image"),
             IsEnabled = false, MinWidth = 0,
         };
-        var back = new HyperlinkButton
+        // The third choice is the state the printer starts in, so it belongs beside
+        // the other two rather than off to one side: it carries the guess in its own
+        // label, which is the only place the guess is ever spelled out.
+        var autoChoice = new RadioButton
         {
-            Content = SL("print.types.auto"), FontSize = 12,
-            Padding = new Thickness(0), IsEnabled = false,
+            GroupName = "PrinterSendMode", Content = SL("print.types.autoPlain"),
+            IsEnabled = false, MinWidth = 0,
         };
 
         bool syncing = false;
@@ -812,13 +822,17 @@ public sealed partial class PreviewPage
             chosen.Text = current ?? SL("print.types.pick");
             chosen.Opacity = current is null ? 0.6 : 1;
             chosen.FontWeight = current is null ? FontWeights.Normal : FontWeights.SemiBold;
-            rawChoice.IsEnabled = imageChoice.IsEnabled = current is not null;
-            back.IsEnabled = current is not null && PrintJobService.IsPinned(_settings, current);
+            rawChoice.IsEnabled = imageChoice.IsEnabled = autoChoice.IsEnabled = current is not null;
+            autoChoice.Content = current is null
+                ? SL("print.types.autoPlain")
+                : string.Format(SL("print.types.auto"), PlainTypeName(PrintJobService.DetectMode(current)));
 
             syncing = true;
-            var mode = current is null ? (SendMode?)null : PrintJobService.ModeFor(_settings, current);
+            bool pinned = current is not null && PrintJobService.IsPinned(_settings, current);
+            var mode = pinned ? PrintJobService.ModeFor(_settings, current!) : (SendMode?)null;
             rawChoice.IsChecked = mode == SendMode.Raw;
             imageChoice.IsChecked = mode == SendMode.Image;
+            autoChoice.IsChecked = current is not null && !pinned;
             syncing = false;
         }
 
@@ -827,16 +841,14 @@ public sealed partial class PreviewPage
             if (syncing || current is null) return;
             PrintJobService.RememberMode(_settings, current, mode);
             kinds[current].Text = TypeLine(current);
-            back.IsEnabled = true;
         }
         rawChoice.Checked += (_, _) => Pin(SendMode.Raw);
         imageChoice.Checked += (_, _) => Pin(SendMode.Image);
-        back.Click += (_, _) =>
+        autoChoice.Checked += (_, _) =>
         {
-            if (current is null) return;
+            if (syncing || current is null) return;
             PrintJobService.ForgetMode(_settings, current);
             kinds[current].Text = TypeLine(current);
-            ShowChoice();
         };
         list.SelectionChanged += (_, _) =>
         {
@@ -848,7 +860,7 @@ public sealed partial class PreviewPage
         choice.Children.Add(chosen);
         choice.Children.Add(rawChoice);
         choice.Children.Add(imageChoice);
-        choice.Children.Add(back);
+        choice.Children.Add(autoChoice);
 
         var stackBody = new StackPanel { Spacing = 12 };
         stackBody.Children.Add(frame);

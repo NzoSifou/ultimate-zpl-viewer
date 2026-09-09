@@ -1859,7 +1859,8 @@
       },
       "send": {
         "raw": "Imprimante thermique (ZPL brut)",
-        "image": "Imprimante classique"
+        "image": "Imprimante classique",
+        "rawPlain": "Imprimante thermique : ZPL brut"
       },
       "msg": {
         "title": "Impression",
@@ -1878,7 +1879,8 @@
       "types": {
         "detected": "{0} · détecté",
         "pick": "Sélectionnez une imprimante pour choisir son type.",
-        "auto": "Revenir à la détection automatique"
+        "auto": "Détection automatique ({0})",
+        "autoPlain": "Détection automatique"
       }
     },
     "appearance": {

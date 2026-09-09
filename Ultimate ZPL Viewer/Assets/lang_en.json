@@ -1859,7 +1859,8 @@
       },
       "send": {
         "raw": "Thermal printer (raw ZPL)",
-        "image": "Classic printer"
+        "image": "Classic printer",
+        "rawPlain": "Thermal printer: raw ZPL"
       },
       "msg": {
         "title": "Printing",
@@ -1878,7 +1879,8 @@
       "types": {
         "detected": "{0} · detected",
         "pick": "Select a printer to choose its type.",
-        "auto": "Back to automatic detection"
+        "auto": "Automatic detection ({0})",
+        "autoPlain": "Automatic detection"
       }
     },
     "appearance": {

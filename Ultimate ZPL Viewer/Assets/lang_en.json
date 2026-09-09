@@ -1801,6 +1801,10 @@
           "title": "Default printer",
           "desc": "Printer preselected when the application opens."
         },
+        "types": {
+          "title": "Type of each printer",
+          "desc": "How the label reaches each printer. With nothing chosen here, the type is worked out from the driver."
+        },
         "quick": {
           "title": "Quick print",
           "desc": "The Print button prints straight away, without opening the window.",
@@ -1824,7 +1828,10 @@
         }
       },
       "lbl": {
-        "lastPrinter": "Last selected printer"
+        "lastPrinter": "Last selected printer",
+        "setDefault": "Set as default",
+        "clearDefault": "Clear the default",
+        "pinned": "The type is set for this printer. “Clear the default” hands it back, and the settings list every printer."
       },
       "layout": {
         "portrait": "Portrait",
@@ -1867,6 +1874,11 @@
       },
       "perPage": {
         "summary": "{0} per sheet"
+      },
+      "types": {
+        "detected": "{0} · detected",
+        "pick": "Select a printer to choose its type.",
+        "auto": "Back to automatic detection"
       }
     },
     "appearance": {

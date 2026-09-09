@@ -180,8 +180,16 @@ public sealed partial class PreviewPage
         Grid.SetColumn(marginUnit, 1);
         marginRow.Children.Add(marginUnit);
 
+        // The type is a guess until somebody settles it. This button settles it for
+        // this printer, once: the combo then reads the answer rather than asking the
+        // question again at every print. The same button takes it back, so the
+        // choice is never a one-way door.
+        var pinType = new HyperlinkButton { Padding = new Thickness(0, 2, 0, 0), FontSize = 12 };
+
         right.Children.Add(Field(SL("print.field.printer"), printerBox));
-        right.Children.Add(Field(SL("print.field.send"), modeBox));
+        var sendField = Field(SL("print.field.send"), modeBox);
+        sendField.Children.Add(pinType);
+        right.Children.Add(sendField);
         right.Children.Add(Field(SL("print.field.copies"), copiesBox));
         right.Children.Add(Field(SL("print.field.perPage"), perPageBox));
         right.Children.Add(Field(SL("print.field.layout"), layoutBox));
@@ -247,11 +255,30 @@ public sealed partial class PreviewPage
             previewHost.Child = BuildPrintPreview(job);
         }
 
+        // A pinned printer answers the question itself: the combo shows the answer
+        // and refuses to be argued with, and the button offers to take it back.
+        void ApplyPinLook()
+        {
+            bool pinned = PrintJobService.IsPinned(_settings, job.Printer);
+            modeBox.IsEnabled = !pinned;
+            pinType.Content = SL(pinned ? "print.lbl.clearDefault" : "print.lbl.setDefault");
+            ToolTipService.SetToolTip(modeBox, pinned ? SL("print.lbl.pinned") : null);
+        }
+        pinType.Click += (_, _) =>
+        {
+            if (PrintJobService.IsPinned(_settings, job.Printer))
+                PrintJobService.ForgetMode(_settings, job.Printer);
+            else
+                PrintJobService.RememberMode(_settings, job.Printer, job.Mode);
+            ApplyPinLook();
+        };
+
         printerBox.SelectionChanged += (_, _) =>
         {
             if (printerBox.SelectedItem is not string p) return;
             job = job with { Printer = p, Mode = PrintJobService.ModeFor(_settings, p) };
             modeBox.SelectedIndex = job.Mode == SendMode.Raw ? 0 : 1;
+            ApplyPinLook();
             ApplyModeConstraints();
             Refresh();
         };
@@ -305,6 +332,7 @@ public sealed partial class PreviewPage
         };
 
         modeBox.SelectedIndex = job.Mode == SendMode.Raw ? 0 : 1;
+        ApplyPinLook();
         ApplyModeConstraints();
         loading = false;
         Refresh();
@@ -331,8 +359,10 @@ public sealed partial class PreviewPage
             if (e.Key is Windows.System.VirtualKey.Enter) e.Handled = true;
         };
 
+        // Printing does NOT pin the type. It used to, which made a one-off choice
+        // permanent without saying so; the "set as default" button is now the only
+        // thing that writes the mapping, and it says so before it does.
         if (await ShowDialogAsync(dialog) != ContentDialogResult.Primary) return null;
-        PrintJobService.RememberMode(_settings, job.Printer, job.Mode);
         return job;
     }
 
@@ -603,6 +633,8 @@ public sealed partial class PreviewPage
         panel.Children.Add(MakeCard("", SL("print.cards.printer.title"),
             SL("print.cards.printer.desc"), printerBox));
 
+        panel.Children.Add(PrinterTypeCard(printers));
+
         // The three dual-mode defaults.
         var copies = new NumberBox
         {
@@ -681,6 +713,150 @@ public sealed partial class PreviewPage
 
         RefreshQuickAvailability();
         return panel;
+    }
+
+
+    // ── One type per printer ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// The type of every printer on the machine, listed. Windows never says "this
+    /// one is a label printer", so the application reads the driver name and
+    /// guesses; this is where a guess is overruled, printer by printer, and the
+    /// answer then holds for every print.
+    /// <para>
+    /// Both choices stay on show and are greyed until a printer is picked, rather
+    /// than appearing on selection: the card keeps one height, and what is on offer
+    /// can be read before anything is chosen.
+    /// </para>
+    /// </summary>
+    private FrameworkElement PrinterTypeCard(IReadOnlyList<string> printers)
+    {
+        string TypeLine(string printer)
+        {
+            var mode = PrintJobService.ModeFor(_settings, printer);
+            var kind = SL(mode == SendMode.Raw ? "print.send.raw" : "print.send.image");
+            return PrintJobService.IsPinned(_settings, printer)
+                ? kind
+                : string.Format(SL("print.types.detected"), kind);
+        }
+
+        FrameworkElement body;
+        if (printers.Count == 0)
+        {
+            body = new TextBlock
+            {
+                Text = SL("print.msg.noPrinter"), Opacity = 0.6, FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+            };
+            return MakeCard("", SL("print.cards.types.title"),
+                            SL("print.cards.types.desc"), null, expanded: body);
+        }
+
+        // Single selection, no checkboxes: the WinUI list already marks the chosen
+        // row with the accent bar down its left edge.
+        var kinds = new Dictionary<string, TextBlock>(StringComparer.OrdinalIgnoreCase);
+        var list = new ListView { SelectionMode = ListViewSelectionMode.Single, MaxHeight = 176 };
+        foreach (var printer in printers)
+        {
+            var kind = new TextBlock
+            {
+                Text = TypeLine(printer), FontSize = 12, Opacity = 0.6,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+            };
+            kinds[printer] = kind;
+            var stack = new StackPanel();
+            stack.Children.Add(new TextBlock { Text = printer, TextTrimming = TextTrimming.CharacterEllipsis });
+            stack.Children.Add(kind);
+            list.Items.Add(new ListViewItem
+            {
+                Content = stack, Tag = printer,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            });
+        }
+
+        var frame = new Border
+        {
+            Child = list,
+            Background = (Brush)Application.Current.Resources["CardBackgroundFillColorSecondaryBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+        };
+
+        var chosen = new TextBlock
+        {
+            Text = SL("print.types.pick"), Opacity = 0.6,
+            TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 0, 0, 2),
+        };
+        var rawChoice = new RadioButton
+        {
+            GroupName = "PrinterSendMode", Content = SL("print.send.raw"),
+            IsEnabled = false, MinWidth = 0,
+        };
+        var imageChoice = new RadioButton
+        {
+            GroupName = "PrinterSendMode", Content = SL("print.send.image"),
+            IsEnabled = false, MinWidth = 0,
+        };
+        var back = new HyperlinkButton
+        {
+            Content = SL("print.types.auto"), FontSize = 12,
+            Padding = new Thickness(0), IsEnabled = false,
+        };
+
+        bool syncing = false;
+        string? current = null;
+
+        void ShowChoice()
+        {
+            chosen.Text = current ?? SL("print.types.pick");
+            chosen.Opacity = current is null ? 0.6 : 1;
+            chosen.FontWeight = current is null ? FontWeights.Normal : FontWeights.SemiBold;
+            rawChoice.IsEnabled = imageChoice.IsEnabled = current is not null;
+            back.IsEnabled = current is not null && PrintJobService.IsPinned(_settings, current);
+
+            syncing = true;
+            var mode = current is null ? (SendMode?)null : PrintJobService.ModeFor(_settings, current);
+            rawChoice.IsChecked = mode == SendMode.Raw;
+            imageChoice.IsChecked = mode == SendMode.Image;
+            syncing = false;
+        }
+
+        void Pin(SendMode mode)
+        {
+            if (syncing || current is null) return;
+            PrintJobService.RememberMode(_settings, current, mode);
+            kinds[current].Text = TypeLine(current);
+            back.IsEnabled = true;
+        }
+        rawChoice.Checked += (_, _) => Pin(SendMode.Raw);
+        imageChoice.Checked += (_, _) => Pin(SendMode.Image);
+        back.Click += (_, _) =>
+        {
+            if (current is null) return;
+            PrintJobService.ForgetMode(_settings, current);
+            kinds[current].Text = TypeLine(current);
+            ShowChoice();
+        };
+        list.SelectionChanged += (_, _) =>
+        {
+            current = (list.SelectedItem as ListViewItem)?.Tag as string;
+            ShowChoice();
+        };
+
+        var choice = new StackPanel { Spacing = 2 };
+        choice.Children.Add(chosen);
+        choice.Children.Add(rawChoice);
+        choice.Children.Add(imageChoice);
+        choice.Children.Add(back);
+
+        var stackBody = new StackPanel { Spacing = 12 };
+        stackBody.Children.Add(frame);
+        stackBody.Children.Add(choice);
+        body = stackBody;
+
+        return MakeCard("", SL("print.cards.types.title"),
+                        SL("print.cards.types.desc"), null, expanded: body);
     }
 
     // A default that is either "whatever was used last" or a value typed here. The

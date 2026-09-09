@@ -28,7 +28,37 @@
     "zoomReset": "Reset zoom (100 %)",
     "widthTooLarge": "Width exceeds 50 cm: the preview is capped at 50 cm.",
     "heightTooLarge": "Height exceeds 50 cm: the preview is capped at 50 cm.",
-    "sizeCapped": "capped"
+    "sizeCapped": "capped",
+    "transform": "Transform"
+  },
+  "transform": {
+    "title": "Transform the document",
+    "apply": "Transform",
+    "cancel": "Cancel",
+    "density": {
+      "title": "Convert the density",
+      "desc": "Every length is worked out again. The label keeps the size it has in the real world: the numbers change, the format does not.",
+      "current": "The file's current density: {0}",
+      "none": "Do not convert"
+    },
+    "rotate": {
+      "title": "Turn the document",
+      "desc": "Every field is placed again and its orientation advanced. A quarter turn swaps the label's width and height too.",
+      "none": "Do not turn",
+      "deg": "Turn by {0}°"
+    },
+    "result": "Afterwards: {0} × {1} mm at {2}.",
+    "notes": {
+      "title": "Left alone",
+      "unsupported": "{0} carries a size the engine does not rewrite (line {1}).",
+      "units": "{0} writes the coordinates in inches or millimetres: they do not depend on the density (line {1}).",
+      "declared": "{0} states the label's density and is not changed (line {1}).",
+      "image": "{0} could not be drawn again (line {1})."
+    },
+    "msg": {
+      "empty": "The ZPL document is empty: nothing to transform.",
+      "nothing": "Both choices leave the document as it is."
+    }
   },
   "editor": {
     "shortDescription": {

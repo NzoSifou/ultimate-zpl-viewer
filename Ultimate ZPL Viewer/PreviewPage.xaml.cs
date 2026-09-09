@@ -832,6 +832,7 @@ public sealed partial class PreviewPage : Page
             { ("", "Nouveau fichier"), ("", "Ouvrir un fichier"), ("", "Enregistrer") }),
         ("density", "Densité", "", null),
         ("size", "Taille", "", null),
+        ("transform", "Transformer", "", null),
         ("rotate", "Tourner", "", null),
         ("zoom", "Zoom", "", null),
         ("download", "Téléchargement", "", new[]
@@ -844,6 +845,7 @@ public sealed partial class PreviewPage : Page
         "file"     => FileGroup,
         "density"  => DensityGroup,
         "size"     => SizeGroup,
+        "transform" => TransformGroup,
         "rotate"   => RotateGroup,
         "zoom"     => ZoomGroup,
         "download" => DownloadGroup,
@@ -872,6 +874,7 @@ public sealed partial class PreviewPage : Page
         SaveText.Text     = T("save");
         SaveAsMenuItem.Text = T("saveAs");
         RotateText.Text   = T("rotate");
+        TransformText.Text = T("transform");
         PdfText.Text      = T("pdf");
         PngText.Text      = T("png");
         PrintText.Text    = T("print");

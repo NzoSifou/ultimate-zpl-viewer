@@ -299,18 +299,56 @@ public static partial class ZplRenderer
                 data = data.Replace("-", " - ", StringComparison.Ordinal);
             }
 
-            if (fbActive && fbWidth > 0 && orientation == 0)
+            if (fbActive && fbWidth > 0)
             {
-                // ^FB: word-wrap into at most fbLines lines of fbWidth dots. With ^FT
-                // the baseline of the FIRST line sits (maxLines-1) line-heights above
-                // the anchor (the block is top-justified in its reserved band).
+                // ^FB: word-wrap into at most fbLines lines of fbWidth dots.
+                //
+                // The block is laid out in its own reading frame — u along the line,
+                // v down the lines — and that frame is then turned with the field.
+                // Turning it moves the corner the block hangs from: at 90 degrees
+                // the first line is the RIGHTMOST column, not the topmost row.
                 double lineHeight = font.Height + fbSpacing;
                 var lines = WrapFieldBlock(data, font, condenseW, fbWidth, fbLines);
-                double startY = typeset ? fy - (fbLines - 1) * lineHeight : fy;
+                double blockW = fbWidth, blockH = fbLines * lineHeight;
+
+                // One line to the next, and one dot along the reading direction.
+                (double stepX, double stepY) = orientation switch
+                {
+                    90 => (-lineHeight, 0d),
+                    180 => (0d, -lineHeight),
+                    270 => (lineHeight, 0d),
+                    _ => (0d, lineHeight),
+                };
+                (double readX, double readY) = orientation switch
+                {
+                    90 => (0d, 1d),
+                    180 => (-1d, 0d),
+                    270 => (0d, -1d),
+                    _ => (1d, 0d),
+                };
+
+                // Where line i's own anchor lands. With ^FO that is the top-left of
+                // the line's ROTATED box, the same rule a single field follows; with
+                // ^FT it is a baseline, which is a point of the glyphs and simply
+                // travels with them — the anchor being the LAST line's, the block
+                // being top-justified in the band it reserves.
+                (double X, double Y) Anchor(int i, double off, double lw)
+                {
+                    if (typeset)
+                        return (fx + stepX * (i - (fbLines - 1)) + readX * off,
+                                fy + stepY * (i - (fbLines - 1)) + readY * off);
+                    return orientation switch
+                    {
+                        90 => (fx + blockH - (i + 1) * lineHeight, fy + off),
+                        180 => (fx + blockW - off - lw, fy + blockH - (i + 1) * lineHeight),
+                        270 => (fx + i * lineHeight, fy + blockW - off - lw),
+                        _ => (fx + off, fy + i * lineHeight),
+                    };
+                }
+
                 for (int i = 0; i < lines.Count; i++)
                 {
                     string line = lines[i];
-                    double ly = startY + i * lineHeight;
                     double lw = MeasureTextWidth(line, font) * condenseW;
                     if (fbJust == 'J' && i < lines.Count - 1 && line.Contains(' '))
                     {
@@ -318,25 +356,35 @@ public static partial class ZplRenderer
                         var words = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                         double wordsW = words.Sum(wd => MeasureTextWidth(wd, font)) * condenseW;
                         double gap = words.Length > 1 ? (fbWidth - wordsW) / (words.Length - 1) : 0;
-                        double wx = fx;
+                        double along = 0;
                         foreach (var word in words)
                         {
-                            fieldBuf.Add(new ZplText(wx, ly, word, font.Height, effWidth, font.Family, font.Bold, false, 0, typeset));
-                            wx += MeasureTextWidth(word, font) * condenseW + gap;
+                            double ww = MeasureTextWidth(word, font) * condenseW;
+                            var (wx, wy) = Anchor(i, along, ww);
+                            fieldBuf.Add(new ZplText(wx, wy, word, font.Height, effWidth,
+                                font.Family, font.Bold, false, orientation, typeset));
+                            along += ww + gap;
                         }
                     }
                     else
                     {
-                        double lx = fbJust switch
+                        double off = fbJust switch
                         {
-                            'C' => fx + (fbWidth - lw) / 2,
-                            'R' => fx + (fbWidth - lw),
-                            _   => fx,
+                            'C' => (fbWidth - lw) / 2,
+                            'R' => fbWidth - lw,
+                            _ => 0,
                         };
-                        fieldBuf.Add(new ZplText(lx, ly, line, font.Height, effWidth, font.Family, font.Bold, false, 0, typeset));
+                        var (lx, ly) = Anchor(i, off, lw);
+                        fieldBuf.Add(new ZplText(lx, ly, line, font.Height, effWidth,
+                            font.Family, font.Bold, false, orientation, typeset));
                     }
-                    Grow(fx + fbWidth, ly + font.Height);
                 }
+
+                // The whole band the block reserves, whichever way it reads.
+                bool sideways = orientation is 90 or 270;
+                double farX = fx + (sideways ? blockH : blockW);
+                double farY = fy + (sideways ? blockW : blockH);
+                Grow(Math.Max(fx, farX), Math.Max(fy, farY));
                 return;
             }
 
@@ -357,15 +405,6 @@ public static partial class ZplRenderer
             }
 
             double txX = fx, txY = fy;
-            if (fbActive && fbWidth > 0 && orientation != 0)
-            {
-                // Rotated field block (e.g. GLS FlexDeliveryService): the lines stack
-                // perpendicular to the reading direction.
-                double lineHeight = font.Height + fbSpacing;
-                double lineShift = (fbLines - 1) * lineHeight;
-                if (orientation == 90) txX = fx + lineShift;
-                else if (orientation == 270) txX = fx - lineShift;
-            }
 
             // ^FR text prints white only over a solid black box, otherwise black.
             bool textReverse = reverse;
@@ -1230,6 +1269,72 @@ public static partial class ZplRenderer
             InvertOrientation = poi,
             MirrorImage = mirror,
         };
+    }
+
+    /// <summary>
+    /// The dot-space rectangle a drawable covers, in the label's own coordinates.
+    /// <para>
+    /// Everything but text writes its size in the command itself, so this is exact.
+    /// Text is measured — the same measurement the preview draws with. A rotated ^FO
+    /// text field is already anchored by its ROTATED box (the rule Labelary uses), so
+    /// there the width and the height swap rather than the origin moving.
+    /// </para>
+    /// </summary>
+    public static ZplRect BoundsOf(ZplDrawable drawable)
+    {
+        switch (drawable)
+        {
+            case ZplText t:
+            {
+                double cell = Math.Max(1, t.Height);
+                double condense = t.Height > 0 && t.Width > 0 ? t.Width / t.Height : 1;
+                double w = MeasureTextWidthByFamily(t.Text, t.Font, t.Height, t.Bold) * condense;
+                if (!t.Baseline)
+                    return t.Rotation is 90 or 270
+                        ? new ZplRect(t.X, t.Y, cell, w)
+                        : new ZplRect(t.X, t.Y, w, cell);
+
+                // ^FT: the anchor sits ON the baseline at the start of the run, so the
+                // cell rises above it and the descenders hang below.
+                double up = cell * BaselineFraction, down = cell - up;
+                return t.Rotation switch
+                {
+                    90  => new ZplRect(t.X - up, t.Y - w, cell, w),
+                    180 => new ZplRect(t.X - w, t.Y - down, w, cell),
+                    270 => new ZplRect(t.X - down, t.Y, cell, w),
+                    _   => new ZplRect(t.X, t.Y - up, w, cell),
+                };
+            }
+            case ZplBox b:
+                return new ZplRect(b.X, b.Y, Math.Max(b.Width, b.Thickness), Math.Max(b.Height, b.Thickness));
+            case ZplLine l:
+            {
+                // A right-leaning ^GD is stored with a NEGATIVE height: it starts at
+                // the bottom-left and climbs. The rectangle it covers is the same one
+                // either way round, so both ends are taken.
+                double w = Math.Max(Math.Abs(l.Width), l.Thickness);
+                double h = Math.Max(Math.Abs(l.Height), l.Thickness);
+                return new ZplRect(Math.Min(l.X, l.X + l.Width), Math.Min(l.Y, l.Y + l.Height), w, h);
+            }
+            case ZplEllipse e:
+                return new ZplRect(e.X, e.Y, e.Width, e.Height);
+            case ZplSymbol s:
+                return new ZplRect(s.X, s.Y, s.Width, s.Height);
+            case ZplBars bars:
+                return new ZplRect(bars.X, bars.Y, bars.Width, bars.Height);
+            case ZplGrid g:
+                return new ZplRect(g.X, g.Y, g.Matrix.GetLength(1) * g.ModW, g.Matrix.GetLength(0) * g.ModH);
+            case ZplImage im:
+                return new ZplRect(im.X, im.Y, im.PixelWidth, im.PixelHeight);
+            case ZplMatrix m:
+                return new ZplRect(m.X, m.Y, m.Size, m.Size);
+            case ZplAztec a:
+                return new ZplRect(a.X, a.Y, a.Matrix.GetLength(1) * a.ModuleSize, a.Matrix.GetLength(0) * a.ModuleSize);
+            case ZplDataMatrix dm:
+                return new ZplRect(dm.X, dm.Y, dm.Matrix.GetLength(1) * dm.ModuleSize, dm.Matrix.GetLength(0) * dm.ModuleSize);
+            default:
+                return new ZplRect(drawable.X, drawable.Y, 0, 0);
+        }
     }
 
     // Orientation char of a ^Bx command's first parameter (N/R/I/B → degrees).

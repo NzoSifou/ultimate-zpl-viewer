@@ -6,6 +6,77 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.6.0] — 2026-09-10 — transformer un document entier
+
+Jusqu'ici on modifiait une étiquette un champ à la fois. Un bouton
+**« Transformer »** dans la barre d'outils en change deux choses d'un coup, sur
+tout le document : la **densité** pour laquelle il est écrit, et son
+**orientation**. Les deux se combinent, ou se prennent séparément.
+
+Rien n'est régénéré. Comme le mode édition, le moteur **réécrit les nombres là
+où ils sont** : les commentaires, les sauts de ligne et les commandes qu'il ne
+connaît pas ressortent à l'octet près. Et tout passe en une seule modification :
+un Ctrl+Z rend le document d'avant.
+
+### ✨ Ajouté
+
+- **Convertir la densité** 🔍
+  Six, huit, douze ou vingt-quatre points par millimètre. Toutes les longueurs
+  sont recalculées — coordonnées, corps de texte, hauteurs de codes-barres,
+  épaisseurs de traits, largeurs de bloc — et **l'étiquette garde la taille
+  qu'elle a dans le monde réel**. Ce sont les nombres qui changent, pas le format :
+  une étiquette de 100 × 150 mm reste 100 × 150 mm, et l'aperçu ne bouge pas d'un
+  pixel. Les images embarquées (^GF) sont **redessinées** avec plus ou moins de
+  pixels plutôt que laissées à leur taille, sans quoi elles seraient les seules à
+  changer de dimension sur l'étiquette.
+
+- **Pivoter le document** 🔄
+  Un quart, un demi ou trois quarts de tour. Chaque champ est replacé et son
+  orientation avancée ; un quart de tour échange aussi la largeur et la hauteur de
+  l'étiquette, et met les cadres, les images et les codes-barres sur le côté avec
+  elle. C'est une vraie réécriture du code, pas une rotation de l'affichage — le
+  bouton « Tourner » à côté, lui, ne touche toujours qu'à l'aperçu.
+
+  Le point délicat est l'ancrage. Un ^FO désigne le coin haut-gauche de la boîte
+  d'un champ, et un coin n'est pas un point : tournez le champ et c'est un autre
+  coin qui devient le haut-gauche. Cette boîte n'est pas recalculée ici, elle est
+  demandée au moteur de rendu, qui mesure déjà chaque champ pour l'aperçu. Un ^FT
+  échappe à la règle et tombe juste : il ancre une ligne de base, qui est un point
+  matériel des lettres et voyage avec elles.
+
+- **La fenêtre dit ce qu'elle va faire, et ce qu'elle laisse** 📐
+  La taille après transformation est annoncée avant de valider. Et les commandes
+  que le moteur n'a pas su réécrire sont **nommées, avec leur ligne**, au lieu
+  d'être passées sous silence : une image rappelée par son nom (^XG), un ^MU qui
+  exprime les coordonnées en pouces, un ^JM qui déclare lui-même la densité.
+
+### 🔄 Modifié
+
+- **Un bloc de texte pivoté revient enfin à la ligne** 📄
+  Un ^FB rendu de travers était dessiné sur une seule ligne, qui filait hors de
+  l'étiquette. Le découpage en lignes vaut maintenant pour les quatre
+  orientations : le bloc est mis en page dans son propre sens de lecture, puis ce
+  sens est tourné avec le champ. Une étiquette dont le texte tenait sur une ligne
+  est rendue exactement comme avant.
+
+### 🐛 Corrigé
+
+- **Le mode visualisation refusait les modifications venues de l'application** ✏️
+  L'éditeur y est en lecture seule, et Monaco refuse alors une modification
+  programmée comme il refuse une frappe — Ctrl+Z compris. Une modification qui
+  vient de l'application n'est pas une frappe : le verrou est levé le temps de
+  l'appliquer, puis remis.
+
+### 🔧 Détails
+
+- Un ^GD qui penche à droite est stocké avec une hauteur négative ; la boîte qu'il
+  occupe est la même dans les deux sens, et elle est désormais lue comme telle.
+- Changer la densité depuis la liste de la barre d'outils réécrit ^PW et ^LL à elle
+  seule. La conversion vient de le faire, pour toutes les longueurs : la liste se
+  tait quand c'est la conversion qui la déplace.
+
+---
+
 ## [1.5.1] — 2026-09-09 — la ligne de commande, le type des imprimantes, et huit corrections
 
 ### ✨ Ajouté

@@ -148,6 +148,12 @@ public sealed partial class PreviewPage
         // the preview has to be told the dots are a different size now — otherwise
         // the same label would appear to have grown.
         if (target is { } wanted) ShowDensity(wanted);
+
+        // A quarter turn stands the label on its side, and the size shown in the
+        // toolbar has to turn with it. An ordinary edit leaves that size alone, on
+        // purpose — a typed size must survive typing — but this is not an ordinary
+        // edit: the whole document changed shape, so the size is read off it again.
+        if (rotation != 0) RefreshPreview(SizeUpdate.DocumentLoaded);
     }
 
     // Moves the toolbar's density to the one the document was just written for.

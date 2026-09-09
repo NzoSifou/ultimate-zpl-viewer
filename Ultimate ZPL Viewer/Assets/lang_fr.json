@@ -28,7 +28,37 @@
     "zoomReset": "Réinitialiser le zoom (100 %)",
     "widthTooLarge": "La largeur dépasse 50 cm : l'aperçu est limité à 50 cm.",
     "heightTooLarge": "La hauteur dépasse 50 cm : l'aperçu est limité à 50 cm.",
-    "sizeCapped": "limité"
+    "sizeCapped": "limité",
+    "transform": "Transformer"
+  },
+  "transform": {
+    "title": "Transformer le document",
+    "apply": "Transformer",
+    "cancel": "Annuler",
+    "density": {
+      "title": "Convertir la densité",
+      "desc": "Toutes les longueurs sont recalculées. L'étiquette garde la taille qu'elle a dans le monde réel : ce sont les nombres qui changent, pas le format.",
+      "current": "Densité actuelle du fichier : {0}",
+      "none": "Ne pas convertir"
+    },
+    "rotate": {
+      "title": "Pivoter le document",
+      "desc": "Chaque champ est replacé et son orientation avancée. Un quart de tour échange aussi la largeur et la hauteur de l'étiquette.",
+      "none": "Ne pas pivoter",
+      "deg": "Pivoter de {0}°"
+    },
+    "result": "Après transformation : {0} × {1} mm à {2}.",
+    "notes": {
+      "title": "Laissé tel quel",
+      "unsupported": "{0} porte une taille que le moteur ne réécrit pas (ligne {1}).",
+      "units": "{0} exprime les coordonnées en pouces ou en millimètres : elles ne dépendent pas de la densité (ligne {1}).",
+      "declared": "{0} déclare la densité de l'étiquette et n'est pas modifiée (ligne {1}).",
+      "image": "{0} n'a pas pu être redessinée (ligne {1})."
+    },
+    "msg": {
+      "empty": "Le document ZPL est vide : rien à transformer.",
+      "nothing": "Les deux choix laissent le document tel quel."
+    }
   },
   "editor": {
     "shortDescription": {

@@ -142,6 +142,18 @@
 
             // The minimap is only useful when the content is vertically scrollable,
             // so hide it automatically when everything fits.
+            // The view mode makes the editor read-only, and Monaco refuses
+            // executeEdits and undo on a read-only editor exactly as it refuses
+            // typing. A change that comes from the APPLICATION is not typing —
+            // dragging an element on the preview, converting the whole document —
+            // so the lock is lifted for the length of it and put straight back.
+            function unlocked(action) {
+                var locked = window._readOnly === true;
+                if (locked) editor.updateOptions({ readOnly: false });
+                try { action(); }
+                finally { if (locked) editor.updateOptions({ readOnly: true }); }
+            }
+
             function updateMinimap() {
                 var info = editor.getLayoutInfo();
                 var scrollable = editor.getScrollHeight() > info.height + 1;
@@ -267,6 +279,18 @@
             }
             editor.addCommand(M.CtrlCmd | K.Digit0, forward('lastTab'));
             editor.addCommand(M.CtrlCmd | K.KeyD, forward('duplicateTab'));
+
+            // Undo/redo, re-declared for the same reason and for one more: the view
+            // mode holds the editor read-only, and Monaco's own undo is switched off
+            // there along with typing. The document can still have history in that
+            // mode — a drag on the preview, a conversion — so the keystroke has to
+            // reach it. unlocked() is what lets it.
+            function history(what) {
+                return function () { unlocked(function () { editor.trigger('app', what, null); }); };
+            }
+            editor.addCommand(M.CtrlCmd | K.KeyZ, history('undo'));
+            editor.addCommand(M.CtrlCmd | K.KeyY, history('redo'));
+            editor.addCommand(M.CtrlCmd | M.Shift | K.KeyZ, history('redo'));
 
             editor.addCommand(M.CtrlCmd | K.KeyO, forward('openFile'));
             editor.addCommand(M.CtrlCmd | M.Shift | K.KeyS, forward('saveAs'));
@@ -407,7 +431,10 @@
                         // View mode. readOnly refuses edits but keeps selection,
                         // copy, Ctrl+F and folding; domReadOnly would also block
                         // the caret, which is not what we want.
-                        if (typeof msg.readOnly === 'boolean') o.readOnly = msg.readOnly;
+                        if (typeof msg.readOnly === 'boolean') {
+                            o.readOnly = msg.readOnly;
+                            window._readOnly = msg.readOnly;
+                        }
                         editor.updateOptions(o);
                         if (typeof msg.minimap === 'boolean') window._minimapWanted = msg.minimap;
                         updateMinimap();
@@ -415,8 +442,9 @@
                         // Asked for from the PREVIEW, where the focus sits after an
                         // element has been dragged. The history is Monaco's, so the
                         // request has to come back here rather than be kept twice.
-                        editor.trigger('app', msg.type, null);
+                        unlocked(function () { editor.trigger('app', msg.type, null); });
                     } else if (msg.type === 'applyEdit') {
+                        // See unlocked(): the view mode holds the editor read-only.
                         // An edit made from the PREVIEW (dragging an element,
                         // turning it). It goes through executeEdits rather than
                         // setValue so it lands on Monaco's own undo stack: Ctrl+Z
@@ -438,8 +466,10 @@
                                 };
                             });
                             if (ops.length) {
-                                editor.executeEdits('zpl-canvas', ops);
-                                editor.pushUndoStop();
+                                unlocked(function () {
+                                    editor.executeEdits('zpl-canvas', ops);
+                                    editor.pushUndoStop();
+                                });
                             }
                         }
                     } else if (msg.type === 'applyDecorations') {

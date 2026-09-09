@@ -227,6 +227,17 @@
                 <TextBlock x:Name="UnitLabel2" Text="mm" VerticalAlignment="Center"/>
             </StackPanel>
 
+            <!-- Transform group: rewrites the DOCUMENT (density, angle), unlike
+                 the Rotate group beside it which only turns the view. -->
+            <StackPanel x:Name="TransformGroup" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="TransformButton" VerticalAlignment="Center" Click="TransformButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE7A8;" FontSize="14"/>
+                        <TextBlock x:Name="TransformText" Text="Transformer"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
             <!-- Rotate group: a SplitButton (90° on click + a flyout for a custom angle). -->
             <StackPanel x:Name="RotateGroup" Orientation="Horizontal" VerticalAlignment="Center">
                 <SplitButton x:Name="RotateSplitButton" VerticalAlignment="Center">

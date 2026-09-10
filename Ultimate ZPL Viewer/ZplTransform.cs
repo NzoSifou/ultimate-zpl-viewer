@@ -45,8 +45,11 @@ public static class ZplTransform
     /// <param name="currentDpmm">What the document is written for today.</param>
     /// <param name="targetDpmm">null leaves the lengths alone.</param>
     /// <param name="rotate">0, 90, 180 or 270, clockwise.</param>
-    public static Plan Build(string zpl, double currentDpmm, double? targetDpmm, int rotate)
+    /// <param name="roundUp">Which way a length that lands on a half goes.</param>
+    public static Plan Build(string zpl, double currentDpmm, double? targetDpmm, int rotate,
+                             bool roundUp = true)
     {
+        _roundUp = roundUp;
         if (string.IsNullOrEmpty(zpl)) return Nothing;
 
         int rot = ((rotate % 360) + 360) % 360;
@@ -244,6 +247,22 @@ public static class ZplTransform
             // printer can only double or treble it. Between those steps there is
             // nothing, so a conversion by three halves leaves the type where it was
             // or jumps it a whole step — which is worth saying rather than hiding.
+            // A module that cannot be converted exactly is worth a word: the symbol
+            // ends up a measurable amount wider or narrower than the one that was
+            // there, and no arrangement of whole dots avoids it.
+            void NoteModule(ZplToken token, double original)
+            {
+                if (original <= 0) return;
+                double ideal = original * ratio;
+                long landed = Whole(Math.Max(ModuleFloor(original), ideal));
+                if (Math.Abs(landed - ideal) < 0.01) return;
+                int percent = (int)Math.Round((landed / ideal - 1) * 100);
+                var sign = percent > 0 ? "+" : "";
+                notes.Add(new Note("module",
+                    $"{Named(zpl, token)}{original:0.##} → {landed} ({sign}{percent} %)",
+                    LineOf(zpl, token.Start)));
+            }
+
             void NoteFont(string font, double height)
             {
                 if (!scaling || font.Length == 0 || !ZplFont.IsBitmap(font)) return;
@@ -385,6 +404,7 @@ public static class ZplTransform
                     sawModuleWidth = true;
                     if (scaling)
                     {
+                        NoteModule(t, At(0));
                         Write(edits, parts, 0, At(0) * ratio, ModuleFloor(At(0)));
                         Write(edits, parts, 2, At(2) * ratio, 1);
                     }
@@ -428,8 +448,11 @@ public static class ZplTransform
                         if (!sawModuleWidth && !Modules.Contains(t.Command)) needsModuleWidth = true;
                         if (rot != 0) TurnLetter(edits, parts, 0, rot, insert: false);
                         if (scaling)
+                        {
+                            if (Modules.Contains(t.Command)) NoteModule(t, At(at));
                             Write(edits, parts, at, At(at) * ratio,
                                   Modules.Contains(t.Command) ? ModuleFloor(At(at)) : 1);
+                        }
                     }
                     break;
             }
@@ -671,17 +694,24 @@ public static class ZplTransform
         else if (rounded != 0) edits.Add(new ZplPatcher.Edit(part.End, part.End, text));
     }
 
-    // ZPL counts in whole dots, so every converted length lands on one. The nearest
-    // is the faithful choice; a half goes DOWN.
+    // ZPL counts in whole dots, so every converted length has to land on one. The
+    // nearest is the faithful choice; the question is what to do with a half.
     //
-    // That tie-break is not a detail. Most of these numbers are lengths, where half
-    // a dot is half a dot — but a few are MULTIPLIERS, and there the error is
-    // multiplied with them. ^BY3 at 8 dots/mm is 4.5 at twelve, and a Code 128 is
-    // some two hundred modules wide: rounding that half up spreads the barcode a
-    // tenth wider than it was, out over its neighbours or off the label. Down, it
-    // stays inside the room it had, and the bars stay far wider than any scanner
-    // needs. The same holds for a ^BQ or ^BO magnification and a ^BX module.
-    private static long Whole(double value) => (long)Math.Ceiling(value - 0.5);
+    // It is not a detail. Most of these numbers are lengths, where half a dot is
+    // half a dot — but a few are MULTIPLIERS, and there the half is multiplied with
+    // them. ^BY3 at 8 dots/mm is 4.5 at twelve, and a Code 128 is some two hundred
+    // modules wide: the two answers are a barcode a tenth wider or a tenth narrower
+    // than the one that was there, and neither is the one that was there.
+    //
+    // So the caller decides, and the window says which way it went. UP is the
+    // default because a module width is quoted as a MINIMUM — going over it stays
+    // within the specification, going under can fall out of it.
+    // Set once at the top of Build and read all the way down. Marked per-thread so
+    // two conversions could never read each other's answer.
+    [ThreadStatic] private static bool _roundUp;
+
+    private static long Whole(double value)
+        => (long)(_roundUp ? Math.Floor(value + 0.5) : Math.Ceiling(value - 0.5));
 
     // Advances the N/R/I/B an argument carries. With insert, one is written where
     // the argument had none — that is how a bare ^FW is given a direction.

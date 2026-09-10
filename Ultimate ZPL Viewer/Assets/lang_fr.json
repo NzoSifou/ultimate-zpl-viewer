@@ -41,6 +41,11 @@
       "current": "Densité actuelle du fichier : {0}",
       "none": "Ne pas convertir"
     },
+    "half": {
+      "desc": "Un module de code-barres est un nombre entier de points, et il ne tombe pas toujours juste : trois points à 8 dpmm en font quatre et demi à 12, et ni quatre ni cinq ne sont exacts. Un fournisseur indique une largeur de module MINIMALE, donc arrondir vers le haut reste dans les clous quand arrondir vers le bas peut passer dessous.",
+      "up": "Plutôt plus grand",
+      "down": "Plutôt plus petit"
+    },
     "rotate": {
       "title": "Pivoter le document",
       "desc": "Chaque champ est replacé et son orientation avancée. Un quart de tour échange aussi la largeur et la hauteur de l'étiquette.",
@@ -54,7 +59,8 @@
       "units": "{0} exprime les coordonnées en pouces ou en millimètres : elles ne dépendent pas de la densité (ligne {1}).",
       "declared": "{0} déclare la densité de l'étiquette et n'est pas modifiée (ligne {1}).",
       "image": "{0} n'a pas pu être redessinée (ligne {1}).",
-      "bitmapFont": "{0} dessine avec une police interne à l'imprimante, qui n'existe qu'en multiples entiers de sa taille : son corps ne peut pas suivre exactement (ligne {1})."
+      "bitmapFont": "{0} dessine avec une police interne à l'imprimante, qui n'existe qu'en multiples entiers de sa taille : son corps ne peut pas suivre exactement (ligne {1}).",
+      "module": "{0} — un module est un nombre entier de points et ne tombe pas juste à cette densité ; la largeur du code-barres change d'autant (ligne {1})."
     },
     "msg": {
       "empty": "Le document ZPL est vide : rien à transformer.",

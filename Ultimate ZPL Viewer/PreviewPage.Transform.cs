@@ -42,6 +42,7 @@ public sealed partial class PreviewPage
         double current = _model.DeclaredDpmm ?? SelectedDpmm;
         double? target = null;
         int rotation = 0;
+        bool roundUp = _settings.TransformRoundUp;
 
         var body = new StackPanel { Spacing = 6, MinWidth = 560 };
 
@@ -61,6 +62,20 @@ public sealed partial class PreviewPage
         }
         foreach (var card in densityCards) densityRow.Children.Add(card);
         body.Children.Add(densityRow);
+
+        // ── Which way a half goes ───────────────────────────────────────────
+        // Only ever visible on a barcode, where the half is multiplied by every
+        // module of the symbol - and where neither answer is the one that was
+        // there. So it is asked rather than decided.
+        var halfNote = SectionLine(TL("half.desc"));
+        halfNote.Margin = new Thickness(0, 12, 0, 0);
+        body.Children.Add(halfNote);
+        var upChoice = new RadioButton { GroupName = "TransformHalf", Content = TL("half.up"), MinWidth = 0 };
+        var downChoice = new RadioButton { GroupName = "TransformHalf", Content = TL("half.down"), MinWidth = 0 };
+        var halfRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 18 };
+        halfRow.Children.Add(upChoice);
+        halfRow.Children.Add(downChoice);
+        body.Children.Add(halfRow);
 
         // ── Rotation ────────────────────────────────────────────────────────
         body.Children.Add(SectionTitle(TL("rotate.title")));
@@ -103,6 +118,12 @@ public sealed partial class PreviewPage
             for (int i = 0; i < rotationCards.Count; i++)
                 Dress(rotationCards[i], rotation == i * 90);
 
+            upChoice.IsChecked = roundUp;
+            downChoice.IsChecked = !roundUp;
+            // The question only arises when a length is being recalculated.
+            halfNote.Opacity = target is null ? 0.35 : 0.7;
+            upChoice.IsEnabled = downChoice.IsEnabled = target is not null;
+
             bool acts = target is not null || rotation != 0;
             dialog.IsPrimaryButtonEnabled = acts;
             outcome.Children.Clear();
@@ -111,7 +132,7 @@ public sealed partial class PreviewPage
                 outcome.Children.Add(SectionLine(TL("msg.nothing")));
                 return;
             }
-            foreach (var line in Outcome(current, target, rotation)) outcome.Children.Add(line);
+            foreach (var line in Outcome(current, target, rotation, roundUp)) outcome.Children.Add(line);
         }
 
         for (int i = 0; i < densityCards.Count; i++)
@@ -128,17 +149,27 @@ public sealed partial class PreviewPage
             int index = i;
             rotationCards[i].Click += (_, _) => { rotation = index * 90; Refresh(); };
         }
+        void Half(bool up)
+        {
+            if (roundUp == up) return;
+            roundUp = up;
+            _settings.TransformRoundUp = up;
+            _settings.Save();
+            Refresh();
+        }
+        upChoice.Checked += (_, _) => Half(true);
+        downChoice.Checked += (_, _) => Half(false);
 
         Refresh();
         if (await ShowDialogAsync(dialog) != ContentDialogResult.Primary) return;
-        ApplyTransform(current, target, rotation);
+        ApplyTransform(current, target, rotation, roundUp);
     }
 
     // ── Doing it ─────────────────────────────────────────────────────────────
 
-    private void ApplyTransform(double current, double? target, int rotation)
+    private void ApplyTransform(double current, double? target, int rotation, bool roundUp)
     {
-        var plan = ZplTransform.Build(_currentText, current, target, rotation);
+        var plan = ZplTransform.Build(_currentText, current, target, rotation, roundUp);
         if (plan.Empty) return;
 
         ClearInspectSelection();
@@ -179,7 +210,7 @@ public sealed partial class PreviewPage
 
     // ── What the dialog says it will do ──────────────────────────────────────
 
-    private IEnumerable<FrameworkElement> Outcome(double current, double? target, int rotation)
+    private IEnumerable<FrameworkElement> Outcome(double current, double? target, int rotation, bool roundUp)
     {
         double ratio = target is { } t && current > 0 ? t / current : 1;
         double dpmm = target ?? current;
@@ -192,7 +223,7 @@ public sealed partial class PreviewPage
 
         // Everything the engine met and left alone, named. A file it understood
         // whole says nothing, which is the answer people are hoping for.
-        var notes = ZplTransform.Build(_currentText, current, target, rotation).Notes;
+        var notes = ZplTransform.Build(_currentText, current, target, rotation, roundUp).Notes;
         if (notes.Count == 0) yield break;
 
         yield return new TextBlock

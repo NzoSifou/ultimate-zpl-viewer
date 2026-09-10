@@ -41,6 +41,11 @@
       "current": "The file's current density: {0}",
       "none": "Do not convert"
     },
+    "half": {
+      "desc": "A barcode module is a whole number of dots, and it does not always land on one: three dots at 8 dpmm are four and a half at 12, and neither four nor five is exact. A supplier quotes a MINIMUM module width, so rounding up stays within it where rounding down can fall under.",
+      "up": "Rather larger",
+      "down": "Rather smaller"
+    },
     "rotate": {
       "title": "Turn the document",
       "desc": "Every field is placed again and its orientation advanced. A quarter turn swaps the label's width and height too.",
@@ -54,7 +59,8 @@
       "units": "{0} writes the coordinates in inches or millimetres: they do not depend on the density (line {1}).",
       "declared": "{0} states the label's density and is not changed (line {1}).",
       "image": "{0} could not be drawn again (line {1}).",
-      "bitmapFont": "{0} draws with a font built into the printer, which exists only at whole multiples of its own size: its type cannot follow exactly (line {1})."
+      "bitmapFont": "{0} draws with a font built into the printer, which exists only at whole multiples of its own size: its type cannot follow exactly (line {1}).",
+      "module": "{0} — a module is a whole number of dots and does not land on one at this density; the barcode's width changes by as much (line {1})."
     },
     "msg": {
       "empty": "The ZPL document is empty: nothing to transform.",

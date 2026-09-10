@@ -59,6 +59,12 @@ public sealed class AppSettings
     // Unit the margin box is shown in: "mm" or "cm". Purely a display choice.
     public string MarginsUnit { get; set; } = "mm";
 
+    // Which way a converted length goes when it lands exactly between two whole
+    // dots. It only ever matters for a barcode module, where the half is
+    // multiplied by every module of the symbol - and a supplier states a MINIMUM
+    // module width, so going up stays within it and going down can fall under.
+    public bool TransformRoundUp { get; set; } = true;
+
     // Skips the print dialog and prints straight away with the defaults. Only
     // meaningful while all three settings above are on "fixed".
     public bool QuickPrint { get; set; }

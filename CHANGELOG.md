@@ -32,12 +32,18 @@ un Ctrl+Z rend le document d'avant.
 
   Un module de code-barres est un nombre entier de points, et il n'a pas toujours
   d'image exacte à la nouvelle densité : trois points à huit par millimètre en
-  font quatre et demi à douze. La moitié va **vers le bas**, parce que l'erreur
-  est multipliée par les deux cents modules d'un Code 128 — arrondie vers le haut,
-  le code-barres s'étale d'un dixième et déborde de la place qu'il avait. Avec un
-  plancher : jamais moins de deux points, en deçà desquels aucun lecteur ne
-  déchiffre les barres. Et une étiquette qui n'a jamais écrit `^BY` se voit
-  remettre celui sur lequel elle comptait, dans les nouveaux points.
+  font quatre et demi à douze, et **ni quatre ni cinq ne sont exacts**. La
+  différence n'est pas un détail d'arrondi : un module est un multiplicateur, et un
+  Code 128 en compte deux cents, si bien que le demi-point devient un dixième de la
+  largeur du code-barres. La fenêtre demande donc de quel côté pencher — **plutôt
+  plus grand** par défaut, parce qu'un fournisseur indique une largeur de module
+  MINIMALE : la dépasser reste dans les clous, passer dessous peut en sortir. Et
+  quand le compte ne tombe pas juste, elle le dit, avec l'écart en pourcentage.
+
+  Avec un plancher dans tous les cas : jamais moins de deux points, en deçà
+  desquels aucun lecteur ne déchiffre les barres. Et une étiquette qui n'a jamais
+  écrit `^BY` se voit remettre celui sur lequel elle comptait, dans les nouveaux
+  points.
 
 - **Pivoter le document** 🔄
   Un quart, un demi ou trois quarts de tour. Chaque champ est replacé et son

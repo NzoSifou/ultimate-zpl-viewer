@@ -30,6 +30,15 @@ un Ctrl+Z rend le document d'avant.
   pixels plutôt que laissées à leur taille, sans quoi elles seraient les seules à
   changer de dimension sur l'étiquette.
 
+  Un module de code-barres est un nombre entier de points, et il n'a pas toujours
+  d'image exacte à la nouvelle densité : trois points à huit par millimètre en
+  font quatre et demi à douze. La moitié va **vers le bas**, parce que l'erreur
+  est multipliée par les deux cents modules d'un Code 128 — arrondie vers le haut,
+  le code-barres s'étale d'un dixième et déborde de la place qu'il avait. Avec un
+  plancher : jamais moins de deux points, en deçà desquels aucun lecteur ne
+  déchiffre les barres. Et une étiquette qui n'a jamais écrit `^BY` se voit
+  remettre celui sur lequel elle comptait, dans les nouveaux points.
+
 - **Pivoter le document** 🔄
   Un quart, un demi ou trois quarts de tour. Chaque champ est replacé et son
   orientation avancée ; un quart de tour échange aussi la largeur et la hauteur de
@@ -49,6 +58,8 @@ un Ctrl+Z rend le document d'avant.
   que le moteur n'a pas su réécrire sont **nommées, avec leur ligne**, au lieu
   d'être passées sous silence : une image rappelée par son nom (^XG), un ^MU qui
   exprime les coordonnées en pouces, un ^JM qui déclare lui-même la densité.
+  Une police interne à l'imprimante y figure aussi : elle n'existe qu'en multiples
+  entiers de sa propre taille, et son corps ne peut donc pas suivre exactement.
 
 ### 🔄 Modifié
 
@@ -71,6 +82,14 @@ un Ctrl+Z rend le document d'avant.
 
 - Un ^GD qui penche à droite est stocké avec une hauteur négative ; la boîte qu'il
   occupe est la même dans les deux sens, et elle est désormais lue comme telle.
+- Une image ^GF n'était redessinée que si l'on pivotait aussi le document : une
+  conversion de densité seule la laissait à son nombre de pixels, donc seule à ne
+  pas changer de taille sur l'étiquette.
+- La boîte d'un code-barres pivoté était lue à l'endroit, et un PDF417 pivoté
+  n'était pas pivoté du tout — ses modules sont maintenant tournés avec le champ,
+  de sorte que la boîte, le dessin et la conversion voient la même forme.
+- Deux commandes à insérer au même endroit se prenaient pour des doublons et
+  l'une était jetée.
 - Changer la densité depuis la liste de la barre d'outils réécrit ^PW et ^LL à elle
   seule. La conversion vient de le faire, pour toutes les longueurs : la liste se
   tait quand c'est la conversion qui la déplace.

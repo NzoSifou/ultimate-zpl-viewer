@@ -53,7 +53,8 @@
       "unsupported": "{0} porte une taille que le moteur ne réécrit pas (ligne {1}).",
       "units": "{0} exprime les coordonnées en pouces ou en millimètres : elles ne dépendent pas de la densité (ligne {1}).",
       "declared": "{0} déclare la densité de l'étiquette et n'est pas modifiée (ligne {1}).",
-      "image": "{0} n'a pas pu être redessinée (ligne {1})."
+      "image": "{0} n'a pas pu être redessinée (ligne {1}).",
+      "bitmapFont": "{0} dessine avec une police interne à l'imprimante, qui n'existe qu'en multiples entiers de sa taille : son corps ne peut pas suivre exactement (ligne {1})."
     },
     "msg": {
       "empty": "Le document ZPL est vide : rien à transformer.",

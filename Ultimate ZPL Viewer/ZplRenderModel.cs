@@ -825,6 +825,7 @@ public static partial class ZplRenderer
                 }
                 case "B7": // PDF417: ^B7o,h,s,c,r,t — h row height, s security, c cols, r rows
                 {
+                    barcodeRotation = BarcodeOrientation(args, fwOrient);
                     var b7 = ParseNumbers(args).ToArray();
                     p417RowH = b7.Length > 0 ? Math.Max(1, b7[0]) : 8;
                     p417Sec  = b7.Length > 1 ? (int)b7[1] : -1;
@@ -1151,10 +1152,17 @@ public static partial class ZplRenderer
                         var matrix = TryEncodePdf417(data, p417Cols, p417Rows, p417Sec);
                         if (matrix is not null)
                         {
+                            // A rotated symbol is the same modules read the other way.
+                            // Turning the MATRIX here rather than carrying an angle
+                            // means the box, the drawing and the code that converts a
+                            // whole label all see one shape and agree on it.
+                            double mw = moduleWidth, mh = p417RowH;
+                            if (barcodeRotation != 0) matrix = TurnMatrix(matrix, barcodeRotation);
+                            if (barcodeRotation is 90 or 270) (mw, mh) = (mh, mw);
                             int rows = matrix.GetLength(0), cols = matrix.GetLength(1);
-                            double w = cols * moduleWidth, h = rows * p417RowH;
+                            double w = cols * mw, h = rows * mh;
                             double topY = typeset ? fy - h : fy;
-                            fieldBuf.Add(new ZplGrid(fx, topY, moduleWidth, p417RowH, matrix));
+                            fieldBuf.Add(new ZplGrid(fx, topY, mw, mh, matrix));
                             Grow(fx + w, topY + h);
                         }
                         pendingPdf417 = false;
@@ -1321,7 +1329,12 @@ public static partial class ZplRenderer
             case ZplSymbol s:
                 return new ZplRect(s.X, s.Y, s.Width, s.Height);
             case ZplBars bars:
-                return new ZplRect(bars.X, bars.Y, bars.Width, bars.Height);
+                // A barcode keeps the length of its bar run and the height of its
+                // bars whichever way it reads; the box it covers is those two the
+                // other way round once it is stood on its side.
+                return bars.Rotation is 90 or 270
+                    ? new ZplRect(bars.X, bars.Y, bars.Height, bars.Width)
+                    : new ZplRect(bars.X, bars.Y, bars.Width, bars.Height);
             case ZplGrid g:
                 return new ZplRect(g.X, g.Y, g.Matrix.GetLength(1) * g.ModW, g.Matrix.GetLength(0) * g.ModH);
             case ZplImage im:
@@ -1335,6 +1348,28 @@ public static partial class ZplRenderer
             default:
                 return new ZplRect(drawable.X, drawable.Y, 0, 0);
         }
+    }
+
+    // The same modules, the symbol stood on its side. Clockwise, as everywhere else.
+    private static bool[,] TurnMatrix(bool[,] matrix, int degrees)
+    {
+        int rows = matrix.GetLength(0), cols = matrix.GetLength(1);
+        if (degrees == 180)
+        {
+            var half = new bool[rows, cols];
+            for (int r = 0; r < rows; r++)
+                for (int c = 0; c < cols; c++)
+                    half[r, c] = matrix[rows - 1 - r, cols - 1 - c];
+            return half;
+        }
+        if (degrees is not (90 or 270)) return matrix;
+
+        var turned = new bool[cols, rows];
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < cols; c++)
+                if (degrees == 90) turned[c, rows - 1 - r] = matrix[r, c];
+                else turned[cols - 1 - c, r] = matrix[r, c];
+        return turned;
     }
 
     // Orientation char of a ^Bx command's first parameter (N/R/I/B → degrees).

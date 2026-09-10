@@ -53,7 +53,8 @@
       "unsupported": "{0} carries a size the engine does not rewrite (line {1}).",
       "units": "{0} writes the coordinates in inches or millimetres: they do not depend on the density (line {1}).",
       "declared": "{0} states the label's density and is not changed (line {1}).",
-      "image": "{0} could not be drawn again (line {1})."
+      "image": "{0} could not be drawn again (line {1}).",
+      "bitmapFont": "{0} draws with a font built into the printer, which exists only at whole multiples of its own size: its type cannot follow exactly (line {1})."
     },
     "msg": {
       "empty": "The ZPL document is empty: nothing to transform.",

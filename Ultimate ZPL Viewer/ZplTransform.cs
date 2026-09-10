@@ -64,33 +64,31 @@ public static class ZplTransform
         // pair right — one label stores the format, another prints it, and neither
         // half draws anything on its own — and for the ordinary single-label file
         // it is the only reading needed.
-        var whole = rot == 0 ? null : ZplRenderer.Parse(zpl, currentDpmm);
+        //
+        // It is read for a density change as well as for a rotation, because the
+        // fields carry the DECODED pictures: a ^GF has no numbers to scale, only
+        // pixels, and the only way to redraw it is to be handed the image back.
+        var whole = ZplRenderer.Parse(zpl, currentDpmm);
 
         foreach (var block in Blocks(zpl, tokens))
         {
-            var fields = new List<Field>();
-            double labelW = 0, labelH = 0;
+            var fields = FieldsOf(whole, block.Start, block.End);
+            double labelW = whole.Size.WidthDots;
+            double labelH = whole.Size.HeightDots;
 
-            if (rot != 0)
+            if (fields.Count == 0)
             {
-                fields = FieldsOf(whole!, block.Start, block.End);
-                labelW = whole!.Size.WidthDots;
-                labelH = whole.Size.HeightDots;
-
-                if (fields.Count == 0)
+                // A later label in a stream: the reader stops at the first one that
+                // printed something, so this block is read on its own — with
+                // whatever came before it still in scope, since a graphic
+                // downloaded by name outlives the label that downloaded it.
+                var upTo = ZplRenderer.Parse(UpTo(zpl, block), currentDpmm);
+                fields = FieldsOf(upTo, block.Start, block.End);
+                var local = ZplRenderer.Parse(zpl[block.Start..block.End], currentDpmm);
+                if (local.Drawables.Count > 0)
                 {
-                    // A later label in a stream: the reader stops at the first one
-                    // that printed something, so this block is read on its own —
-                    // with whatever came before it still in scope, since a graphic
-                    // downloaded by name outlives the label that downloaded it.
-                    var upTo = ZplRenderer.Parse(UpTo(zpl, block), currentDpmm);
-                    fields = FieldsOf(upTo, block.Start, block.End);
-                    var local = ZplRenderer.Parse(zpl[block.Start..block.End], currentDpmm);
-                    if (local.Drawables.Count > 0)
-                    {
-                        labelW = local.Size.WidthDots;
-                        labelH = local.Size.HeightDots;
-                    }
+                    labelW = local.Size.WidthDots;
+                    labelH = local.Size.HeightDots;
                 }
             }
 
@@ -98,12 +96,18 @@ public static class ZplTransform
                  labelW, labelH, ratio, rot, edits, notes);
         }
 
-        // Same range twice is a contradiction, and an empty rewrite is noise.
-        var clean = edits
+        // Same range rewritten twice is a contradiction, and an empty rewrite is
+        // noise. Two INSERTIONS at one spot are neither: a label can need both a
+        // ^FW and a ^BY written in at the top, and they are not each other's
+        // duplicate just because they go in at the same place.
+        var kept = edits
             .Where(e => e.Start >= 0 && e.End <= zpl.Length && e.Start <= e.End)
             .Where(e => e.Text != zpl[e.Start..e.End])
+            .ToList();
+        var clean = kept.Where(e => e.Start < e.End)
             .GroupBy(e => (e.Start, e.End))
             .Select(g => g.First())
+            .Concat(kept.Where(e => e.Start == e.End))
             .OrderBy(e => e.Start).ThenBy(e => e.End)
             .ToList();
 
@@ -225,6 +229,8 @@ public static class ZplTransform
         bool inDots = true;         // ^MU can express coordinates in inches or millimetres
         double lhX = 0, lhY = 0, lsX = 0, ltY = 0;
         bool sawFieldWidth = false;
+        bool sawModuleWidth = false;
+        bool needsModuleWidth = false;
 
         var byStart = fields.ToDictionary(f => f.Start);
 
@@ -233,6 +239,19 @@ public static class ZplTransform
             if (t.Start < block.Start || t.Start >= block.End) continue;
             var parts = Split(zpl, t);
             double At(int i) => i < parts.Count && Numeric(parts[i]) is { } n ? n.Value : 0;
+
+            // A built-in font is a picture of an alphabet at one size, and the
+            // printer can only double or treble it. Between those steps there is
+            // nothing, so a conversion by three halves leaves the type where it was
+            // or jumps it a whole step — which is worth saying rather than hiding.
+            void NoteFont(string font, double height)
+            {
+                if (!scaling || font.Length == 0 || !ZplFont.IsBitmap(font)) return;
+                double asked = (height > 0 ? height : ZplFont.BaseCell(font).H) * ratio;
+                var (landed, _) = ZplFont.Quantize(font, asked, asked);
+                if (Math.Abs(landed - asked) > 1)
+                    notes.Add(new Note("bitmapFont", Named(zpl, t), LineOf(zpl, t.Start)));
+            }
 
             switch (t.Command)
             {
@@ -311,6 +330,7 @@ public static class ZplTransform
 
                 // ── Type ────────────────────────────────────────────────────
                 case "CF":
+                    NoteFont(parts.Count > 0 ? parts[0].Text.Trim() : "", At(1));
                     if (scaling) { Write(edits, parts, 1, At(1) * ratio, 1); Write(edits, parts, 2, At(2) * ratio, 0); }
                     break;
 
@@ -362,7 +382,12 @@ public static class ZplTransform
 
                 // ── Barcodes ────────────────────────────────────────────────
                 case "BY":
-                    if (scaling) { Write(edits, parts, 0, At(0) * ratio, 1); Write(edits, parts, 2, At(2) * ratio, 1); }
+                    sawModuleWidth = true;
+                    if (scaling)
+                    {
+                        Write(edits, parts, 0, At(0) * ratio, ModuleFloor(At(0)));
+                        Write(edits, parts, 2, At(2) * ratio, 1);
+                    }
                     break;
 
                 case "GF":
@@ -390,13 +415,21 @@ public static class ZplTransform
                     {
                         // ^A0N,30,30 / ^ADN,18,10 / ^A@N,50,50,E:F.TTF — the height and
                         // the width always follow the orientation, whatever the font.
+                        NoteFont(t.Command.Length > 1 ? t.Command[1].ToString() : "", At(1));
                         if (rot != 0) TurnLetter(edits, parts, 0, rot, insert: false);
                         if (scaling) { Write(edits, parts, 1, At(1) * ratio, 1); Write(edits, parts, 2, At(2) * ratio, 0); }
                     }
                     else if (HeightAt.TryGetValue(t.Command, out int at))
                     {
+                        // Every 1D symbology is built from the narrow bar ^BY
+                        // sets. Without one it is the printer's own two dots, and
+                        // two dots are a different width at another density - so
+                        // the default has to be written down to be converted.
+                        if (!sawModuleWidth && !Modules.Contains(t.Command)) needsModuleWidth = true;
                         if (rot != 0) TurnLetter(edits, parts, 0, rot, insert: false);
-                        if (scaling) Write(edits, parts, at, At(at) * ratio, 1);
+                        if (scaling)
+                            Write(edits, parts, at, At(at) * ratio,
+                                  Modules.Contains(t.Command) ? ModuleFloor(At(at)) : 1);
                     }
                     break;
             }
@@ -405,17 +438,16 @@ public static class ZplTransform
         // Nothing said which way the fields that never said so should read. One
         // ^FW at the top of the label says it once, for all of them.
         if (rot != 0 && !sawFieldWidth && block.OpenEnd > 0)
-        {
-            // On its own line where ^XA had one, so the document keeps the shape it
-            // was written in rather than growing a command on the end of a line.
-            int at = block.OpenEnd;
-            var line = "^FW" + Advance('N', rot);
-            if (at + 1 < zpl.Length && zpl[at] == '\r' && zpl[at + 1] == '\n')
-            { at += 2; line += "\r\n"; }
-            else if (at < zpl.Length && zpl[at] == '\n')
-            { at += 1; line += "\n"; }
-            edits.Add(new ZplPatcher.Edit(at, at, line));
-        }
+            OpenWith(zpl, block, "^FW" + Advance('N', rot), edits);
+
+        // The printer's own narrow bar is two dots. Converted, those are two dots
+        // of a different size - so a label that never said ^BY is handed the one
+        // it was relying on, in the new dots.
+        if (scaling && needsModuleWidth && block.OpenEnd > 0)
+            OpenWith(zpl, block,
+                "^BY" + Whole(Math.Max(ModuleFloor(DefaultModuleWidth), DefaultModuleWidth * ratio))
+                    .ToString(CultureInfo.InvariantCulture),
+                edits);
     }
 
     private static bool HasLetter(string part)
@@ -489,6 +521,44 @@ public static class ZplTransform
         }
         return bands;
     }
+
+    /// <summary>The narrow bar a printer uses when the label never names one.</summary>
+    private const double DefaultModuleWidth = 2;
+
+    // Writes a command in at the top of the label, on its own line where ^XA had
+    // one, so the document keeps the shape it was written in rather than growing
+    // a command onto the end of a line.
+    private static void OpenWith(string zpl, Block block, string command, List<ZplPatcher.Edit> edits)
+    {
+        int at = block.OpenEnd;
+        var line = command;
+        if (at + 1 < zpl.Length && zpl[at] == '\r' && zpl[at + 1] == '\n')
+        { at += 2; line += "\r\n"; }
+        else if (at < zpl.Length && zpl[at] == '\n')
+        { at += 1; line += "\n"; }
+        edits.Add(new ZplPatcher.Edit(at, at, line));
+    }
+
+    // The symbologies whose number at that index is a MODULE or a magnification —
+    // a multiplier the whole symbol is built from — rather than a plain height.
+    private static readonly HashSet<string> Modules = new(StringComparer.Ordinal)
+    {
+        "BX", "BQ", "BO", "B0",
+    };
+
+    // How small a module may become.
+    //
+    // Rounding a module to the nearest whole dot is the faithful choice, but it has
+    // a floor that has nothing to do with faithfulness: below about two dots the
+    // bars stop being readable, and a barcode nobody can scan is worse than one a
+    // tenth off its size. Converting 8 to 6 dots/mm halves a ^BY2 to one dot — a
+    // sixth of a millimetre — which no scanner is expected to manage.
+    //
+    // The floor is two dots, EXCEPT where the label was already finer than that:
+    // a ^BY1 is a deliberate choice on a dense printer, and doubling it would be
+    // us redesigning the label rather than converting it.
+    private static double ModuleFloor(double original)
+        => original <= 0 ? 1 : Math.Min(2, Math.Max(1, original));
 
     // Where a symbology writes the height (or, for the 2D ones, the module size)
     // among its comma-separated parameters. Read off the parser, so the engine and
@@ -585,8 +655,7 @@ public static class ZplTransform
         if (index >= parts.Count)
         {
             if (!fill) return;
-            long missing = (long)Math.Round(min == double.MinValue ? value : Math.Max(min, value),
-                                            MidpointRounding.AwayFromZero);
+            long missing = Whole(min == double.MinValue ? value : Math.Max(min, value));
             if (missing == 0) return;
             var tail = parts[^1];
             edits.Add(new ZplPatcher.Edit(tail.End, tail.End,
@@ -595,12 +664,24 @@ public static class ZplTransform
         }
         var part = parts[index];
         double clamped = min == double.MinValue ? value : Math.Max(min, value);
-        long rounded = (long)Math.Round(clamped, MidpointRounding.AwayFromZero);
+        long rounded = Whole(clamped);
         var text = rounded.ToString(CultureInfo.InvariantCulture);
 
         if (Numeric(part) is { } n) edits.Add(new ZplPatcher.Edit(n.Start, n.End, text));
         else if (rounded != 0) edits.Add(new ZplPatcher.Edit(part.End, part.End, text));
     }
+
+    // ZPL counts in whole dots, so every converted length lands on one. The nearest
+    // is the faithful choice; a half goes DOWN.
+    //
+    // That tie-break is not a detail. Most of these numbers are lengths, where half
+    // a dot is half a dot — but a few are MULTIPLIERS, and there the error is
+    // multiplied with them. ^BY3 at 8 dots/mm is 4.5 at twelve, and a Code 128 is
+    // some two hundred modules wide: rounding that half up spreads the barcode a
+    // tenth wider than it was, out over its neighbours or off the label. Down, it
+    // stays inside the room it had, and the bars stay far wider than any scanner
+    // needs. The same holds for a ^BQ or ^BO magnification and a ^BX module.
+    private static long Whole(double value) => (long)Math.Ceiling(value - 0.5);
 
     // Advances the N/R/I/B an argument carries. With insert, one is written where
     // the argument had none — that is how a bare ^FW is given a direction.

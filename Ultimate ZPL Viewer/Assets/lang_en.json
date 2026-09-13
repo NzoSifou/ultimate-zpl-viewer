@@ -36,35 +36,39 @@
     "apply": "Transform",
     "cancel": "Cancel",
     "density": {
-      "title": "Convert the density",
-      "desc": "Every length is worked out again. The label keeps the size it has in the real world: the numbers change, the format does not.",
-      "current": "The file's current density: {0}",
-      "none": "Do not convert"
-    },
-    "half": {
-      "desc": "A barcode module is a whole number of dots, and it does not always land on one: three dots at 8 dpmm are four and a half at 12, and neither four nor five is exact. A supplier quotes a MINIMUM module width, so rounding up stays within it where rounding down can fall under.",
-      "up": "Rather larger",
-      "down": "Rather smaller"
+      "title": "Density",
+      "desc": "Every length is worked out again; the label keeps its real size.",
+      "info": "The numbers in the ZPL change, the label's format does not: a 100 × 150 mm label stays 100 × 150 mm. Coordinates, type sizes, barcode heights, line thicknesses and embedded images all follow.",
+      "keep": "Keep {0}",
+      "tag": "CURRENT"
     },
     "rotate": {
-      "title": "Turn the document",
-      "desc": "Every field is placed again and its orientation advanced. A quarter turn swaps the label's width and height too.",
+      "title": "Rotation",
+      "desc": "Every field is placed again; a quarter turn swaps width and height.",
+      "info": "A real rewrite of the code, not a rotation of the view: every field is placed again and its orientation advanced. The toolbar's Turn button only touches the preview.",
       "none": "Do not turn",
       "deg": "Turn by {0}°"
     },
-    "result": "Afterwards: {0} × {1} mm at {2}.",
+    "half": {
+      "label": "Rounding:",
+      "up": "Rather larger",
+      "down": "Rather smaller",
+      "info": "A barcode module is a whole number of dots and does not always land on one: 3 dots at 8 dpmm are 4.5 at 12, and neither 4 nor 5 is exact. A supplier quotes a MINIMUM module width, hence the default."
+    },
+    "result": "Result: {0} × {1} mm at {2}.",
     "notes": {
-      "title": "Left alone",
-      "unsupported": "{0} carries a size the engine does not rewrite (line {1}).",
-      "units": "{0} writes the coordinates in inches or millimetres: they do not depend on the density (line {1}).",
-      "declared": "{0} states the label's density and is not changed (line {1}).",
-      "image": "{0} could not be drawn again (line {1}).",
-      "bitmapFont": "{0} draws with a font built into the printer, which exists only at whole multiples of its own size: its type cannot follow exactly (line {1}).",
-      "module": "{0} — a module is a whole number of dots and does not land on one at this density; the barcode's width changes by as much (line {1})."
+      "title": "Worth knowing",
+      "info": "What the engine could not convert exactly, with the line it is on. The rest of the document converts to the dot.",
+      "module": "{0} — module rounded to a whole dot (line {1}).",
+      "unsupported": "{0} — size not converted (line {1}).",
+      "units": "{0} — coordinates in inches or millimetres, independent of the density (line {1}).",
+      "declared": "{0} — density stated by the document, left alone (line {1}).",
+      "image": "{0} — image not drawn again (line {1}).",
+      "bitmapFont": "{0} — font built into the printer, type size not adjustable (line {1})."
     },
     "msg": {
       "empty": "The ZPL document is empty: nothing to transform.",
-      "nothing": "Both choices leave the document as it is."
+      "nothing": "No change selected."
     }
   },
   "editor": {

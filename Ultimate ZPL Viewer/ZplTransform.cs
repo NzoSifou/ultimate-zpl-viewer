@@ -257,9 +257,11 @@ public static class ZplTransform
                 long landed = Whole(Math.Max(ModuleFloor(original), ideal));
                 if (Math.Abs(landed - ideal) < 0.01) return;
                 int percent = (int)Math.Round((landed / ideal - 1) * 100);
-                var sign = percent > 0 ? "+" : "";
+                // A real minus sign: the hyphen on the keyboard is a different
+                // character and reads as one in a line of figures.
+                var change = percent > 0 ? "+" + percent : "−" + Math.Abs(percent);
                 notes.Add(new Note("module",
-                    $"{Named(zpl, token)}{original:0.##} → {landed} ({sign}{percent} %)",
+                    $"{Named(zpl, token)}{original:0.##} → {landed} ({change} %)",
                     LineOf(zpl, token.Start)));
             }
 

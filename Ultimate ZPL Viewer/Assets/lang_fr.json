@@ -36,35 +36,39 @@
     "apply": "Transformer",
     "cancel": "Annuler",
     "density": {
-      "title": "Convertir la densité",
-      "desc": "Toutes les longueurs sont recalculées. L'étiquette garde la taille qu'elle a dans le monde réel : ce sont les nombres qui changent, pas le format.",
-      "current": "Densité actuelle du fichier : {0}",
-      "none": "Ne pas convertir"
-    },
-    "half": {
-      "desc": "Un module de code-barres est un nombre entier de points, et il ne tombe pas toujours juste : trois points à 8 dpmm en font quatre et demi à 12, et ni quatre ni cinq ne sont exacts. Un fournisseur indique une largeur de module MINIMALE, donc arrondir vers le haut reste dans les clous quand arrondir vers le bas peut passer dessous.",
-      "up": "Plutôt plus grand",
-      "down": "Plutôt plus petit"
+      "title": "Densité",
+      "desc": "Toutes les longueurs sont recalculées ; l'étiquette garde sa taille réelle.",
+      "info": "Ce sont les nombres du ZPL qui changent, pas le format de l'étiquette : une étiquette de 100 × 150 mm reste 100 × 150 mm. Coordonnées, corps de texte, hauteurs de codes-barres, épaisseurs de traits et images embarquées suivent.",
+      "keep": "Conserver {0}",
+      "tag": "ACTUEL"
     },
     "rotate": {
-      "title": "Pivoter le document",
-      "desc": "Chaque champ est replacé et son orientation avancée. Un quart de tour échange aussi la largeur et la hauteur de l'étiquette.",
+      "title": "Rotation",
+      "desc": "Chaque champ est replacé ; un quart de tour échange largeur et hauteur.",
+      "info": "Une vraie réécriture du code, pas une rotation de l'affichage : chaque champ est replacé et son orientation avancée. Le bouton « Tourner » de la barre d'outils, lui, ne touche qu'à l'aperçu.",
       "none": "Ne pas pivoter",
       "deg": "Pivoter de {0}°"
     },
-    "result": "Après transformation : {0} × {1} mm à {2}.",
+    "half": {
+      "label": "Arrondi :",
+      "up": "Plutôt plus grand",
+      "down": "Plutôt plus petit",
+      "info": "Un module de code-barres est un nombre entier de points et ne tombe pas toujours juste : 3 points à 8 dpmm en font 4,5 à 12, et ni 4 ni 5 ne sont exacts. Un fournisseur indique une largeur de module MINIMALE, d'où le choix par défaut."
+    },
+    "result": "Résultat : {0} × {1} mm à {2}.",
     "notes": {
-      "title": "Laissé tel quel",
-      "unsupported": "{0} porte une taille que le moteur ne réécrit pas (ligne {1}).",
-      "units": "{0} exprime les coordonnées en pouces ou en millimètres : elles ne dépendent pas de la densité (ligne {1}).",
-      "declared": "{0} déclare la densité de l'étiquette et n'est pas modifiée (ligne {1}).",
-      "image": "{0} n'a pas pu être redessinée (ligne {1}).",
-      "bitmapFont": "{0} dessine avec une police interne à l'imprimante, qui n'existe qu'en multiples entiers de sa taille : son corps ne peut pas suivre exactement (ligne {1}).",
-      "module": "{0} — un module est un nombre entier de points et ne tombe pas juste à cette densité ; la largeur du code-barres change d'autant (ligne {1})."
+      "title": "Points d'attention",
+      "info": "Ce que le moteur n'a pas pu convertir exactement, avec la ligne concernée. Le reste du document est converti au point près.",
+      "module": "{0} — module arrondi au point entier (ligne {1}).",
+      "unsupported": "{0} — taille non convertie (ligne {1}).",
+      "units": "{0} — coordonnées en pouces ou en millimètres, indépendantes de la densité (ligne {1}).",
+      "declared": "{0} — densité déclarée par le document, inchangée (ligne {1}).",
+      "image": "{0} — image non redessinée (ligne {1}).",
+      "bitmapFont": "{0} — police interne à l'imprimante, corps non ajustable (ligne {1})."
     },
     "msg": {
       "empty": "Le document ZPL est vide : rien à transformer.",
-      "nothing": "Les deux choix laissent le document tel quel."
+      "nothing": "Aucun changement sélectionné."
     }
   },
   "editor": {

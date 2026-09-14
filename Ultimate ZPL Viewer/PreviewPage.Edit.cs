@@ -348,7 +348,7 @@ public sealed partial class PreviewPage
     /// the document as it stands now — Monaco resolves them together — so callers
     /// never have to compensate for each other's offsets.
     /// </summary>
-    private void ApplyEdits(IReadOnlyList<ZplPatcher.Edit> edits)
+    private void ApplyEdits(IReadOnlyList<ZplPatcher.Edit> edits, SizeUpdate sizing = SizeUpdate.TextEdited)
     {
         var valid = edits
             .Where(e => e.Start >= 0 && e.End <= _currentText.Length && e.Start <= e.End)
@@ -381,7 +381,7 @@ public sealed partial class PreviewPage
         // box being typed into is one of its children. The box is showing the field
         // in its own font at its own size, so there is nothing to catch up on until
         // the caret leaves (PreviewPage.InPlace.cs).
-        if (!IsEditingInPlace) RefreshPreview(SizeUpdate.TextEdited);
+        if (!IsEditingInPlace) RefreshPreview(sizing);
         ScheduleHighlighting();
         // And ask the frame to find its element again once the new canvas has been
         // measured. RefreshPreview posts that itself, but it declines to run at all

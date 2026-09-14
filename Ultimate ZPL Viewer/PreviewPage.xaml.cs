@@ -3699,11 +3699,14 @@ public sealed partial class PreviewPage : Page
 
         if (changed)
         {
-            var rescaled = RescalePwLl(_currentText, newDpmm / oldDpmm);
-            if (rescaled != _currentText)
+            // As EDITS, not as a new document: replacing the whole text resets
+            // Monaco's history, and undoing a density change is exactly what a user
+            // who moved this list without knowing what it does reaches for.
+            var edits = RescalePwLlEdits(_currentText, newDpmm / oldDpmm);
+            if (edits.Count > 0)
             {
                 _lastDpmm = newDpmm;
-                SetEditorText(rescaled, SizeUpdate.KeepCurrent);
+                ApplyEdits(edits, SizeUpdate.KeepCurrent);
                 return;
             }
         }
@@ -3722,6 +3725,27 @@ public sealed partial class PreviewPage : Page
         SelectDensity(_settings.DefaultDpmm);
         _lastDpmm = SelectedDpmm;
         _suppressDensityRescale = false;
+    }
+
+    // The same rescale as RescalePwLl, but as replacements of the numbers where
+    // they stand — one edit per value, which Monaco applies as a single step and
+    // therefore undoes as one.
+    private static List<ZplPatcher.Edit> RescalePwLlEdits(string text, double ratio)
+    {
+        var edits = new List<ZplPatcher.Edit>();
+        if (string.IsNullOrEmpty(text)) return edits;
+        foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(
+                     text, @"(\^(?:PW|LL)\s*)(\d+(?:\.\d+)?)",
+                     System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        {
+            var digits = m.Groups[2];
+            var value = double.Parse(digits.Value, System.Globalization.CultureInfo.InvariantCulture);
+            var scaled = Math.Max(1, (int)Math.Round(value * ratio))
+                .ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (scaled != digits.Value)
+                edits.Add(new ZplPatcher.Edit(digits.Index, digits.Index + digits.Length, scaled));
+        }
+        return edits;
     }
 
     // Multiplies every ^PW / ^LL value by the given ratio (dot values follow
@@ -5926,7 +5950,9 @@ public sealed partial class PreviewPage : Page
                 OnEditorReady();
                 break;
             case "textChanged":
-                OnEditorTextChanged(doc.RootElement.GetProperty("text").GetString() ?? "");
+                OnEditorTextChanged(
+                    doc.RootElement.GetProperty("text").GetString() ?? "",
+                    doc.RootElement.TryGetProperty("version", out var ver) ? ver.GetInt32() : 0);
                 break;
             case "cursorChanged":
                 _cursorOffset = doc.RootElement.GetProperty("offset").GetInt32();
@@ -6103,14 +6129,48 @@ public sealed partial class PreviewPage : Page
             PostToEditor(ZplHighlighter.GetDecorationsJson(_currentText));
     }
 
-    private void OnEditorTextChanged(string text)
+    private void OnEditorTextChanged(string text, int version = 0)
     {
+        // Before the early return below: an undo that lands back on a state this
+        // document has already been in reports the SAME text the app already holds,
+        // and that is exactly when the density and the size have to come back with it.
+        RestoreDocState(version);
         // Equal → the change came from a programmatic SetEditorText call (already processed).
-        if (text == _currentText) return;
+        if (text == _currentText) { RecordDocState(version); return; }
         _currentText = text;
         if (!_isDirty) { _isDirty = true; UpdateDocumentTitle(); }
         RefreshPreview(SizeUpdate.TextEdited);
         ScheduleHighlighting();
+        // Recorded AFTER the redraw, so the state filed against this version is the
+        // one the document actually ends up in and not the one it came from.
+        RecordDocState(version);
+    }
+
+    // Monaco's alternative version id names a STATE of the document rather than a
+    // step: undo and redo walk back to ids the document has already been at. Hanging
+    // the density and the page size on that id is what lets Ctrl+Z put back what a
+    // conversion changed and not merely the numbers it rewrote — a turned label has
+    // its size back, a converted one its density — and lets Ctrl+Y bring them
+    // forward again. Settings nobody has moved record one value and cost nothing.
+    private void RecordDocState(int version)
+    {
+        if (version <= 0 || _activeTab is null) return;
+        var seen = _activeTab.StateByVersion;
+        if (!seen.ContainsKey(version))
+            seen[version] = new DocState(SelectedDpmm, WidthBox.Text, HeightBox.Text);
+    }
+
+    private void RestoreDocState(int version)
+    {
+        if (version <= 0 || _activeTab is null) return;
+        if (!_activeTab.StateByVersion.TryGetValue(version, out var was)) return;
+
+        if (Math.Abs(was.Dpmm - SelectedDpmm) > 1e-9) ShowDensity(was.Dpmm);
+        // The boxes are the size the preview is drawn at, so putting the text back
+        // is putting the size back; a document that reads its size from ^PW/^LL
+        // works it out again from the restored text a moment later either way.
+        if (WidthBox.Text != was.Width) WidthBox.Text = was.Width;
+        if (HeightBox.Text != was.Height) HeightBox.Text = was.Height;
     }
 
     private void SetEditorText(string text, SizeUpdate kind = SizeUpdate.DocumentLoaded)
@@ -6118,6 +6178,9 @@ public sealed partial class PreviewPage : Page
         // Normalise to LF so _currentText always matches Monaco's getValue() output.
         text = text.Replace("\r\n", "\n").Replace('\r', '\n');
         _currentText = text;
+        // setValue on the other side resets Monaco's history, so the states
+        // recorded against the old one mean nothing any more.
+        _activeTab?.StateByVersion.Clear();
         RefreshPreview(kind);
         ScheduleHighlighting();
         // Guard: _currentText is set before posting so Monaco's textChanged reply is filtered.
@@ -6337,6 +6400,11 @@ public sealed record RenderSnapshot(int Width, int Height, byte[] BgraPixels);
 // A document open in a tab. The active tab's live state is held by the page
 // fields; DocTab stores the snapshot used while the tab is inactive. Id keys
 // the per-document Monaco model in the editor page.
+// The part of a document's state that is not its text but belongs to it all the
+// same: the density it is read at and the size it is drawn at. Undo puts these
+// back with the text — see PreviewPage.RestoreDocState.
+public sealed record DocState(double Dpmm, string Width, string Height);
+
 public sealed class DocTab
 {
     public string Id { get; } = Guid.NewGuid().ToString("N");
@@ -6354,6 +6422,11 @@ public sealed class DocTab
     // toolbar/editor toggles, redraws — restores it instead of the default, and
     // switching tabs brings each document back to its own level.
     public double? ZoomPercent { get; set; }
+
+    // What the toolbar showed at each state of this document's history, keyed by
+    // Monaco's alternative version id (PreviewPage.RecordDocState). Per tab,
+    // because those ids are per editor model.
+    public Dictionary<int, DocState> StateByVersion { get; } = new();
 }
 
 public static class AppWindowLookup

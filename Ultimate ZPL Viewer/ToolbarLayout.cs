@@ -38,7 +38,7 @@ public static class ToolbarItems
     public static readonly string[] AllIds =
     {
         "newFile", "openFile", "save",
-        "density", "size", "zoom", "rotate",
+        "density", "size", "rotate", "zoom",
         "transform", "pdf", "png", "print",
     };
 
@@ -58,7 +58,7 @@ public static class ToolbarItems
             new()
             {
                 ToolbarSlot.Named(Name("file"), "newFile", "openFile", "save"),
-                ToolbarSlot.Named(Name("view"), "density", "size", "zoom", "rotate"),
+                ToolbarSlot.Named(Name("view"), "density", "size", "rotate", "zoom"),
                 ToolbarSlot.Named(Name("output"), "transform", "pdf", "png", "print"),
             },
         };

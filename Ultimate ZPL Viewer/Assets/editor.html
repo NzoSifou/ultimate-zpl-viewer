@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -168,9 +168,14 @@
 
             // Notify C# on every content change (undo/redo included — Monaco handles them natively).
             editor.onDidChangeModelContent(function () {
+                // The alternative version id names the STATE the document is in, and
+                // returns to an earlier value when that state is undone back to.
+                // The app hangs the density on it, so a conversion is undone whole.
+                var m = editor.getModel();
                 window.chrome.webview.postMessage(JSON.stringify({
                     type: 'textChanged',
-                    text: editor.getValue()
+                    text: editor.getValue(),
+                    version: m ? m.getAlternativeVersionId() : 0
                 }));
             });
 

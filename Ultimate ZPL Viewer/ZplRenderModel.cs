@@ -46,7 +46,11 @@ public abstract record ZplDrawable(double X, double Y)
 // X,Y = ZPL field origin. Rotation in degrees (0/90/180/270). Baseline = true for
 // ^FT (origin is the text baseline), false for ^FO (origin is the top-left).
 public sealed record ZplText(double X, double Y, string Text, double Height, double Width, string Font, bool Bold, bool Reverse, int Rotation, bool Baseline) : ZplDrawable(X, Y);
-public sealed record ZplBox(double X, double Y, double Width, double Height, double Thickness, bool Reverse, bool WhiteFill = false) : ZplDrawable(X, Y);
+// TextRule marks a bar that is part of a TEXT field rather than a graphic of its
+// own: the dash of the Zebra typeface is drawn as a bar, not as a glyph, and a
+// field that contains one is still a text field wherever that distinction
+// matters (see ZplTransform.FieldsOf).
+public sealed record ZplBox(double X, double Y, double Width, double Height, double Thickness, bool Reverse, bool WhiteFill = false, bool TextRule = false) : ZplDrawable(X, Y);
 public sealed record ZplLine(double X, double Y, double Width, double Height, double Thickness) : ZplDrawable(X, Y);
 // Circle (^GC) / ellipse (^GE) outline; Thickness >= min(W,H)/2 means filled.
 public sealed record ZplEllipse(double X, double Y, double Width, double Height, double Thickness) : ZplDrawable(X, Y);
@@ -289,7 +293,7 @@ public static partial class ZplRenderer
                         if (i < segs.Length - 1)
                         {
                             cx += dGap;
-                            fieldBuf.Add(new ZplBox(cx, barTop, barW, barThick, barThick, false, false));
+                            fieldBuf.Add(new ZplBox(cx, barTop, barW, barThick, barThick, false, false, TextRule: true));
                             cx += barW + dGap;
                         }
                     }
@@ -407,18 +411,45 @@ public static partial class ZplRenderer
             double txX = fx, txY = fy;
 
             // ^FR text prints white only over a solid black box, otherwise black.
+            //
+            // The question is the same at any angle, and it used to be asked only of
+            // upright fields: a turned one kept its reverse and printed white on
+            // white, so turning a label quietly erased every ^FR field that was not
+            // over a box. The probe point is 0.4 of a cell from the anchor, on the
+            // side the glyphs rise towards — inside the first character whichever
+            // way the field reads.
             bool textReverse = reverse;
-            if (reverse && orientation == 0)
+            if (reverse)
             {
-                double sampleY = typeset ? txY - font.Height * 0.4 : txY + font.Height * 0.4;
-                bool over(ZplRect r) => txX >= r.X && txX <= r.Right && sampleY >= r.Y && sampleY <= r.Bottom;
+                double off = font.Height * 0.4;
+                double sampleX = txX, sampleY = txY;
+                if (typeset)
+                    switch (orientation)
+                    {
+                        case 90:  sampleX += off; break;   // R: ascenders to the right
+                        case 180: sampleY += off; break;   // I: ascenders downward
+                        case 270: sampleX -= off; break;   // B: ascenders to the left
+                        default:  sampleY -= off; break;   // N: ascenders upward
+                    }
+                else { sampleX += off; sampleY += off; }   // ^FO hangs the cell off its corner
+                bool over(ZplRect r) => sampleX >= r.X && sampleX <= r.Right && sampleY >= r.Y && sampleY <= r.Bottom;
                 textReverse = blackBoxes.Any(over) || fieldBlackBoxes.Any(over);
             }
 
             fieldBuf.Add(new ZplText(txX, txY, data, font.Height, effWidth, font.Family, font.Bold, textReverse, orientation, typeset));
-            var tw = MeasureTextWidth(data, font) * condenseW;
-            if (orientation is 90 or 270) Grow(txX + font.Height, txY + tw);
-            else Grow(txX + tw, txY + font.Height);
+            // The label grows to the ink, and where the ink lies depends on which
+            // way the field reads: a 180-degree field puts it to the LEFT of its
+            // anchor and a 90-degree one ABOVE. Reserving a text's width to the
+            // right of both left a margin with nothing in it — a ninth of the width
+            // of a turned label, which is what a turned label was getting.
+            // BoundsOf already knows all four cases; upright text keeps the reading
+            // it has always had, so no label that was right moves.
+            if (orientation != 0)
+            {
+                var inked = BoundsOf(fieldBuf[^1]);
+                Grow(inked.Right, inked.Bottom);
+            }
+            else Grow(txX + MeasureTextWidth(data, font) * condenseW, txY + font.Height);
         }
 
         // Emits a 1D barcode (bars + human-readable text) as a ZplBars drawable.
@@ -810,6 +841,7 @@ public static partial class ZplRenderer
                 case "BX": // Data Matrix (real encoder)
                 {
                     // ^BXo,h,s,cols,rows — h = module size; cols forces the symbol size.
+                    barcodeRotation = BarcodeOrientation(args, fwOrient);
                     var bx = ParseNumbers(args).ToArray();
                     dmModuleSize = bx.Length > 0 ? Math.Max(1, bx[0]) : 3;
                     dmForcedSize = bx.Length > 2 ? (int)bx[2] : 0;
@@ -818,6 +850,7 @@ public static partial class ZplRenderer
                 }
                 case "BQ": // QR code: ^BQa,b,c — c = magnification
                 {
+                    barcodeRotation = BarcodeOrientation(args, fwOrient);
                     var bq = ParseNumbers(args).ToArray();
                     qrMag = bq.Length > 1 ? Math.Max(1, bq[1]) : 3;
                     pendingQr = true;
@@ -914,6 +947,7 @@ public static partial class ZplRenderer
                     break;
                 case "BO": // Aztec (magnification is the first numeric arg)
                 case "B0":
+                    barcodeRotation = BarcodeOrientation(args, fwOrient);
                     var azArgs = ParseNumbers(args).ToArray();
                     aztecMag = azArgs.Length > 0 ? Math.Max(1, azArgs[0]) : 1;
                     pendingAztec = true;
@@ -1104,6 +1138,8 @@ public static partial class ZplRenderer
                         var matrix = TryEncodeAztec(data);
                         if (matrix is not null)
                         {
+                            // Square, so only the modules turn — the box does not.
+                            if (barcodeRotation != 0) matrix = TurnMatrix(matrix, barcodeRotation);
                             int nm = matrix.GetLength(0);
                             double sz = nm * aztecMag;
                             double topY = typeset ? fy - sz : fy;
@@ -1117,6 +1153,7 @@ public static partial class ZplRenderer
                         var matrix = TryEncodeDataMatrix(data, dmForcedSize);
                         if (matrix is not null)
                         {
+                            if (barcodeRotation != 0) matrix = TurnMatrix(matrix, barcodeRotation);
                             int nm = matrix.GetLength(0);
                             double sz = nm * dmModuleSize;
                             double topY = typeset ? fy - sz : fy;
@@ -1139,6 +1176,7 @@ public static partial class ZplRenderer
                         var matrix = TryEncodeQr(payload, ecc);
                         if (matrix is not null)
                         {
+                            if (barcodeRotation != 0) matrix = TurnMatrix(matrix, barcodeRotation);
                             int nm = matrix.GetLength(0);
                             double sz = nm * qrMag;
                             double topY = typeset ? fy - sz : fy;
@@ -1303,13 +1341,17 @@ public static partial class ZplRenderer
                         : new ZplRect(t.X, t.Y, w, cell);
 
                 // ^FT: the anchor sits ON the baseline at the start of the run, so the
-                // cell rises above it and the descenders hang below.
+                // cell rises above it and the descenders hang below. Turning the
+                // field turns that pair too — measured on the renderer itself with
+                // a 40-dot "Hamburg" at each of the four orientations:
+                //   R reads DOWNWARD from the anchor, its ascenders to the right;
+                //   B reads UPWARD from it, its ascenders to the left.
                 double up = cell * BaselineFraction, down = cell - up;
                 return t.Rotation switch
                 {
-                    90  => new ZplRect(t.X - up, t.Y - w, cell, w),
+                    90  => new ZplRect(t.X - down, t.Y, cell, w),
                     180 => new ZplRect(t.X - w, t.Y - down, w, cell),
-                    270 => new ZplRect(t.X - down, t.Y, cell, w),
+                    270 => new ZplRect(t.X - up, t.Y - w, cell, w),
                     _   => new ZplRect(t.X, t.Y - up, w, cell),
                 };
             }

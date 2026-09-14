@@ -97,6 +97,21 @@ un Ctrl+Z rend le document d'avant.
   Les quelques traits ainsi économisés font la différence : la disposition par
   défaut **tient désormais sur une seule ligne sur un écran 1920 × 1080** à 100 %.
 
+- **Ctrl+Z ramène aussi la densité et la taille** ↩️
+  Annuler une conversion remettait les nombres en place mais laissait la liste
+  des densités sur la nouvelle valeur, et une rotation annulée laissait
+  l'étiquette à ses dimensions tournées. La densité et la taille font maintenant
+  partie de l'historique : **un Ctrl+Z rend le document exactement tel qu'il
+  était**, et Ctrl+Y le ramène. Cela vaut partout, pas seulement après une
+  transformation : qui déplace la liste des densités sans savoir ce qu'elle fait
+  n'a qu'à annuler.
+
+  Changer la densité depuis la barre d'outils **effaçait** d'ailleurs tout
+  l'historique de l'éditeur, parce que le document était réécrit en entier :
+  ^PW et ^LL sont désormais modifiés là où ils sont, comme partout ailleurs.
+  (Une étiquette qui n'écrit ni ^PW ni ^LL n'a rien à annuler : il n'y a alors
+  aucune modification du texte à laquelle rattacher la densité.)
+
 ### 🔄 Modifié
 
 - **Fichier et export ne sont plus soudés** ✂️
@@ -115,6 +130,49 @@ un Ctrl+Z rend le document d'avant.
 
 ### 🐛 Corrigé
 
+- **La rotation déplaçait la moitié d'une étiquette n'importe où** 🔄
+  Sept défauts, trouvés en comparant l'image d'une étiquette tournée à l'image de
+  l'étiquette d'origine tournée du même angle — deux choses qui doivent se
+  superposer au pixel près :
+
+  - **Un champ de texte contenant un tiret était placé comme un dessin.** Le
+    tiret de la police Zebra est tracé comme une barre et non comme un
+    caractère ; le champ n'était donc plus reconnu comme du texte, et son ^FT
+    était pris pour un coin de boîte au lieu d'une ligne de base. Chacun de ces
+    champs partait de toute sa longueur. C'est ce qui décalait « n'importe
+    comment » tout un bloc d'une étiquette DPD.
+  - **Les codes 2D ne tournaient pas.** Aztec, Data Matrix et QR gardaient leurs
+    modules à l'endroit dans une étiquette tournée ; ils suivent désormais le
+    champ, comme le PDF417 le faisait déjà.
+  - **^MUD faisait renoncer le moteur.** Le code d'unité de ^MU n'est « pas des
+    points » que pour I (pouces) et M (millimètres) ; toute autre lettre est en
+    points, et GLS écrit ^MUD. Le moteur refusait alors de déplacer la moindre
+    coordonnée tout en tournant les champs : l'étiquette ressortait illisible.
+  - **Une étiquette avec ^LH perdait ses champs de bord.** Les coordonnées sont
+    écrites relativement à ce décalage, et un quart de tour pouvait ramener un
+    champ plus près du bord que le décalage lui-même — donc un ^FO **négatif**,
+    que ZPL ne connaît pas. Une rotation ramène maintenant ^LH (et ^LS, ^LT) à
+    zéro et écrit les positions telles quelles.
+  - **Un champ ^FR tourné devenait invisible.** La question « y a-t-il du noir
+    dessous ? » n'était posée qu'aux champs droits : tourné, le champ gardait
+    son inversion et s'imprimait en blanc sur blanc.
+  - **Les orientations R et B étaient interverties** dans la boîte d'un texte
+    ancré par ^FT : un R monte à droite de son ancre et descend, un B fait
+    l'inverse.
+  - **L'étiquette grandissait en tournant.** Un champ à 180° écrit à GAUCHE de
+    son ancre ; réserver sa largeur à droite ajoutait une marge vide — 109
+    points sur l'étiquette DPD tournée.
+
+  Mesuré sur sept étiquettes réelles (DPD, GLS, Mondial Relay, Chronopost,
+  Colissimo, Geodis) aux trois angles : l'encre tournée tombe désormais à **1 à
+  7 points** près de l'original tourné, contre 114 avant. Les 67 étiquettes du
+  jeu de test sont rendues **au pixel identique** à avant, à l'endroit.
+
+- **La conversion de densité faisait grandir l'étiquette de son propre rapport** 📐
+  Les ^PW/^LL étaient réécrits alors que la barre d'outils tenait encore
+  l'ancienne densité, si bien qu'une étiquette de 101,5 mm convertie de 8 à
+  12 dpmm s'annonçait à 152,25 mm. Elle est relue une fois la densité changée.
+
 - **Le mode visualisation refusait les modifications venues de l'application** ✏️
   L'éditeur y est en lecture seule, et Monaco refuse alors une modification
   programmée comme il refuse une frappe — Ctrl+Z compris. Une modification qui
@@ -123,6 +181,7 @@ un Ctrl+Z rend le document d'avant.
 
 ### 🔧 Détails
 
+- Par défaut, « Tourner » repasse avant « Zoom » dans le groupe Affichage.
 - Le trait qui borde un groupe prend toute la hauteur de sa ligne, le nom
   compris, au lieu d'une hauteur fixe qui le laissait flotter trop bas. Il
   n'a plus de hauteur à lui : c'est la ligne qui la lui donne, et il ne pèse

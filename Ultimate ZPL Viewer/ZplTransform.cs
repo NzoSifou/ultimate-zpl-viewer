@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -191,18 +191,25 @@ public static class ZplTransform
                     Start = d.SourceStart + offset,
                     End = d.SourceEnd + offset,
                     Box = box,
-                    TextOnly = d is ZplText,
+                    TextOnly = ReadsAsText(d),
                     Image = d as ZplImage,
                 };
                 continue;
             }
             field.Box = Union(field.Box, box);
             if (d.SourceEnd + offset > field.End) field.End = d.SourceEnd + offset;
-            if (d is not ZplText) field.TextOnly = false;
+            if (!ReadsAsText(d)) field.TextOnly = false;
             field.Image ??= d as ZplImage;
         }
         return byStart.Values.OrderBy(f => f.Start).ToList();
     }
+
+    // Whether a drawable is one a TEXT field produced. It is not quite "is it a
+    // ZplText": the Zebra typeface draws its dash as a bar rather than a glyph, so
+    // a field holding a hyphen comes back as text runs with bars between them and
+    // is still a text field — its ^FT anchors a baseline, not a corner.
+    private static bool ReadsAsText(ZplDrawable d)
+        => d is ZplText || d is ZplBox { TextRule: true };
 
     private static ZplRect Union(ZplRect a, ZplRect b)
     {
@@ -288,17 +295,29 @@ public static class ZplTransform
 
                 // A shift of the whole label, in the label's own frame: it keeps
                 // meaning what it meant, only in bigger or smaller dots.
+                //
+                // Turning the label is the exception. These offsets are added to
+                // every coordinate before anything is drawn, so a coordinate is
+                // written relative to them — and a quarter turn can land a field
+                // nearer the edge than the offset itself, which would have to be
+                // written as a NEGATIVE ^FO. ZPL has no negative coordinates: a
+                // printer reads one as garbage and the field is lost. So a turn
+                // folds the offsets into the coordinates and zeroes them here;
+                // every field is then written where it really is.
                 case "LH":
                     lhX = At(0); lhY = At(1);
-                    if (scaling) { Write(edits, parts, 0, lhX * ratio, 0); Write(edits, parts, 1, lhY * ratio, 0); }
+                    if (rot != 0) { Write(edits, parts, 0, 0, 0); Write(edits, parts, 1, 0, 0); }
+                    else if (scaling) { Write(edits, parts, 0, lhX * ratio, 0); Write(edits, parts, 1, lhY * ratio, 0); }
                     break;
                 case "LS":
                     lsX = At(0);
-                    if (scaling) Write(edits, parts, 0, lsX * ratio, double.MinValue);
+                    if (rot != 0) Write(edits, parts, 0, 0, double.MinValue);
+                    else if (scaling) Write(edits, parts, 0, lsX * ratio, double.MinValue);
                     break;
                 case "LT":
                     ltY = At(0);
-                    if (scaling) Write(edits, parts, 0, ltY * ratio, double.MinValue);
+                    if (rot != 0) Write(edits, parts, 0, 0, double.MinValue);
+                    else if (scaling) Write(edits, parts, 0, ltY * ratio, double.MinValue);
                     break;
 
                 // ── Where a field starts ────────────────────────────────────
@@ -338,8 +357,13 @@ public static class ZplTransform
                         }
                     }
 
-                    Write(edits, parts, 0, (nx - lhX - lsX) * ratio, double.MinValue, fill: true);
-                    Write(edits, parts, 1, (ny - lhY - ltY) * ratio, double.MinValue, fill: true);
+                    // Turned, the offsets above have been zeroed, so what is written
+                    // is the position itself; upright, they still stand and the
+                    // coordinate stays relative to them, exactly as it was written.
+                    double offX = rot != 0 ? 0 : lhX + lsX;
+                    double offY = rot != 0 ? 0 : lhY + ltY;
+                    Write(edits, parts, 0, (nx - offX) * ratio, double.MinValue, fill: true);
+                    Write(edits, parts, 1, (ny - offY) * ratio, double.MinValue, fill: true);
                     break;
                 }
 
@@ -421,8 +445,15 @@ public static class ZplTransform
                 default:
                     if (t.Command == "MU")
                     {
-                        var unit = parts.Count > 0 ? parts[0].Text.Trim().ToUpperInvariant() : "U";
-                        inDots = unit.Length == 0 || unit[0] == 'U';
+                        // ^MUa: only I (inches) and M (millimetres) take the
+                        // coordinates out of dots. Everything else is dots — U is
+                        // what the manual names, but printers accept other letters
+                        // for it (GLS writes ^MUD) and the renderer reads them all
+                        // as dots. The two have to agree, or this refuses to move
+                        // coordinates the renderer has already placed in dots and
+                        // leaves the label turned in name only.
+                        var unit = parts.Count > 0 ? parts[0].Text.Trim().ToUpperInvariant() : "";
+                        inDots = unit.Length == 0 || (unit[0] != 'I' && unit[0] != 'M');
                         if (!inDots) notes.Add(new Note("units", "^MU", LineOf(zpl, t.Start)));
                     }
                     else if (t.Command == "JM")

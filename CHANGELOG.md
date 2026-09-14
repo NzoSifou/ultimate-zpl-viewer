@@ -86,6 +86,17 @@ un Ctrl+Z rend le document d'avant.
   la retire. **Supprimer un groupe ne supprime pas ses boutons** : ils sont
   répandus là où il se trouvait, c'est-à-dire là où on ira les chercher.
 
+- **Les boutons qui ne formaient qu'un le montrent encore** 🔗
+  Un trait entre « Nouveau fichier » et « Ouvrir un fichier » n'a jamais eu de
+  sens : c'était un seul contrôle. Ces trois-là — et « PDF » avec « PNG » —
+  restent libres d'aller où l'on veut, mais **dès que deux d'entre eux se
+  retrouvent côte à côte, le trait disparaît et l'écart se resserre** à ce qu'il
+  était. Un trait qui borde un groupe, lui, reste : il délimite le groupe, ce
+  n'est pas la même chose qu'un trait entre deux boutons.
+
+  Les quelques traits ainsi économisés font la différence : la disposition par
+  défaut **tient désormais sur une seule ligne sur un écran 1920 × 1080** à 100 %.
+
 ### 🔄 Modifié
 
 - **Fichier et export ne sont plus soudés** ✂️
@@ -112,6 +123,10 @@ un Ctrl+Z rend le document d'avant.
 
 ### 🔧 Détails
 
+- Le trait qui borde un groupe prend toute la hauteur de sa ligne, le nom
+  compris, au lieu d'une hauteur fixe qui le laissait flotter trop bas. Il
+  n'a plus de hauteur à lui : c'est la ligne qui la lui donne, et il ne pèse
+  donc jamais sur la hauteur de la barre. Le nom, lui, respire un peu plus.
 - Un ^GD qui penche à droite est stocké avec une hauteur négative ; la boîte qu'il
   occupe est la même dans les deux sens, et elle est désormais lue comme telle.
 - Une image ^GF n'était redessinée que si l'on pivotait aussi le document : une

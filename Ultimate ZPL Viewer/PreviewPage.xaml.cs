@@ -919,11 +919,17 @@ public sealed partial class PreviewPage : Page
             var wrap = new ToolbarWrapPanel { HorizontalSpacing = 10, VerticalSpacing = 8 };
             for (int i = 0; i < slots.Count; i++)
             {
-                // The rule bounding a group is taller than the ones inside it, so a
-                // group reads as one block rather than as more of the same buttons.
                 if (i > 0)
-                    wrap.Children.Add(MakeToolbarSeparator(
-                        slots[i - 1].IsGroup || slots[i].IsGroup ? (labelled ? 34 : 26) : 16));
+                {
+                    // The rule bounding a group runs the full height of the row —
+                    // the name included, as a ribbon's does — so the group reads as
+                    // one block rather than as more of the same buttons. Between two
+                    // loose buttons it is the short one, unless the two are welded.
+                    if (slots[i - 1].IsGroup || slots[i].IsGroup)
+                        wrap.Children.Add(MakeToolbarGroupSeparator());
+                    else if (!Welded(LastRendered(slots[i - 1]), FirstRendered(slots[i])))
+                        wrap.Children.Add(MakeToolbarSeparator(16));
+                }
                 wrap.Children.Add(BuildToolbarSlot(slots[i], labelled));
             }
             ToolbarLines.Children.Add(wrap);
@@ -935,23 +941,26 @@ public sealed partial class PreviewPage : Page
     // such a row, empty on the ones with nothing to say, so the buttons stay level.
     private FrameworkElement BuildToolbarSlot(ToolbarSlot slot, bool labelled)
     {
+        // The gaps are carried by the items themselves rather than by a uniform
+        // Spacing, because a welded pair sits closer than a ruled one.
         var line = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 10,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        bool first = true;
+        string? previous = null;
         foreach (var id in slot.Items)
         {
             if (GetToolbarItem(id) is not { } control) continue;
-            if (!first) line.Children.Add(MakeToolbarSeparator(16));
+            bool welded = Welded(previous, id);
+            if (previous is not null && !welded) line.Children.Add(MakeToolbarSeparator(16, 10));
+            control.Margin = new Thickness(previous is null ? 0 : welded ? WeldGap : 10, 0, 0, 0);
             line.Children.Add(control);
-            first = false;
+            previous = id;
         }
         if (!labelled) return line;
 
-        var stack = new StackPanel { Spacing = 1 };
+        var stack = new StackPanel { Spacing = 6 };
         stack.Children.Add(line);
         stack.Children.Add(new TextBlock
         {
@@ -965,13 +974,49 @@ public sealed partial class PreviewPage : Page
         return stack;
     }
 
-    private static Microsoft.UI.Xaml.Shapes.Rectangle MakeToolbarSeparator(double height) => new()
+    // leftGap is the air in front of the rule; the row after it carries its own.
+    // A rule dropped straight into the wrap panel wants none, because the panel
+    // already spaces its children.
+    private static Microsoft.UI.Xaml.Shapes.Rectangle MakeToolbarSeparator(double height, double leftGap = 0) => new()
     {
         Width = 1, Height = height, Opacity = 0.5,
-        Margin = new Thickness(2, 0, 2, 0),
+        Margin = new Thickness(leftGap, 0, 0, 0),
         VerticalAlignment = VerticalAlignment.Center,
         Fill = (Brush)Application.Current.Resources["ControlStrongStrokeColorDefaultBrush"],
     };
+
+    // The rule that bounds a group. It carries no height of its own: the wrap
+    // panel stretches it to whatever the row turned out to be, so it reaches the
+    // top of the buttons and the foot of the name without ever deciding how tall
+    // the row is.
+    private static Microsoft.UI.Xaml.Shapes.Rectangle MakeToolbarGroupSeparator() => new()
+    {
+        Width = 1, Opacity = 0.5,
+        Margin = new Thickness(2, 0, 2, 0),
+        VerticalAlignment = VerticalAlignment.Stretch,
+        Fill = (Brush)Application.Current.Resources["ControlStrongStrokeColorDefaultBrush"],
+    };
+
+    // Buttons that were one control until the toolbar learned about groups, and
+    // that still look wrong with a rule between them: wherever two of a run end
+    // up side by side, the rule is dropped and the gap closes to what it was.
+    private const double WeldGap = 8;
+
+    private static readonly string[][] WeldedRuns =
+    {
+        new[] { "newFile", "openFile", "save" },
+        new[] { "pdf", "png" },
+    };
+
+    private static bool Welded(string? a, string? b)
+        => a is not null && b is not null
+           && WeldedRuns.Any(run => Array.IndexOf(run, a) >= 0 && Array.IndexOf(run, b) >= 0);
+
+    private string? FirstRendered(ToolbarSlot slot)
+        => slot.Items.FirstOrDefault(id => GetToolbarItem(id) is not null);
+
+    private string? LastRendered(ToolbarSlot slot)
+        => slot.Items.LastOrDefault(id => GetToolbarItem(id) is not null);
 
     public void RequestOpenSettings() => OpenSettings("general");
 
@@ -6519,7 +6564,12 @@ public sealed partial class ToolbarWrapPanel : Panel
             foreach (var item in line)
             {
                 var s = item.DesiredSize;
-                item.Arrange(new Windows.Foundation.Rect(x, y + (lineHeight - s.Height) / 2, s.Width, s.Height));
+                // A separator that asked for no height of its own takes the row's,
+                // which is how a group's rule reaches past the buttons to the name.
+                double h = IsSeparator(item) && item is FrameworkElement fe
+                           && fe.VerticalAlignment == VerticalAlignment.Stretch
+                    ? lineHeight : s.Height;
+                item.Arrange(new Windows.Foundation.Rect(x, y + (lineHeight - h) / 2, s.Width, h));
                 x += s.Width + HorizontalSpacing;
             }
             y += lineHeight + VerticalSpacing;

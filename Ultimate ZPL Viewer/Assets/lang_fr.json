@@ -1962,7 +1962,33 @@
     },
     "toolbar": {
       "title": "Barre d'outils",
-      "subtitle": "Glissez-déposez les éléments pour les réorganiser. Vous disposez de trois lignes : déposez un élément sur une autre ligne pour l'y déplacer. Chaque ligne se replie automatiquement si la fenêtre est trop étroite."
+      "subtitle": "Glissez-déposez les boutons pour les réorganiser. Vous disposez de trois lignes, et de groupes : un groupe rassemble des boutons sous un nom et n'apparaît dans la barre que lorsqu'il en contient. Chaque ligne se replie automatiquement si la fenêtre est trop étroite.",
+      "lbl": {
+        "row": "Ligne {0}",
+        "addGroup": "Ajouter un groupe",
+        "deleteGroup": "Supprimer le groupe (ses boutons restent à sa place)",
+        "emptyGroup": "Groupe vide",
+        "groupName": "Nom du groupe"
+      },
+      "groups": {
+        "file": "Fichier",
+        "view": "Affichage",
+        "output": "Sortie",
+        "new": "Nouveau groupe"
+      },
+      "items": {
+        "newFile": "Nouveau fichier",
+        "openFile": "Ouvrir un fichier",
+        "save": "Enregistrer",
+        "density": "Densité",
+        "size": "Taille",
+        "zoom": "Zoom",
+        "rotate": "Tourner",
+        "transform": "Transformer",
+        "pdf": "PDF",
+        "png": "PNG",
+        "print": "Imprimer"
+      }
     },
     "screen": {
       "title": "Écran",

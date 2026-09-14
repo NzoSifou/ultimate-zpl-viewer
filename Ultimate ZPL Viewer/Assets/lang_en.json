@@ -1962,7 +1962,33 @@
     },
     "toolbar": {
       "title": "Toolbar",
-      "subtitle": "Drag and drop the items to rearrange them. You have three rows: drop an item on another row to move it there. Each row wraps automatically when the window is too narrow."
+      "subtitle": "Drag and drop the buttons to rearrange them. You have three rows, and groups: a group gathers buttons under a name and only shows on the toolbar once it holds some. Each row wraps automatically when the window is too narrow.",
+      "lbl": {
+        "row": "Row {0}",
+        "addGroup": "Add a group",
+        "deleteGroup": "Delete the group (its buttons stay where it was)",
+        "emptyGroup": "Empty group",
+        "groupName": "Group name"
+      },
+      "groups": {
+        "file": "File",
+        "view": "View",
+        "output": "Output",
+        "new": "New group"
+      },
+      "items": {
+        "newFile": "New file",
+        "openFile": "Open a file",
+        "save": "Save",
+        "density": "Density",
+        "size": "Size",
+        "zoom": "Zoom",
+        "rotate": "Rotate",
+        "transform": "Transform",
+        "pdf": "PDF",
+        "png": "PNG",
+        "print": "Print"
+      }
     },
     "screen": {
       "title": "Screen",

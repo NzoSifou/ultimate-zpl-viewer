@@ -206,14 +206,13 @@ public sealed class AppSettings
     // a window resized during the session leaves the editor where it was put, and
     // reopening the app the same size puts it back exactly there.
     public double EditorWidth { get; set; } = 420;
-    // Toolbar layout: up to 3 rows of group ids. Each row still wraps automatically
-    // on narrow windows. Row 0 holds every group by default.
-    public List<List<string>> ToolbarRows { get; set; } = new()
-    {
-        new List<string>(ToolbarItems.AllIds),
-        new List<string>(),
-        new List<string>(),
-    }; // unknown ids from older versions are dropped by NormalizeRows
+    // Toolbar layout: three rows of slots, a slot being one button or a named
+    // group of them. Each row still wraps automatically on narrow windows.
+    //
+    // Null until somebody arranges one, which is also how a layout written by a
+    // version that knew nothing of groups is handled: the key it used is not this
+    // one, so the default - three named groups - is what comes up.
+    public List<List<ToolbarSlot>>? ToolbarLayout { get; set; }
 
     // Manual physical screen sizes (monitor interface id → diagonal in inches),
     // used to render at real size when the EDID doesn't report a physical size.

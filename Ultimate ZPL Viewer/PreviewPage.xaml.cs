@@ -824,31 +824,36 @@ public sealed partial class PreviewPage : Page
 
     // ── Customizable toolbar ─────────────────────────────────────────────────
 
-    // Groups with several buttons (Buttons != null) are shown in the designer as
-    // one card containing a mini-button per real button, with a single grip.
-    private static readonly (string Id, string Label, string Glyph, (string Glyph, string Label)[]? Buttons)[] ToolbarItemDefs =
+    // Every button the toolbar can show, with the glyph and name the designer
+    // draws on its chip. The names come from the language file: the same words as
+    // on the buttons themselves.
+    private static readonly (string Id, string Glyph)[] ToolbarItemDefs =
     {
-        ("file", "Fichier", "", new[]
-            { ("", "Nouveau fichier"), ("", "Ouvrir un fichier"), ("", "Enregistrer") }),
-        ("density", "Densité", "", null),
-        ("size", "Taille", "", null),
-        ("transform", "Transformer", "", null),
-        ("rotate", "Tourner", "", null),
-        ("zoom", "Zoom", "", null),
-        ("download", "Téléchargement", "", new[]
-            { ("", "PDF"), ("", "PNG") }),
-        ("print", "Imprimer", "", null),
+        ("newFile", ""),
+        ("openFile", ""),
+        ("save", ""),
+        ("density", ""),
+        ("size", ""),
+        ("zoom", ""),
+        ("rotate", ""),
+        ("transform", ""),
+        ("pdf", ""),
+        ("png", ""),
+        ("print", ""),
     };
 
-    private FrameworkElement? GetToolbarGroup(string id) => id switch
+    private FrameworkElement? GetToolbarItem(string id) => id switch
     {
-        "file"     => FileGroup,
+        "newFile"  => NewFileButton,
+        "openFile" => OpenFileButton,
+        "save"     => SaveButton,
         "density"  => DensityGroup,
         "size"     => SizeGroup,
-        "transform" => TransformGroup,
-        "rotate"   => RotateGroup,
         "zoom"     => ZoomGroup,
-        "download" => DownloadGroup,
+        "rotate"   => RotateGroup,
+        "transform" => TransformGroup,
+        "pdf"      => PdfButton,
+        "png"      => PngButton,
         "print"    => PrintGroup,
         _          => null,
     };
@@ -888,35 +893,81 @@ public sealed partial class PreviewPage : Page
     }
 
     // Rebuilds the toolbar: one wrap panel per non-empty row (rows stack
-    // vertically), separators between groups within a row. Each row still wraps
-    // on narrow windows so no control is ever clipped.
+    // vertically), separators between slots within a row. Each row still wraps on
+    // narrow windows so no control is ever clipped.
+    //
+    // A slot is one button or a named group of them. A group writes its name
+    // under its buttons, which costs the row a line of height — so the line is
+    // only reserved on a row that has a name to put in it, and every slot on that
+    // row reserves it so the buttons still sit level with each other.
     private void RebuildToolbar()
     {
-        _settings.ToolbarRows = ToolbarItems.NormalizeRows(_settings.ToolbarRows);
+        _settings.ToolbarLayout = ToolbarItems.Normalize(_settings.ToolbarLayout);
 
         foreach (var id in ToolbarItems.AllIds)
-            if (GetToolbarGroup(id) is { } g) Detach(g);
+            if (GetToolbarItem(id) is { } c) Detach(c);
         ToolbarLines.Children.Clear();
 
-        foreach (var row in _settings.ToolbarRows)
+        foreach (var row in _settings.ToolbarLayout)
         {
-            if (row.Count == 0) continue;
+            // An empty group shows nothing at all: it is a thing half-made, not a
+            // gap to leave in the toolbar.
+            var slots = row.Where(s => s.Items.Any(id => GetToolbarItem(id) is not null)).ToList();
+            if (slots.Count == 0) continue;
+            bool labelled = slots.Any(s => s.IsGroup && !string.IsNullOrWhiteSpace(s.Group));
+
             var wrap = new ToolbarWrapPanel { HorizontalSpacing = 10, VerticalSpacing = 8 };
-            bool first = true;
-            foreach (var id in row)
+            for (int i = 0; i < slots.Count; i++)
             {
-                if (GetToolbarGroup(id) is not { } g) continue;
-                if (!first) wrap.Children.Add(MakeToolbarSeparator());
-                wrap.Children.Add(g);
-                first = false;
+                // The rule bounding a group is taller than the ones inside it, so a
+                // group reads as one block rather than as more of the same buttons.
+                if (i > 0)
+                    wrap.Children.Add(MakeToolbarSeparator(
+                        slots[i - 1].IsGroup || slots[i].IsGroup ? (labelled ? 34 : 26) : 16));
+                wrap.Children.Add(BuildToolbarSlot(slots[i], labelled));
             }
             ToolbarLines.Children.Add(wrap);
         }
     }
 
-    private static Microsoft.UI.Xaml.Shapes.Rectangle MakeToolbarSeparator() => new()
+    // One slot: its buttons side by side, and — on a row that has a group name to
+    // show — a line underneath carrying it. The line is there on every slot of
+    // such a row, empty on the ones with nothing to say, so the buttons stay level.
+    private FrameworkElement BuildToolbarSlot(ToolbarSlot slot, bool labelled)
     {
-        Width = 1, Height = 16, Opacity = 0.5,
+        var line = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        bool first = true;
+        foreach (var id in slot.Items)
+        {
+            if (GetToolbarItem(id) is not { } control) continue;
+            if (!first) line.Children.Add(MakeToolbarSeparator(16));
+            line.Children.Add(control);
+            first = false;
+        }
+        if (!labelled) return line;
+
+        var stack = new StackPanel { Spacing = 1 };
+        stack.Children.Add(line);
+        stack.Children.Add(new TextBlock
+        {
+            Text = slot.IsGroup ? slot.Group : "",
+            FontSize = 11,
+            Opacity = 0.6,
+            Height = 15,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        });
+        return stack;
+    }
+
+    private static Microsoft.UI.Xaml.Shapes.Rectangle MakeToolbarSeparator(double height) => new()
+    {
+        Width = 1, Height = height, Opacity = 0.5,
         Margin = new Thickness(2, 0, 2, 0),
         VerticalAlignment = VerticalAlignment.Center,
         Fill = (Brush)Application.Current.Resources["ControlStrongStrokeColorDefaultBrush"],
@@ -4757,139 +4808,373 @@ public sealed partial class PreviewPage : Page
 
     // ── Toolbar designer (drag & drop) ───────────────────────────────────────
 
-    // The designer lists hold the chip visuals directly (ToolbarChipView builds
-    // its own content and carries its ToolbarChip): no template machinery, so
-    // nothing can override what is displayed.
+    // The designer edits the layout ITSELF — the same ToolbarSlot objects that are
+    // saved — and rebuilds its chips from it after every move. The lists hold half
+    // a dozen things; rebuilding them is cheaper to think about than keeping two
+    // representations in step, and it is what makes a two-level drag tractable:
+    // a button can be dropped on a row or inside a group, and either way there is
+    // one model to take it out of and put it back into.
+    //
+    // The chips sit in the same wrapping panel the real toolbar uses, with the drag
+    // hung off each chip and the drop off the panel. A ListView would have brought
+    // its own machinery, but it cannot wrap a row of variable-width cards — and a
+    // group card that only a sideways scrollbar can reach is a group card nobody
+    // will find.
     private UIElement BuildToolbarDesignerSettings()
     {
         var panel = SettingsPanel();
 
-        // Header row: the title/subtitle on the left, the "Réinitialiser" button
-        // vertically centred on the right (no empty gap above the card).
-        var designer = BuildToolbarDesigner(out var resetBtn);
+        // Header row: the title/subtitle on the left, the two buttons vertically
+        // centred on the right (no empty gap above the card).
+        var designer = BuildToolbarDesigner(out var resetBtn, out var addGroupBtn);
         var headerRow = new Grid { Margin = new Thickness(0, 0, 0, 10) };
         headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var header = LocalizedSettingsHeader("toolbar");
         header.Margin = new Thickness(0);
         header.VerticalAlignment = VerticalAlignment.Center;
-        resetBtn.VerticalAlignment = VerticalAlignment.Center;
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        buttons.Children.Add(addGroupBtn);
+        buttons.Children.Add(resetBtn);
         Grid.SetColumn(header, 0);
-        Grid.SetColumn(resetBtn, 1);
+        Grid.SetColumn(buttons, 1);
         headerRow.Children.Add(header);
-        headerRow.Children.Add(resetBtn);
+        headerRow.Children.Add(buttons);
         panel.Children.Add(headerRow);
 
         panel.Children.Add(designer);
         return panel;
     }
 
-    // The toolbar designer: a 3-row drag-and-drop card bound to the persisted
-    // toolbar layout. The "Réinitialiser" button is returned via resetBtn so the
-    // caller can place it in the section header.
-    private UIElement BuildToolbarDesigner(out Button resetBtn)
+    // The toolbar designer: three drag-and-drop rows bound to the persisted
+    // layout. The two header buttons are returned so the caller can place them.
+    private UIElement BuildToolbarDesigner(out Button resetBtn, out Button addGroupBtn)
     {
-        var section = new StackPanel();
-        var rows = ToolbarItems.NormalizeRows(_settings.ToolbarRows);
-        var designerRows = new System.Collections.ObjectModel.ObservableCollection<ToolbarChipView>[ToolbarItems.RowCount];
+        var model = ToolbarItems.Normalize(_settings.ToolbarLayout);
+        var rowPanels = new ToolbarWrapPanel[ToolbarItems.RowCount];
 
-        // Cross-list drops fire several CollectionChanged events; coalesce into
-        // one save that persists this designer's layout and rebuilds the live
-        // toolbar (only when it is the one being displayed).
-        bool saveQueued = false;
-        void QueueSave()
+        // A group has no name to be found by — two can share one, and renaming
+        // must not break a drag already under way — so each gets a token for the
+        // trip through the drag's data package.
+        var tokens = new Dictionary<string, ToolbarSlot>();
+        string TokenFor(ToolbarSlot slot)
         {
-            if (saveQueued) return;
-            saveQueued = true;
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                saveQueued = false;
-                var outRows = new List<List<string>>();
-                foreach (var col in designerRows)
-                {
-                    var row = new List<string>();
-                    foreach (var view in col) row.Add(view.Chip.Id);
-                    outRows.Add(row);
-                }
-                _settings.ToolbarRows = outRows;
-                _settings.Save();
-                RebuildToolbar();
-            });
+            foreach (var pair in tokens)
+                if (ReferenceEquals(pair.Value, slot)) return pair.Key;
+            var key = "g" + tokens.Count;
+            tokens[key] = slot;
+            return key;
         }
 
+        void Save()
+        {
+            _settings.ToolbarLayout = model.Select(row => row.ToList()).ToList();
+            _settings.Save();
+            RebuildToolbar();
+        }
+
+        void Reload()
+        {
+            for (int r = 0; r < ToolbarItems.RowCount; r++)
+            {
+                rowPanels[r].Children.Clear();
+                foreach (var slot in model[r]) rowPanels[r].Children.Add(BuildSlotView(slot));
+            }
+        }
+
+        // The chips are rebuilt on the NEXT turn, never inside the event that
+        // asked for it: a delete button that tears its own card out of the tree
+        // while it is still handling its click takes the process with it.
+        void Commit()
+        {
+            Save();
+            DispatcherQueue.TryEnqueue(Reload);
+        }
+
+        // Every mutation the designer makes goes through here. A failure inside a
+        // XAML callback dies as a stowed exception that no handler sees and no log
+        // records - the window simply vanishes - so nothing is allowed to escape:
+        // it is written down, and the chips are redrawn from the model, which is
+        // still whole because the model is only ever edited in one step.
+        void Guard(Action act)
+        {
+            try { act(); }
+            catch (Exception ex)
+            {
+                App.LogCrash("Toolbar", ex.Message, ex);
+                DispatcherQueue.TryEnqueue(Reload);
+            }
+        }
+
+        // ── Moving things about ─────────────────────────────────────────────
+        void TakeItemOut(string id)
+        {
+            foreach (var row in model)
+                for (int i = row.Count - 1; i >= 0; i--)
+                {
+                    if (!row[i].Items.Remove(id)) continue;
+                    // A loose slot with nothing left in it is not a slot any more;
+                    // an empty GROUP stays, because it is a thing half-made.
+                    if (!row[i].IsGroup) row.RemoveAt(i);
+                }
+        }
+
+        (int Row, int Index)? FindSlot(ToolbarSlot slot)
+        {
+            for (int r = 0; r < model.Count; r++)
+                for (int i = 0; i < model[r].Count; i++)
+                    if (ReferenceEquals(model[r][i], slot)) return (r, i);
+            return null;
+        }
+
+        void DropOnRow(int targetRow, int insert, string payload)
+        {
+            if (payload.StartsWith("i|", StringComparison.Ordinal))
+            {
+                var id = payload[2..];
+                // Within the same row, taking it out first shifts everything after
+                // it one place to the left.
+                int was = model[targetRow].FindIndex(s => !s.IsGroup && s.Items.Contains(id));
+                TakeItemOut(id);
+                if (was >= 0 && was < insert) insert--;
+                model[targetRow].Insert(Math.Clamp(insert, 0, model[targetRow].Count), ToolbarSlot.Loose(id));
+            }
+            else if (payload.StartsWith("g|", StringComparison.Ordinal)
+                     && tokens.TryGetValue(payload[2..], out var slot)
+                     && FindSlot(slot) is { } at)
+            {
+                model[at.Row].RemoveAt(at.Index);
+                if (at.Row == targetRow && at.Index < insert) insert--;
+                model[targetRow].Insert(Math.Clamp(insert, 0, model[targetRow].Count), slot);
+            }
+            else return;
+            Commit();
+        }
+
+        // A group takes buttons, not other groups.
+        void DropInGroup(ToolbarSlot group, int insert, string payload)
+        {
+            if (!payload.StartsWith("i|", StringComparison.Ordinal)) return;
+            var id = payload[2..];
+            int was = group.Items.IndexOf(id);
+            TakeItemOut(id);
+            if (was >= 0 && was < insert) insert--;
+            group.Items.Insert(Math.Clamp(insert, 0, group.Items.Count), id);
+            Commit();
+        }
+
+        // Deleting a group does not delete the buttons it held: they are spilled
+        // where it stood, which is where anyone would look for them.
+        void Ungroup(ToolbarSlot group)
+        {
+            if (FindSlot(group) is not { } at) return;
+            model[at.Row].RemoveAt(at.Index);
+            for (int i = 0; i < group.Items.Count; i++)
+                model[at.Row].Insert(at.Index + i, ToolbarSlot.Loose(group.Items[i]));
+            Commit();
+        }
+
+        // ── The chips ───────────────────────────────────────────────────────
+        ToolbarSlotView BuildSlotView(ToolbarSlot slot)
+        {
+            var view = slot.IsGroup
+                ? new ToolbarSlotView(slot, BuildGroupChip(slot))
+                : new ToolbarSlotView(slot, ToolbarChipView.BuildChip(
+                    ToolbarItemGlyph(slot.Items.FirstOrDefault() ?? ""),
+                    ToolbarItemLabel(slot.Items.FirstOrDefault() ?? "")));
+            view.DragStarting += (_, e) =>
+            {
+                e.Data.SetText(slot.IsGroup
+                    ? "g|" + TokenFor(slot)
+                    : "i|" + (slot.Items.FirstOrDefault() ?? ""));
+                e.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+            };
+            return view;
+        }
+
+        // A group chip: its name along the top with the button that removes it,
+        // and underneath a well of its own that buttons can be dropped into.
+        // Empty, it says so — an empty group shows nothing at all on the toolbar,
+        // so saying so here is the only way to know it is there.
+        UIElement BuildGroupChip(ToolbarSlot slot)
+        {
+            var name = new TextBox
+            {
+                Text = slot.Group ?? "",
+                PlaceholderText = SL("toolbar.lbl.groupName"),
+                FontSize = 12,
+                MinWidth = 120,
+                MinHeight = 0,
+                Padding = new Thickness(8, 3, 8, 3),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            // Renaming saves and redraws the toolbar, but must NOT rebuild these
+            // chips: the caret is in one of them.
+            name.TextChanged += (_, _) => Guard(() => { slot.Group = name.Text; Save(); });
+
+            var remove = new Button
+            {
+                Content = new FontIcon { Glyph = "", FontSize = 12 },
+                Padding = new Thickness(7, 4, 7, 4),
+                MinWidth = 0,
+                Margin = new Thickness(6, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            ToolTipService.SetToolTip(remove, SL("toolbar.lbl.deleteGroup"));
+            remove.Click += (_, _) => Guard(() => Ungroup(slot));
+
+            var head = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+            head.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(name, 0);
+            Grid.SetColumn(remove, 1);
+            head.Children.Add(name);
+            head.Children.Add(remove);
+
+            var body = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            body.Children.Add(ToolbarChipView.BuildGrip());
+
+            var well = MakeChipPanel();
+            well.MinHeight = 34;
+            well.MinWidth = slot.Items.Count == 0 ? 150 : 40;
+            foreach (var id in slot.Items)
+            {
+                var chip = new ToolbarChipView(id, ToolbarItemGlyph(id), ToolbarItemLabel(id));
+                chip.DragStarting += (_, e) =>
+                {
+                    e.Data.SetText("i|" + id);
+                    e.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+                };
+                well.Children.Add(chip);
+            }
+
+            var wellHost = new Grid();
+            if (slot.Items.Count == 0)
+                wellHost.Children.Add(new TextBlock
+                {
+                    Text = SL("toolbar.lbl.emptyGroup"),
+                    FontSize = 12,
+                    Opacity = 0.55,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    IsHitTestVisible = false,
+                });
+            wellHost.Children.Add(well);
+            body.Children.Add(wellHost);
+
+            var content = new StackPanel();
+            content.Children.Add(head);
+            content.Children.Add(body);
+
+            // The WHOLE CARD takes the drop, not only the well inside it: aiming
+            // for a strip of empty space a few pixels wide is not how anyone drops
+            // a button into a group. Where along the row it lands is still read
+            // off the well, so dropping between two buttons puts it between them.
+            var card = new Border
+            {
+                Background = (Brush)Application.Current.Resources["CardBackgroundFillColorSecondaryBrush"],
+                BorderBrush = (Brush)Application.Current.Resources["ControlStrongStrokeColorDefaultBrush"],
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(8, 6, 8, 8),
+                Child = content,
+                AllowDrop = true,
+            };
+            card.DragOver += (_, e) =>
+            {
+                e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+                e.Handled = true;   // the row behind must not claim this drop as well
+            };
+            card.Drop += async (_, e) =>
+            {
+                e.Handled = true;
+                try
+                {
+                    var (payload, insert) = await ReadDropAsync(e, well);
+                    if (payload is not null) DropInGroup(slot, insert, payload);
+                }
+                catch (Exception ex) { App.LogCrash("Toolbar", ex.Message, ex); Reload(); }
+            };
+            return card;
+        }
+
+        // ── The header buttons ──────────────────────────────────────────────
         resetBtn = new Button
         {
             Content = SL("general.lbl.reset"),
             FontSize = 12,
             Padding = new Thickness(10, 5, 10, 5),
         };
-        resetBtn.Click += (_, _) =>
+        resetBtn.Click += (_, _) => Guard(() =>
         {
-            foreach (var c in designerRows) c.Clear();
-            foreach (var id in ToolbarItems.AllIds) designerRows[0].Add(new ToolbarChipView(MakeChip(id)));
-            // CollectionChanged → QueueSave persists and rebuilds the toolbar.
-        };
+            model.Clear();
+            model.AddRange(ToolbarItems.Default());
+            Commit();
+        });
 
-        // A single card holding the three rows, separated by thin dividers.
+        addGroupBtn = new Button
+        {
+            Content = SL("toolbar.lbl.addGroup"),
+            FontSize = 12,
+            Padding = new Thickness(10, 5, 10, 5),
+        };
+        addGroupBtn.Click += (_, _) => Guard(() =>
+        {
+            model[0].Add(new ToolbarSlot { Group = SL("toolbar.groups.new") });
+            Commit();
+        });
+
+        // ── The three rows ──────────────────────────────────────────────────
         var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
 
         for (int i = 0; i < ToolbarItems.RowCount; i++)
         {
             int rowIndex = i;
-            var col = new System.Collections.ObjectModel.ObservableCollection<ToolbarChipView>(
-                rows[i].ConvertAll(id => new ToolbarChipView(MakeChip(id))));
-            col.CollectionChanged += (_, _) => QueueSave();
-            designerRows[i] = col;
-
-            var lv = new ChipListView
-            {
-                ItemsSource = col,
-                SelectionMode = ListViewSelectionMode.None,
-                CanReorderItems = false, // cross-row moves are handled manually below
-                CanDragItems = true,
-                AllowDrop = true,
-                MinHeight = 52,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Center,
-                ItemsPanel = HorizontalItemsPanel(),
-                ItemContainerStyle = ChipContainerStyle(),
-                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                Padding = new Thickness(4),
-            };
-            ScrollViewer.SetHorizontalScrollMode(lv, ScrollMode.Disabled);
-            ScrollViewer.SetHorizontalScrollBarVisibility(lv, ScrollBarVisibility.Disabled);
-            ScrollViewer.SetVerticalScrollMode(lv, ScrollMode.Disabled);
-            ScrollViewer.SetVerticalScrollBarVisibility(lv, ScrollBarVisibility.Disabled);
-
-            lv.DragItemsStarting += (_, e) =>
-            {
-                if (e.Items.Count > 0 && e.Items[0] is ToolbarChipView view)
-                {
-                    e.Data.SetText(view.Chip.Id);
-                    e.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
-                }
-            };
-            lv.DragOver += (_, e) =>
+            var row = MakeChipPanel();
+            row.MinHeight = 44;
+            row.Margin = new Thickness(0, 6, 8, 6);
+            row.DragOver += (_, e) =>
                 e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
-            lv.Drop += (s, e) => OnDesignerDrop(designerRows, rowIndex, (ListView)s, e);
+            row.Drop += async (s, e) =>
+            {
+                try
+                {
+                    var target = (ToolbarWrapPanel)s;
+                    var (payload, insert) = await ReadDropAsync(e, target);
+                    if (payload is not null) DropOnRow(rowIndex, insert, payload);
+                }
+                catch (Exception ex) { App.LogCrash("Toolbar", ex.Message, ex); Reload(); }
+            };
+            rowPanels[i] = row;
 
-            // "Ligne N" label on the left + the row's list.
-            var rowGrid = new Grid { MinHeight = 52 };
+            // "Ligne N" label on the left + the row's chips.
+            var rowGrid = new Grid { MinHeight = 56 };
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             var label = new TextBlock
             {
-                Text = $"Ligne {i + 1}",
+                Text = string.Format(SL("toolbar.lbl.row"), i + 1),
                 FontSize = 12,
                 Opacity = 0.7,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(12, 0, 8, 0),
             };
             Grid.SetColumn(label, 0);
-            Grid.SetColumn(lv, 1);
+            Grid.SetColumn(row, 1);
             rowGrid.Children.Add(label);
-            rowGrid.Children.Add(lv);
+            rowGrid.Children.Add(row);
             stack.Children.Add(rowGrid);
 
             if (i < ToolbarItems.RowCount - 1)
@@ -4901,6 +5186,8 @@ public sealed partial class PreviewPage : Page
                 });
         }
 
+        Reload();
+
         var card = new Border
         {
             Background = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
@@ -4911,80 +5198,58 @@ public sealed partial class PreviewPage : Page
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = stack,
         };
+        var section = new StackPanel();
         section.Children.Add(card);
         return section;
     }
 
-    // Manual drop: moves the dragged group into the target row at the position
-    // under the pointer. Works within a row and across rows of the SAME designer
-    private async void OnDesignerDrop(
-        System.Collections.ObjectModel.ObservableCollection<ToolbarChipView>[] designerRows,
-        int targetRow, ListView lv, DragEventArgs e)
+    // A wrapping panel that accepts drops. The transparent background is what
+    // makes the empty space between chips hit-testable — without it a drop only
+    // lands when it happens to be over a chip.
+    private static ToolbarWrapPanel MakeChipPanel() => new()
     {
-        if (!e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text)) return;
+        HorizontalSpacing = 6,
+        VerticalSpacing = 6,
+        AllowDrop = true,
+        Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+    };
+
+    // What was dragged, and where in this panel the pointer says to put it.
+    private static async Task<(string? Payload, int Insert)> ReadDropAsync(DragEventArgs e, Panel panel)
+    {
+        if (!e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
+            return (null, 0);
 
         var def = e.GetDeferral();
         try
         {
-            var id = await e.DataView.GetTextAsync();
-            if (string.IsNullOrEmpty(id)) return;
+            var payload = await e.DataView.GetTextAsync();
+            if (string.IsNullOrEmpty(payload)) return (null, 0);
 
-            var target = designerRows[targetRow];
-
-            // Insertion index from the horizontal pointer position (before removal).
-            var pos = e.GetPosition(lv);
-            int insert = target.Count;
-            for (int i = 0; i < target.Count; i++)
+            // Reading order: anything on a line the pointer has not reached yet is
+            // after it; on its own line, anything whose middle it has not passed.
+            var pos = e.GetPosition(panel);
+            int insert = panel.Children.Count;
+            for (int i = 0; i < panel.Children.Count; i++)
             {
-                if (lv.ContainerFromIndex(i) is FrameworkElement c)
-                {
-                    var origin = c.TransformToVisual(lv).TransformPoint(new Windows.Foundation.Point(0, 0));
-                    if (pos.X < origin.X + c.ActualWidth / 2) { insert = i; break; }
-                }
+                if (panel.Children[i] is not FrameworkElement fe) continue;
+                var at = fe.TransformToVisual(panel).TransformPoint(new Windows.Foundation.Point(0, 0));
+                if (pos.Y < at.Y + fe.ActualHeight && pos.X < at.X + fe.ActualWidth / 2) { insert = i; break; }
             }
-
-            // Remove the group from wherever it currently sits.
-            int srcRow = -1, srcIdx = -1;
-            for (int r = 0; r < designerRows.Length && srcRow < 0; r++)
-                for (int i = 0; i < designerRows[r].Count; i++)
-                    if (designerRows[r][i].Chip.Id == id) { srcRow = r; srcIdx = i; break; }
-            if (srcRow < 0) return;
-            designerRows[srcRow].RemoveAt(srcIdx);
-
-            if (srcRow == targetRow && srcIdx < insert) insert--;
-            insert = System.Math.Clamp(insert, 0, target.Count);
-            target.Insert(insert, new ToolbarChipView(MakeChip(id)));
+            return (payload, insert);
         }
-        finally
-        {
-            def.Complete();
-        }
+        finally { def.Complete(); }
     }
 
-    private ToolbarChip MakeChip(string id)
+    private static string ToolbarItemLabel(string id)
+        => LocalizationService.Get("settings.toolbar.items." + id);
+
+    private static string ToolbarItemGlyph(string id)
     {
-        foreach (var d in ToolbarItemDefs)
-            if (d.Id == id) return new ToolbarChip { Id = id, Label = d.Label, Glyph = d.Glyph, Buttons = d.Buttons };
-        return new ToolbarChip { Id = id, Label = id, Glyph = "" };
+        foreach (var (defId, glyph) in ToolbarItemDefs)
+            if (defId == id) return glyph;
+        return "";
     }
-
-    // Items flow left-to-right and hug their content (no uniform cell sizing).
-    private static ItemsPanelTemplate HorizontalItemsPanel() =>
-        (ItemsPanelTemplate)Microsoft.UI.Xaml.Markup.XamlReader.Load(
-            "<ItemsPanelTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>" +
-            "<ItemsStackPanel Orientation='Horizontal'/></ItemsPanelTemplate>");
-
-    // Strips the default ListViewItem padding/min-size so the chip border hugs
-    // its content instead of every item sharing one fixed size.
-    private static Style ChipContainerStyle() =>
-        (Style)Microsoft.UI.Xaml.Markup.XamlReader.Load(
-            "<Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='ListViewItem'>" +
-            "<Setter Property='MinWidth' Value='0'/>" +
-            "<Setter Property='MinHeight' Value='0'/>" +
-            "<Setter Property='Padding' Value='0'/>" +
-            "<Setter Property='Margin' Value='3'/>" +
-            "<Setter Property='HorizontalContentAlignment' Value='Left'/>" +
-            "<Setter Property='VerticalContentAlignment' Value='Center'/></Style>");
 
 
 
@@ -6046,17 +6311,6 @@ public sealed class DocTab
     public double? ZoomPercent { get; set; }
 }
 
-// A draggable toolbar item in the toolbar designer.
-public sealed class ToolbarChip
-{
-    public string Id { get; set; } = "";
-    public string Label { get; set; } = "";
-    public string Glyph { get; set; } = "";
-    // When set, the chip shows one mini-button per entry (single shared grip)
-    // instead of a single icon + label.
-    public (string Glyph, string Label)[]? Buttons { get; set; }
-}
-
 public static class AppWindowLookup
 {
     public static Window? MainWindowForXamlRoot(XamlRoot root)
@@ -6072,27 +6326,39 @@ public sealed partial class CursorGrid : Grid
     public void SetCursor(Microsoft.UI.Input.InputCursor cursor) => ProtectedCursor = cursor;
 }
 
-// ListView whose item containers show a hand cursor on hover and a move (grab)
-// cursor while the pointer is pressed — used by the toolbar designer chips.
-public sealed partial class ChipListView : ListView
+// A chip that can be picked up: a hand while the pointer is over it, the
+// "moving" cursor while it is held. (Windows has no closed-hand cursor; SizeAll
+// is the conventional stand-in.)
+public partial class DraggableChip : Grid
 {
-    protected override DependencyObject GetContainerForItemOverride() => new ChipListViewItem();
+    private static readonly Microsoft.UI.Input.InputCursor Hand =
+        PreviewPage.SystemCursor(Microsoft.UI.Input.InputSystemCursorShape.Hand);
+    private static readonly Microsoft.UI.Input.InputCursor Grab =
+        PreviewPage.SystemCursor(Microsoft.UI.Input.InputSystemCursorShape.SizeAll);
+
+    protected DraggableChip()
+    {
+        CanDrag = true;
+        ProtectedCursor = Hand;
+        PointerPressed += (_, _) => ProtectedCursor = Grab;
+        PointerReleased += (_, _) => ProtectedCursor = Hand;
+        PointerCaptureLost += (_, _) => ProtectedCursor = Hand;
+        PointerExited += (_, _) => ProtectedCursor = Hand;
+    }
 }
 
-// A designer chip: builds its own visual from the ToolbarChip it represents.
-// Used directly as ListView item, so no template machinery is involved.
-public sealed partial class ToolbarChipView : Grid
+// One draggable button in the designer: a grip, an icon and a name.
+public sealed partial class ToolbarChipView : DraggableChip
 {
-    public ToolbarChip Chip { get; }
+    public string Id { get; }
 
-    public ToolbarChipView(ToolbarChip chip)
+    public ToolbarChipView(string id, string glyph, string label)
     {
-        Chip = chip;
-        Children.Add(BuildChipVisual(chip));
+        Id = id;
+        Children.Add(BuildChip(glyph, label));
     }
 
-    // Chip: 6-dot grip | icon + label, or grip | mini-button per real button.
-    private static UIElement BuildChipVisual(ToolbarChip chip)
+    public static UIElement BuildChip(string glyph, string label)
     {
         var row = new StackPanel
         {
@@ -6101,21 +6367,12 @@ public sealed partial class ToolbarChipView : Grid
             VerticalAlignment = VerticalAlignment.Center,
         };
         row.Children.Add(BuildGrip());
-
-        if (chip.Buttons is { Length: > 0 })
+        if (!string.IsNullOrEmpty(glyph))
+            row.Children.Add(new FontIcon { Glyph = glyph, FontSize = 14 });
+        row.Children.Add(new TextBlock
         {
-            foreach (var (glyph, label) in chip.Buttons)
-                row.Children.Add(BuildMiniButton(glyph, label));
-        }
-        else
-        {
-            if (!string.IsNullOrEmpty(chip.Glyph))
-                row.Children.Add(new FontIcon { Glyph = chip.Glyph, FontSize = 14 });
-            row.Children.Add(new TextBlock
-            {
-                Text = chip.Label, FontSize = 12, VerticalAlignment = VerticalAlignment.Center,
-            });
-        }
+            Text = label, FontSize = 12, VerticalAlignment = VerticalAlignment.Center,
+        });
 
         return new Border
         {
@@ -6128,33 +6385,7 @@ public sealed partial class ToolbarChipView : Grid
         };
     }
 
-    // Non-interactive button look-alike (the chip itself is the drag target).
-    private static Border BuildMiniButton(string glyph, string label)
-    {
-        var content = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 6,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        if (!string.IsNullOrEmpty(glyph))
-            content.Children.Add(new FontIcon { Glyph = glyph, FontSize = 12 });
-        content.Children.Add(new TextBlock
-        {
-            Text = label, FontSize = 12, VerticalAlignment = VerticalAlignment.Center,
-        });
-        return new Border
-        {
-            Background = (Brush)Application.Current.Resources["ControlFillColorDefaultBrush"],
-            BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"],
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(8, 4, 8, 4),
-            Child = content,
-        };
-    }
-
-    private static Grid BuildGrip()
+    public static Grid BuildGrip()
     {
         var grip = new Grid { Width = 7, Height = 11, VerticalAlignment = VerticalAlignment.Center, Opacity = 0.5 };
         for (int r = 0; r < 3; r++) grip.RowDefinitions.Add(new RowDefinition());
@@ -6177,22 +6408,16 @@ public sealed partial class ToolbarChipView : Grid
     }
 }
 
-// (Windows has no built-in "closed hand" cursor; SizeAll is the conventional
-// "moving" cursor.)
-public sealed partial class ChipListViewItem : ListViewItem
+// One slot in a designer row: a lone button's chip, or a whole group's card.
+// It carries the slot itself so a drop can find what was dragged.
+public sealed partial class ToolbarSlotView : DraggableChip
 {
-    private static readonly Microsoft.UI.Input.InputCursor Hand =
-        PreviewPage.SystemCursor(Microsoft.UI.Input.InputSystemCursorShape.Hand);
-    private static readonly Microsoft.UI.Input.InputCursor Grab =
-        PreviewPage.SystemCursor(Microsoft.UI.Input.InputSystemCursorShape.SizeAll);
+    public ToolbarSlot Slot { get; }
 
-    public ChipListViewItem()
+    public ToolbarSlotView(ToolbarSlot slot, UIElement content)
     {
-        ProtectedCursor = Hand;
-        PointerPressed += (_, _) => ProtectedCursor = Grab;
-        PointerReleased += (_, _) => ProtectedCursor = Hand;
-        PointerCaptureLost += (_, _) => ProtectedCursor = Hand;
-        PointerExited += (_, _) => ProtectedCursor = Hand;
+        Slot = slot;
+        Children.Add(content);
     }
 }
 

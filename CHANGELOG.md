@@ -67,7 +67,33 @@ un Ctrl+Z rend le document d'avant.
   Une police interne à l'imprimante y figure aussi : elle n'existe qu'en multiples
   entiers de sa propre taille, et son corps ne peut donc pas suivre exactement.
 
+- **Des groupes dans la barre d'outils** 🗃️
+  Les boutons se rangeaient en trois lignes et rien de plus. On peut maintenant
+  en réunir plusieurs sous un nom : le groupe porte son titre **centré sous ses
+  boutons**, et les traits qui le bordent sont plus hauts que ceux qui séparent
+  les boutons à l'intérieur, de sorte qu'il se lit comme un bloc et non comme
+  quatre boutons de plus.
+
+  Rien n'y oblige : un bouton reste seul tant que personne ne l'y met, on fait
+  autant de groupes qu'on veut, et aussi bien un groupe par bouton que tous les
+  boutons dans un seul. Un groupe vide se garde dans les paramètres — c'est une
+  chose à moitié faite, pas une erreur — mais **n'apparaît pas dans la barre**.
+  Et la barre ne prend la hauteur du nom que sur une ligne qui en porte un :
+  sans aucun groupe, elle retrouve exactement la hauteur qu'elle avait.
+
+  Dans les paramètres, « Ajouter un groupe » pose une carte vide où l'on dépose
+  des boutons ; son nom se tape en haut à gauche, la corbeille en haut à droite
+  la retire. **Supprimer un groupe ne supprime pas ses boutons** : ils sont
+  répandus là où il se trouvait, c'est-à-dire là où on ira les chercher.
+
 ### 🔄 Modifié
+
+- **Fichier et export ne sont plus soudés** ✂️
+  « Nouveau fichier », « Ouvrir un fichier » et « Enregistrer » formaient un bloc
+  indéformable, « PDF » et « PNG » un autre. Ce sont désormais cinq boutons
+  indépendants, que l'on place un par un — ou que l'on regroupe autrement.
+  « Réinitialiser » propose trois groupes : **Fichier**, **Affichage** et
+  **Sortie**.
 
 - **Un bloc de texte pivoté revient enfin à la ligne** 📄
   Un ^FB rendu de travers était dessiné sur une seule ligne, qui filait hors de

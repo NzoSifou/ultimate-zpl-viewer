@@ -67,6 +67,34 @@ un Ctrl+Z rend le document d'avant.
   Une police interne à l'imprimante y figure aussi : elle n'existe qu'en multiples
   entiers de sa propre taille, et son corps ne peut donc pas suivre exactement.
 
+- **Une page d'accueil** 🏠
+  Ouvrir l'application ouvrait un document que personne n'avait demandé. Une
+  fenêtre sans document montre maintenant une page d'accueil : pas de barre
+  d'outils, pas d'onglets, pas d'éditeur, pas d'aperçu — **rien que l'acrylique
+  de la fenêtre**, teinté d'un dégradé de la couleur d'accentuation. Trois
+  boutons pour en sortir (nouveau fichier, ouvrir, étiquette d'exemple), les
+  fichiers récents, ce que l'application sait faire en quatre lignes, et le seul
+  raccourci qu'il faut connaître avant les autres : **Ctrl + /**, qui les liste
+  tous.
+
+  Elle vaut par fenêtre : une fenêtre qui n'a plus d'onglet y revient pendant que
+  les autres gardent leurs documents.
+
+- **Un onglet apparaît dès le premier document** 🗂️
+  La barre d'onglets attendait le deuxième document pour se montrer, et le
+  contenu descendait d'un cran quand il arrivait. Un onglet reste un onglet :
+  il est là dès qu'il y a quelque chose d'ouvert. C'est l'absence d'onglet qui
+  veut dire quelque chose désormais — la page d'accueil.
+
+- **Deux réglages, dans une catégorie « Page d'accueil »** ⚙️
+  Le ZPL qu'ouvre le bouton « Étiquette d'exemple » : celui livré avec
+  l'application, ou **le vôtre**, tapé dans les paramètres. Et ce que fait la
+  fermeture du **dernier onglet** d'une fenêtre : fermer l'application, ou
+  revenir à la page d'accueil. Ce même choix décide du démarrage — qui ne veut
+  pas de page d'accueil n'en veut pas au lancement non plus — et « Rouvrir
+  le(s) dernier(s) fichier(s) » passe devant : une session à restaurer est un
+  document à ouvrir.
+
 - **Des groupes dans la barre d'outils** 🗃️
   Les boutons se rangeaient en trois lignes et rien de plus. On peut maintenant
   en réunir plusieurs sous un nom : le groupe porte son titre **centré sous ses

@@ -342,7 +342,9 @@
 
         </Grid>
 
-        <Grid Grid.Row="2">
+        <!-- Editor + preview. Collapsed while the home page is up, so nothing of
+             the document surface shows through it. -->
+        <Grid x:Name="ContentArea" Grid.Row="2">
             <!-- Left/right columns swap roles when the editor and preview are
                  swapped; the editor's column is fixed-width, the preview's is star. -->
             <Grid.ColumnDefinitions>
@@ -1014,6 +1016,16 @@
         <!-- Full-screen settings (PowerToys-style: categories on the left, the
              selected category's settings on the right). Covers everything below
              the title bar; the app content stays alive behind it. -->
+        <!-- The home page. A window with no document shows this instead of the
+             toolbar, the tabs, the editor and the preview: no grid, no rails, no
+             chrome — a wash of colour over the window's own acrylic, and the few
+             things there are to do from here. Filled by PreviewPage.Home.cs. -->
+        <Grid x:Name="HomeOverlay"
+              Grid.Row="0"
+              Grid.RowSpan="4"
+              Visibility="Collapsed"
+              Canvas.ZIndex="40"/>
+
         <Grid x:Name="SettingsOverlay"
               Grid.Row="0"
               Grid.RowSpan="3"
@@ -1034,6 +1046,9 @@
                 <NavigationView.MenuItems>
                     <NavigationViewItem Content="Général" Tag="general">
                         <NavigationViewItem.Icon><FontIcon Glyph="&#xE713;"/></NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                    <NavigationViewItem Content="Page d'accueil" Tag="home">
+                        <NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;"/></NavigationViewItem.Icon>
                     </NavigationViewItem>
                     <NavigationViewItem Content="Document" Tag="doc">
                         <NavigationViewItem.Icon><FontIcon Glyph="&#xE8A5;"/></NavigationViewItem.Icon>

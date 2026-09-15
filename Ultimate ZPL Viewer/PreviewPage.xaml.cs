@@ -711,6 +711,10 @@ public sealed partial class PreviewPage : Page
         Loaded += (_, _) =>
         {
             (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.SetToolbarToggleGlyph(_toolbarVisible);
+            // The title bar could not be reached while the page was still being
+            // navigated into — XamlRoot was null and would have answered for
+            // whichever window happened to be first. Now it can.
+            if (_homeVisible) ApplyHomeChrome();
             ScheduleStartupUpdateCheck();
         };
 
@@ -718,6 +722,7 @@ public sealed partial class PreviewPage : Page
 
         string text;
         bool openedFromFile = false;
+        bool startOnHome = false;
         var extraTabs = new List<(string Path, string Text)>(); // session tabs beyond the first
         if (options.Adopt is { } handedOver)
         {
@@ -742,9 +747,19 @@ public sealed partial class PreviewPage : Page
             _currentFilePath = firstDoc.Path;
             openedFromFile = true;
         }
+        else if (_settings.LastTabClosed == 1)
+        {
+            // Nothing to open and the user keeps the home page: this window starts
+            // on it rather than on a document nobody asked for.
+            text = "";
+            _currentFilePath = null;
+            startOnHome = true;
+        }
         else
         {
-            text = "^XA\n^PW812\n^LL406\n^FO40,40^GB732,326,3^FS\n^FO70,85^A0N,44,44^FDUltimate ZPL Viewer^FS\n^FO70,150^A0N,28,28^FDRendu local sans API externe^FS\n^XZ";
+            // The home page is turned off, so a launch with nothing to open lands
+            // on the example label, the way it always did.
+            text = _settings.SampleLabelText();
             _currentFilePath = null; // sample document (never saved)
         }
         // Opening a file uses the "open" default density; a new/sample document
@@ -753,11 +768,14 @@ public sealed partial class PreviewPage : Page
         // A never-saved document counts as unsaved from the start, so closing its
         // tab (or the app) asks the save question like for any other document.
         _isDirty = _adoptedDirty ?? _currentFilePath is null;
+        if (startOnHome) _isDirty = false;   // there is no document to be dirty
         _adoptedDirty = null;
 
         // Normalise to LF — Monaco always outputs LF from getValue(), so _currentText must match.
         _currentText = text.Replace("\r\n", "\n").Replace('\r', '\n');
-        InitFirstTab();
+        // No first tab on the home page: UpdateTabBar below sees an empty strip and
+        // raises it.
+        if (!startOnHome) InitFirstTab();
         foreach (var (path, content) in extraTabs)
             DocTabs.TabItems.Add(MakeTabItem(new DocTab
             {
@@ -1031,8 +1049,11 @@ public sealed partial class PreviewPage : Page
         return _toolbarVisible;
     }
 
+    // The home page has no toolbar to show or hide: the preference is kept, it
+    // simply does not apply while there is no document to act on.
     private void ApplyToolbarVisibility() =>
-        ToolbarBorder.Visibility = _toolbarVisible ? Visibility.Visible : Visibility.Collapsed;
+        ToolbarBorder.Visibility = _toolbarVisible && !_homeVisible
+            ? Visibility.Visible : Visibility.Collapsed;
 
     // Editor collapse handle (the thin full-height strip): flips the editor's
     // visibility, same persistence rule as the toolbar.
@@ -1176,6 +1197,9 @@ public sealed partial class PreviewPage : Page
 
     private void RefreshPreview(SizeUpdate kind)
     {
+        // Nothing to draw and nowhere to draw it: the home page has the surface
+        // collapsed, and there is no document behind it to render.
+        if (_homeVisible) return;
         if (_updating)
         {
             return;
@@ -2740,6 +2764,9 @@ public sealed partial class PreviewPage : Page
     {
         if (_activeTab is not null) RefreshTabHeader(_activeTab);
         var mw = AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow;
+        // No document: the window is named after the application, not after the
+        // document that was closed a moment ago.
+        if (_homeVisible) { mw?.SetDocumentTitle("Ultimate ZPL Viewer"); return; }
         // The title always names the ACTIVE document, tabs or not. It used to fall
         // back to the bare product name as soon as a second tab existed, which left
         // the title bar saying nothing at all — and, since it is also the taskbar
@@ -3343,6 +3370,14 @@ public sealed partial class PreviewPage : Page
             && name is not ("print" or "newWindow" or "fullScreen" or "settings" or "shortcutsHelp"))
             return;
 
+        // Neither is the home page. Printing, exporting or undoing there would act
+        // on a document that is not open — the ones left are the ones that BRING a
+        // document, plus the doors out of the page.
+        if (_homeVisible
+            && name is not ("newTab" or "newWindow" or "openFile" or "reopenClosed"
+                            or "settings" or "shortcutsHelp" or "fullScreen"))
+            return;
+
         switch (name)
         {
             case "undo":
@@ -3661,16 +3696,33 @@ public sealed partial class PreviewPage : Page
         _suppressTabEvents = false;
         // After the switch, so the editor page never disposes the model in use.
         if (_editorReady) PostToEditor($"{{\"type\":\"closeDoc\",\"id\":\"{tab.Id}\"}}");
+
+        if (DocTabs.TabItems.Count == 0)
+        {
+            // A document that MOVED to another window is not a document closed, and
+            // the window it left is dealt with by the caller.
+            if (remember && _settings.LastTabClosed == 0) { CloseOwnWindow(); return; }
+            // Nothing is open any more: the live fields must stop describing the
+            // document that just went, or the home page would carry its title.
+            _activeTab = null;
+            _currentFilePath = null;
+            _currentText = "";
+            _isDirty = false;
+        }
         UpdateTabBar();
         UpdateDocumentTitle();
     }
 
-    // The tab bar only exists with two documents or more; with a single one the
-    // document name lives in the window title bar instead. Every change to the tab
-    // set is also a change to the arrangement worth remembering for the next launch.
+    // The tab bar shows as soon as there is a document — one tab is still a tab,
+    // and a window that gains a second one should not have its content jump down a
+    // row. No document at all is the home page, which has no tab strip either.
+    // Every change to the tab set is also a change to the arrangement worth
+    // remembering for the next launch.
     private void UpdateTabBar()
     {
-        DocTabs.Visibility = DocTabs.TabItems.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+        bool any = DocTabs.TabItems.Count > 0;
+        if (_homeVisible == any) SetHomeVisible(!any);
+        DocTabs.Visibility = any && !_homeVisible ? Visibility.Visible : Visibility.Collapsed;
         WindowManager.SaveSessionLayout();
     }
 
@@ -4063,6 +4115,9 @@ public sealed partial class PreviewPage : Page
             // Every category except Editor (its own 5-column grid) and Toolbar
             // (a designer canvas) forces each card to exactly 1/3 of the container
             // width, so every sub-category lines up identically.
+            // Full width: the custom example label is a ZPL editor, and a third of
+            // the window turns it into a keyhole.
+            ["home"]       = BuildHomeSettings(),
             ["doc"]        = WithThirdWidthCards(BuildDocumentSettings()),
             // Full width, not a third: the print defaults carry a mode selector
             // AND a value side by side, and a third-width card crushes the label
@@ -4090,7 +4145,7 @@ public sealed partial class PreviewPage : Page
     // Section-key → settings.nav key (the nav Tags predate the language files).
     private static readonly Dictionary<string, string> SettingsNavKey = new()
     {
-        ["general"] = "general", ["doc"] = "document", ["editor"] = "editor",
+        ["general"] = "general", ["home"] = "home", ["doc"] = "document", ["editor"] = "editor",
         ["print"] = "print", ["appearance"] = "appearance", ["toolbar"] = "toolbar",
         ["editmode"] = "editMode",
         ["screen"] = "screen", ["printer"] = "virtualPrinter",

@@ -159,6 +159,39 @@ public sealed class AppSettings
     public double NewDocWidthMm { get; set; } = 100;
     public double NewDocHeightMm { get; set; } = 60;
 
+    // ---- The home page ----------------------------------------------------
+    // What closing the LAST tab of a window does: 0 = close the window (and with
+    // it the app, when it was the only one), 1 = fall back to the home page. The
+    // same choice decides whether a launch with nothing to open lands on the home
+    // page or straight on a document: someone who never wants the home page does
+    // not want it at startup either.
+    public int LastTabClosed { get; set; } = 1;
+
+    // Which label the home page's "sample" button opens: 0 = the one shipped with
+    // the app, 1 = SampleLabelZpl below.
+    public int SampleLabelMode { get; set; }
+    public string SampleLabelZpl { get; set; } = string.Empty;
+
+    // The label the app has always opened on. Kept here rather than in the page so
+    // the settings screen can show it, and so there is one copy of it.
+    public const string DefaultSampleZpl = """
+        ^XA
+        ^PW812
+        ^LL406
+        ^FO40,40^GB732,326,3^FS
+        ^FO70,85^A0N,44,44^FDUltimate ZPL Viewer^FS
+        ^FO70,150^A0N,28,28^FDRendu local sans API externe^FS
+        ^XZ
+        """;
+
+    /// <summary>The ZPL the sample button opens, falling back to the shipped one.</summary>
+    public string SampleLabelText()
+    {
+        var custom = SampleLabelZpl;
+        var text = SampleLabelMode == 1 && !string.IsNullOrWhiteSpace(custom) ? custom : DefaultSampleZpl;
+        return text.Replace("\r\n", "\n").Replace('\r', '\n');
+    }
+
     // General
     public bool ReopenLastFile { get; set; }
     public string LastFilePath { get; set; } = string.Empty;

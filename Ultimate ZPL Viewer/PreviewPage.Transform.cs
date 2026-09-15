@@ -246,6 +246,9 @@ public sealed partial class PreviewPage
                 _suppressDensityRescale = true;
                 DensityComboBox.SelectedItem = item;
                 _lastDpmm = SelectedDpmm;
+                // The density belongs to the document: a conversion — or an undo of
+                // one — changes it for THIS tab and no other.
+                if (_activeTab is not null) _activeTab.Dpmm = _lastDpmm;
                 _suppressDensityRescale = false;
                 RefreshPreview(SizeUpdate.KeepCurrent);
                 return;

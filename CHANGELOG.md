@@ -156,6 +156,17 @@ un Ctrl+Z rend le document d'avant.
   sens est tourné avec le champ. Une étiquette dont le texte tenait sur une ligne
   est rendue exactement comme avant.
 
+- **La densité était partagée par tous les onglets** 🔍
+  Elle appartient au document, pas à la fenêtre : deux étiquettes ouvertes côte
+  à côte peuvent être écrites pour deux imprimantes différentes. La liste de la
+  barre d'outils ne bougeait pourtant pas en changeant d'onglet : elle gardait la
+  densité de l'onglet qu'on venait de quitter, et **le changement suivant
+  calculait son rapport à partir d'une densité que ce document n'avait jamais
+  eue** — passer de 24 à 8 divisait les longueurs d'une étiquette qui était à 8.
+  Chaque onglet porte désormais la sienne : elle le suit quand on y revient, quand
+  on le duplique et quand on le fait glisser dans une autre fenêtre, et arriver
+  sur un onglet ne réécrit plus rien.
+
 ### 🐛 Corrigé
 
 - **La rotation déplaçait la moitié d'une étiquette n'importe où** 🔄

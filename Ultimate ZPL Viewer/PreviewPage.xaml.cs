@@ -780,6 +780,7 @@ public sealed partial class PreviewPage : Page
             DocTabs.TabItems.Add(MakeTabItem(new DocTab
             {
                 FilePath = path,
+                Dpmm = _settings.DefaultDpmm,
                 Text = content.Replace("\r\n", "\n").Replace('\r', '\n'),
             }));
         UpdateTabBar();
@@ -2535,9 +2536,11 @@ public sealed partial class PreviewPage : Page
             heightMm = UnitConverter.ToMillimeters(height, _settings.Unit);
         }
 
+        // The tab first, so the dots below are counted at the density this new
+        // document is read at and not at the one the previous tab happened to use.
+        AddTabAndActivate(null, _settings.DefaultDpmm); // a new document opens in its own tab
         var widthDots = (int)Math.Round(widthMm * SelectedDpmm);
         var heightDots = (int)Math.Round(heightMm * SelectedDpmm);
-        AddTabAndActivate(null); // a new document opens in its own tab
         // Empty on purpose: the guide frame it used to carry was a hint for a
         // viewer, and is one more element to delete for someone drawing.
         SetEditorText($"^XA\n^PW{widthDots}\n^LL{heightDots}\n^XZ");
@@ -2628,7 +2631,6 @@ public sealed partial class PreviewPage : Page
             _settings.LastFilePath = path;
             AddRecentFile(path);
             _settings.Save();
-            ApplyOpenDensity();           // density-on-open (does not rewrite ^PW/^LL)
 
             if (job is not null)
             {
@@ -2636,7 +2638,9 @@ public sealed partial class PreviewPage : Page
                 await YieldToUiAsync();   // let the strip reach the screen first
             }
 
-            AddTabAndActivate(path);      // an opened file gets its own tab
+            // The opened file gets its own tab AND the open-default density: set on
+            // the tab, not on the toolbar first, so the tab being left keeps its own.
+            AddTabAndActivate(path, _settings.DefaultDpmm);
             SetEditorText(text);          // parse, render and analyse
             _isDirty = false;
             UpdateDocumentTitle();
@@ -2791,7 +2795,7 @@ public sealed partial class PreviewPage : Page
     // Creates the tab for the document loaded at startup (tab bar stays hidden).
     private void InitFirstTab()
     {
-        _activeTab = new DocTab { FilePath = _currentFilePath };
+        _activeTab = new DocTab { FilePath = _currentFilePath, Dpmm = SelectedDpmm };
         _suppressTabEvents = true;
         DocTabs.TabItems.Add(MakeTabItem(_activeTab));
         DocTabs.SelectedIndex = 0;
@@ -2886,18 +2890,37 @@ public sealed partial class PreviewPage : Page
         _activeTab.Text = _currentText;
         _activeTab.IsDirty = _isDirty;
         _activeTab.EditMode = _editMode;
+        _activeTab.Dpmm = SelectedDpmm;
+    }
+
+    // Puts the toolbar's density list on the density THIS document is read at,
+    // without rewriting a thing: moving that list by hand rescales ^PW/^LL, and
+    // arriving on a tab is not the user asking for a conversion. Without it the
+    // list kept the density of the tab just left, and the next change computed its
+    // ratio from a density this document never had — dividing its lengths by a
+    // number that meant nothing here.
+    private void ApplyTabDensity(DocTab tab)
+    {
+        if (tab.Dpmm <= 0) tab.Dpmm = _settings.DefaultDpmm;
+        _suppressDensityRescale = true;
+        SelectDensity(tab.Dpmm);
+        _lastDpmm = SelectedDpmm;
+        tab.Dpmm = _lastDpmm;          // snapped to a standard density
+        _suppressDensityRescale = false;
     }
 
     // Opens a fresh tab (for a new or just-opened document) and makes it active.
     // The caller then fills it via SetEditorText and sets _isDirty.
-    private void AddTabAndActivate(string? filePath)
+    private void AddTabAndActivate(string? filePath, double dpmm = 0)
     {
+        // BEFORE the list moves: the tab being left keeps the density it was read at.
         CaptureActiveTab();
-        var tab = new DocTab { FilePath = filePath, EditMode = InitialEditMode };
+        var tab = new DocTab { FilePath = filePath, EditMode = InitialEditMode, Dpmm = dpmm };
         _activeTab = tab;
         _currentFilePath = filePath;
         _currentText = "";
         _isDirty = false;
+        ApplyTabDensity(tab);
         RestoreTabMode();
         var item = MakeTabItem(tab);
         _suppressTabEvents = true;
@@ -2926,6 +2949,7 @@ public sealed partial class PreviewPage : Page
         _currentFilePath = tab.FilePath;
         _currentText = tab.Text;
         _isDirty = tab.IsDirty;
+        ApplyTabDensity(tab);
         RestoreTabMode();
         if (_editorReady) PostToEditor(BuildSwitchDocMessage(tab.Id, tab.Text));
         // Bring this document back to its own zoom right away, so the incoming
@@ -3211,7 +3235,7 @@ public sealed partial class PreviewPage : Page
     private DocTab Snapshot(DocTab tab)
     {
         if (ReferenceEquals(tab, _activeTab)) CaptureActiveTab();
-        return new DocTab { FilePath = tab.FilePath, Text = tab.Text, IsDirty = tab.IsDirty };
+        return new DocTab { FilePath = tab.FilePath, Text = tab.Text, IsDirty = tab.IsDirty, Dpmm = tab.Dpmm };
     }
 
     /// <summary>
@@ -3236,7 +3260,7 @@ public sealed partial class PreviewPage : Page
     /// <summary>Takes a document handed over by another window as a new tab here.</summary>
     public void AdoptTab(DocTab incoming)
     {
-        AddTabAndActivate(incoming.FilePath);
+        AddTabAndActivate(incoming.FilePath, incoming.Dpmm);
         SetEditorText(incoming.Text);
         _isDirty = incoming.IsDirty;
         UpdateDocumentTitle();
@@ -3594,7 +3618,7 @@ public sealed partial class PreviewPage : Page
     private void DuplicateTab(DocTab tab)
     {
         var text = ReferenceEquals(tab, _activeTab) ? _currentText : tab.Text;
-        AddTabAndActivate(null);
+        AddTabAndActivate(null, ReferenceEquals(tab, _activeTab) ? SelectedDpmm : tab.Dpmm);
         SetEditorText(text);
         _isDirty = true;
         UpdateDocumentTitle();
@@ -3758,12 +3782,14 @@ public sealed partial class PreviewPage : Page
             if (edits.Count > 0)
             {
                 _lastDpmm = newDpmm;
+                if (_activeTab is not null) _activeTab.Dpmm = newDpmm;
                 ApplyEdits(edits, SizeUpdate.KeepCurrent);
                 return;
             }
         }
 
         _lastDpmm = newDpmm;
+        if (_activeTab is not null) _activeTab.Dpmm = newDpmm;
         if (!_suppressDensityRescale) RefreshPreview(SizeUpdate.KeepCurrent);
     }
 
@@ -6477,6 +6503,12 @@ public sealed class DocTab
     // toolbar/editor toggles, redraws — restores it instead of the default, and
     // switching tabs brings each document back to its own level.
     public double? ZoomPercent { get; set; }
+
+    // The density this document is READ at, in dots per millimetre. It belongs to
+    // the document, not to the window: two tabs can be written for two different
+    // printers, and the toolbar list must follow the tab rather than the other way
+    // round. Zero until the tab has been given one.
+    public double Dpmm { get; set; }
 
     // What the toolbar showed at each state of this document's history, keyed by
     // Monaco's alternative version id (PreviewPage.RecordDocState). Per tab,

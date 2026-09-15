@@ -6035,6 +6035,10 @@ public sealed partial class PreviewPage : Page
                     doc.RootElement.GetProperty("text").GetString() ?? "",
                     doc.RootElement.TryGetProperty("version", out var ver) ? ver.GetInt32() : 0);
                 break;
+            case "docVersion":
+                // The state a document starts in, reported when its model is bound.
+                RecordDocState(doc.RootElement.GetProperty("version").GetInt32());
+                break;
             case "cursorChanged":
                 _cursorOffset = doc.RootElement.GetProperty("offset").GetInt32();
                 if (DocBadge.IsChecked == true) UpdateDocPanel();

@@ -156,6 +156,15 @@ un Ctrl+Z rend le document d'avant.
   sens est tourné avec le champ. Une étiquette dont le texte tenait sur une ligne
   est rendue exactement comme avant.
 
+- **Un onglet restauré n'avait pas de point de départ à annuler** ↩️
+  Lier un document à l'éditeur ne change aucun texte, donc n'annonce aucun
+  changement : un onglet dont l'éditeur reçoit le document tel quel — ceux
+  restaurés de la session précédente — ne disait jamais dans quel état il
+  commençait. Sa première conversion était alors le premier état connu de son
+  historique, et l'annuler **remettait le code en place sans remettre la
+  densité** : il n'y avait rien derrière où revenir. L'éditeur annonce désormais
+  cet état de départ au moment où il prend le document.
+
 - **La densité était partagée par tous les onglets** 🔍
   Elle appartient au document, pas à la fenêtre : deux étiquettes ouvertes côte
   à côte peuvent être écrites pour deux imprimantes différentes. La liste de la

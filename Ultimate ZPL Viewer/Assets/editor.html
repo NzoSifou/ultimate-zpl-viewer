@@ -422,6 +422,13 @@
                         }
                         editor.setModel(m);
                         if (window._docViews[msg.id]) editor.restoreViewState(window._docViews[msg.id]);
+                        // Binding a model changes no content, so it fires no change
+                        // event — and a tab whose model is created HERE (a document
+                        // restored from the last session, say) would never tell the
+                        // app what state it starts in. Its history would then have
+                        // no first step to come back to, and undoing its very first
+                        // change would put the text back without the density.
+                        send({ type: 'docVersion', version: m.getAlternativeVersionId() });
                     } else if (msg.type === 'closeDoc') {
                         var mm = window._docModels[msg.id];
                         if (mm && window._docId !== msg.id) mm.dispose();

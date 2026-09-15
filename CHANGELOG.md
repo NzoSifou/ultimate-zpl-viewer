@@ -6,7 +6,13 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
-## [1.6.0] — 2026-09-10 — transformer un document entier
+## [1.6.0] — 2026-09-16 — transformer un document, une page d'accueil, des groupes d'outils
+
+Trois choses dans cette version. La première touche les documents, la
+deuxième ce que l'application montre quand il n'y en a aucun, la troisième la
+barre d'outils. S'y ajoutent huit corrections — dont une qui en rassemble sept,
+toutes trouvées en comparant l'image d'une étiquette tournée à l'image de
+l'originale tournée du même angle, deux choses qui doivent se superposer.
 
 Jusqu'ici on modifiait une étiquette un champ à la fois. Un bouton
 **« Transformer »** dans la barre d'outils en change deux choses d'un coup, sur
@@ -156,6 +162,8 @@ un Ctrl+Z rend le document d'avant.
   sens est tourné avec le champ. Une étiquette dont le texte tenait sur une ligne
   est rendue exactement comme avant.
 
+### 🐛 Corrigé
+
 - **Un onglet restauré n'avait pas de point de départ à annuler** ↩️
   Lier un document à l'éditeur ne change aucun texte, donc n'annonce aucun
   changement : un onglet dont l'éditeur reçoit le document tel quel — ceux
@@ -204,8 +212,6 @@ un Ctrl+Z rend le document d'avant.
   Chaque onglet porte désormais la sienne : elle le suit quand on y revient, quand
   on le duplique et quand on le fait glisser dans une autre fenêtre, et arriver
   sur un onglet ne réécrit plus rien.
-
-### 🐛 Corrigé
 
 - **La rotation déplaçait la moitié d'une étiquette n'importe où** 🔄
   Sept défauts, trouvés en comparant l'image d'une étiquette tournée à l'image de

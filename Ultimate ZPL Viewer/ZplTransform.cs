@@ -172,6 +172,9 @@ public static class ZplTransform
         public ZplRect Box;
         public bool TextOnly;
         public ZplImage? Image;
+        // The barcode this field draws, when it draws one: its ^FT does not anchor
+        // the bottom of the block the way every other graphic's does.
+        public ZplBars? Bars;
     }
 
     // Every field of one label, with the box it covers. Drawables carry the span of
@@ -193,6 +196,7 @@ public static class ZplTransform
                     Box = box,
                     TextOnly = ReadsAsText(d),
                     Image = d as ZplImage,
+                    Bars = d as ZplBars,
                 };
                 continue;
             }
@@ -200,6 +204,7 @@ public static class ZplTransform
             if (d.SourceEnd + offset > field.End) field.End = d.SourceEnd + offset;
             if (!ReadsAsText(d)) field.TextOnly = false;
             field.Image ??= d as ZplImage;
+            field.Bars ??= d as ZplBars;
         }
         return byStart.Values.OrderBy(f => f.Start).ToList();
     }
@@ -210,6 +215,24 @@ public static class ZplTransform
     // is still a text field — its ^FT anchors a baseline, not a corner.
     private static bool ReadsAsText(ZplDrawable d)
         => d is ZplText || d is ZplBox { TextRule: true };
+
+    // How far below the top of its turned box a ^FT graphic's anchor sits.
+    //
+    // For anything but a barcode that is the whole height: ^FT holds the bottom
+    // edge. A barcode is the exception — ^FT holds the bottom of the BARS, and the
+    // interpretation line hangs below the anchor, outside. So the drop is the bar
+    // height, not the block height, and the two differ by that line. Standing the
+    // barcode on its side changes the question again: the anchor then holds the end
+    // of the bar RUN, which is the box height in that frame. The renderer decides
+    // it the same way — these two have to agree or the barcode lands with the
+    // interpretation line's worth of offset, on top of whatever is underneath.
+    private static double AnchorDrop(Field? field, (double X, double Y, double W, double H) turned, int rot)
+    {
+        if (field?.Bars is not { } bars) return turned.H;
+        int after = ((bars.Rotation + rot) % 360 + 360) % 360;
+        if (after is 90 or 270) return bars.Width;
+        return bars.BarHeight > 0 ? bars.BarHeight : turned.H;
+    }
 
     private static ZplRect Union(ZplRect a, ZplRect b)
     {
@@ -353,7 +376,7 @@ public static class ZplTransform
                             // anchors its bottom-left, and turning the label picks a
                             // different corner for each.
                             nx = turned.X;
-                            ny = t.Command == "FT" ? turned.Y + turned.H : turned.Y;
+                            ny = t.Command == "FT" ? turned.Y + AnchorDrop(field, turned, rot) : turned.Y;
                         }
                     }
 

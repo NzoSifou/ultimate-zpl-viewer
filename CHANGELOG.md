@@ -165,6 +165,17 @@ un Ctrl+Z rend le document d'avant.
   densité** : il n'y avait rien derrière où revenir. L'éditeur annonce désormais
   cet état de départ au moment où il prend le document.
 
+- **Un demi-tour posait les codes-barres sur le texte** 🔄
+  Le `^FT` d'un code-barres ne tient pas le bas du bloc comme celui de n'importe
+  quel autre dessin : **il tient le bas des BARRES**, et la ligne de lecture pend
+  en dessous, hors de l'ancre. Le rendu le savait — la conversion non : elle
+  replaçait l'ancre au bas de la boîte entière, donc une ligne de lecture trop
+  bas. À 90° et 270° la question ne se pose pas (l'ancre tient alors le bout de
+  la course des barres, qui est bien la hauteur de la boîte dans ce sens), mais à
+  180° l'étiquette Mondial Relay ressortait avec ses codes-barres décalés de la
+  hauteur de leurs chiffres, **par-dessus le texte du dessus**. Les deux calculent
+  désormais l'ancre de la même façon.
+
 - **Un code-barres converti ressortait haut d'un point** 📏
   Un argument écrit comme RIEN — la case vide de `^BCN,,Y,N` — dit la même chose
   qu'un argument absent : prends la valeur par défaut. Celle-ci vient d'ailleurs

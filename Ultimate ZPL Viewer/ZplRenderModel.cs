@@ -63,7 +63,10 @@ public sealed record ZplSymbol(double X, double Y, double Height, double Width, 
 public sealed record BarSeg(double X, double Y, double W, double H);
 // CenterWidth > 0 → the text is centered within [X, X+CenterWidth].
 public sealed record BarLabel(double X, double Y, string Text, double FontHeight, double CenterWidth = 0);
-public sealed record ZplBars(double X, double Y, double Width, double Height, IReadOnlyList<BarSeg> Segs, IReadOnlyList<BarLabel> Labels, int Rotation) : ZplDrawable(X, Y);
+// BarHeight is the height of the BARS alone, without the interpretation line that
+// hangs below them. ^FT anchors that line rather than the bottom of the block, so
+// anything replacing the anchor — turning a whole label — needs the two apart.
+public sealed record ZplBars(double X, double Y, double Width, double Height, IReadOnlyList<BarSeg> Segs, IReadOnlyList<BarLabel> Labels, int Rotation, double BarHeight = 0) : ZplDrawable(X, Y);
 // A rectangular 2D module grid with independent module width/height (PDF417).
 public sealed record ZplGrid(double X, double Y, double ModW, double ModH, bool[,] Matrix) : ZplDrawable(X, Y);
 // Monochrome bitmap from ^GF/^GFA (1 bit per pixel, row-padded to whole bytes).
@@ -576,7 +579,7 @@ public static partial class ZplRenderer
             // lifted the bars into the text above (MOR "Réf Client" overlap bug).
             double anchorH = barcodeRotation is 90 or 270 ? W : barcodeHeight;
             double topY = typeset ? fy - anchorH : fy;
-            fieldBuf.Add(new ZplBars(fx, topY, W, H, segs, labels, barcodeRotation));
+            fieldBuf.Add(new ZplBars(fx, topY, W, H, segs, labels, barcodeRotation, barcodeHeight));
             // Some interpretation digits sit OUTSIDE the symbol (the UPC-A/UPC-E number
             // system and check digits): without them the auto-sized label ends at the
             // last bar and clips the trailing digit away.

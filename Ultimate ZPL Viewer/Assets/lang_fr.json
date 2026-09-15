@@ -31,6 +31,38 @@
     "sizeCapped": "limité",
     "transform": "Transformer"
   },
+  "home": {
+    "tagline": "Visualisez, modifiez et imprimez vos étiquettes ZPL. Tout est rendu sur votre machine, sans aucune API externe.",
+    "actions": {
+      "new": {
+        "title": "Nouveau fichier",
+        "desc": "Partir d'une étiquette vide, à la taille de votre choix."
+      },
+      "open": {
+        "title": "Ouvrir un fichier",
+        "desc": "Charger un .zpl ou un .txt déjà écrit."
+      },
+      "sample": {
+        "title": "Étiquette d'exemple",
+        "desc": "Voir à quoi ressemble un rendu, sans rien préparer."
+      }
+    },
+    "recent": {
+      "title": "Récents",
+      "empty": "Les fichiers que vous ouvrirez apparaîtront ici."
+    },
+    "tips": {
+      "title": "Ce que vous pouvez faire",
+      "edit": "Lire le code à gauche, l'étiquette à droite — ou passer en mode édition et déplacer les éléments à la souris.",
+      "transform": "Convertir tout un document dans une autre densité, ou le faire pivoter, sans le réécrire.",
+      "print": "Imprimer sur une imprimante classique comme sur une thermique en ZPL brut.",
+      "export": "Exporter en PDF vectoriel ou en PNG."
+    },
+    "shortcuts": {
+      "hint": "affiche la liste de tous les raccourcis clavier.",
+      "open": "Voir les raccourcis"
+    }
+  },
   "transform": {
     "title": "Transformer le document",
     "apply": "Transformer",
@@ -1510,6 +1542,7 @@
   "settings": {
     "nav": {
       "general": "Général",
+      "home": "Page d'accueil",
       "document": "Document",
       "editor": "Éditeur et aperçu",
       "editMode": "Mode édition",
@@ -1594,6 +1627,30 @@
         "successBody": "C'est fait ! Ultimate ZPL Viewer est désormais l'application par défaut pour les fichiers .zpl.",
         "manualTitle": "Définition manuelle nécessaire",
         "manualBody": "Windows n'a pas autorisé la définition automatique (un autre choix est déjà enregistré pour les fichiers .zpl).\n\nPour le faire manuellement :\n1. Faites un clic droit sur un fichier .zpl.\n2. Choisissez « Ouvrir avec » puis « Choisir une autre application ».\n3. Sélectionnez « Ultimate ZPL Viewer ».\n4. Cochez « Toujours utiliser cette application » (ou « Toujours »), puis validez."
+      }
+    },
+    "home": {
+      "title": "Page d'accueil",
+      "subtitle": "Ce que propose la page affichée quand aucun document n'est ouvert.",
+      "cards": {
+        "sample": {
+          "title": "Étiquette d'exemple",
+          "desc": "Le code ZPL qu'ouvre le bouton « Étiquette d'exemple » de la page d'accueil."
+        },
+        "lastTab": {
+          "title": "Action du dernier onglet fermé",
+          "desc": "Ce qui se passe quand vous fermez le dernier document d'une fenêtre."
+        }
+      },
+      "opt": {
+        "sample": [
+          "Code ZPL par défaut",
+          "Code ZPL personnalisé"
+        ],
+        "lastTab": [
+          "Fermer l'application",
+          "Faire apparaître la page d'accueil"
+        ]
       }
     },
     "document": {
@@ -1962,7 +2019,33 @@
     },
     "toolbar": {
       "title": "Barre d'outils",
-      "subtitle": "Glissez-déposez les éléments pour les réorganiser. Vous disposez de trois lignes : déposez un élément sur une autre ligne pour l'y déplacer. Chaque ligne se replie automatiquement si la fenêtre est trop étroite."
+      "subtitle": "Glissez-déposez les boutons pour les réorganiser. Vous disposez de trois lignes, et de groupes : un groupe rassemble des boutons sous un nom et n'apparaît dans la barre que lorsqu'il en contient. Chaque ligne se replie automatiquement si la fenêtre est trop étroite.",
+      "lbl": {
+        "row": "Ligne {0}",
+        "addGroup": "Ajouter un groupe",
+        "deleteGroup": "Supprimer le groupe (ses boutons restent à sa place)",
+        "emptyGroup": "Groupe vide",
+        "groupName": "Nom du groupe"
+      },
+      "groups": {
+        "file": "Fichier",
+        "view": "Affichage",
+        "output": "Sortie",
+        "new": "Nouveau groupe"
+      },
+      "items": {
+        "newFile": "Nouveau fichier",
+        "openFile": "Ouvrir un fichier",
+        "save": "Enregistrer",
+        "density": "Densité",
+        "size": "Taille",
+        "zoom": "Zoom",
+        "rotate": "Tourner",
+        "transform": "Transformer",
+        "pdf": "PDF",
+        "png": "PNG",
+        "print": "Imprimer"
+      }
     },
     "screen": {
       "title": "Écran",

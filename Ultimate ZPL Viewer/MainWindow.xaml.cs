@@ -223,7 +223,7 @@ namespace Ultimate_ZPL_Viewer
             TitleContent.Margin = new Thickness(48, 0, 0, 0); // right of the settings button
             AppTitleText.Text = _documentTitle;
             SettingsTitleButton.Visibility = Visibility.Visible;
-            ToolbarToggleButton.Visibility = Visibility.Visible;
+            ToolbarToggleButton.Visibility = _inHome ? Visibility.Collapsed : Visibility.Visible;
             FullScreenButton.Visibility = Visibility.Visible;
             UpdateTitleBarBackground();
         }
@@ -245,7 +245,7 @@ namespace Ultimate_ZPL_Viewer
         {
             if (_inSettings) return;   // the wizard handed over to the settings screen
             SettingsTitleButton.Visibility = Visibility.Visible;
-            ToolbarToggleButton.Visibility = Visibility.Visible;
+            ToolbarToggleButton.Visibility = _inHome ? Visibility.Collapsed : Visibility.Visible;
             FullScreenButton.Visibility = Visibility.Visible;
             AppTitleText.Text = _documentTitle;
         }
@@ -272,6 +272,17 @@ namespace Ultimate_ZPL_Viewer
         {
             if ((rootFrame.Content as PreviewPage)?.ToggleToolbar() is bool visible)
                 SetToolbarToggleGlyph(visible);
+        }
+
+        // The home page has no toolbar and no document, so the button that shows
+        // and hides the toolbar has nothing to act on: it goes away with it and
+        // comes back with the first document.
+        private bool _inHome;
+
+        public void SetHomeMode(bool on)
+        {
+            _inHome = on;
+            ToolbarToggleButton.Visibility = on || _inSettings ? Visibility.Collapsed : Visibility.Visible;
         }
 
         public void SetToolbarToggleGlyph(bool toolbarVisible)

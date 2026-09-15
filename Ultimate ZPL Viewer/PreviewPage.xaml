@@ -169,41 +169,39 @@
             </TabView.Resources>
         </TabView>
 
-        <!-- Holder for the toolbar groups; RebuildToolbar reparents them into the
-             lines above. The download/print buttons keep their per-group styling. -->
+        <!-- Holder for every toolbar button; RebuildToolbar reparents them into
+             the lines above, on their own or inside a group. -->
         <Grid x:Name="ToolbarItemHolder" Grid.Row="0" Visibility="Collapsed">
-            <StackPanel x:Name="FileGroup" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <Button x:Name="NewFileButton" Click="NewFileButton_Click" Style="{StaticResource AccentButtonStyle}" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE8A5;" FontSize="14"/>
-                        <TextBlock x:Name="NewFileText" Text="Nouveau fichier"/>
-                    </StackPanel>
-                </Button>
-                <!-- Primary click opens the picker; the dropdown lists recent files.
-                     A SplitButton keeps this on one line (no extra toolbar button). -->
-                <SplitButton x:Name="OpenFileButton" Click="OpenFileButton_Click" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xED25;" FontSize="14"/>
-                        <TextBlock x:Name="OpenFileText" Text="Ouvrir un fichier"/>
-                    </StackPanel>
-                    <SplitButton.Flyout>
-                        <MenuFlyout x:Name="RecentFilesFlyout" Placement="Bottom"/>
-                    </SplitButton.Flyout>
-                </SplitButton>
-                <SplitButton x:Name="SaveButton" Click="SaveButton_Click" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE74E;" FontSize="14"/>
-                        <TextBlock x:Name="SaveText" Text="Enregistrer"/>
-                    </StackPanel>
-                    <SplitButton.Flyout>
-                        <MenuFlyout Placement="Bottom">
-                            <MenuFlyoutItem x:Name="SaveAsMenuItem" Text="Enregistrer sous…" Click="SaveAsMenu_Click">
-                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE792;"/></MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                        </MenuFlyout>
-                    </SplitButton.Flyout>
-                </SplitButton>
-            </StackPanel>
+            <Button x:Name="NewFileButton" Click="NewFileButton_Click" Style="{StaticResource AccentButtonStyle}" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xE8A5;" FontSize="14"/>
+                    <TextBlock x:Name="NewFileText" Text="Nouveau fichier"/>
+                </StackPanel>
+            </Button>
+            <!-- Primary click opens the picker; the dropdown lists recent files.
+                 A SplitButton keeps this on one line (no extra toolbar button). -->
+            <SplitButton x:Name="OpenFileButton" Click="OpenFileButton_Click" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xED25;" FontSize="14"/>
+                    <TextBlock x:Name="OpenFileText" Text="Ouvrir un fichier"/>
+                </StackPanel>
+                <SplitButton.Flyout>
+                    <MenuFlyout x:Name="RecentFilesFlyout" Placement="Bottom"/>
+                </SplitButton.Flyout>
+            </SplitButton>
+            <SplitButton x:Name="SaveButton" Click="SaveButton_Click" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xE74E;" FontSize="14"/>
+                    <TextBlock x:Name="SaveText" Text="Enregistrer"/>
+                </StackPanel>
+                <SplitButton.Flyout>
+                    <MenuFlyout Placement="Bottom">
+                        <MenuFlyoutItem x:Name="SaveAsMenuItem" Text="Enregistrer sous…" Click="SaveAsMenu_Click">
+                            <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE792;"/></MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                    </MenuFlyout>
+                </SplitButton.Flyout>
+            </SplitButton>
 
             <StackPanel x:Name="DensityGroup" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                 <FontIcon Glyph="&#xE80A;" FontSize="14" VerticalAlignment="Center"/>
@@ -304,29 +302,34 @@
                 </Button>
             </StackPanel>
 
-            <StackPanel x:Name="DownloadGroup" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <StackPanel.Resources>
+            <!-- Flat, accent-outlined export buttons. That look used to live on the
+                 panel around the pair; each carries it now they stand alone. -->
+            <Button x:Name="PdfButton" Click="PdfButton_Click" VerticalAlignment="Center"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                    BorderBrush="{ThemeResource AccentTextFillColorPrimaryBrush}">
+                <Button.Resources>
                     <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>
                     <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SubtleFillColorSecondaryBrush"/>
                     <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SubtleFillColorTertiaryBrush"/>
-                </StackPanel.Resources>
-                <Button x:Name="PdfButton" Click="PdfButton_Click"
-                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                        BorderBrush="{ThemeResource AccentTextFillColorPrimaryBrush}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xF000;" FontSize="14"/>
-                        <TextBlock x:Name="PdfText" Text="PDF"/>
-                    </StackPanel>
-                </Button>
-                <Button x:Name="PngButton" Click="PngButton_Click"
-                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                        BorderBrush="{ThemeResource AccentTextFillColorPrimaryBrush}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE91B;" FontSize="14"/>
-                        <TextBlock x:Name="PngText" Text="PNG"/>
-                    </StackPanel>
-                </Button>
-            </StackPanel>
+                </Button.Resources>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xF000;" FontSize="14"/>
+                    <TextBlock x:Name="PdfText" Text="PDF"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="PngButton" Click="PngButton_Click" VerticalAlignment="Center"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                    BorderBrush="{ThemeResource AccentTextFillColorPrimaryBrush}">
+                <Button.Resources>
+                    <SolidColorBrush x:Key="ButtonBackground" Color="Transparent"/>
+                    <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SubtleFillColorSecondaryBrush"/>
+                    <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SubtleFillColorTertiaryBrush"/>
+                </Button.Resources>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xE91B;" FontSize="14"/>
+                    <TextBlock x:Name="PngText" Text="PNG"/>
+                </StackPanel>
+            </Button>
 
             <StackPanel x:Name="PrintGroup" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                 <Button x:Name="PrintButton" Click="PrintButton_Click" Style="{StaticResource AccentButtonStyle}">
@@ -339,7 +342,9 @@
 
         </Grid>
 
-        <Grid Grid.Row="2">
+        <!-- Editor + preview. Collapsed while the home page is up, so nothing of
+             the document surface shows through it. -->
+        <Grid x:Name="ContentArea" Grid.Row="2">
             <!-- Left/right columns swap roles when the editor and preview are
                  swapped; the editor's column is fixed-width, the preview's is star. -->
             <Grid.ColumnDefinitions>
@@ -1011,6 +1016,16 @@
         <!-- Full-screen settings (PowerToys-style: categories on the left, the
              selected category's settings on the right). Covers everything below
              the title bar; the app content stays alive behind it. -->
+        <!-- The home page. A window with no document shows this instead of the
+             toolbar, the tabs, the editor and the preview: no grid, no rails, no
+             chrome — a wash of colour over the window's own acrylic, and the few
+             things there are to do from here. Filled by PreviewPage.Home.cs. -->
+        <Grid x:Name="HomeOverlay"
+              Grid.Row="0"
+              Grid.RowSpan="4"
+              Visibility="Collapsed"
+              Canvas.ZIndex="40"/>
+
         <Grid x:Name="SettingsOverlay"
               Grid.Row="0"
               Grid.RowSpan="3"
@@ -1031,6 +1046,9 @@
                 <NavigationView.MenuItems>
                     <NavigationViewItem Content="Général" Tag="general">
                         <NavigationViewItem.Icon><FontIcon Glyph="&#xE713;"/></NavigationViewItem.Icon>
+                    </NavigationViewItem>
+                    <NavigationViewItem Content="Page d'accueil" Tag="home">
+                        <NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;"/></NavigationViewItem.Icon>
                     </NavigationViewItem>
                     <NavigationViewItem Content="Document" Tag="doc">
                         <NavigationViewItem.Icon><FontIcon Glyph="&#xE8A5;"/></NavigationViewItem.Icon>

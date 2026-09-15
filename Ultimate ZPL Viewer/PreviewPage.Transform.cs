@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -222,7 +222,13 @@ public sealed partial class PreviewPage
         // toolbar has to turn with it. An ordinary edit leaves that size alone, on
         // purpose — a typed size must survive typing — but this is not an ordinary
         // edit: the whole document changed shape, so the size is read off it again.
-        if (rotation != 0) RefreshPreview(SizeUpdate.DocumentLoaded);
+        //
+        // A density conversion needs the same, for a subtler reason: the edits were
+        // applied while the toolbar still held the OLD density, so the new ^PW/^LL
+        // were divided by it and the label appeared to grow by the very ratio the
+        // conversion had just applied. Reading it again, now that the density has
+        // moved, gives back the size the label really has.
+        if (rotation != 0 || target is not null) RefreshPreview(SizeUpdate.DocumentLoaded);
     }
 
     // Moves the toolbar's density to the one the document was just written for.
@@ -240,6 +246,9 @@ public sealed partial class PreviewPage
                 _suppressDensityRescale = true;
                 DensityComboBox.SelectedItem = item;
                 _lastDpmm = SelectedDpmm;
+                // The density belongs to the document: a conversion — or an undo of
+                // one — changes it for THIS tab and no other.
+                if (_activeTab is not null) _activeTab.Dpmm = _lastDpmm;
                 _suppressDensityRescale = false;
                 RefreshPreview(SizeUpdate.KeepCurrent);
                 return;

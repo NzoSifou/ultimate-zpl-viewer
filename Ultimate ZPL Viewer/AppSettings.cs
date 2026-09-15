@@ -159,6 +159,39 @@ public sealed class AppSettings
     public double NewDocWidthMm { get; set; } = 100;
     public double NewDocHeightMm { get; set; } = 60;
 
+    // ---- The home page ----------------------------------------------------
+    // What closing the LAST tab of a window does: 0 = close the window (and with
+    // it the app, when it was the only one), 1 = fall back to the home page. The
+    // same choice decides whether a launch with nothing to open lands on the home
+    // page or straight on a document: someone who never wants the home page does
+    // not want it at startup either.
+    public int LastTabClosed { get; set; } = 1;
+
+    // Which label the home page's "sample" button opens: 0 = the one shipped with
+    // the app, 1 = SampleLabelZpl below.
+    public int SampleLabelMode { get; set; }
+    public string SampleLabelZpl { get; set; } = string.Empty;
+
+    // The label the app has always opened on. Kept here rather than in the page so
+    // the settings screen can show it, and so there is one copy of it.
+    public const string DefaultSampleZpl = """
+        ^XA
+        ^PW812
+        ^LL406
+        ^FO40,40^GB732,326,3^FS
+        ^FO70,85^A0N,44,44^FDUltimate ZPL Viewer^FS
+        ^FO70,150^A0N,28,28^FDRendu local sans API externe^FS
+        ^XZ
+        """;
+
+    /// <summary>The ZPL the sample button opens, falling back to the shipped one.</summary>
+    public string SampleLabelText()
+    {
+        var custom = SampleLabelZpl;
+        var text = SampleLabelMode == 1 && !string.IsNullOrWhiteSpace(custom) ? custom : DefaultSampleZpl;
+        return text.Replace("\r\n", "\n").Replace('\r', '\n');
+    }
+
     // General
     public bool ReopenLastFile { get; set; }
     public string LastFilePath { get; set; } = string.Empty;
@@ -206,14 +239,13 @@ public sealed class AppSettings
     // a window resized during the session leaves the editor where it was put, and
     // reopening the app the same size puts it back exactly there.
     public double EditorWidth { get; set; } = 420;
-    // Toolbar layout: up to 3 rows of group ids. Each row still wraps automatically
-    // on narrow windows. Row 0 holds every group by default.
-    public List<List<string>> ToolbarRows { get; set; } = new()
-    {
-        new List<string>(ToolbarItems.AllIds),
-        new List<string>(),
-        new List<string>(),
-    }; // unknown ids from older versions are dropped by NormalizeRows
+    // Toolbar layout: three rows of slots, a slot being one button or a named
+    // group of them. Each row still wraps automatically on narrow windows.
+    //
+    // Null until somebody arranges one, which is also how a layout written by a
+    // version that knew nothing of groups is handled: the key it used is not this
+    // one, so the default - three named groups - is what comes up.
+    public List<List<ToolbarSlot>>? ToolbarLayout { get; set; }
 
     // Manual physical screen sizes (monitor interface id → diagonal in inches),
     // used to render at real size when the EDID doesn't report a physical size.

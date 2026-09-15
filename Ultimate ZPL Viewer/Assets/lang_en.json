@@ -31,6 +31,38 @@
     "sizeCapped": "capped",
     "transform": "Transform"
   },
+  "home": {
+    "tagline": "View, edit and print your ZPL labels. Everything is rendered on your own machine, with no external API.",
+    "actions": {
+      "new": {
+        "title": "New file",
+        "desc": "Start from an empty label, at the size you choose."
+      },
+      "open": {
+        "title": "Open a file",
+        "desc": "Load a .zpl or .txt you already have."
+      },
+      "sample": {
+        "title": "Example label",
+        "desc": "See what a render looks like, with nothing to prepare."
+      }
+    },
+    "recent": {
+      "title": "Recent",
+      "empty": "The files you open will show up here."
+    },
+    "tips": {
+      "title": "What you can do",
+      "edit": "Read the code on the left and the label on the right — or switch to edit mode and drag the elements about.",
+      "transform": "Convert a whole document to another density, or turn it, without rewriting it.",
+      "print": "Print to an ordinary printer or to a thermal one in raw ZPL.",
+      "export": "Export to vector PDF or to PNG."
+    },
+    "shortcuts": {
+      "hint": "lists every keyboard shortcut.",
+      "open": "See the shortcuts"
+    }
+  },
   "transform": {
     "title": "Transform the document",
     "apply": "Transform",
@@ -1510,6 +1542,7 @@
   "settings": {
     "nav": {
       "general": "General",
+      "home": "Home page",
       "document": "Document",
       "editor": "Editor & preview",
       "editMode": "Edit mode",
@@ -1594,6 +1627,30 @@
         "successBody": "Done! Ultimate ZPL Viewer is now the default app for .zpl files.",
         "manualTitle": "Manual step required",
         "manualBody": "Windows didn't allow setting the default automatically (another app is already registered for .zpl files).\n\nTo do it manually:\n1. Right-click a .zpl file.\n2. Choose \"Open with\" then \"Choose another app\".\n3. Select \"Ultimate ZPL Viewer\".\n4. Check \"Always use this app\", then confirm."
+      }
+    },
+    "home": {
+      "title": "Home page",
+      "subtitle": "What the page shown when no document is open has to offer.",
+      "cards": {
+        "sample": {
+          "title": "Example label",
+          "desc": "The ZPL opened by the home page's “Example label” button."
+        },
+        "lastTab": {
+          "title": "Closing the last tab",
+          "desc": "What happens when you close the last document of a window."
+        }
+      },
+      "opt": {
+        "sample": [
+          "Default ZPL",
+          "Custom ZPL"
+        ],
+        "lastTab": [
+          "Close the application",
+          "Show the home page"
+        ]
       }
     },
     "document": {
@@ -1962,7 +2019,33 @@
     },
     "toolbar": {
       "title": "Toolbar",
-      "subtitle": "Drag and drop the items to rearrange them. You have three rows: drop an item on another row to move it there. Each row wraps automatically when the window is too narrow."
+      "subtitle": "Drag and drop the buttons to rearrange them. You have three rows, and groups: a group gathers buttons under a name and only shows on the toolbar once it holds some. Each row wraps automatically when the window is too narrow.",
+      "lbl": {
+        "row": "Row {0}",
+        "addGroup": "Add a group",
+        "deleteGroup": "Delete the group (its buttons stay where it was)",
+        "emptyGroup": "Empty group",
+        "groupName": "Group name"
+      },
+      "groups": {
+        "file": "File",
+        "view": "View",
+        "output": "Output",
+        "new": "New group"
+      },
+      "items": {
+        "newFile": "New file",
+        "openFile": "Open a file",
+        "save": "Save",
+        "density": "Density",
+        "size": "Size",
+        "zoom": "Zoom",
+        "rotate": "Rotate",
+        "transform": "Transform",
+        "pdf": "PDF",
+        "png": "PNG",
+        "print": "Print"
+      }
     },
     "screen": {
       "title": "Screen",

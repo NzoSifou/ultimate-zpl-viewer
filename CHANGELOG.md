@@ -6,7 +6,13 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
-## [1.6.0] — 2026-09-10 — transformer un document entier
+## [1.6.0] — 2026-09-16 — transformer un document, une page d'accueil, des groupes d'outils
+
+Trois choses dans cette version. La première touche les documents, la
+deuxième ce que l'application montre quand il n'y en a aucun, la troisième la
+barre d'outils. S'y ajoutent huit corrections — dont une qui en rassemble sept,
+toutes trouvées en comparant l'image d'une étiquette tournée à l'image de
+l'originale tournée du même angle, deux choses qui doivent se superposer.
 
 Jusqu'ici on modifiait une étiquette un champ à la fois. Un bouton
 **« Transformer »** dans la barre d'outils en change deux choses d'un coup, sur
@@ -67,7 +73,87 @@ un Ctrl+Z rend le document d'avant.
   Une police interne à l'imprimante y figure aussi : elle n'existe qu'en multiples
   entiers de sa propre taille, et son corps ne peut donc pas suivre exactement.
 
+- **Une page d'accueil** 🏠
+  Ouvrir l'application ouvrait un document que personne n'avait demandé. Une
+  fenêtre sans document montre maintenant une page d'accueil : pas de barre
+  d'outils, pas d'onglets, pas d'éditeur, pas d'aperçu — **rien que l'acrylique
+  de la fenêtre**, teinté d'un dégradé de la couleur d'accentuation. Trois
+  boutons pour en sortir (nouveau fichier, ouvrir, étiquette d'exemple), les
+  fichiers récents, ce que l'application sait faire en quatre lignes, et le seul
+  raccourci qu'il faut connaître avant les autres : **Ctrl + /**, qui les liste
+  tous.
+
+  Elle vaut par fenêtre : une fenêtre qui n'a plus d'onglet y revient pendant que
+  les autres gardent leurs documents.
+
+- **Un onglet apparaît dès le premier document** 🗂️
+  La barre d'onglets attendait le deuxième document pour se montrer, et le
+  contenu descendait d'un cran quand il arrivait. Un onglet reste un onglet :
+  il est là dès qu'il y a quelque chose d'ouvert. C'est l'absence d'onglet qui
+  veut dire quelque chose désormais — la page d'accueil.
+
+- **Deux réglages, dans une catégorie « Page d'accueil »** ⚙️
+  Le ZPL qu'ouvre le bouton « Étiquette d'exemple » : celui livré avec
+  l'application, ou **le vôtre**, tapé dans les paramètres. Et ce que fait la
+  fermeture du **dernier onglet** d'une fenêtre : fermer l'application, ou
+  revenir à la page d'accueil. Ce même choix décide du démarrage — qui ne veut
+  pas de page d'accueil n'en veut pas au lancement non plus — et « Rouvrir
+  le(s) dernier(s) fichier(s) » passe devant : une session à restaurer est un
+  document à ouvrir.
+
+- **Des groupes dans la barre d'outils** 🗃️
+  Les boutons se rangeaient en trois lignes et rien de plus. On peut maintenant
+  en réunir plusieurs sous un nom : le groupe porte son titre **centré sous ses
+  boutons**, et les traits qui le bordent sont plus hauts que ceux qui séparent
+  les boutons à l'intérieur, de sorte qu'il se lit comme un bloc et non comme
+  quatre boutons de plus.
+
+  Rien n'y oblige : un bouton reste seul tant que personne ne l'y met, on fait
+  autant de groupes qu'on veut, et aussi bien un groupe par bouton que tous les
+  boutons dans un seul. Un groupe vide se garde dans les paramètres — c'est une
+  chose à moitié faite, pas une erreur — mais **n'apparaît pas dans la barre**.
+  Et la barre ne prend la hauteur du nom que sur une ligne qui en porte un :
+  sans aucun groupe, elle retrouve exactement la hauteur qu'elle avait.
+
+  Dans les paramètres, « Ajouter un groupe » pose une carte vide où l'on dépose
+  des boutons ; son nom se tape en haut à gauche, la corbeille en haut à droite
+  la retire. **Supprimer un groupe ne supprime pas ses boutons** : ils sont
+  répandus là où il se trouvait, c'est-à-dire là où on ira les chercher.
+
+- **Les boutons qui ne formaient qu'un le montrent encore** 🔗
+  Un trait entre « Nouveau fichier » et « Ouvrir un fichier » n'a jamais eu de
+  sens : c'était un seul contrôle. Ces trois-là — et « PDF » avec « PNG » —
+  restent libres d'aller où l'on veut, mais **dès que deux d'entre eux se
+  retrouvent côte à côte, le trait disparaît et l'écart se resserre** à ce qu'il
+  était. Un trait qui borde un groupe, lui, reste : il délimite le groupe, ce
+  n'est pas la même chose qu'un trait entre deux boutons.
+
+  Les quelques traits ainsi économisés font la différence : la disposition par
+  défaut **tient désormais sur une seule ligne sur un écran 1920 × 1080** à 100 %.
+
+- **Ctrl+Z ramène aussi la densité et la taille** ↩️
+  Annuler une conversion remettait les nombres en place mais laissait la liste
+  des densités sur la nouvelle valeur, et une rotation annulée laissait
+  l'étiquette à ses dimensions tournées. La densité et la taille font maintenant
+  partie de l'historique : **un Ctrl+Z rend le document exactement tel qu'il
+  était**, et Ctrl+Y le ramène. Cela vaut partout, pas seulement après une
+  transformation : qui déplace la liste des densités sans savoir ce qu'elle fait
+  n'a qu'à annuler.
+
+  Changer la densité depuis la barre d'outils **effaçait** d'ailleurs tout
+  l'historique de l'éditeur, parce que le document était réécrit en entier :
+  ^PW et ^LL sont désormais modifiés là où ils sont, comme partout ailleurs.
+  (Une étiquette qui n'écrit ni ^PW ni ^LL n'a rien à annuler : il n'y a alors
+  aucune modification du texte à laquelle rattacher la densité.)
+
 ### 🔄 Modifié
+
+- **Fichier et export ne sont plus soudés** ✂️
+  « Nouveau fichier », « Ouvrir un fichier » et « Enregistrer » formaient un bloc
+  indéformable, « PDF » et « PNG » un autre. Ce sont désormais cinq boutons
+  indépendants, que l'on place un par un — ou que l'on regroupe autrement.
+  « Réinitialiser » propose trois groupes : **Fichier**, **Affichage** et
+  **Sortie**.
 
 - **Un bloc de texte pivoté revient enfin à la ligne** 📄
   Un ^FB rendu de travers était dessiné sur une seule ligne, qui filait hors de
@@ -78,6 +164,98 @@ un Ctrl+Z rend le document d'avant.
 
 ### 🐛 Corrigé
 
+- **Un onglet restauré n'avait pas de point de départ à annuler** ↩️
+  Lier un document à l'éditeur ne change aucun texte, donc n'annonce aucun
+  changement : un onglet dont l'éditeur reçoit le document tel quel — ceux
+  restaurés de la session précédente — ne disait jamais dans quel état il
+  commençait. Sa première conversion était alors le premier état connu de son
+  historique, et l'annuler **remettait le code en place sans remettre la
+  densité** : il n'y avait rien derrière où revenir. L'éditeur annonce désormais
+  cet état de départ au moment où il prend le document.
+
+- **Un demi-tour posait les codes-barres sur le texte** 🔄
+  Le `^FT` d'un code-barres ne tient pas le bas du bloc comme celui de n'importe
+  quel autre dessin : **il tient le bas des BARRES**, et la ligne de lecture pend
+  en dessous, hors de l'ancre. Le rendu le savait — la conversion non : elle
+  replaçait l'ancre au bas de la boîte entière, donc une ligne de lecture trop
+  bas. À 90° et 270° la question ne se pose pas (l'ancre tient alors le bout de
+  la course des barres, qui est bien la hauteur de la boîte dans ce sens), mais à
+  180° l'étiquette Mondial Relay ressortait avec ses codes-barres décalés de la
+  hauteur de leurs chiffres, **par-dessus le texte du dessus**. Les deux calculent
+  désormais l'ancre de la même façon.
+
+- **Un code-barres converti ressortait haut d'un point** 📏
+  Un argument écrit comme RIEN — la case vide de `^BCN,,Y,N` — dit la même chose
+  qu'un argument absent : prends la valeur par défaut. Celle-ci vient d'ailleurs
+  (`^BY` porte la hauteur des barres) et suit la conversion avec le reste. La
+  conversion écrivait quand même un nombre dans cette case — zéro mis à l'échelle,
+  donc **un**, remonté au minimum d'un point. Les étiquettes qui laissent la
+  hauteur à `^BY` — Mondial Relay, GLS, Colissimo — ressortaient avec des barres
+  d'un point de haut. Une case vide est désormais laissée vide.
+
+- **^JM était lu comme une densité** 🖨️
+  `^JM` dit avec **quelle fraction** des points de la tête d'impression imprimer :
+  A les prend tous, B un sur deux. Ce n'est pas une densité — la même étiquette
+  `^JMA` fait 8 points par millimètre sur une imprimante et 12 sur une autre. Les
+  lettres étaient pourtant lues comme des densités à elles seules (A valait six),
+  si bien qu'une étiquette GLS demandant la pleine résolution s'annonçait à la
+  plus grossière qui soit, et la fenêtre « Transformer » proposait de conserver
+  6 dpmm pour un document écrit en 8.
+
+- **La densité était partagée par tous les onglets** 🔍
+  Elle appartient au document, pas à la fenêtre : deux étiquettes ouvertes côte
+  à côte peuvent être écrites pour deux imprimantes différentes. La liste de la
+  barre d'outils ne bougeait pourtant pas en changeant d'onglet : elle gardait la
+  densité de l'onglet qu'on venait de quitter, et **le changement suivant
+  calculait son rapport à partir d'une densité que ce document n'avait jamais
+  eue** — passer de 24 à 8 divisait les longueurs d'une étiquette qui était à 8.
+  Chaque onglet porte désormais la sienne : elle le suit quand on y revient, quand
+  on le duplique et quand on le fait glisser dans une autre fenêtre, et arriver
+  sur un onglet ne réécrit plus rien.
+
+- **La rotation déplaçait la moitié d'une étiquette n'importe où** 🔄
+  Sept défauts, trouvés en comparant l'image d'une étiquette tournée à l'image de
+  l'étiquette d'origine tournée du même angle — deux choses qui doivent se
+  superposer au pixel près :
+
+  - **Un champ de texte contenant un tiret était placé comme un dessin.** Le
+    tiret de la police Zebra est tracé comme une barre et non comme un
+    caractère ; le champ n'était donc plus reconnu comme du texte, et son ^FT
+    était pris pour un coin de boîte au lieu d'une ligne de base. Chacun de ces
+    champs partait de toute sa longueur. C'est ce qui décalait « n'importe
+    comment » tout un bloc d'une étiquette DPD.
+  - **Les codes 2D ne tournaient pas.** Aztec, Data Matrix et QR gardaient leurs
+    modules à l'endroit dans une étiquette tournée ; ils suivent désormais le
+    champ, comme le PDF417 le faisait déjà.
+  - **^MUD faisait renoncer le moteur.** Le code d'unité de ^MU n'est « pas des
+    points » que pour I (pouces) et M (millimètres) ; toute autre lettre est en
+    points, et GLS écrit ^MUD. Le moteur refusait alors de déplacer la moindre
+    coordonnée tout en tournant les champs : l'étiquette ressortait illisible.
+  - **Une étiquette avec ^LH perdait ses champs de bord.** Les coordonnées sont
+    écrites relativement à ce décalage, et un quart de tour pouvait ramener un
+    champ plus près du bord que le décalage lui-même — donc un ^FO **négatif**,
+    que ZPL ne connaît pas. Une rotation ramène maintenant ^LH (et ^LS, ^LT) à
+    zéro et écrit les positions telles quelles.
+  - **Un champ ^FR tourné devenait invisible.** La question « y a-t-il du noir
+    dessous ? » n'était posée qu'aux champs droits : tourné, le champ gardait
+    son inversion et s'imprimait en blanc sur blanc.
+  - **Les orientations R et B étaient interverties** dans la boîte d'un texte
+    ancré par ^FT : un R monte à droite de son ancre et descend, un B fait
+    l'inverse.
+  - **L'étiquette grandissait en tournant.** Un champ à 180° écrit à GAUCHE de
+    son ancre ; réserver sa largeur à droite ajoutait une marge vide — 109
+    points sur l'étiquette DPD tournée.
+
+  Mesuré sur sept étiquettes réelles (DPD, GLS, Mondial Relay, Chronopost,
+  Colissimo, Geodis) aux trois angles : l'encre tournée tombe désormais à **1 à
+  7 points** près de l'original tourné, contre 114 avant. Les 67 étiquettes du
+  jeu de test sont rendues **au pixel identique** à avant, à l'endroit.
+
+- **La conversion de densité faisait grandir l'étiquette de son propre rapport** 📐
+  Les ^PW/^LL étaient réécrits alors que la barre d'outils tenait encore
+  l'ancienne densité, si bien qu'une étiquette de 101,5 mm convertie de 8 à
+  12 dpmm s'annonçait à 152,25 mm. Elle est relue une fois la densité changée.
+
 - **Le mode visualisation refusait les modifications venues de l'application** ✏️
   L'éditeur y est en lecture seule, et Monaco refuse alors une modification
   programmée comme il refuse une frappe — Ctrl+Z compris. Une modification qui
@@ -86,6 +264,13 @@ un Ctrl+Z rend le document d'avant.
 
 ### 🔧 Détails
 
+- Les trois boutons de la page d'accueil font la même hauteur, même quand l'un
+  des textes tient sur une ligne de moins.
+- Par défaut, « Tourner » repasse avant « Zoom » dans le groupe Affichage.
+- Le trait qui borde un groupe prend toute la hauteur de sa ligne, le nom
+  compris, au lieu d'une hauteur fixe qui le laissait flotter trop bas. Il
+  n'a plus de hauteur à lui : c'est la ligne qui la lui donne, et il ne pèse
+  donc jamais sur la hauteur de la barre. Le nom, lui, respire un peu plus.
 - Un ^GD qui penche à droite est stocké avec une hauteur négative ; la boîte qu'il
   occupe est la même dans les deux sens, et elle est désormais lue comme telle.
 - Une image ^GF n'était redessinée que si l'on pivotait aussi le document : une

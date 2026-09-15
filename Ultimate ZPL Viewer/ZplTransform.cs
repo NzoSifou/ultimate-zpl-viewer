@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -172,6 +172,9 @@ public static class ZplTransform
         public ZplRect Box;
         public bool TextOnly;
         public ZplImage? Image;
+        // The barcode this field draws, when it draws one: its ^FT does not anchor
+        // the bottom of the block the way every other graphic's does.
+        public ZplBars? Bars;
     }
 
     // Every field of one label, with the box it covers. Drawables carry the span of
@@ -191,17 +194,44 @@ public static class ZplTransform
                     Start = d.SourceStart + offset,
                     End = d.SourceEnd + offset,
                     Box = box,
-                    TextOnly = d is ZplText,
+                    TextOnly = ReadsAsText(d),
                     Image = d as ZplImage,
+                    Bars = d as ZplBars,
                 };
                 continue;
             }
             field.Box = Union(field.Box, box);
             if (d.SourceEnd + offset > field.End) field.End = d.SourceEnd + offset;
-            if (d is not ZplText) field.TextOnly = false;
+            if (!ReadsAsText(d)) field.TextOnly = false;
             field.Image ??= d as ZplImage;
+            field.Bars ??= d as ZplBars;
         }
         return byStart.Values.OrderBy(f => f.Start).ToList();
+    }
+
+    // Whether a drawable is one a TEXT field produced. It is not quite "is it a
+    // ZplText": the Zebra typeface draws its dash as a bar rather than a glyph, so
+    // a field holding a hyphen comes back as text runs with bars between them and
+    // is still a text field — its ^FT anchors a baseline, not a corner.
+    private static bool ReadsAsText(ZplDrawable d)
+        => d is ZplText || d is ZplBox { TextRule: true };
+
+    // How far below the top of its turned box a ^FT graphic's anchor sits.
+    //
+    // For anything but a barcode that is the whole height: ^FT holds the bottom
+    // edge. A barcode is the exception — ^FT holds the bottom of the BARS, and the
+    // interpretation line hangs below the anchor, outside. So the drop is the bar
+    // height, not the block height, and the two differ by that line. Standing the
+    // barcode on its side changes the question again: the anchor then holds the end
+    // of the bar RUN, which is the box height in that frame. The renderer decides
+    // it the same way — these two have to agree or the barcode lands with the
+    // interpretation line's worth of offset, on top of whatever is underneath.
+    private static double AnchorDrop(Field? field, (double X, double Y, double W, double H) turned, int rot)
+    {
+        if (field?.Bars is not { } bars) return turned.H;
+        int after = ((bars.Rotation + rot) % 360 + 360) % 360;
+        if (after is 90 or 270) return bars.Width;
+        return bars.BarHeight > 0 ? bars.BarHeight : turned.H;
     }
 
     private static ZplRect Union(ZplRect a, ZplRect b)
@@ -288,17 +318,29 @@ public static class ZplTransform
 
                 // A shift of the whole label, in the label's own frame: it keeps
                 // meaning what it meant, only in bigger or smaller dots.
+                //
+                // Turning the label is the exception. These offsets are added to
+                // every coordinate before anything is drawn, so a coordinate is
+                // written relative to them — and a quarter turn can land a field
+                // nearer the edge than the offset itself, which would have to be
+                // written as a NEGATIVE ^FO. ZPL has no negative coordinates: a
+                // printer reads one as garbage and the field is lost. So a turn
+                // folds the offsets into the coordinates and zeroes them here;
+                // every field is then written where it really is.
                 case "LH":
                     lhX = At(0); lhY = At(1);
-                    if (scaling) { Write(edits, parts, 0, lhX * ratio, 0); Write(edits, parts, 1, lhY * ratio, 0); }
+                    if (rot != 0) { Write(edits, parts, 0, 0, 0); Write(edits, parts, 1, 0, 0); }
+                    else if (scaling) { Write(edits, parts, 0, lhX * ratio, 0); Write(edits, parts, 1, lhY * ratio, 0); }
                     break;
                 case "LS":
                     lsX = At(0);
-                    if (scaling) Write(edits, parts, 0, lsX * ratio, double.MinValue);
+                    if (rot != 0) Write(edits, parts, 0, 0, double.MinValue);
+                    else if (scaling) Write(edits, parts, 0, lsX * ratio, double.MinValue);
                     break;
                 case "LT":
                     ltY = At(0);
-                    if (scaling) Write(edits, parts, 0, ltY * ratio, double.MinValue);
+                    if (rot != 0) Write(edits, parts, 0, 0, double.MinValue);
+                    else if (scaling) Write(edits, parts, 0, ltY * ratio, double.MinValue);
                     break;
 
                 // ── Where a field starts ────────────────────────────────────
@@ -334,12 +376,17 @@ public static class ZplTransform
                             // anchors its bottom-left, and turning the label picks a
                             // different corner for each.
                             nx = turned.X;
-                            ny = t.Command == "FT" ? turned.Y + turned.H : turned.Y;
+                            ny = t.Command == "FT" ? turned.Y + AnchorDrop(field, turned, rot) : turned.Y;
                         }
                     }
 
-                    Write(edits, parts, 0, (nx - lhX - lsX) * ratio, double.MinValue, fill: true);
-                    Write(edits, parts, 1, (ny - lhY - ltY) * ratio, double.MinValue, fill: true);
+                    // Turned, the offsets above have been zeroed, so what is written
+                    // is the position itself; upright, they still stand and the
+                    // coordinate stays relative to them, exactly as it was written.
+                    double offX = rot != 0 ? 0 : lhX + lsX;
+                    double offY = rot != 0 ? 0 : lhY + ltY;
+                    Write(edits, parts, 0, (nx - offX) * ratio, double.MinValue, fill: true);
+                    Write(edits, parts, 1, (ny - offY) * ratio, double.MinValue, fill: true);
                     break;
                 }
 
@@ -421,8 +468,15 @@ public static class ZplTransform
                 default:
                     if (t.Command == "MU")
                     {
-                        var unit = parts.Count > 0 ? parts[0].Text.Trim().ToUpperInvariant() : "U";
-                        inDots = unit.Length == 0 || unit[0] == 'U';
+                        // ^MUa: only I (inches) and M (millimetres) take the
+                        // coordinates out of dots. Everything else is dots — U is
+                        // what the manual names, but printers accept other letters
+                        // for it (GLS writes ^MUD) and the renderer reads them all
+                        // as dots. The two have to agree, or this refuses to move
+                        // coordinates the renderer has already placed in dots and
+                        // leaves the label turned in name only.
+                        var unit = parts.Count > 0 ? parts[0].Text.Trim().ToUpperInvariant() : "";
+                        inDots = unit.Length == 0 || (unit[0] != 'I' && unit[0] != 'M');
                         if (!inDots) notes.Add(new Note("units", "^MU", LineOf(zpl, t.Start)));
                     }
                     else if (t.Command == "JM")
@@ -692,8 +746,15 @@ public static class ZplTransform
         long rounded = Whole(clamped);
         var text = rounded.ToString(CultureInfo.InvariantCulture);
 
-        if (Numeric(part) is { } n) edits.Add(new ZplPatcher.Edit(n.Start, n.End, text));
-        else if (rounded != 0) edits.Add(new ZplPatcher.Edit(part.End, part.End, text));
+        if (Numeric(part) is { } n) { edits.Add(new ZplPatcher.Edit(n.Start, n.End, text)); return; }
+
+        // An argument written as NOTHING — the empty slot in ^BCN,,Y,N — says the
+        // same as one left off the end: use the default. That default is carried by
+        // another command which is converted with everything else (a bar height
+        // comes from ^BY), so writing a number here would override a default that
+        // has already followed. And the number to hand is zero scaled up, which is
+        // a barcode one dot tall — which is exactly what came out.
+        if (fill && rounded != 0) edits.Add(new ZplPatcher.Edit(part.End, part.End, text));
     }
 
     // ZPL counts in whole dots, so every converted length has to land on one. The

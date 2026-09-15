@@ -184,7 +184,12 @@ public sealed partial class PreviewPage
     private static Button HomeActionCard(string glyph, string title, string description,
                                          bool accent, Action invoke)
     {
-        var content = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Left };
+        var content = new StackPanel
+        {
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,   // the words stay at the top of a taller card
+        };
         content.Children.Add(new FontIcon { Glyph = glyph, FontSize = 20, HorizontalAlignment = HorizontalAlignment.Left });
         content.Children.Add(new TextBlock { Text = title, FontSize = 15, FontWeight = FontWeights.SemiBold });
         content.Children.Add(new TextBlock
@@ -200,6 +205,10 @@ public sealed partial class PreviewPage
             CornerRadius = new CornerRadius(10),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Left,
+            // All three fill the row, so the one whose description fits on a single
+            // line is not left a size smaller than its neighbours.
+            VerticalAlignment = VerticalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Top,
         };
         if (accent) button.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
         button.Click += (_, _) => invoke();

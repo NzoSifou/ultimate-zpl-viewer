@@ -723,8 +723,15 @@ public static class ZplTransform
         long rounded = Whole(clamped);
         var text = rounded.ToString(CultureInfo.InvariantCulture);
 
-        if (Numeric(part) is { } n) edits.Add(new ZplPatcher.Edit(n.Start, n.End, text));
-        else if (rounded != 0) edits.Add(new ZplPatcher.Edit(part.End, part.End, text));
+        if (Numeric(part) is { } n) { edits.Add(new ZplPatcher.Edit(n.Start, n.End, text)); return; }
+
+        // An argument written as NOTHING — the empty slot in ^BCN,,Y,N — says the
+        // same as one left off the end: use the default. That default is carried by
+        // another command which is converted with everything else (a bar height
+        // comes from ^BY), so writing a number here would override a default that
+        // has already followed. And the number to hand is zero scaled up, which is
+        // a barcode one dot tall — which is exactly what came out.
+        if (fill && rounded != 0) edits.Add(new ZplPatcher.Edit(part.End, part.End, text));
     }
 
     // ZPL counts in whole dots, so every converted length has to land on one. The

@@ -604,7 +604,7 @@ public static partial class ZplRenderer
             switch (command)
             {
                 case "JM":
-                    dpmm = ParseDpmm(args);
+                    dpmm = ParseDpmm(args, dpmm ?? fallbackDpmm);
                     break;
                 case "PW":
                     width = Positive(ParseFirstNumber(args) * unitScale, width);
@@ -2366,7 +2366,13 @@ public static partial class ZplRenderer
         }
     }
 
-    private static double? ParseDpmm(string args)
+    // ^JM says how many of the printhead's dots to print with, as a FRACTION of
+    // what that printhead has: A is all of them, B is every other one. It does not
+    // name a density — the same ^JMA label is 8 dots per millimetre on one printer
+    // and 12 on another — so A keeps the density already in force and only B halves
+    // it. Reading the letters as densities of their own (A as six) made a label
+    // that asks for full resolution claim to be the coarsest there is.
+    private static double? ParseDpmm(string args, double current)
     {
         var token = args.Trim().TrimStart(',');
         if (double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out var direct) && direct > 0)
@@ -2376,10 +2382,8 @@ public static partial class ZplRenderer
 
         return token.ToUpperInvariant() switch
         {
-            "A" => 6,
-            "B" => 8,
-            "C" => 12,
-            "D" => 24,
+            "A" => current,
+            "B" => current / 2,
             _ => null
         };
     }

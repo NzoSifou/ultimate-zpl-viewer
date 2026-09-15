@@ -165,6 +165,24 @@ un Ctrl+Z rend le document d'avant.
   densité** : il n'y avait rien derrière où revenir. L'éditeur annonce désormais
   cet état de départ au moment où il prend le document.
 
+- **Un code-barres converti ressortait haut d'un point** 📏
+  Un argument écrit comme RIEN — la case vide de `^BCN,,Y,N` — dit la même chose
+  qu'un argument absent : prends la valeur par défaut. Celle-ci vient d'ailleurs
+  (`^BY` porte la hauteur des barres) et suit la conversion avec le reste. La
+  conversion écrivait quand même un nombre dans cette case — zéro mis à l'échelle,
+  donc **un**, remonté au minimum d'un point. Les étiquettes qui laissent la
+  hauteur à `^BY` — Mondial Relay, GLS, Colissimo — ressortaient avec des barres
+  d'un point de haut. Une case vide est désormais laissée vide.
+
+- **^JM était lu comme une densité** 🖨️
+  `^JM` dit avec **quelle fraction** des points de la tête d'impression imprimer :
+  A les prend tous, B un sur deux. Ce n'est pas une densité — la même étiquette
+  `^JMA` fait 8 points par millimètre sur une imprimante et 12 sur une autre. Les
+  lettres étaient pourtant lues comme des densités à elles seules (A valait six),
+  si bien qu'une étiquette GLS demandant la pleine résolution s'annonçait à la
+  plus grossière qui soit, et la fenêtre « Transformer » proposait de conserver
+  6 dpmm pour un document écrit en 8.
+
 - **La densité était partagée par tous les onglets** 🔍
   Elle appartient au document, pas à la fenêtre : deux étiquettes ouvertes côte
   à côte peuvent être écrites pour deux imprimantes différentes. La liste de la
@@ -229,6 +247,8 @@ un Ctrl+Z rend le document d'avant.
 
 ### 🔧 Détails
 
+- Les trois boutons de la page d'accueil font la même hauteur, même quand l'un
+  des textes tient sur une ligne de moins.
 - Par défaut, « Tourner » repasse avant « Zoom » dans le groupe Affichage.
 - Le trait qui borde un groupe prend toute la hauteur de sa ligne, le nom
   compris, au lieu d'une hauteur fixe qui le laissait flotter trop bas. Il

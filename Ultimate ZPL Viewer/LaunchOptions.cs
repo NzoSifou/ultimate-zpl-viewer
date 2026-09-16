@@ -1,46 +1,45 @@
-using System;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Ultimate_ZPL_Viewer;
 
-// Parsed GUI launch arguments. FilePath opens a document; HideEditor/HideToolbar
-// force those panes hidden at startup (`--hide editor,toolbar`). Forced is true
-// whenever a --hide flag was given: while set, the editor/toolbar visibility is
-// NOT persisted on exit (the override is a one-off, not a saved preference).
-// Adopt carries a document handed over by another window (a tab dragged out, or
-// "open in a new window"); RestoreSession is false for every window but the first,
-// so only one of them reopens the previous session.
-public sealed record LaunchOptions(string? FilePath, bool HideEditor, bool HideToolbar, bool Forced,
-    DocTab? Adopt = null, bool RestoreSession = true)
+// What a window is asked to open, and how. Built from the command line (see
+// CommandLine) or by the application itself when it opens a window of its own.
+//
+// The Show*/EditMode overrides are FORCED values: while a window carries one, the
+// matching preference is not written back when the user changes it in that window.
+// The command line shapes one session; it does not rewrite the settings.
+public sealed record LaunchOptions
 {
-    // args come from Environment.GetCommandLineArgs() (args[0] = executable path).
-    public static LaunchOptions Parse(string[] args)
+    /// <summary>The documents to open, first one active.</summary>
+    public IReadOnlyList<string> Files { get; init; } = Array.Empty<string>();
+
+    /// <summary>The first document, when there is one.</summary>
+    public string? FilePath => Files.Count > 0 ? Files[0] : null;
+
+    // null = the saved preference.
+    public bool? ShowToolbar { get; init; }
+    public bool? ShowEditor { get; init; }
+    public bool? EditMode { get; init; }
+
+    /// <summary>Open a window of its own even when the application is already running.</summary>
+    public bool NewWindow { get; init; }
+
+    /// <summary>How the documents above are read, and whether they are rewritten.</summary>
+    public DocumentOptions Document { get; init; } = DocumentOptions.None;
+
+    /// <summary>A document handed over by another window (a tab dragged out, …).</summary>
+    public DocTab? Adopt { get; init; }
+
+    /// <summary>False for every window but the first, so only one reopens the last session.</summary>
+    public bool RestoreSession { get; init; } = true;
+
+    public bool ForcedLayout => ShowToolbar is not null || ShowEditor is not null;
+
+    /// <summary>A window the application opens for one document, or for none.</summary>
+    public static LaunchOptions ForFile(string? path) => new()
     {
-        string? file = null;
-        bool hideEditor = false, hideToolbar = false, forced = false;
-
-        for (int i = 1; i < args.Length; i++)
-        {
-            var a = args[i];
-            if (string.Equals(a, "--hide", StringComparison.OrdinalIgnoreCase))
-            {
-                forced = true;
-                if (i + 1 < args.Length)
-                {
-                    foreach (var part in args[++i].Split(',', StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        var p = part.Trim().ToLowerInvariant();
-                        if (p == "editor") hideEditor = true;
-                        else if (p == "toolbar") hideToolbar = true;
-                    }
-                }
-            }
-            else if (!a.StartsWith('-') && file is null)
-            {
-                file = a;
-            }
-        }
-
-        return new LaunchOptions(file, hideEditor, hideToolbar, forced);
-    }
+        Files = path is null ? Array.Empty<string>() : new[] { path },
+        RestoreSession = false,
+    };
 }

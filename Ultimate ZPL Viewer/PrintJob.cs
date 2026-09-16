@@ -154,7 +154,12 @@ public static class PrintJobService
     /// page it came from.
     /// </para>
     /// </summary>
-    public static void PrintImage(PrintJob job, RenderSnapshot snapshot, double widthMm, double heightMm)
+    /// <param name="printToFile">
+    /// Where a virtual printer (PDF, XPS) writes, instead of asking for a name. Null
+    /// for a real printer.
+    /// </param>
+    public static void PrintImage(PrintJob job, RenderSnapshot snapshot, double widthMm, double heightMm,
+                                  string? printToFile = null)
     {
         using var bitmap = ToBitmap(snapshot);
         Rotate(bitmap, job.Layout);
@@ -173,6 +178,11 @@ public static class PrintJobService
         doc.DocumentName = "Ultimate ZPL Viewer";
         doc.PrinterSettings.PrinterName = job.Printer;
         doc.PrinterSettings.Copies = (short)Math.Clamp(job.Copies, 1, short.MaxValue);
+        if (printToFile is not null)
+        {
+            doc.PrinterSettings.PrintToFile = true;
+            doc.PrinterSettings.PrintFileName = System.IO.Path.GetFullPath(printToFile);
+        }
         doc.DefaultPageSettings.Landscape = sideways;
         doc.OriginAtMargins = false;
         if (!string.IsNullOrEmpty(job.PaperSize) && FindPaper(doc.PrinterSettings, job.PaperSize) is { } paper)

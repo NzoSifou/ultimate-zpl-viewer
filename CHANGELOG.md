@@ -69,6 +69,14 @@ l'une et manquer dans l'autre.
   l'une d'elles explique par quoi la remplacer.
 - L'aide garde les **accents** : seule la ponctuation typographique qu'une vieille
   console ne sait pas afficher est simplifiée.
+- **Une nouvelle étiquette d'exemple** 🏷️ Le bouton « Étiquette d'exemple » de la
+  page d'accueil ouvrait un cadre et deux lignes de texte. Il ouvre maintenant une
+  planche au format transporteur (10 × 15 cm) qui présente **les quinze
+  symbologies** que l'application dessine — Code 128, GS1-128, EAN-13, UPC-A,
+  EAN-8, UPC-E, Code 39, Code 93, 2 parmi 5 entrelacé, Codabar, POSTNET, PDF417,
+  QR, Aztec et Data Matrix —, chacune dans sa case, nommée sur un onglet en texte
+  inversé et accompagnée de son usage. Une étiquette d'exemple personnalisée
+  reste prioritaire.
 
 ### 🐛 Corrigé
 
@@ -90,6 +98,10 @@ l'une et manquer dans l'autre.
 - **Un QR code placé par ^FO** commence 10 points plus bas que son origine, comme
   sur l'imprimante ; il était dessiné collé à elle, et pouvait déborder sur ce qui
   se trouve au-dessus.
+- **Un code Aztec correct était signalé comme une erreur.** L'analyseur attendait
+  un nombre pour le paramètre ECI de ^BO / ^B0, qui vaut Y ou N, et pour
+  l'identifiant d'ajout structuré, qui est un texte. La définition est corrigée, y
+  compris dans la copie que chaque installation garde dans ses paramètres.
 
 ---
 

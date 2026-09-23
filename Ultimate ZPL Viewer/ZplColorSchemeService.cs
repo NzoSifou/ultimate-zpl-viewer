@@ -76,7 +76,7 @@ public static class ZplColorSchemeService
 
     public static void EnsureUserConfig()
     {
-        if (File.Exists(UserConfigPath)) return;
+        if (File.Exists(UserConfigPath)) { MigrateUserConfig(); return; }
 
         var dir = Path.GetDirectoryName(UserConfigPath)!;
         Directory.CreateDirectory(dir);
@@ -98,6 +98,37 @@ public static class ZplColorSchemeService
             File.Copy(src, UserConfigPath);
             break;
         }
+    }
+
+    // The user's copy is made once and then belongs to them, so a mistake in the
+    // shipped definitions stays in every copy made before it was fixed. The ones
+    // fixed since are put right here, and only where the copy still says exactly
+    // what the old default said: nothing a user chose is touched.
+    //
+    //  - ^BO / ^B0: "eci" is Y or N and "id" is free text; both were declared as
+    //    numbers, so the analyzer flagged ^BON,6,N,… — a correct Aztec code, and
+    //    the one on the sample label — as a mistake.
+    private static void MigrateUserConfig()
+    {
+        try
+        {
+            var text = File.ReadAllText(UserConfigPath);
+            var fixedText = text;
+            foreach (var cmd in new[] { "^BO", "^B0" })
+            {
+                int start = fixedText.IndexOf($"\"command\": \"{cmd}\"", StringComparison.Ordinal);
+                if (start < 0) continue;
+                int end = fixedText.IndexOf("\"command\":", start + 10, StringComparison.Ordinal);
+                if (end < 0) end = fixedText.Length;
+                var block = fixedText[start..end];
+                var patched = Regex.Replace(block,
+                    "(\"name\":\\s*\"(?:eci|id)\",\\s*\"description\":\\s*\"[^\"]*\",\\s*\"type\":\\s*)\"number\"",
+                    "$1\"string\"");
+                fixedText = fixedText[..start] + patched + fixedText[end..];
+            }
+            if (fixedText != text) File.WriteAllText(UserConfigPath, fixedText);
+        }
+        catch { /* a copy we cannot read or write is left as it is */ }
     }
 
     // Validates the user JSON against the bundled schema. Returns null when it

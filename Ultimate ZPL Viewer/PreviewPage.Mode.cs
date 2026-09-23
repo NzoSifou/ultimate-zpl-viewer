@@ -19,8 +19,11 @@ public sealed partial class PreviewPage
 
     internal bool EditMode => _editMode;
 
-    /// <summary>The mode a document opens in, per the user's setting.</summary>
-    private bool InitialEditMode => _settings.StartMode switch
+    /// <summary>
+    /// The mode a document opens in: the one a --mode launch forced on this window,
+    /// else the user's setting.
+    /// </summary>
+    private bool InitialEditMode => _forcedEditMode ?? _settings.StartMode switch
     {
         1 => true,                      // always edit
         2 => _settings.LastModeEdit,    // whatever was in use last
@@ -42,8 +45,9 @@ public sealed partial class PreviewPage
         if (_editMode == edit) return;
         _editMode = edit;
         if (_activeTab is not null) _activeTab.EditMode = edit;
-        // Only worth writing to disk when the setting actually reads it back.
-        if (_settings.StartMode == 2)
+        // Only worth writing to disk when the setting actually reads it back — and
+        // never from a window whose mode the command line forced.
+        if (_settings.StartMode == 2 && _forcedEditMode is null)
         {
             _settings.LastModeEdit = edit;
             _settings.Save();

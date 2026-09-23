@@ -14,7 +14,7 @@
 ; ============================================================================
 
 #define MyAppName "Ultimate ZPL Viewer"
-#define MyAppVersion "1.6.0"
+#define MyAppVersion "1.6.1"
 #define MyAppPublisher "Enzo Monchanin (NzoSifou)"
 #define MyAppExeName "Ultimate ZPL Viewer.exe"
 ; Dossier de publication (relatif a ce .iss). Genere par :

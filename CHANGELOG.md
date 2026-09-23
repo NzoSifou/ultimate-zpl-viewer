@@ -6,6 +6,105 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.6.1] — 2026-09-16 — la ligne de commande, refaite
+
+La ligne de commande est **réécrite de zéro**. Elle savait ouvrir un fichier et
+en tirer un PDF ou un PNG ; elle sait maintenant faire depuis un script presque
+tout ce que fait la fenêtre : choisir le mode, montrer ou masquer les zones,
+écrire plusieurs sorties d'un coup, **transformer** le document comme le bouton
+du même nom, et **imprimer** sur papier comme sur une imprimante d'étiquettes.
+
+Une seule règle à retenir : **sans action, une fenêtre s'ouvre ; avec une action**
+(`--pdf`, `--png`, `--zpl`, `--print`), **aucune**, le fichier est traité et le
+programme se termine avec un code de sortie (0 terminé, 1 échec, 2 ligne
+incorrecte). La liste complète est dans `--help` et dans **Paramètres › Ligne de
+commande**, qui sont tirés de la même table : une option ne peut pas exister dans
+l'une et manquer dans l'autre.
+
+### ✨ Ajouté
+
+- **`--mode view|edit`** ouvre les documents en lecture ou en édition.
+- **`--show toolbar,editor`**, le contraire de `--hide` : montre ces zones même si
+  les paramètres les masquent.
+  Comme `--hide`, ces options **ne sont jamais enregistrées** : elles règlent la
+  fenêtre qui s'ouvre, pas les paramètres. Une liste s'écrit au choix
+  `--hide toolbar,editor` ou `--hide toolbar --hide editor`.
+- **Plusieurs fichiers** sur la ligne s'ouvrent en onglets, et **`--new-window`**
+  force une nouvelle fenêtre quand l'application tourne déjà.
+- **Des sorties qui se cumulent** : `--pdf a.pdf --png a.png --zpl a.zpl` en un seul
+  appel. `--png-scale` règle la définition du PNG, `--margin` accepte son unité
+  (`5`, `5mm`, `0.5cm`, `0.2in`).
+- **Transformer depuis la ligne de commande** 🔄
+  `--transform-dpmm` et `--transform-rotate` font ce que fait le bouton
+  « Transformer », et `--rounding up|down` choisit l'arrondi des modules de
+  code-barres. Le ZPL transformé s'écrit avec `--zpl` — y compris dans le fichier
+  d'entrée lui-même. Dans une fenêtre, la transformation est une modification
+  comme une autre : **un Ctrl+Z la défait, densité et taille comprises**.
+  Elle est bien distincte de la **lecture** : `--dpmm` dit à quelle densité le
+  fichier est lu, `--view-rotate` tourne seulement l'affichage et le rendu, et
+  aucun des deux ne touche au ZPL.
+- **Imprimer** 🖨️ avec `--print`, sur l'imprimante des paramètres, celle de
+  Windows, ou celle donnée par `--printer`. Sur une imprimante classique :
+  `--copies`, `--per-page`, `--paper`, `--layout` et `--margin`, comme dans la
+  fenêtre d'impression. Sur une imprimante thermique, le ZPL part tel quel, et ce
+  qui ne peut pas s'y appliquer (format, étiquettes par page…) est **signalé**
+  plutôt qu'ignoré en silence. `--printer-type` force l'un ou l'autre envoi, et
+  `--print-file` imprime dans un fichier : un PDF ou un XPS avec une imprimante
+  virtuelle, ou le ZPL exact qu'aurait reçu une imprimante thermique. Ce que la
+  ligne ne précise pas vient des **valeurs par défaut fixes** des paramètres
+  d'impression.
+- **`--list-printers`**, **`--list-papers`** et **`--version`**, pour qu'un script
+  sache à quoi il parle.
+- **Des erreurs qui aident** : une option mal tapée propose la bonne
+  (« Vouliez-vous dire --pdf ? »), une option qui n'a pas de sens dans le contexte
+  dit pourquoi, et une option d'une valeur donnée deux fois est refusée plutôt que
+  d'en garder une au hasard. Tous les messages suivent la langue de
+  l'application.
+
+### 🔧 Modifié
+
+- **`-o` / `--output` disparaissent**, de même que `--rotate` et `--unit` : la
+  sortie se donne directement (`--pdf`, `--png`, `--zpl`), la rotation se dit
+  `--view-rotate` ou `--transform-rotate`, et l'unité se colle à la marge. Taper
+  l'une d'elles explique par quoi la remplacer.
+- L'aide garde les **accents** : seule la ponctuation typographique qu'une vieille
+  console ne sait pas afficher est simplifiée.
+- **Une nouvelle étiquette d'exemple** 🏷️ Le bouton « Étiquette d'exemple » de la
+  page d'accueil ouvrait un cadre et deux lignes de texte. Il ouvre maintenant une
+  planche au format transporteur (10 × 15 cm) qui présente **les quinze
+  symbologies** que l'application dessine — Code 128, GS1-128, EAN-13, UPC-A,
+  EAN-8, UPC-E, Code 39, Code 93, 2 parmi 5 entrelacé, Codabar, POSTNET, PDF417,
+  QR, Aztec et Data Matrix —, chacune dans sa case, nommée sur un onglet en texte
+  inversé et accompagnée de son usage. Une étiquette d'exemple personnalisée
+  reste prioritaire.
+
+### 🐛 Corrigé
+
+- **Le texte inversé (^FR) disparaissait dans le noir.** Un champ inversé
+  n'imprime pas en blanc : il imprime **le contraire de ce qu'il recouvre**, point
+  par point — noir sur du blanc, blanc sur du noir, et les deux quand il est à
+  cheval. L'aperçu choisissait au contraire **une seule couleur pour tout le
+  champ**, d'après ce qu'il y avait sous sa première lettre. D'où du noir sur noir
+  dans bien des cas : un mot qui déborde d'un pavé noir, un texte à cheval sur
+  plusieurs pavés, un texte centré dans un ^FB, un code-barres inversé, ou un pavé
+  inversé posé **après** le texte qu'il doit faire ressortir. Chaque partie d'un
+  champ inversé prend maintenant la couleur que lui donnerait l'imprimante, dans
+  l'aperçu comme dans le PDF, le PNG et l'impression, et ^LRY (toute l'étiquette
+  inversée) suit la même règle. Contrôlé sur une étiquette de douze cas contre
+  Labelary.
+- **Les barres de garde des EAN et UPC** descendent toujours de 13 points sous
+  le code, qu'on imprime les chiffres ou non ; sans les chiffres, elles restaient
+  à la hauteur des autres barres.
+- **Un QR code placé par ^FO** commence 10 points plus bas que son origine, comme
+  sur l'imprimante ; il était dessiné collé à elle, et pouvait déborder sur ce qui
+  se trouve au-dessus.
+- **Un code Aztec correct était signalé comme une erreur.** L'analyseur attendait
+  un nombre pour le paramètre ECI de ^BO / ^B0, qui vaut Y ou N, et pour
+  l'identifiant d'ajout structuré, qui est un texte. La définition est corrigée, y
+  compris dans la copie que chaque installation garde dans ses paramètres.
+
+---
+
 ## [1.6.0] — 2026-09-16 — transformer un document, une page d'accueil, des groupes d'outils
 
 Trois choses dans cette version. La première touche les documents, la

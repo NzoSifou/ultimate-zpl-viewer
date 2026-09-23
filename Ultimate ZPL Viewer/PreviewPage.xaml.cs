@@ -50,6 +50,8 @@ public sealed partial class PreviewPage : Page
     private bool _editorVisible = true;
     private bool _toolbarVisible = true;
     private bool _suppressLayoutPersist;
+    // A --mode launch: this window's starting mode, and a mode not written back.
+    private bool? _forcedEditMode;
     private bool _updating;
     private double _rotationDegrees;
     private string _currentText = "";
@@ -699,12 +701,20 @@ public sealed partial class PreviewPage : Page
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
-        var options = e.Parameter as LaunchOptions ?? new LaunchOptions(null, false, false, false);
+        var options = e.Parameter as LaunchOptions ?? new LaunchOptions();
         // A --hide launch forces the panes hidden and, while it lasts, prevents the
         // visibility from being persisted on exit (it is a one-off override).
-        _suppressLayoutPersist = options.Forced;
-        _toolbarVisible = options.HideToolbar ? false : _settings.ToolbarVisible;
-        _editorVisible  = options.HideEditor  ? false : _settings.EditorVisible;
+        _suppressLayoutPersist = options.ForcedLayout;
+        _toolbarVisible = options.ShowToolbar ?? _settings.ToolbarVisible;
+        _editorVisible  = options.ShowEditor  ?? _settings.EditorVisible;
+        // A forced mode is this window's starting mode, and like a forced layout it
+        // is not written back: the command line shapes a session, not the settings.
+        if (options.EditMode is { } forcedMode)
+        {
+            _forcedEditMode = forcedMode;
+            _editMode = forcedMode;
+            ApplyMode();
+        }
         if (_settings.EditorWidth > 0) _editorWidth = _settings.EditorWidth;
         ApplyToolbarVisibility();
         ApplyEditorLayout();
@@ -718,11 +728,14 @@ public sealed partial class PreviewPage : Page
             ScheduleStartupUpdateCheck();
         };
 
-        _rotationDegrees = Math.Clamp(_settings.DefaultRotation, 0, 359.99);
+        _rotationDegrees = Math.Clamp(options.Document.ViewRotate ?? _settings.DefaultRotation, 0, 359.99);
+        if (options.Document.ViewRotate is not null && RotationBox != null)
+            RotationBox.Text = _rotationDegrees.ToString("0.##");
 
         string text;
         bool openedFromFile = false;
         bool startOnHome = false;
+        bool launchedFiles = false;   // the documents came from the command line
         var extraTabs = new List<(string Path, string Text)>(); // session tabs beyond the first
         if (options.Adopt is { } handedOver)
         {
@@ -738,7 +751,15 @@ public sealed partial class PreviewPage : Page
             text = await File.ReadAllTextAsync(options.FilePath);
             _currentFilePath = options.FilePath;
             openedFromFile = true;
+            launchedFiles = true;
             AddRecentFile(options.FilePath);
+            // The rest of the files on the command line, as tabs behind the first.
+            foreach (var more in options.Files.Skip(1))
+            {
+                if (!File.Exists(more)) continue;
+                try { extraTabs.Add((more, await File.ReadAllTextAsync(more))); AddRecentFile(more); }
+                catch { /* unreadable: simply not opened */ }
+            }
         }
         else if (options.RestoreSession && _settings.ReopenLastFile
                  && await LoadPreviousSessionAsync(extraTabs) is { } firstDoc)
@@ -764,7 +785,7 @@ public sealed partial class PreviewPage : Page
         }
         // Opening a file uses the "open" default density; a new/sample document
         // keeps the "new document" default already selected at startup.
-        if (openedFromFile) ApplyOpenDensity();
+        if (openedFromFile) ApplyOpenDensity(launchedFiles ? options.Document.Dpmm : null);
         // A never-saved document counts as unsaved from the start, so closing its
         // tab (or the app) asks the save question like for any other document.
         _isDirty = _adoptedDirty ?? _currentFilePath is null;
@@ -776,11 +797,15 @@ public sealed partial class PreviewPage : Page
         // No first tab on the home page: UpdateTabBar below sees an empty strip and
         // raises it.
         if (!startOnHome) InitFirstTab();
+        if (launchedFiles && options.Document.HasTransform && _activeTab is not null)
+            _activeTab.PendingTransform = options.Document;
         foreach (var (path, content) in extraTabs)
             DocTabs.TabItems.Add(MakeTabItem(new DocTab
             {
                 FilePath = path,
-                Dpmm = _settings.DefaultDpmm,
+                Dpmm = (launchedFiles ? options.Document.Dpmm : null) ?? _settings.DefaultDpmm,
+                EditMode = InitialEditMode,
+                PendingTransform = launchedFiles && options.Document.HasTransform ? options.Document : null,
                 Text = content.Replace("\r\n", "\n").Replace('\r', '\n'),
             }));
         UpdateTabBar();
@@ -805,7 +830,7 @@ public sealed partial class PreviewPage : Page
             foreach (var files in layout)
             {
                 var window = WindowManager.Open(
-                    new LaunchOptions(files[0], false, false, false, RestoreSession: false));
+                    LaunchOptions.ForFile(files[0]));
                 foreach (var extra in files.Skip(1))
                     if (window.Page is { } page) await page.OpenFileFromAnotherLaunchAsync(extra);
             }
@@ -1287,6 +1312,7 @@ public sealed partial class PreviewPage : Page
                 ContentHeightDots  = parsed.ContentHeightDots,
                 Size      = new LabelSize(finalW, finalH),
                 Drawables = parsed.Drawables,
+                Patches   = parsed.Patches,
                 InvertOrientation = parsed.InvertOrientation,
             };
 
@@ -2565,7 +2591,7 @@ public sealed partial class PreviewPage : Page
         {
             AddRecentFile(file.Path);
             _settings.Save();
-            WindowManager.Open(new LaunchOptions(file.Path, false, false, false, RestoreSession: false));
+            WindowManager.Open(LaunchOptions.ForFile(file.Path));
             return;
         }
         await OpenPathAsync(file.Path);
@@ -2584,14 +2610,14 @@ public sealed partial class PreviewPage : Page
 
     // Opens a file by path in its own tab, at the "open" default density, and
     // records it in the recent-files list. Shared by the picker and the recent menu.
-    private async Task OpenPathAsync(string path)
+    private async Task OpenPathAsync(string path, DocumentOptions? document = null, bool? editMode = null)
     {
         await _openGate.WaitAsync();
-        try { await OpenPathCoreAsync(path); }
+        try { await OpenPathCoreAsync(path, document, editMode); }
         finally { _openGate.Release(); }
     }
 
-    private async Task OpenPathCoreAsync(string path)
+    private async Task OpenPathCoreAsync(string path, DocumentOptions? document = null, bool? editMode = null)
     {
         if (!File.Exists(path))
         {
@@ -2640,10 +2666,16 @@ public sealed partial class PreviewPage : Page
 
             // The opened file gets its own tab AND the open-default density: set on
             // the tab, not on the toolbar first, so the tab being left keeps its own.
-            AddTabAndActivate(path, _settings.DefaultDpmm);
+            AddTabAndActivate(path, document?.Dpmm ?? _settings.DefaultDpmm);
             SetEditorText(text);          // parse, render and analyse
             _isDirty = false;
             UpdateDocumentTitle();
+            if (editMode is { } mode) ForceTabMode(mode);
+            if (document is { HasTransform: true } && _activeTab is not null)
+            {
+                _activeTab.PendingTransform = document;
+                RunPendingTransform();
+            }
             if (job is not null) UpdateStatus(job, 1.0);
         }
         finally { if (job is not null) EndStatus(job); }
@@ -2959,6 +2991,7 @@ public sealed partial class PreviewPage : Page
         RefreshPreview(SizeUpdate.DocumentLoaded);
         ScheduleHighlighting();
         UpdateDocumentTitle();
+        RunPendingTransform();
     }
 
     private void DocTabs_AddTabButtonClick(TabView sender, object args)
@@ -3248,7 +3281,7 @@ public sealed partial class PreviewPage : Page
         bool wasLast = DocTabs.TabItems.Count <= 1;
 
         var window = WindowManager.Open(
-            new LaunchOptions(null, false, false, false, carried, RestoreSession: false));
+            LaunchOptions.ForFile(null) with { Adopt = carried });
         // Drop point = roughly where the pointer grabbed the tab, so the new window
         // appears under the hand instead of jumping to a corner.
         if (screenX is int sx && screenY is int sy) window.MoveTo(sx - 120, sy - 24);
@@ -3525,7 +3558,7 @@ public sealed partial class PreviewPage : Page
     private void OpenNewDocumentWindow()
     {
         var window = WindowManager.Open(
-            new LaunchOptions(null, false, false, false, RestoreSession: false));
+            LaunchOptions.ForFile(null));
         if (window.Page is not { } page) return;
 
         // Wait for the page to be IN THE VISUAL TREE. Right after the window is
@@ -3562,9 +3595,10 @@ public sealed partial class PreviewPage : Page
         if (entry.WasWindow)
         {
             var first = entry.Docs[0];
-            var window = WindowManager.Open(new LaunchOptions(null, false, false, false,
-                new DocTab { FilePath = first.FilePath, Text = first.Text, IsDirty = first.Dirty },
-                RestoreSession: false));
+            var window = WindowManager.Open(LaunchOptions.ForFile(null) with
+            {
+                Adopt = new DocTab { FilePath = first.FilePath, Text = first.Text, IsDirty = first.Dirty },
+            });
             DispatcherQueue.TryEnqueue(() =>
             {
                 foreach (var doc in entry.Docs.Skip(1))
@@ -3797,10 +3831,10 @@ public sealed partial class PreviewPage : Page
 
     // Sets the density to the default without rescaling the document's ^PW/^LL
     // (used when opening/restoring a file, not when the user changes density).
-    private void ApplyOpenDensity()
+    private void ApplyOpenDensity(double? dpmm = null)
     {
         _suppressDensityRescale = true;
-        SelectDensity(_settings.DefaultDpmm);
+        SelectDensity(dpmm ?? _settings.DefaultDpmm);
         _lastDpmm = SelectedDpmm;
         _suppressDensityRescale = false;
     }
@@ -6160,10 +6194,15 @@ public sealed partial class PreviewPage : Page
         // Bind the initial document to its tab's Monaco model before filling it,
         // so later tab switches can save/restore it by id.
         if (_activeTab is not null) PostToEditor(BuildSwitchDocMessage(_activeTab.Id, ""));
+        // The model is bound empty and filled next, and filling it starts its history
+        // afresh: until that text comes back, the editor holds no state of it to
+        // build on (see RunPendingTransform).
+        _editorTextPending = !string.IsNullOrEmpty(_currentText);
         PostToEditor(BuildSetTextMessage(_currentText));
         if (!string.IsNullOrEmpty(_currentText))
             PostToEditor(ZplHighlighter.GetDecorationsJson(_currentText));
         RunStaticAnalysis();
+        RunPendingTransform();
     }
 
     // ── Floating diagnostics bar placement ─────────────────────────────────
@@ -6216,6 +6255,7 @@ public sealed partial class PreviewPage : Page
 
     private void OnEditorTextChanged(string text, int version = 0)
     {
+        _editorTextPending = false;
         // Before the early return below: an undo that lands back on a state this
         // document has already been in reports the SAME text the app already holds,
         // and that is exactly when the density and the size have to come back with it.
@@ -6243,6 +6283,8 @@ public sealed partial class PreviewPage : Page
         var seen = _activeTab.StateByVersion;
         if (!seen.ContainsKey(version))
             seen[version] = new DocState(SelectedDpmm, WidthBox.Text, HeightBox.Text);
+        // A transform from the command line waits for this first state.
+        RunPendingTransform();
     }
 
     private void RestoreDocState(int version)
@@ -6270,7 +6312,10 @@ public sealed partial class PreviewPage : Page
         ScheduleHighlighting();
         // Guard: _currentText is set before posting so Monaco's textChanged reply is filtered.
         if (_editorReady)
+        {
+            _editorTextPending = true;
             PostToEditor(BuildSetTextMessage(text));
+        }
     }
 
     private void ScheduleHighlighting()
@@ -6518,6 +6563,10 @@ public sealed class DocTab
     // Monaco's alternative version id (PreviewPage.RecordDocState). Per tab,
     // because those ids are per editor model.
     public Dictionary<int, DocState> StateByVersion { get; } = new();
+
+    // A transform the command line asked for, run once the document is in the
+    // editor: from then on it is an ordinary change, and Ctrl+Z takes it back.
+    public DocumentOptions? PendingTransform { get; set; }
 }
 
 public static class AppWindowLookup

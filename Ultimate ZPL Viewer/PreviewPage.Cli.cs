@@ -1,20 +1,21 @@
-using Microsoft.UI.Text;
+﻿using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using System;
+using System.Linq;
 
 namespace Ultimate_ZPL_Viewer;
 
 // ── The command line, written out ───────────────────────────────────────────
-// The application answers to a handful of switches, and until now the only way
-// to learn that was to run it with --help from a terminal - which nobody does
-// with an application they open by double-clicking. The same list lives here, in
-// the settings, laid out to be read rather than parsed.
+// The application answers to a set of switches, and the only other way to learn
+// them is to run it with --help from a terminal - which nobody does with an
+// application they open by double-clicking. The same list lives here, laid out to
+// be read rather than parsed.
 //
-// It is the SAME list as CliRunner.HelpText and LaunchOptions.Parse. A switch
-// added there and not here simply does not exist as far as anyone can tell.
+// It is DRAWN FROM the table the parser runs on (CommandLine.Options): a switch
+// cannot exist there and be missing here, or be described two different ways.
 public sealed partial class PreviewPage
 {
     private UIElement BuildCommandLineSettings()
@@ -22,35 +23,35 @@ public sealed partial class PreviewPage
         var panel = SettingsPanel();
         panel.Children.Add(LocalizedSettingsHeader("commandLine"));
 
-        panel.Children.Add(CliGroup("open", new[]
+        // The one rule everything else depends on: an action on the line means no
+        // window. Said once, above the lists, rather than inside one of them.
+        panel.Children.Add(Card(new TextBlock
         {
-            ("<fichier.zpl>", "file"),
-            ("--hide <zones>", "hide"),
+            Text = SL("commandLine.help.rule"),
+            TextWrapping = TextWrapping.Wrap,
         }));
 
-        panel.Children.Add(CliGroup("convert", new[]
-        {
-            ("--pdf <sortie.pdf>", "pdf"),
-            ("--png <sortie.png>", "png"),
-            ("--dpmm <n>", "dpmm"),
-            ("--rotate <degres>", "rotate"),
-            ("--margin <n>", "margin"),
-            ("--unit <mm|cm|in>", "unit"),
-            ("-o, --output", "output"),
-        }));
+        foreach (var group in CommandLine.Groups)
+            panel.Children.Add(CliGroup(group, CommandLine.Options
+                .Where(o => o.Group == group)
+                .Select(o => (CommandLine.Signature(o), o.Key))
+                .ToArray()));
 
-        panel.Children.Add(CliGroup("other", new[]
+        panel.Children.Add(SubHeader(SL("commandLine.help.exitTitle")));
+        panel.Children.Add(Card(new TextBlock
         {
-            ("-h, --help", "help"),
+            Text = SL("commandLine.help.exitCodes"),
+            TextWrapping = TextWrapping.Wrap,
         }));
 
         panel.Children.Add(SubHeader(SL("commandLine.sec.examples")));
-        panel.Children.Add(ExampleCard(new[]
+        panel.Children.Add(ExampleCard(CommandLine.Examples.ToArray()));
+
+        panel.Children.Add(Card(new TextBlock
         {
-            ("\"Ultimate ZPL Viewer.exe\" etiquette.zpl", "open"),
-            ("\"Ultimate ZPL Viewer.exe\" etiquette.zpl --hide editor", "hide"),
-            ("\"Ultimate ZPL Viewer.exe\" etiquette.zpl -o --pdf sortie.pdf", "pdf"),
-            ("\"Ultimate ZPL Viewer.exe\" etiquette.zpl -o --png sortie.png --dpmm 12", "png"),
+            Text = SL("commandLine.help.wait"),
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.8,
         }));
 
         return panel;
@@ -58,7 +59,7 @@ public sealed partial class PreviewPage
 
     // One card per family of switches: the flag on the left in the font a
     // terminal uses, what it does on the right, one line each.
-    private Border CliGroup(string section, (string Flag, string Key)[] options)
+    private FrameworkElement CliGroup(string section, (string Flag, string Key)[] options)
     {
         var rows = new StackPanel { Spacing = 0 };
         for (int i = 0; i < options.Length; i++)
@@ -79,14 +80,16 @@ public sealed partial class PreviewPage
             Text = SL("commandLine.sec." + section),
             FontWeight = FontWeights.SemiBold,
         });
-        body.Children.Add(new TextBlock
-        {
-            Text = SL("commandLine.desc." + section),
-            Opacity = 0.7,
-            FontSize = 12,
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, -6, 0, 0),
-        });
+        var intro = SL("commandLine.desc." + section);
+        if (!string.IsNullOrWhiteSpace(intro))
+            body.Children.Add(new TextBlock
+            {
+                Text = intro,
+                Opacity = 0.7,
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, -6, 0, 0),
+            });
         body.Children.Add(rows);
         return Card(body);
     }
@@ -130,7 +133,7 @@ public sealed partial class PreviewPage
 
     // The commands, copyable: a reference sheet whose lines have to be retyped by
     // hand is a reference sheet nobody uses twice.
-    private Border ExampleCard((string Command, string Key)[] examples)
+    private FrameworkElement ExampleCard((string Command, string Key)[] examples)
     {
         var rows = new StackPanel { Spacing = 8 };
         foreach (var (command, key) in examples)
@@ -190,17 +193,24 @@ public sealed partial class PreviewPage
     }
 
     // The same surface MakeCard draws, without its icon / title / control row:
-    // what goes in here is a table, not a setting.
-    private static Border Card(FrameworkElement content) => new()
+    // what goes in here is a table, not a setting. Every card is the same width —
+    // the page's, up to a limit — whatever it holds, so the stack reads as one
+    // column rather than a pile of boxes each as wide as its longest line.
+    private static FrameworkElement Card(FrameworkElement content)
     {
-        Background = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
-        BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
-        BorderThickness = new Thickness(1),
-        CornerRadius = new CornerRadius(8),
-        Padding = new Thickness(16, 14, 16, 14),
-        Margin = new Thickness(0, 3, 0, 8),
-        MaxWidth = 820,
-        HorizontalAlignment = HorizontalAlignment.Left,
-        Child = content,
-    };
+        var card = new Border
+        {
+            Background = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(16, 14, 16, 14),
+            Child = content,
+        };
+        var host = new Grid { Margin = new Thickness(0, 3, 0, 8) };
+        host.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 820 });
+        host.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0) });
+        host.Children.Add(card);
+        return host;
+    }
 }

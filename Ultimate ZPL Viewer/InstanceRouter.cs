@@ -1,4 +1,4 @@
-using Microsoft.UI.Dispatching;
+﻿using Microsoft.UI.Dispatching;
 using System;
 using System.IO;
 using System.IO.Pipes;
@@ -80,29 +80,46 @@ internal static class InstanceRouter
     }
 
     // Runs on the UI thread: applies the user's preferences to place the incoming
-    // document, and always leaves the target window in front.
+    // documents, and always leaves the target window in front.
+    //
+    // A launch that asks for a LAYOUT (--show, --hide) or for a window of its own
+    // gets one: a forced layout describes a window, and bending an existing one to
+    // it would change a window the user already arranged. Everything else lands
+    // where the settings say, as tabs of the window already open when they say so.
     private static void Dispatch(string[] args)
     {
-        var options = LaunchOptions.Parse(args);
+        var parsed = CommandLine.Parse(args);
+        // Anything but a window launch was dealt with by the launching process, which
+        // only hands over what it could not do itself; a malformed line has already
+        // been reported there.
+        if (parsed.Kind != CommandKind.Gui) return;
+
+        var options = parsed.Gui with { RestoreSession = false };
         var settings = AppSettings.Load();
         var target = WindowManager.Active ?? WindowManager.Windows.FirstOrDefault();
+        var files = options.Files.Where(File.Exists).ToList();
+        options = options with { Files = files };
 
-        if (string.IsNullOrWhiteSpace(options.FilePath) || !File.Exists(options.FilePath))
+        if (files.Count == 0)
         {
-            // Launched with no file: either a fresh empty window or just a nudge
-            // back to the one already open.
-            if (settings.LaunchWithoutFile == "focus" && target is not null) target.BringToFront();
-            else WindowManager.Open(options with { RestoreSession = false });
+            // Launched with no file: a fresh window, or just a nudge back to the one
+            // already open — unless the launch asked for something only a new window
+            // can give.
+            bool wantsOwn = options.NewWindow || options.ForcedLayout || options.EditMode is not null
+                            || options.Document.ViewRotate is not null;
+            if (!wantsOwn && settings.LaunchWithoutFile == "focus" && target is not null) target.BringToFront();
+            else WindowManager.Open(options);
             return;
         }
 
-        if (settings.OpenFromExplorer == "window" || target?.Page is not { } page)
+        if (options.NewWindow || options.ForcedLayout
+            || settings.OpenFromExplorer == "window" || target?.Page is not { } page)
         {
-            WindowManager.Open(options with { RestoreSession = false });
+            WindowManager.Open(options);
             return;
         }
 
-        _ = page.OpenFileFromAnotherLaunchAsync(options.FilePath);
+        _ = page.OpenFromLaunchAsync(options);
         target.BringToFront();
     }
 }

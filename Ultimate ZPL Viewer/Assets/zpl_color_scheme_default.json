@@ -95,7 +95,7 @@
         {
           "name": "id",
           "description": "lang.editor.parameters.B0.id",
-          "type": "number"
+          "type": "string"
         }
       ]
     },
@@ -695,7 +695,7 @@
         {
           "name": "eci",
           "description": "lang.editor.parameters.BO.eci",
-          "type": "number"
+          "type": "string"
         },
         {
           "name": "size",
@@ -715,7 +715,7 @@
         {
           "name": "id",
           "description": "lang.editor.parameters.BO.id",
-          "type": "number"
+          "type": "string"
         }
       ]
     },

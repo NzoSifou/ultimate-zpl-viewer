@@ -172,15 +172,115 @@ public sealed class AppSettings
     public int SampleLabelMode { get; set; }
     public string SampleLabelZpl { get; set; } = string.Empty;
 
-    // The label the app has always opened on. Kept here rather than in the page so
-    // the settings screen can show it, and so there is one copy of it.
+    // The label the sample button opens unless the user wrote their own: every
+    // symbology the renderer draws, one per tile, each named on a reversed tab —
+    // what the application can do, shown rather than told. Kept here rather than
+    // in the page so the settings screen can show it, and so there is one copy.
     public const string DefaultSampleZpl = """
         ^XA
+        ^CI28
         ^PW812
-        ^LL406
-        ^FO40,40^GB732,326,3^FS
-        ^FO70,85^A0N,44,44^FDUltimate ZPL Viewer^FS
-        ^FO70,150^A0N,28,28^FDRendu local sans API externe^FS
+        ^LL1218
+
+        ^FX ===== En-tete =====
+        ^FO0,0^GB812,132,132^FS
+        ^FO24,20^FR^A0N,62,62^FDULTIMATE ZPL VIEWER^FS
+        ^FO24,88^FR^A0N,26,26^FD15 symbologies  -  rendu 100 % local, aucune API externe^FS
+        ^FO690,22^FR^GC92,46^FS
+        ^FO690,50^A0N,38,38^FB92,1,0,C^FDZPL^FS
+
+        ^FX ===== Grille =====
+        ^FO20,146^GB772,1022,3^FS
+        ^FO406,146^GB3,768,3^FS
+        ^FO20,274^GB772,3,3^FS
+        ^FO20,402^GB772,3,3^FS
+        ^FO20,530^GB772,3,3^FS
+        ^FO20,658^GB772,3,3^FS
+        ^FO20,786^GB772,3,3^FS
+        ^FO20,914^GB772,3,3^FS
+        ^FO276,914^GB3,254,3^FS
+        ^FO534,914^GB3,254,3^FS
+
+        ^FX ----- Ligne 1 -----
+        ^FO32,158^GB150,26,26^FS
+        ^FO32,161^FR^A0N,22,22^FB150,1,0,C^FDCODE 128^FS
+        ^FO40,192^BY2^BCN,56,Y,N,N^FDZPL-VIEWER^FS
+        ^FO418,158^GB150,26,26^FS
+        ^FO418,161^FR^A0N,22,22^FB150,1,0,C^FDGS1-128^FS
+        ^FO426,192^BY2^BCN,56,N,N,N^FD>;>80103761234567890^FS
+        ^FO426,250^A0N,20,20^FD(01) 03761234567890^FS
+
+        ^FX ----- Ligne 2 -----
+        ^FO32,286^GB150,26,26^FS
+        ^FO32,289^FR^A0N,22,22^FB150,1,0,C^FDEAN-13^FS
+        ^FO52,320^BY2^BEN,56,Y,N^FD376123456789^FS
+        ^FO418,286^GB150,26,26^FS
+        ^FO418,289^FR^A0N,22,22^FB150,1,0,C^FDUPC-A^FS
+        ^FO438,320^BY2^BUN,56,Y,N^FD03600029145^FS
+
+        ^FX ----- Ligne 3 -----
+        ^FO32,414^GB150,26,26^FS
+        ^FO32,417^FR^A0N,22,22^FB150,1,0,C^FDEAN-8^FS
+        ^FO52,448^BY2^B8N,56,Y,N^FD5512345^FS
+        ^FO418,414^GB150,26,26^FS
+        ^FO418,417^FR^A0N,22,22^FB150,1,0,C^FDUPC-E^FS
+        ^FO438,448^BY2^B9N,56,Y,N^FD0425261^FS
+
+        ^FX ----- Ligne 4 -----
+        ^FO32,542^GB150,26,26^FS
+        ^FO32,545^FR^A0N,22,22^FB150,1,0,C^FDCODE 39^FS
+        ^FO40,576^BY2,3^B3N,N,56,Y,N^FDZPL-39^FS
+        ^FO418,542^GB150,26,26^FS
+        ^FO418,545^FR^A0N,22,22^FB150,1,0,C^FDCODE 93^FS
+        ^FO426,576^BY2^BAN,56,Y,N^FDZPL-93^FS
+
+        ^FX ----- Ligne 5 -----
+        ^FO32,670^GB170,26,26^FS
+        ^FO32,673^FR^A0N,22,22^FB170,1,0,C^FD2/5 ENTRELACÉ^FS
+        ^FO40,704^BY2,3^B2N,56,Y,N^FD12345678^FS
+        ^FO418,670^GB150,26,26^FS
+        ^FO418,673^FR^A0N,22,22^FB150,1,0,C^FDCODABAR^FS
+        ^FO426,704^BY2,3^BKN,N,56,Y,N,A,B^FD40156^FS
+
+        ^FX ----- Ligne 6 -----
+        ^FO32,798^GB150,26,26^FS
+        ^FO32,801^FR^A0N,22,22^FB150,1,0,C^FDPOSTNET^FS
+        ^FO40,846^BY2^BZN,40,Y,N^FD75011^FS
+        ^FO418,798^GB150,26,26^FS
+        ^FO418,801^FR^A0N,22,22^FB150,1,0,C^FDPDF417^FS
+        ^FO426,834^BY2^B7N,4,3,4^FDUltimate ZPL Viewer - PDF417^FS
+
+        ^FX ----- Ligne 7 : codes 2D -----
+        ^FO32,926^GB150,26,26^FS
+        ^FO32,929^FR^A0N,22,22^FB150,1,0,C^FDQR CODE^FS
+        ^FO88,966^BQN,2,4^FDMA,https://github.com/NzoSifou/ultimate-zpl-viewer^FS
+        ^FO290,926^GB150,26,26^FS
+        ^FO290,929^FR^A0N,22,22^FB150,1,0,C^FDAZTEC^FS
+        ^FO330,970^BON,6,N,0,N,1,^FDULTIMATE ZPL VIEWER - AZTEC^FS
+        ^FO548,926^GB150,26,26^FS
+        ^FO548,929^FR^A0N,22,22^FB150,1,0,C^FDDATA MATRIX^FS
+        ^FO590,970^BXN,7,200^FDUltimate ZPL Viewer^FS
+
+        ^FX ----- Usages -----
+        ^FO224,161^A0N,20,20^FB170,1,0,R^FDLogistique^FS
+        ^FO610,161^A0N,20,20^FB170,1,0,R^FDTraçabilité GS1^FS
+        ^FO224,289^A0N,20,20^FB170,1,0,R^FDCommerce (Europe)^FS
+        ^FO610,289^A0N,20,20^FB170,1,0,R^FDCommerce (USA)^FS
+        ^FO224,417^A0N,20,20^FB170,1,0,R^FDPetits emballages^FS
+        ^FO610,417^A0N,20,20^FB170,1,0,R^FDUPC compact^FS
+        ^FO224,545^A0N,20,20^FB170,1,0,R^FDIndustrie, défense^FS
+        ^FO610,545^A0N,20,20^FB170,1,0,R^FDCode 39 dense^FS
+        ^FO224,673^A0N,20,20^FB170,1,0,R^FDCartons, palettes^FS
+        ^FO610,673^A0N,20,20^FB170,1,0,R^FDSanté, bibliothèques^FS
+        ^FO224,801^A0N,20,20^FB170,1,0,R^FDCourrier (USPS)^FS
+        ^FO610,801^A0N,20,20^FB170,1,0,R^FDDocuments, billets^FS
+        ^FO20,1136^A0N,20,20^FB258,1,0,C^FDLiens, mobile^FS
+        ^FO278,1136^A0N,20,20^FB258,1,0,C^FDBillets de transport^FS
+        ^FO536,1136^A0N,20,20^FB258,1,0,C^FDMarquage de pièces^FS
+
+        ^FX ===== Pied =====
+        ^FO0,1180^GB812,38,38^FS
+        ^FO0,1187^FR^A0N,24,24^FB812,1,0,C^FDÉtiquette d'exemple  -  tous les codes sont dessinés par Ultimate ZPL Viewer^FS
         ^XZ
         """;
 

@@ -13,6 +13,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Text.RegularExpressions;
+using Color = Windows.UI.Color;
 
 namespace Ultimate_ZPL_Viewer;
 
@@ -42,7 +43,18 @@ public abstract record ZplDrawable(double X, double Y)
     // element could not be traced back (nothing selectable). End is exclusive.
     public int SourceStart { get; set; } = -1;
     public int SourceEnd { get; set; } = -1;
+
+    // The field was reversed (^FR, or every field under ^LRY): its ink does not
+    // cover what is beneath it, it TOGGLES it — black turns white, white turns
+    // black. See ZplRenderer.ComputeInkPatches.
+    public bool Xor { get; set; }
 }
+
+// A reversed field is drawn in black like any other, then patched: Source drawn
+// again, clipped to Clip, in white (or back in black), right after the drawable at
+// index After. That is XOR on a printhead, said in shapes a vector canvas and a PDF
+// both know how to draw.
+public sealed record ZplInkPatch(int After, ZplDrawable Source, ZplRect Clip, bool White);
 // X,Y = ZPL field origin. Rotation in degrees (0/90/180/270). Baseline = true for
 // ^FT (origin is the text baseline), false for ^FO (origin is the top-left).
 public sealed record ZplText(double X, double Y, string Text, double Height, double Width, string Font, bool Bold, bool Reverse, int Rotation, bool Baseline) : ZplDrawable(X, Y);
@@ -85,6 +97,9 @@ public sealed class ZplRenderModel
     public double? DeclaredDpmm { get; init; }
     public LabelSize Size { get; init; } = new(812, 1218);
     public IReadOnlyList<ZplDrawable> Drawables { get; init; } = Array.Empty<ZplDrawable>();
+
+    // What the reversed fields toggle, in drawing order (see ZplInkPatch).
+    public IReadOnlyList<ZplInkPatch> Patches { get; init; } = Array.Empty<ZplInkPatch>();
 
     // ^POI: the whole label prints upside-down (180° rotation of the content).
     public bool InvertOrientation { get; init; }
@@ -178,7 +193,7 @@ public static partial class ZplRenderer
         var fontAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         double? dpmm = null;
         var drawables = new List<ZplDrawable>();
-        var blackBoxes = new List<ZplRect>(); // filled black ^GB boxes, for ^FR text color
+        var fieldXor = false;       // ^FR seen for the field being built
         var storedGraphics = new Dictionary<string, (int W, int H, byte[] Bits)>(StringComparer.OrdinalIgnoreCase);
         var stop = false;
 
@@ -186,7 +201,6 @@ public static partial class ZplRenderer
         // and are committed on ^FS. A new ^FO/^FT (or end of label) before the ^FS
         // abandons the un-terminated field, exactly like real printers/Labelary.
         var fieldBuf = new List<ZplDrawable>();
-        var fieldBlackBoxes = new List<ZplRect>();
         // Span of the field being built, so the elements it commits can point back
         // at the code that produced them (-1 = not started).
         var fieldStart = -1;
@@ -206,9 +220,15 @@ public static partial class ZplRenderer
         void CommitField()
         {
             var end = fieldStart >= 0 ? TrimmedEnd() : fieldEnd;
-            foreach (var d in fieldBuf) { d.SourceStart = fieldStart; d.SourceEnd = end; }
+            foreach (var d in fieldBuf)
+            {
+                d.SourceStart = fieldStart; d.SourceEnd = end;
+                // A white box (^GB…,W) paints white whatever is under it: it erases,
+                // it does not toggle.
+                d.Xor = (fieldXor || labelReverse) && d is not ZplBox { WhiteFill: true };
+            }
             drawables.AddRange(fieldBuf);
-            blackBoxes.AddRange(fieldBlackBoxes);
+            fieldXor = false;
             foreach (var (gx, gy) in growBuf)
             {
                 if (gx > maxXCommitted) maxXCommitted = gx;
@@ -219,7 +239,6 @@ public static partial class ZplRenderer
         void AbandonField()
         {
             fieldBuf.Clear();
-            fieldBlackBoxes.Clear();
             growBuf.Clear();
             fieldStart = -1;
             fieldEnd = -1;
@@ -413,33 +432,10 @@ public static partial class ZplRenderer
 
             double txX = fx, txY = fy;
 
-            // ^FR text prints white only over a solid black box, otherwise black.
-            //
-            // The question is the same at any angle, and it used to be asked only of
-            // upright fields: a turned one kept its reverse and printed white on
-            // white, so turning a label quietly erased every ^FR field that was not
-            // over a box. The probe point is 0.4 of a cell from the anchor, on the
-            // side the glyphs rise towards — inside the first character whichever
-            // way the field reads.
-            bool textReverse = reverse;
-            if (reverse)
-            {
-                double off = font.Height * 0.4;
-                double sampleX = txX, sampleY = txY;
-                if (typeset)
-                    switch (orientation)
-                    {
-                        case 90:  sampleX += off; break;   // R: ascenders to the right
-                        case 180: sampleY += off; break;   // I: ascenders downward
-                        case 270: sampleX -= off; break;   // B: ascenders to the left
-                        default:  sampleY -= off; break;   // N: ascenders upward
-                    }
-                else { sampleX += off; sampleY += off; }   // ^FO hangs the cell off its corner
-                bool over(ZplRect r) => sampleX >= r.X && sampleX <= r.Right && sampleY >= r.Y && sampleY <= r.Bottom;
-                textReverse = blackBoxes.Any(over) || fieldBlackBoxes.Any(over);
-            }
-
-            fieldBuf.Add(new ZplText(txX, txY, data, font.Height, effWidth, font.Family, font.Bold, textReverse, orientation, typeset));
+            // A reversed field is drawn black here; what it toggles is worked out
+            // once the whole label is known (ComputeInkPatches), part by part — a
+            // field half on a black box and half off it is half white, half black.
+            fieldBuf.Add(new ZplText(txX, txY, data, font.Height, effWidth, font.Family, font.Bold, reverse, orientation, typeset));
             // The label grows to the ink, and where the ink lies depends on which
             // way the field reads: a 180-degree field puts it to the LEFT of its
             // anchor and a 90-degree one ABOVE. Reserving a text's width to the
@@ -716,6 +712,7 @@ public static partial class ZplRenderer
                     // Multi-label streams: like Labelary, only the first label that
                     // produced content is previewed.
                     AbandonField();
+                    fieldXor = false;
                     if (drawables.Count > 0) stop = true;
                     break;
                 case "DG":
@@ -1008,6 +1005,7 @@ public static partial class ZplRenderer
                     break;
                 case "FR":
                     reverse = true;
+                    fieldXor = true;
                     break;
                 case "GB":
                 {
@@ -1027,19 +1025,7 @@ public static partial class ZplRenderer
                         bool white = gbParts.Length > 3 && gbParts[3].Trim().ToUpperInvariant() == "W";
                         double fx = x + lhX + lsX, fy = y + lhY + ltY;
                         double topY = typeset ? fy - gh : fy; // ^FT anchors bottom-left
-                        var boxRect = new ZplRect(fx, topY, gw, gh);
-                        // ^FR reverses against the background: knock out to white only when
-                        // the field is genuinely OVER a solid black area — tested by the box
-                        // centre being inside a tracked black box. (A hairline crossing the
-                        // field must not trigger it: e.g. the "MESS" outline box crosses a
-                        // 1-dot separator line yet must still print black.)
-                        double cX = fx + gw / 2, cY = topY + gh / 2;
-                        bool overBlack = reverse && blackBoxes.Any(b => cX >= b.X && cX <= b.Right && cY >= b.Y && cY <= b.Bottom);
-                        fieldBuf.Add(new ZplBox(fx, topY, gw, gh, gt, overBlack, white));
-                        // Remember only SOLID 2-D black areas (min dimension ≥ 8 dots) as
-                        // knockout backdrops — hairline rules/bars are not backdrops.
-                        if (!overBlack && !white && gt >= Math.Min(gw, gh) / 2.0 && Math.Min(gw, gh) >= 8)
-                            fieldBlackBoxes.Add(boxRect);
+                        fieldBuf.Add(new ZplBox(fx, topY, gw, gh, gt, reverse, white));
                         Grow(fx + gw, topY + gh);
                         reverse = labelReverse;
                     }
@@ -1182,7 +1168,9 @@ public static partial class ZplRenderer
                             if (barcodeRotation != 0) matrix = TurnMatrix(matrix, barcodeRotation);
                             int nm = matrix.GetLength(0);
                             double sz = nm * qrMag;
-                            double topY = typeset ? fy - sz : fy;
+                            // A QR code hangs 10 dots below its ^FO, whatever its
+                            // magnification (measured on the reference at 2, 4 and 8).
+                            double topY = typeset ? fy - sz : fy + QrTopOffsetDots;
                             fieldBuf.Add(new ZplDataMatrix(fx, topY, qrMag, matrix));
                             Grow(fx + sz, topY + sz);
                         }
@@ -1315,9 +1303,125 @@ public static partial class ZplRenderer
             ContentHeightDots = contentHeight,
             Size = new LabelSize(width > 0 ? width : contentWidth, height > 0 ? height : contentHeight),
             Drawables = drawables,
+            Patches = ComputeInkPatches(drawables),
             InvertOrientation = poi,
             MirrorImage = mirror,
         };
+    }
+
+    // ── Reversed fields ──────────────────────────────────────────────────────
+    //
+    // ^FR does not print white. It prints the OPPOSITE of what is already there,
+    // dot by dot: over white it is black, over black it is white, and a field that
+    // straddles the edge of a box is both. Deciding one colour for a whole field
+    // (white if it looks like it sits on a box) was right only when the field sat
+    // wholly on one box; a word running off a box, across a row of boxes, centred
+    // in a ^FB, turned on its side, or a reversed box laid over words that were
+    // already there, all came out wrong — mostly as black on black.
+    //
+    // The label is walked in printing order with what is black on it so far: the
+    // solid areas as rectangles (every box is rectangles), and everything else —
+    // words, bars, images — as ink laid down at a place. A reversed field is then
+    // redrawn in white inside each black rectangle it touches; a reversed BOX also
+    // turns the ink already under it white, and the white ink of an earlier reversed
+    // field back to black. Only what is black beneath a field as ANOTHER field's
+    // letters is left out: letters toggling letters is not something labels do.
+    private static IReadOnlyList<ZplInkPatch> ComputeInkPatches(IReadOnlyList<ZplDrawable> drawables)
+    {
+        if (!drawables.Any(d => d.Xor)) return Array.Empty<ZplInkPatch>();
+
+        var patches = new List<ZplInkPatch>();
+        var black = new List<ZplRect>();                          // disjoint
+        var inks = new List<(ZplDrawable Drawable, ZplRect Reach)>();
+
+        for (int i = 0; i < drawables.Count; i++)
+        {
+            var d = drawables[i];
+            if (d is ZplBox box)
+            {
+                var pieces = BoxPieces(box);
+                if (box.WhiteFill)
+                {
+                    foreach (var p in pieces) black = Subtract(black, p);
+                    continue;
+                }
+                if (!d.Xor)
+                {
+                    foreach (var p in pieces) black.AddRange(Subtract(p, black).ToList());
+                    continue;
+                }
+                foreach (var p in pieces)
+                {
+                    var under = Intersect(black, p);
+                    // The box itself: white where it lands on black.
+                    foreach (var r in under) patches.Add(new ZplInkPatch(i, d, r, true));
+                    foreach (var (ink, reach) in inks)
+                    {
+                        if (!RectsOverlap(reach, p)) continue;
+                        // Ink on white turns white on the black the box brings...
+                        foreach (var q in Subtract(p, under))
+                            if (RectsOverlap(reach, q)) patches.Add(new ZplInkPatch(i, ink, q, true));
+                        // ...and an earlier reversed field's white, on a black the box
+                        // clears, turns back to black.
+                        if (ink.Xor)
+                            foreach (var r in under)
+                                if (RectsOverlap(reach, r)) patches.Add(new ZplInkPatch(i, ink, r, false));
+                    }
+                    var fresh = Subtract(p, under).ToList();
+                    black = Subtract(black, p);
+                    black.AddRange(fresh);
+                }
+                continue;
+            }
+
+            // Words, bars, images: ink at a place. Reach is generous — a clip only
+            // shows the ink that is really there, so too wide costs nothing, and too
+            // narrow would leave the edge of a letter black on black.
+            var bounds = BoundsOf(d);
+            double pad = d is ZplText t ? Math.Max(4, t.Height) : 4;
+            var reachRect = new ZplRect(bounds.X - pad, bounds.Y - pad, bounds.Width + 2 * pad, bounds.Height + 2 * pad);
+            if (d.Xor)
+                foreach (var r in black)
+                    if (RectsOverlap(reachRect, r)) patches.Add(new ZplInkPatch(i, d, r, true));
+            inks.Add((d, reachRect));
+        }
+        return patches;
+    }
+
+    // A box as the rectangles of ink it lays down, never overlapping one another —
+    // a frame's corners are ink once, not twice, which matters when ink toggles.
+    private static List<ZplRect> BoxPieces(ZplBox box)
+    {
+        double w = Math.Max(1, box.Width), h = Math.Max(1, box.Height);
+        double t = Math.Max(1, Math.Min(box.Thickness, Math.Min(w, h)));
+        if (IsFilledBox(box) || 2 * t >= Math.Min(w, h))
+            return new List<ZplRect> { new(box.X, box.Y, w, h) };
+        return new List<ZplRect>
+        {
+            new(box.X, box.Y, w, t),
+            new(box.X, box.Y + h - t, w, t),
+            new(box.X, box.Y + t, t, h - 2 * t),
+            new(box.X + w - t, box.Y + t, t, h - 2 * t),
+        };
+    }
+
+    private static List<ZplRect> Subtract(List<ZplRect> rects, ZplRect cut)
+    {
+        var result = new List<ZplRect>(rects.Count);
+        foreach (var r in rects) result.AddRange(SubtractOne(r, cut).Where(x => x.Width > 0 && x.Height > 0));
+        return result;
+    }
+
+    private static List<ZplRect> Intersect(List<ZplRect> rects, ZplRect with)
+    {
+        var result = new List<ZplRect>();
+        foreach (var r in rects)
+        {
+            double l = Math.Max(r.X, with.X), tp = Math.Max(r.Y, with.Y);
+            double rt = Math.Min(r.Right, with.Right), b = Math.Min(r.Bottom, with.Bottom);
+            if (rt > l && b > tp) result.Add(new ZplRect(l, tp, rt - l, b - tp));
+        }
+        return result;
     }
 
     /// <summary>
@@ -1754,46 +1858,12 @@ public static partial class ZplRenderer
             canvas.Children.Add(target);
         }
 
-        var blackFilledRects = new List<ZplRect>();
-        foreach (var drawable in model.Drawables)
+        int nextPatch = 0;
+        for (int index = 0; index < model.Drawables.Count; index++)
         {
+            var drawable = model.Drawables[index];
             int childrenBefore = target.Children.Count;
-            switch (drawable)
-            {
-                case ZplText text:
-                    DrawText(target, text);
-                    break;
-                case ZplBox box:
-                    DrawBox(target, box, blackFilledRects);
-                    break;
-                case ZplLine line:
-                    DrawLine(target, line);
-                    break;
-                case ZplBars bars:
-                    DrawBars(target, bars);
-                    break;
-                case ZplEllipse el:
-                    DrawEllipse(target, el);
-                    break;
-                case ZplSymbol sym:
-                    DrawSymbol(target, sym);
-                    break;
-                case ZplImage image:
-                    DrawImage(target, image);
-                    break;
-                case ZplMatrix matrix:
-                    DrawMatrix(target, matrix);
-                    break;
-                case ZplAztec aztec:
-                    DrawAztec(target, aztec);
-                    break;
-                case ZplDataMatrix dm:
-                    DrawModuleGrid(target, dm.X, dm.Y, dm.ModuleSize, dm.ModuleSize, dm.Matrix);
-                    break;
-                case ZplGrid grid:
-                    DrawModuleGrid(target, grid.X, grid.Y, grid.ModW, grid.ModH, grid.Matrix);
-                    break;
-            }
+            DrawOne(target, drawable, Colors.Black);
 
             // Everything this drawable just put on the canvas belongs to it. A field
             // can produce several (a barcode is bars plus its interpretation line),
@@ -1801,9 +1871,47 @@ public static partial class ZplRenderer
             if (hitMap is not null)
                 for (int i = childrenBefore; i < target.Children.Count; i++)
                     hitMap[target.Children[i]] = drawable;
+
+            // What the reversed fields toggle, right where the printhead would. A
+            // patch is a copy of its field, clipped; it is not something to click —
+            // the click belongs to the field underneath.
+            while (nextPatch < model.Patches.Count && model.Patches[nextPatch].After == index)
+            {
+                var patch = model.Patches[nextPatch++];
+                var layer = new Canvas
+                {
+                    IsHitTestVisible = false,
+                    Clip = new RectangleGeometry
+                    {
+                        Rect = new Windows.Foundation.Rect(patch.Clip.X, patch.Clip.Y, patch.Clip.Width, patch.Clip.Height),
+                    },
+                };
+                Canvas.SetLeft(layer, 0);
+                Canvas.SetTop(layer, 0);
+                DrawOne(layer, patch.Source, patch.White ? Colors.White : Colors.Black);
+                target.Children.Add(layer);
+            }
         }
 
         CullOutsideLabel(target, w, h, hitMap);
+    }
+
+    private static void DrawOne(Canvas target, ZplDrawable drawable, Color ink)
+    {
+        switch (drawable)
+        {
+            case ZplText text:      DrawText(target, text, ink); break;
+            case ZplBox box:        DrawBox(target, box, ink); break;
+            case ZplLine line:      DrawLine(target, line, ink); break;
+            case ZplBars bars:      DrawBars(target, bars, ink); break;
+            case ZplEllipse el:     DrawEllipse(target, el, ink); break;
+            case ZplSymbol sym:     DrawSymbol(target, sym, ink); break;
+            case ZplImage image:    DrawImage(target, image, ink); break;
+            case ZplMatrix matrix:  DrawMatrix(target, matrix, ink); break;
+            case ZplAztec aztec:    DrawModuleGrid(target, aztec.X, aztec.Y, aztec.ModuleSize, aztec.ModuleSize, aztec.Matrix, ink); break;
+            case ZplDataMatrix dm:  DrawModuleGrid(target, dm.X, dm.Y, dm.ModuleSize, dm.ModuleSize, dm.Matrix, ink); break;
+            case ZplGrid grid:      DrawModuleGrid(target, grid.X, grid.Y, grid.ModW, grid.ModH, grid.Matrix, ink); break;
+        }
     }
 
     // Drops the children that start beyond the label. The canvas clip already HIDES
@@ -1977,9 +2085,9 @@ public static partial class ZplRenderer
         return transforms;
     }
 
-    private static void DrawText(Canvas canvas, ZplText text)
+    private static void DrawText(Canvas canvas, ZplText text, Color ink)
     {
-        foreach (var block in TextBlocksFor(text)) canvas.Children.Add(block);
+        foreach (var block in TextBlocksFor(text, ink)) canvas.Children.Add(block);
     }
 
     /// <summary>
@@ -1988,8 +2096,9 @@ public static partial class ZplRenderer
     /// editor draws the SAME blocks, which is what makes the words under the caret
     /// the words that will print rather than an approximation of them.
     /// </summary>
-    internal static IReadOnlyList<TextBlock> TextBlocksFor(ZplText text)
+    internal static IReadOnlyList<TextBlock> TextBlocksFor(ZplText text, Color? ink = null)
     {
+        var foreground = new SolidColorBrush(ink ?? Colors.Black);
         var m = MeasureText(text);
         double fontSize = m.CellHeight, condense = m.Condense;
         bool restoreWeight = text.Bold && condense < 0.9
@@ -2000,7 +2109,7 @@ public static partial class ZplRenderer
             var block = new TextBlock
             {
                 Text = text.Text,
-                Foreground = new SolidColorBrush(text.Reverse ? Colors.White : Colors.Black),
+                Foreground = foreground,
                 FontFamily = new FontFamily(text.Font),
                 FontSize = m.FontSize,
                 FontWeight = m.Weight,
@@ -2039,10 +2148,10 @@ public static partial class ZplRenderer
 
     // Renders a pre-built 1D barcode (bars + labels) with the ^FO rotation rule:
     // the rotated bounding box's top-left corner sits at (X, Y).
-    private static void DrawBars(Canvas canvas, ZplBars bars)
+    private static void DrawBars(Canvas canvas, ZplBars bars, Color ink)
     {
         var inner = new Canvas { Width = bars.Width, Height = bars.Height };
-        var black = new SolidColorBrush(Colors.Black);
+        var black = new SolidColorBrush(ink);
         foreach (var s in bars.Segs)
         {
             var rect = new Rectangle { Width = Math.Max(1, s.W), Height = Math.Max(1, s.H), Fill = black };
@@ -2090,16 +2199,16 @@ public static partial class ZplRenderer
         canvas.Children.Add(inner);
     }
 
-    private static void DrawEllipse(Canvas canvas, ZplEllipse el)
+    private static void DrawEllipse(Canvas canvas, ZplEllipse el, Color ink)
     {
         bool filled = el.Thickness >= Math.Min(el.Width, el.Height) / 2;
         var shape = new Microsoft.UI.Xaml.Shapes.Ellipse
         {
             Width = el.Width,
             Height = el.Height,
-            Stroke = filled ? null : new SolidColorBrush(Colors.Black),
+            Stroke = filled ? null : new SolidColorBrush(ink),
             StrokeThickness = filled ? 0 : el.Thickness,
-            Fill = filled ? new SolidColorBrush(Colors.Black) : null,
+            Fill = filled ? new SolidColorBrush(ink) : null,
         };
         Canvas.SetLeft(shape, el.X);
         Canvas.SetTop(shape, el.Y);
@@ -2108,9 +2217,9 @@ public static partial class ZplRenderer
 
     // ^GS symbols: A ®, B ©, C ™ rendered as glyphs; D (UL) and E (CSA) approximated
     // as a circle mark with the letters inside.
-    private static void DrawSymbol(Canvas canvas, ZplSymbol sym)
+    private static void DrawSymbol(Canvas canvas, ZplSymbol sym, Color ink)
     {
-        var black = new SolidColorBrush(Colors.Black);
+        var black = new SolidColorBrush(ink);
         if (sym.Code is 'A' or 'B' or 'C')
         {
             var tb = new TextBlock
@@ -2153,7 +2262,7 @@ public static partial class ZplRenderer
         canvas.Children.Add(label);
     }
 
-    private static void DrawImage(Canvas canvas, ZplImage img)
+    private static void DrawImage(Canvas canvas, ZplImage img, Color ink)
     {
         int w = img.PixelWidth, h = img.PixelHeight;
         if (w <= 0 || h <= 0) return;
@@ -2168,7 +2277,7 @@ public static partial class ZplRenderer
                 if (black)
                 {
                     int p = (yy * w + xx) * 4;
-                    buf[p] = 0; buf[p + 1] = 0; buf[p + 2] = 0; buf[p + 3] = 255; // opaque black (BGRA premul)
+                    buf[p] = ink.B; buf[p + 1] = ink.G; buf[p + 2] = ink.R; buf[p + 3] = 255; // opaque ink (BGRA premul)
                 }
             }
         using (var s = wb.PixelBuffer.AsStream()) s.Write(buf, 0, buf.Length);
@@ -2179,15 +2288,12 @@ public static partial class ZplRenderer
         canvas.Children.Add(image);
     }
 
-    private static void DrawAztec(Canvas canvas, ZplAztec az) =>
-        DrawModuleGrid(canvas, az.X, az.Y, az.ModuleSize, az.ModuleSize, az.Matrix);
-
     // Draws a 2D module matrix (Aztec / Data Matrix / QR / PDF417) as black rects,
     // merging horizontal runs of set modules into a single rectangle.
-    private static void DrawModuleGrid(Canvas canvas, double x, double y, double mw, double mh, bool[,] matrix)
+    private static void DrawModuleGrid(Canvas canvas, double x, double y, double mw, double mh, bool[,] matrix, Color ink)
     {
         int rows = matrix.GetLength(0), cols = matrix.GetLength(1);
-        var brush = new SolidColorBrush(Colors.Black);
+        var brush = new SolidColorBrush(ink);
         for (int r = 0; r < rows; r++)
         {
             int c = 0;
@@ -2207,14 +2313,15 @@ public static partial class ZplRenderer
 
     // Placeholder for 2D symbologies (Data Matrix / QR): a framed square with a
     // coarse pattern so the label layout still reads correctly.
-    private static void DrawMatrix(Canvas canvas, ZplMatrix m)
+    private static void DrawMatrix(Canvas canvas, ZplMatrix m, Color ink)
     {
         double s = m.Size;
         var frame = new Rectangle
         {
             Width = s, Height = s,
-            Fill = new SolidColorBrush(Colors.White),
-            Stroke = new SolidColorBrush(Colors.Black),
+            // The placeholder's white ground is part of the stand-in, not ink.
+            Fill = ink == Colors.Black ? new SolidColorBrush(Colors.White) : null,
+            Stroke = new SolidColorBrush(ink),
             StrokeThickness = Math.Max(1, s * 0.04),
         };
         Canvas.SetLeft(frame, m.X);
@@ -2227,18 +2334,17 @@ public static partial class ZplRenderer
             for (int c = 0; c < n; c++)
                 if (((r * 7 + c * 13) & 2) == 0)
                 {
-                    var q = new Rectangle { Width = cell, Height = cell, Fill = new SolidColorBrush(Colors.Black) };
+                    var q = new Rectangle { Width = cell, Height = cell, Fill = new SolidColorBrush(ink) };
                     Canvas.SetLeft(q, m.X + c * cell);
                     Canvas.SetTop(q, m.Y + r * cell);
                     canvas.Children.Add(q);
                 }
     }
 
-    private static void DrawBox(Canvas canvas, ZplBox box, List<ZplRect> blackFilledRects)
+    private static void DrawBox(Canvas canvas, ZplBox box, Color ink)
     {
-        var blackBrush = new SolidColorBrush(Colors.Black);
         var whiteBrush = new SolidColorBrush(Colors.White);
-        var brush = box.Reverse ? whiteBrush : blackBrush;
+        var brush = new SolidColorBrush(ink);
         var width = Math.Max(1, box.Width);
         var height = Math.Max(1, box.Height);
         var thickness = Math.Max(1, Math.Min(box.Thickness, Math.Min(width, height)));
@@ -2258,23 +2364,11 @@ public static partial class ZplRenderer
             return;
         }
 
+        // A reversed box is drawn as ink too; the patches turn it white where it
+        // lands on black (ComputeInkPatches).
         if (IsFilledBox(box))
         {
-            var rect = new ZplRect(box.X, box.Y, width, height);
-            if (box.Reverse)
-            {
-                AddFilledRect(canvas, rect.X, rect.Y, rect.Width, rect.Height, whiteBrush);
-                foreach (var visible in Subtract(rect, blackFilledRects))
-                {
-                    AddFilledRect(canvas, visible.X, visible.Y, visible.Width, visible.Height, blackBrush);
-                }
-            }
-            else
-            {
-                AddFilledRect(canvas, rect.X, rect.Y, rect.Width, rect.Height, blackBrush);
-                blackFilledRects.Add(rect);
-            }
-
+            AddFilledRect(canvas, box.X, box.Y, width, height, brush);
             return;
         }
 
@@ -2284,7 +2378,7 @@ public static partial class ZplRenderer
         AddFilledRect(canvas, box.X + width - thickness, box.Y, thickness, height, brush);
     }
 
-    private static void DrawLine(Canvas canvas, ZplLine line)
+    private static void DrawLine(Canvas canvas, ZplLine line, Color ink)
     {
         var shape = new Line
         {
@@ -2292,7 +2386,7 @@ public static partial class ZplRenderer
             Y1 = 0,
             X2 = line.Width,
             Y2 = line.Height,
-            Stroke = new SolidColorBrush(Colors.Black),
+            Stroke = new SolidColorBrush(ink),
             StrokeThickness = Math.Max(1, line.Thickness)
         };
 
@@ -2645,6 +2739,9 @@ public static partial class ZplRenderer
         return (10 - sum % 10) % 10;
     }
 
+    private const double GuardExtensionDots = 13;
+    private const double QrTopOffsetDots = 10;
+
     // Builds the segments/labels of an EAN-13, UPC-A or EAN-8 barcode: guard bars
     // extend below the data bars by half the text height, and the digits sit in the
     // guard gaps (leading digit outside the symbol for EAN-13/UPC-A).
@@ -2685,7 +2782,10 @@ public static partial class ZplRenderer
         // Unlike EAN-13, the symbol itself starts at the field origin: the number
         // system digit prints OUTSIDE it on the left and the check digit on the right
         // (measured on the reference: bars 40…193 for a ^FO40 field, digits either side).
-        double guardExtra = showText ? hrtH * 0.5 : 0;
+        // The guards reach below the bars by a fixed 13 dots, whatever the module
+        // width and whether or not the digits are printed (measured on the reference
+        // at ^BY1 to ^BY4, with and without the interpretation line).
+        double guardExtra = GuardExtensionDots;
         double sideW = hrtH * 1.1;
         bool IsGuard(int idx) => guard.Any(g => idx >= g.Start && idx < g.Start + g.Len);
 
@@ -2820,7 +2920,10 @@ public static partial class ZplRenderer
             guard.Add((modules.Length - 10, 7));
         }
 
-        double guardExtra = showText ? hrtH * 0.5 : 0;
+        // The guards reach below the bars by a fixed 13 dots, whatever the module
+        // width and whether or not the digits are printed (measured on the reference
+        // at ^BY1 to ^BY4, with and without the interpretation line).
+        double guardExtra = GuardExtensionDots;
         // The leading digit of an EAN-13/UPC-A prints to the LEFT of the symbol, outside
         // the field: the bars themselves still start on the field origin.
         double leadW = 0;
@@ -3355,22 +3458,36 @@ public static partial class ZplRenderer
         body.Append("q\n");
         body.Append($"0 0 {N(w)} {N(h)} re W n\n");
 
-        var blackRects = new List<ZplRect>();
-        foreach (var drawable in model.Drawables)
+        void PdfOne(ZplDrawable drawable, bool white)
         {
+            string ink = white ? "1" : "0";
             switch (drawable)
             {
-                case ZplText t:    PdfText(body, t, Resolve); break;
-                case ZplBox b:     PdfBox(body, b, blackRects); break;
-                case ZplLine l:    PdfLine(body, l); break;
-                case ZplBars bb:   PdfBars(body, bb, Resolve); break;
-                case ZplEllipse el: PdfEllipse(body, el); break;
-                case ZplSymbol sy: PdfSymbol(body, sy, Resolve); break;
-                case ZplImage im:  PdfImage(body, im, RegisterImage); break;
-                case ZplMatrix mx: PdfMatrix(body, mx); break;
-                case ZplAztec az:  PdfModuleGrid(body, az.X, az.Y, az.ModuleSize, az.ModuleSize, az.Matrix); break;
-                case ZplDataMatrix dm: PdfModuleGrid(body, dm.X, dm.Y, dm.ModuleSize, dm.ModuleSize, dm.Matrix); break;
-                case ZplGrid gr:   PdfModuleGrid(body, gr.X, gr.Y, gr.ModW, gr.ModH, gr.Matrix); break;
+                case ZplText t:    PdfText(body, t, Resolve, ink); break;
+                case ZplBox b:     PdfBox(body, b, ink); break;
+                case ZplLine l:    PdfLine(body, l, ink); break;
+                case ZplBars bb:   PdfBars(body, bb, Resolve, ink); break;
+                case ZplEllipse el: PdfEllipse(body, el, ink); break;
+                case ZplSymbol sy: PdfSymbol(body, sy, Resolve, ink); break;
+                case ZplImage im:  PdfImage(body, im, RegisterImage, ink); break;
+                case ZplMatrix mx: PdfMatrix(body, mx, ink); break;
+                case ZplAztec az:  PdfModuleGrid(body, az.X, az.Y, az.ModuleSize, az.ModuleSize, az.Matrix, ink); break;
+                case ZplDataMatrix dm: PdfModuleGrid(body, dm.X, dm.Y, dm.ModuleSize, dm.ModuleSize, dm.Matrix, ink); break;
+                case ZplGrid gr:   PdfModuleGrid(body, gr.X, gr.Y, gr.ModW, gr.ModH, gr.Matrix, ink); break;
+            }
+        }
+
+        int nextPatch = 0;
+        for (int index = 0; index < model.Drawables.Count; index++)
+        {
+            PdfOne(model.Drawables[index], white: false);
+            // The reversed fields' toggles, each a clipped copy (see ZplInkPatch).
+            while (nextPatch < model.Patches.Count && model.Patches[nextPatch].After == index)
+            {
+                var patch = model.Patches[nextPatch++];
+                body.Append($"q {N(patch.Clip.X)} {N(patch.Clip.Y)} {N(patch.Clip.Width)} {N(patch.Clip.Height)} re W n\n");
+                PdfOne(patch.Source, patch.White);
+                body.Append("Q\n");
             }
         }
         body.Append("Q\n"); // end clip
@@ -3487,7 +3604,7 @@ public static partial class ZplRenderer
         return (cos, sin, -sin, cos, e, f);
     }
 
-    private static void PdfBox(StringBuilder sb, ZplBox box, List<ZplRect> blackRects)
+    private static void PdfBox(StringBuilder sb, ZplBox box, string ink)
     {
         double w = Math.Max(1, box.Width), h = Math.Max(1, box.Height);
         double t = Math.Max(1, Math.Min(box.Thickness, Math.Min(w, h)));
@@ -3505,43 +3622,34 @@ public static partial class ZplRenderer
             return;
         }
 
+        // A reversed box is ink too; the patches turn it white where it lands on
+        // black (ComputeInkPatches).
         if (IsFilledBox(box))
         {
-            var rect = new ZplRect(box.X, box.Y, w, h);
-            if (box.Reverse)
-            {
-                sb.Append($"1 g {N(box.X)} {N(box.Y)} {N(w)} {N(h)} re f\n");
-                foreach (var v in Subtract(rect, blackRects))
-                    sb.Append($"0 g {N(v.X)} {N(v.Y)} {N(v.Width)} {N(v.Height)} re f\n");
-            }
-            else
-            {
-                sb.Append($"0 g {N(box.X)} {N(box.Y)} {N(w)} {N(h)} re f\n");
-                blackRects.Add(rect);
-            }
+            sb.Append($"{ink} g {N(box.X)} {N(box.Y)} {N(w)} {N(h)} re f\n");
             return;
         }
 
-        string fill = box.Reverse ? "1 g" : "0 g";
+        string fill = ink + " g";
         sb.Append($"{fill} {N(box.X)} {N(box.Y)} {N(w)} {N(t)} re f\n");
         sb.Append($"{fill} {N(box.X)} {N(box.Y + h - t)} {N(w)} {N(t)} re f\n");
         sb.Append($"{fill} {N(box.X)} {N(box.Y)} {N(t)} {N(h)} re f\n");
         sb.Append($"{fill} {N(box.X + w - t)} {N(box.Y)} {N(t)} {N(h)} re f\n");
     }
 
-    private static void PdfLine(StringBuilder sb, ZplLine line)
+    private static void PdfLine(StringBuilder sb, ZplLine line, string ink)
     {
         double t = Math.Max(1, line.Thickness);
-        sb.Append($"0 G {N(t)} w 0 J\n");
+        sb.Append($"{ink} G {N(t)} w 0 J\n");
         sb.Append($"{N(line.X)} {N(line.Y)} m {N(line.X + line.Width)} {N(line.Y + line.Height)} l S\n");
     }
 
-    private static void PdfText(StringBuilder sb, ZplText text, Func<string, bool, FontEntry> resolve)
+    private static void PdfText(StringBuilder sb, ZplText text, Func<string, bool, FontEntry> resolve, string ink)
     {
         double zh = Math.Max(8, text.Height);
         var fe = resolve(text.Font, text.Bold);
         double fs = zh * GlyphScaleFactor(text.Font); // match the preview render size
-        string color = text.Reverse ? "1 g" : "0 g";
+        string color = ink + " g";
 
         double r = text.Rotation * Math.PI / 180.0;
         double cos = Math.Cos(r), sin = Math.Sin(r);
@@ -3586,7 +3694,7 @@ public static partial class ZplRenderer
         }
     }
 
-    private static void PdfBars(StringBuilder sb, ZplBars bars, Func<string, bool, FontEntry> resolve)
+    private static void PdfBars(StringBuilder sb, ZplBars bars, Func<string, bool, FontEntry> resolve, string ink)
     {
         double W = bars.Width, H = bars.Height;
         (double X, double Y, double W, double H) Map(BarSeg s) => bars.Rotation switch
@@ -3597,7 +3705,7 @@ public static partial class ZplRenderer
             _   => (bars.X + s.X, bars.Y + s.Y, s.W, s.H),
         };
 
-        sb.Append("0 g\n");
+        sb.Append($"{ink} g\n");
         foreach (var s in bars.Segs)
         {
             var m = Map(s);
@@ -3621,7 +3729,7 @@ public static partial class ZplRenderer
                 270 => (bars.X + lby, bars.Y + W - lx),
                 _   => (bars.X + lx, bars.Y + lby),
             };
-            sb.Append("BT\n0 g\n");
+            sb.Append($"BT\n{ink} g\n");
             sb.Append($"/{fe.ResName} {N(fsz)} Tf\n");
             sb.Append($"{N(cos)} {N(sin)} {N(sin)} {N(-cos)} {N(ox)} {N(oy)} Tm\n");
             sb.Append($"({PdfString(l.Text)}) Tj\nET\n");
@@ -3630,7 +3738,7 @@ public static partial class ZplRenderer
 
     // Ellipse via 4 Bézier arcs (kappa approximation); filled when the border
     // thickness reaches half the smaller radius.
-    private static void PdfEllipse(StringBuilder sb, ZplEllipse el)
+    private static void PdfEllipse(StringBuilder sb, ZplEllipse el, string ink = "0")
     {
         void Arcs(double x, double y, double w, double h)
         {
@@ -3646,58 +3754,58 @@ public static partial class ZplRenderer
         bool filled = el.Thickness >= Math.Min(el.Width, el.Height) / 2;
         if (filled)
         {
-            sb.Append("0 g\n");
+            sb.Append($"{ink} g\n");
             Arcs(el.X, el.Y, el.Width, el.Height);
             sb.Append("f\n");
         }
         else
         {
             // Stroke along the centerline of the border band.
-            sb.Append($"0 G {N(el.Thickness)} w\n");
+            sb.Append($"{ink} G {N(el.Thickness)} w\n");
             Arcs(el.X + el.Thickness / 2, el.Y + el.Thickness / 2,
                  el.Width - el.Thickness, el.Height - el.Thickness);
             sb.Append("S\n");
         }
     }
 
-    private static void PdfSymbol(StringBuilder sb, ZplSymbol sym, Func<string, bool, FontEntry> resolve)
+    private static void PdfSymbol(StringBuilder sb, ZplSymbol sym, Func<string, bool, FontEntry> resolve, string ink)
     {
         if (sym.Code is 'A' or 'B' or 'C')
         {
             var fe = resolve("Helvetica", false);
             string glyph = sym.Code switch { 'A' => "®", 'B' => "©", _ => "™" };
-            sb.Append("BT\n0 g\n");
+            sb.Append($"BT\n{ink} g\n");
             sb.Append($"/{fe.ResName} {N(sym.Height)} Tf\n");
             sb.Append($"1 0 0 -1 {N(sym.X)} {N(sym.Y + sym.Height * 0.75)} Tm\n");
             sb.Append($"({PdfString(glyph)}) Tj\nET\n");
             return;
         }
         double d = Math.Min(sym.Width, sym.Height);
-        PdfEllipse(sb, new ZplEllipse(sym.X, sym.Y, d, d, Math.Max(2, d * 0.06)));
+        PdfEllipse(sb, new ZplEllipse(sym.X, sym.Y, d, d, Math.Max(2, d * 0.06)), ink);
         var feb = resolve("Helvetica", true);
         string txt = sym.Code == 'D' ? "UL" : "CSA";
         double fs = d * (sym.Code == 'D' ? 0.42 : 0.30);
         double tw = txt.Length * fs * 0.62;
-        sb.Append("BT\n0 g\n");
+        sb.Append($"BT\n{ink} g\n");
         sb.Append($"/{feb.ResName} {N(fs)} Tf\n");
         sb.Append($"1 0 0 -1 {N(sym.X + (d - tw) / 2)} {N(sym.Y + d * 0.30 + fs * 0.72)} Tm\n");
         sb.Append($"({PdfString(txt)}) Tj\nET\n");
     }
 
-    private static void PdfImage(StringBuilder sb, ZplImage img, Func<ZplImage, string> register)
+    private static void PdfImage(StringBuilder sb, ZplImage img, Func<ZplImage, string> register, string ink)
     {
         var name = register(img);
         // Map the unit image square to [X, X+W]×[topY, topY+H] with row 0 at the top
         // (the -H flips the image the right way up in the y-down content space).
-        sb.Append("q\n0 g\n");
+        sb.Append($"q\n{ink} g\n");
         sb.Append($"{N(img.PixelWidth)} 0 0 {N(-img.PixelHeight)} {N(img.X)} {N(img.Y + img.PixelHeight)} cm\n");
         sb.Append($"/{name} Do\nQ\n");
     }
 
-    private static void PdfModuleGrid(StringBuilder sb, double x, double y, double mw, double mh, bool[,] matrix)
+    private static void PdfModuleGrid(StringBuilder sb, double x, double y, double mw, double mh, bool[,] matrix, string ink)
     {
         int rows = matrix.GetLength(0), cols = matrix.GetLength(1);
-        sb.Append("0 g\n");
+        sb.Append($"{ink} g\n");
         for (int r = 0; r < rows; r++)
         {
             int c = 0;
@@ -3712,15 +3820,16 @@ public static partial class ZplRenderer
         }
     }
 
-    private static void PdfMatrix(StringBuilder sb, ZplMatrix m)
+    private static void PdfMatrix(StringBuilder sb, ZplMatrix m, string ink)
     {
         double s = m.Size;
-        sb.Append($"1 g {N(m.X)} {N(m.Y)} {N(s)} {N(s)} re f\n");
+        // The placeholder's white ground is part of the stand-in, not ink.
+        if (ink == "0") sb.Append($"1 g {N(m.X)} {N(m.Y)} {N(s)} {N(s)} re f\n");
         double t = Math.Max(1, s * 0.04);
-        sb.Append($"0 G {N(t)} w {N(m.X)} {N(m.Y)} {N(s)} {N(s)} re S\n");
+        sb.Append($"{ink} G {N(t)} w {N(m.X)} {N(m.Y)} {N(s)} {N(s)} re S\n");
         const int n = 10;
         double cell = s / n;
-        sb.Append("0 g\n");
+        sb.Append($"{ink} g\n");
         for (int r = 0; r < n; r++)
             for (int c = 0; c < n; c++)
                 if (((r * 7 + c * 13) & 2) == 0)

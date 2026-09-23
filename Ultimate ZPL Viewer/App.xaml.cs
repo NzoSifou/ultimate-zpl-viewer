@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using System;
 using System.IO;
 using System.Linq;
@@ -55,29 +55,41 @@ namespace Ultimate_ZPL_Viewer
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            // --help / -h : print the usage screen to the parent console and exit,
-            // instead of opening the window.
-            if (CliRunner.IsHelpRequested(Environment.GetCommandLineArgs()))
-            {
-                CliRunner.PrintHelp();
-                Environment.Exit(0);
-                return;
-            }
+            var commandLine = Environment.GetCommandLineArgs();
 
-            // Headless command-line conversion (ultimatezplviewer.exe in.zpl --pdf/--png out):
-            // convert and exit without ever creating a window. Runs here so the UI
-            // thread + XAML are initialised (ZPL text measurement needs them).
-            if (CliRunner.Parse(Environment.GetCommandLineArgs()) is { } job)
+            // The print-capture scheduled task relaunches the app with this flag
+            // (unpackaged: a plain command-line argument, no MSIX protocol). It is not a
+            // command line anybody typed, and is not part of the grammar.
+            bool launchedFromCapture = commandLine
+                .Any(a => string.Equals(a, "--print-capture", StringComparison.OrdinalIgnoreCase));
+
+            // The language first: the help screen, the error messages and the notes a
+            // transform leaves are all read from it.
+            LocalizationService.SetLanguage(AppSettings.Load().Language);
+
+            // Everything that ends without a window is done here and exits: help,
+            // version, the lists, a malformed line, and the actions (--pdf, --png,
+            // --zpl, --print). The UI thread and XAML are up by now, which measuring
+            // ZPL text needs.
+            var parsed = launchedFromCapture
+                ? new ParsedCommand { Kind = CommandKind.Gui }
+                : CommandLine.Parse(commandLine);
+            int? exitCode = parsed.Kind switch
             {
-                int code = CliRunner.Run(job);
+                CommandKind.Help => CliRunner.PrintHelp(),
+                CommandKind.Version => CliRunner.PrintVersion(),
+                CommandKind.ListPrinters => CliRunner.ListPrinters(),
+                CommandKind.ListPapers => CliRunner.ListPapers(parsed.Printer),
+                CommandKind.Error => CliRunner.UsageError(parsed.Error ?? "ligne de commande invalide."),
+                CommandKind.Headless => CliRunner.Run(parsed.Job, parsed.Warnings),
+                _ => null,
+            };
+            if (exitCode is { } code)
+            {
                 Environment.Exit(code);
                 return;
             }
-
-            // The print-capture scheduled task relaunches the app with this flag
-            // (unpackaged: a plain command-line argument, no MSIX protocol).
-            bool launchedFromCapture = Environment.GetCommandLineArgs()
-                .Any(a => string.Equals(a, "--print-capture", StringComparison.OrdinalIgnoreCase));
+            CliRunner.WarnAboutMissingFiles(parsed.Gui.Files);
 
             // Single instance: if a job is printed while the app is already open,
             // the scheduled task relaunches us — but the running instance's watcher
@@ -92,7 +104,7 @@ namespace Ultimate_ZPL_Viewer
                 // the window already on screen, as a tab or a window of its own
                 // depending on the settings. If the hand-off fails, fall through and
                 // open normally rather than lose the file.
-                if (launchedFromCapture || InstanceRouter.HandOff(Environment.GetCommandLineArgs()))
+                if (launchedFromCapture || InstanceRouter.HandOff(commandLine))
                 {
                     Exit();
                     return;
@@ -104,9 +116,7 @@ namespace Ultimate_ZPL_Viewer
 
             AccentColorService.ApplyAtStartup(this);
 
-            // Load the active language before the window so the title bar localizes.
-            LocalizationService.SetLanguage(AppSettings.Load().Language);
-            _window = new MainWindow(LaunchOptions.Parse(Environment.GetCommandLineArgs()));
+            _window = new MainWindow(parsed.Gui);
             _window.Activate();
 
             // From here on, later launches talk to this instance instead of starting

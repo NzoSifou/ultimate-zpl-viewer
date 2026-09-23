@@ -1312,6 +1312,7 @@ public sealed partial class PreviewPage : Page
                 ContentHeightDots  = parsed.ContentHeightDots,
                 Size      = new LabelSize(finalW, finalH),
                 Drawables = parsed.Drawables,
+                Patches   = parsed.Patches,
                 InvertOrientation = parsed.InvertOrientation,
             };
 

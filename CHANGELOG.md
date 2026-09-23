@@ -70,6 +70,21 @@ l'une et manquer dans l'autre.
 - L'aide garde les **accents** : seule la ponctuation typographique qu'une vieille
   console ne sait pas afficher est simplifiée.
 
+### 🐛 Corrigé
+
+- **Le texte inversé (^FR) disparaissait dans le noir.** Un champ inversé
+  n'imprime pas en blanc : il imprime **le contraire de ce qu'il recouvre**, point
+  par point — noir sur du blanc, blanc sur du noir, et les deux quand il est à
+  cheval. L'aperçu choisissait au contraire **une seule couleur pour tout le
+  champ**, d'après ce qu'il y avait sous sa première lettre. D'où du noir sur noir
+  dans bien des cas : un mot qui déborde d'un pavé noir, un texte à cheval sur
+  plusieurs pavés, un texte centré dans un ^FB, un code-barres inversé, ou un pavé
+  inversé posé **après** le texte qu'il doit faire ressortir. Chaque partie d'un
+  champ inversé prend maintenant la couleur que lui donnerait l'imprimante, dans
+  l'aperçu comme dans le PDF, le PNG et l'impression, et ^LRY (toute l'étiquette
+  inversée) suit la même règle. Contrôlé sur une étiquette de douze cas contre
+  Labelary.
+
 ---
 
 ## [1.6.0] — 2026-09-16 — transformer un document, une page d'accueil, des groupes d'outils

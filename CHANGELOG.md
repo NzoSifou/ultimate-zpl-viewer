@@ -84,6 +84,12 @@ l'une et manquer dans l'autre.
   l'aperçu comme dans le PDF, le PNG et l'impression, et ^LRY (toute l'étiquette
   inversée) suit la même règle. Contrôlé sur une étiquette de douze cas contre
   Labelary.
+- **Les barres de garde des EAN et UPC** descendent toujours de 13 points sous
+  le code, qu'on imprime les chiffres ou non ; sans les chiffres, elles restaient
+  à la hauteur des autres barres.
+- **Un QR code placé par ^FO** commence 10 points plus bas que son origine, comme
+  sur l'imprimante ; il était dessiné collé à elle, et pouvait déborder sur ce qui
+  se trouve au-dessus.
 
 ---
 

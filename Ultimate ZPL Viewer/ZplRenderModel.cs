@@ -1168,7 +1168,9 @@ public static partial class ZplRenderer
                             if (barcodeRotation != 0) matrix = TurnMatrix(matrix, barcodeRotation);
                             int nm = matrix.GetLength(0);
                             double sz = nm * qrMag;
-                            double topY = typeset ? fy - sz : fy;
+                            // A QR code hangs 10 dots below its ^FO, whatever its
+                            // magnification (measured on the reference at 2, 4 and 8).
+                            double topY = typeset ? fy - sz : fy + QrTopOffsetDots;
                             fieldBuf.Add(new ZplDataMatrix(fx, topY, qrMag, matrix));
                             Grow(fx + sz, topY + sz);
                         }
@@ -2737,6 +2739,9 @@ public static partial class ZplRenderer
         return (10 - sum % 10) % 10;
     }
 
+    private const double GuardExtensionDots = 13;
+    private const double QrTopOffsetDots = 10;
+
     // Builds the segments/labels of an EAN-13, UPC-A or EAN-8 barcode: guard bars
     // extend below the data bars by half the text height, and the digits sit in the
     // guard gaps (leading digit outside the symbol for EAN-13/UPC-A).
@@ -2777,7 +2782,10 @@ public static partial class ZplRenderer
         // Unlike EAN-13, the symbol itself starts at the field origin: the number
         // system digit prints OUTSIDE it on the left and the check digit on the right
         // (measured on the reference: bars 40…193 for a ^FO40 field, digits either side).
-        double guardExtra = showText ? hrtH * 0.5 : 0;
+        // The guards reach below the bars by a fixed 13 dots, whatever the module
+        // width and whether or not the digits are printed (measured on the reference
+        // at ^BY1 to ^BY4, with and without the interpretation line).
+        double guardExtra = GuardExtensionDots;
         double sideW = hrtH * 1.1;
         bool IsGuard(int idx) => guard.Any(g => idx >= g.Start && idx < g.Start + g.Len);
 
@@ -2912,7 +2920,10 @@ public static partial class ZplRenderer
             guard.Add((modules.Length - 10, 7));
         }
 
-        double guardExtra = showText ? hrtH * 0.5 : 0;
+        // The guards reach below the bars by a fixed 13 dots, whatever the module
+        // width and whether or not the digits are printed (measured on the reference
+        // at ^BY1 to ^BY4, with and without the interpretation line).
+        double guardExtra = GuardExtensionDots;
         // The leading digit of an EAN-13/UPC-A prints to the LEFT of the symbol, outside
         // the field: the bars themselves still start on the field origin.
         double leadW = 0;

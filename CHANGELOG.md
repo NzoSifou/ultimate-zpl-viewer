@@ -31,6 +31,12 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   nom), l'ajout ou le retrait de langues, et le choix de la langue de repli. Les
   erreurs (code invalide, langue en double, ligne incomplète) sont signalées
   avant d'enregistrer.
+- **Masquer des boutons de la barre d'outils** 🙈 Sous les trois lignes de
+  **Paramètres › Barre d'outils**, une zone « Éléments masqués » reçoit ce qu'on
+  ne veut pas voir : un bouton, ou un groupe entier, glissé là disparaît de la
+  barre, et revient en le glissant vers une ligne. Les raccourcis clavier et le
+  reste de l'application continuent de fonctionner comme avant. Un bouton ajouté
+  par une future version n'est jamais masqué d'office.
 - **Un import ne touche jamais ce qui appartient à la machine** : fichiers
   récents, fenêtres à rouvrir, types d'imprimantes, tailles d'écran, vérification
   des mises à jour restent hors des profils. Un profil importé arrive toujours

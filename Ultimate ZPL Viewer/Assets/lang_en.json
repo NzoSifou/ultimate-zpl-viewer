@@ -2025,7 +2025,10 @@
         "addGroup": "Add a group",
         "deleteGroup": "Delete the group (its buttons stay where it was)",
         "emptyGroup": "Empty group",
-        "groupName": "Group name"
+        "groupName": "Group name",
+        "hiddenTitle": "Hidden items",
+        "hiddenDesc": "Anything dragged here no longer appears on the toolbar. Keyboard shortcuts still work; drag an item back onto a row to bring it back.",
+        "hiddenEmpty": "Drag here the items you do not want to see"
       },
       "groups": {
         "file": "File",

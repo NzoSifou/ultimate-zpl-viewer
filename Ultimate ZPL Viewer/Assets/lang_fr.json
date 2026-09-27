@@ -2025,7 +2025,10 @@
         "addGroup": "Ajouter un groupe",
         "deleteGroup": "Supprimer le groupe (ses boutons restent à sa place)",
         "emptyGroup": "Groupe vide",
-        "groupName": "Nom du groupe"
+        "groupName": "Nom du groupe",
+        "hiddenTitle": "Éléments masqués",
+        "hiddenDesc": "Ce qui est glissé ici n'apparaît plus dans la barre d'outils. Les raccourcis clavier restent actifs ; glissez un élément vers une ligne pour le faire revenir.",
+        "hiddenEmpty": "Glissez ici les éléments à ne pas afficher"
       },
       "groups": {
         "file": "Fichier",

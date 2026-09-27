@@ -952,7 +952,14 @@ public sealed partial class PreviewPage : Page
             if (GetToolbarItem(id) is { } c) Detach(c);
         ToolbarLines.Children.Clear();
 
-        foreach (var row in _settings.ToolbarLayout)
+        // What sits in the hidden row goes back to the holder it came from: out of
+        // sight, but still loaded — the density list, the size boxes and the zoom
+        // box keep doing their work for the document when nobody can see them.
+        foreach (var slot in _settings.ToolbarLayout[ToolbarItems.HiddenRow])
+            foreach (var id in slot.Items)
+                if (GetToolbarItem(id) is { } hidden) ToolbarItemHolder.Children.Add(hidden);
+
+        foreach (var row in _settings.ToolbarLayout.Take(ToolbarItems.RowCount))
         {
             // An empty group shows nothing at all: it is a thing half-made, not a
             // gap to leave in the toolbar.
@@ -5043,7 +5050,8 @@ public sealed partial class PreviewPage : Page
     private UIElement BuildToolbarDesigner(out Button resetBtn, out Button addGroupBtn)
     {
         var model = ToolbarItems.Normalize(_settings.ToolbarLayout);
-        var rowPanels = new ToolbarWrapPanel[ToolbarItems.RowCount];
+        var rowPanels = new ToolbarWrapPanel[ToolbarItems.TotalRows];
+        TextBlock? hiddenHint = null;
 
         // A group has no name to be found by — two can share one, and renaming
         // must not break a drag already under way — so each gets a token for the
@@ -5067,11 +5075,14 @@ public sealed partial class PreviewPage : Page
 
         void Reload()
         {
-            for (int r = 0; r < ToolbarItems.RowCount; r++)
+            for (int r = 0; r < ToolbarItems.TotalRows; r++)
             {
                 rowPanels[r].Children.Clear();
                 foreach (var slot in model[r]) rowPanels[r].Children.Add(BuildSlotView(slot));
             }
+            if (hiddenHint is not null)
+                hiddenHint.Visibility = model[ToolbarItems.HiddenRow].Count == 0
+                    ? Visibility.Visible : Visibility.Collapsed;
         }
 
         // The chips are rebuilt on the NEXT turn, never inside the event that
@@ -5321,12 +5332,9 @@ public sealed partial class PreviewPage : Page
             Commit();
         });
 
-        // ── The three rows ──────────────────────────────────────────────────
-        var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
-
-        for (int i = 0; i < ToolbarItems.RowCount; i++)
+        // ── The rows ────────────────────────────────────────────────────────
+        ToolbarWrapPanel MakeDropRow(int rowIndex)
         {
-            int rowIndex = i;
             var row = MakeChipPanel();
             row.MinHeight = 44;
             row.Margin = new Thickness(0, 6, 8, 6);
@@ -5342,7 +5350,15 @@ public sealed partial class PreviewPage : Page
                 }
                 catch (Exception ex) { App.LogCrash("Toolbar", ex.Message, ex); Reload(); }
             };
-            rowPanels[i] = row;
+            rowPanels[rowIndex] = row;
+            return row;
+        }
+
+        var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
+
+        for (int i = 0; i < ToolbarItems.RowCount; i++)
+        {
+            var row = MakeDropRow(i);
 
             // "Ligne N" label on the left + the row's chips.
             var rowGrid = new Grid { MinHeight = 56 };
@@ -5372,6 +5388,38 @@ public sealed partial class PreviewPage : Page
                 });
         }
 
+        // ── The hidden row ──────────────────────────────────────────────────
+        // A card of its own under the toolbar's, not a fourth line inside it:
+        // what is here is not a place on the toolbar but the absence of one.
+        var hiddenRow = MakeDropRow(ToolbarItems.HiddenRow);
+        hiddenHint = new TextBlock
+        {
+            Text = SL("toolbar.lbl.hiddenEmpty"),
+            FontSize = 12,
+            Opacity = 0.55,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 0, 0, 0),
+            IsHitTestVisible = false,
+        };
+        var hiddenWell = new Grid();
+        hiddenWell.Children.Add(hiddenHint);
+        hiddenWell.Children.Add(hiddenRow);
+
+        var hiddenHead = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(12, 10, 12, 0) };
+        hiddenHead.Children.Add(new FontIcon { Glyph = "\uED1A", FontSize = 14, Opacity = 0.8 });
+        hiddenHead.Children.Add(new TextBlock { Text = SL("toolbar.lbl.hiddenTitle"), FontWeight = FontWeights.SemiBold });
+        var hiddenBody = new StackPanel();
+        hiddenBody.Children.Add(hiddenHead);
+        hiddenBody.Children.Add(new TextBlock
+        {
+            Text = SL("toolbar.lbl.hiddenDesc"),
+            FontSize = 12, Opacity = 0.7, TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(12, 2, 12, 0),
+        });
+        var hiddenGrid = new Grid { MinHeight = 56, Margin = new Thickness(76, 0, 0, 0) };
+        hiddenGrid.Children.Add(hiddenWell);
+        hiddenBody.Children.Add(hiddenGrid);
+
         Reload();
 
         var card = new Border
@@ -5384,8 +5432,20 @@ public sealed partial class PreviewPage : Page
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = stack,
         };
+        // A step back in tone: a tray, not part of the toolbar.
+        var hiddenCard = new Border
+        {
+            Background = (Brush)Application.Current.Resources["CardBackgroundFillColorSecondaryBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Margin = new Thickness(0, 12, 0, 4),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = hiddenBody,
+        };
         var section = new StackPanel();
         section.Children.Add(card);
+        section.Children.Add(hiddenCard);
         return section;
     }
 

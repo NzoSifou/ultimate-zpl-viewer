@@ -2357,7 +2357,21 @@
       "importFailedTitle": "Import impossible",
       "importFailedJson": "Ce fichier n'est pas un JSON valide.",
       "importFailedFormat": "Ce fichier n'est pas un profil d'Ultimate ZPL Viewer : il lui manque ses paramètres (« settings »).",
-      "failedTitle": "Opération impossible"
+      "failedTitle": "Opération impossible",
+      "advancedShow": "Noms dans d'autres langues…",
+      "advancedHide": "Revenir à l'affichage simple",
+      "advancedBody": "Un nom par langue. Le nom affiché est celui de la langue de l'interface ; si elle n'en a pas, c'est celui de la langue de repli.",
+      "codeColumn": "Code langue",
+      "nameColumn": "Nom",
+      "addLanguage": "Ajouter une langue",
+      "removeLanguage": "Retirer cette langue",
+      "fallbackLabel": "Langue de repli",
+      "fallbackTip": "Le nom utilisé quand l'interface est dans une langue qui n'a pas de nom pour ce profil.",
+      "installed": "Langues installées : {list}. Tout autre code de langue est accepté (nl, de, fr-CA…).",
+      "errEmpty": "Il faut au moins un nom.",
+      "errIncomplete": "Chaque ligne a besoin d'un code de langue et d'un nom.",
+      "errCode": "« {code} » n'est pas un code de langue (exemples : fr, en, fr-CA).",
+      "errTwice": "La langue « {code} » apparaît deux fois."
     }
   },
   "shortcuts": {

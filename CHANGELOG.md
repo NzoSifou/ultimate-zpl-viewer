@@ -25,6 +25,12 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   pas. Le profil livré avec l'application s'appelle « Profil par défaut » /
   « Default profile », et une nouvelle langue peut lui donner son nom depuis son
   propre fichier de langue.
+- **Renommer, simplement ou dans toutes les langues.** La fenêtre « Renommer »
+  change par défaut le nom dans la langue affichée. Son lien « Noms dans
+  d'autres langues… » ouvre la liste complète : une ligne par langue (code et
+  nom), l'ajout ou le retrait de langues, et le choix de la langue de repli. Les
+  erreurs (code invalide, langue en double, ligne incomplète) sont signalées
+  avant d'enregistrer.
 - **Un import ne touche jamais ce qui appartient à la machine** : fichiers
   récents, fenêtres à rouvrir, types d'imprimantes, tailles d'écran, vérification
   des mises à jour restent hors des profils. Un profil importé arrive toujours

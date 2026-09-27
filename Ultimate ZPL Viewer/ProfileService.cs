@@ -188,16 +188,22 @@ internal static class ProfileService
         => Add(name, ReadSettings(sourceId) ?? new JsonObject());
 
     /// <summary>
-    /// Renames a profile in the language the application is shown in. Its names in
-    /// other languages stay as they were: a French rename is a French name.
+    /// Replaces a profile's names — one per language — and the language to fall
+    /// back on. The rename dialog's simple view passes the names it already had
+    /// with the current language's changed; its advanced view passes the list as
+    /// edited. Empty entries are dropped, and a fallback that names no entry
+    /// falls back itself to the first one.
     /// </summary>
-    public static void Rename(string id, string name)
+    public static void SetNames(string id, IReadOnlyDictionary<string, string> names, string fallback)
     {
         var root = Read(id) ?? throw new FileNotFoundException(id);
-        var names = NamesOf(root);
-        names[LocalizationService.CurrentCode] = name.Trim();
-        Write(id, names, root["fallbackLanguage"]?.GetValue<string>() ?? LocalizationService.CurrentCode,
-              root["settings"] as JsonObject ?? new JsonObject());
+        var cleaned = names
+            .Where(n => !string.IsNullOrWhiteSpace(n.Key) && !string.IsNullOrWhiteSpace(n.Value))
+            .ToDictionary(n => n.Key.Trim(), n => n.Value.Trim(), StringComparer.OrdinalIgnoreCase);
+        if (cleaned.Count == 0) throw new ArgumentException("names");
+        var fb = cleaned.Keys.FirstOrDefault(k => string.Equals(k, fallback, StringComparison.OrdinalIgnoreCase))
+                 ?? cleaned.Keys.First();
+        Write(id, cleaned, fb, root["settings"] as JsonObject ?? new JsonObject());
     }
 
     public static void Delete(string id)

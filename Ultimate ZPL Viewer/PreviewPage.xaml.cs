@@ -38,7 +38,7 @@ namespace Ultimate_ZPL_Viewer;
 
 public sealed partial class PreviewPage : Page
 {
-    private readonly AppSettings _settings = AppSettings.Load();
+    private readonly AppSettings _settings = AppSettings.Current;
     private readonly List<DpmmOption> _densityOptions = new();
     // Maximum physical size of a label dimension (50 cm). Enforced in millimetres so
     // it is density-independent — see the clamp in RefreshPreview.
@@ -4067,6 +4067,7 @@ public sealed partial class PreviewPage : Page
     {
         LocalizeSettingsNav();
         BuildSettingsCategories();
+        BuildProfileFooter();
         SettingsOverlay.Visibility = Visibility.Visible;
         var navItem = SettingsNav.MenuItems
             .OfType<NavigationViewItem>()
@@ -4141,6 +4142,7 @@ public sealed partial class PreviewPage : Page
         ReloadEditorForLanguage();  // reload Monaco in the new UI language (no-op if unchanged)
         _settingsCategories = null; // force rebuild with the new strings / language list
         BuildSettingsCategories();
+        BuildProfileFooter();       // its label, and the profiles' names in the new language
         var tag = _currentSettingsTag ?? "appearance";
         SettingsNav.SelectedItem = SettingsNav.MenuItems.OfType<NavigationViewItem>()
             .FirstOrDefault(i => (i.Tag as string) == tag);
@@ -5860,22 +5862,13 @@ public sealed partial class PreviewPage : Page
         return panel;
     }
 
+    // Resets the ACTIVE profile (the machine's own state — recent files, open
+    // windows… — is not a preference and stays), then puts it into effect in
+    // every window, as a profile switch does.
     private void ResetSettings()
     {
         _settings.ResetToDefaults();
-        Root.RequestedTheme = _settings.ToElementTheme();
-        (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.SetTheme(_settings.ToElementTheme());
-        ApplyAccentFromSettings();
-        _editorWidth = _settings.EditorWidth;   // reset by ResetToDefaults above
-        ApplyEditorLayout();
-        ApplyEditorOptions();
-        LoadDensityOptions(SelectedDpmm);
-        UpdateSizeBoxes();
-        UpdateSizeBoxLocks();
-        DrawPreviewGrid();
-        PostToEditor("{\"type\":\"setLineNumbers\",\"show\":" + (_settings.ShowLineNumbers ? "true" : "false") + "}");
-        BuildSettingsCategories();
-        ShowSettingsCategory("general");
+        ApplySettingsEverywhere();
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, ApplyDefaultZoom);
     }
 

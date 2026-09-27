@@ -29,7 +29,7 @@ namespace Ultimate_ZPL_Viewer
             SetTitleBar(DragRegion);
 
             // The title bar follows the app theme (settings), not the OS theme.
-            WindowRoot.RequestedTheme = AppSettings.Load().ToElementTheme();
+            WindowRoot.RequestedTheme = AppSettings.Current.ToElementTheme();
             WindowRoot.ActualThemeChanged += (_, _) =>
             {
                 UpdateCaptionButtonColors();

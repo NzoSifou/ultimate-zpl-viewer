@@ -95,7 +95,7 @@ internal static class InstanceRouter
         if (parsed.Kind != CommandKind.Gui) return;
 
         var options = parsed.Gui with { RestoreSession = false };
-        var settings = AppSettings.Load();
+        var settings = AppSettings.Current;
         var target = WindowManager.Active ?? WindowManager.Windows.FirstOrDefault();
         var files = options.Files.Where(File.Exists).ToList();
         options = options with { Files = files };

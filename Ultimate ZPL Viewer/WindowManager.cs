@@ -68,7 +68,7 @@ internal static class WindowManager
                 .ToList();
             var flat = layout.SelectMany(f => f).Distinct().ToList();
 
-            var settings = AppSettings.Load();
+            var settings = AppSettings.Current;
             settings.WindowSessions = layout;
             settings.OpenFiles = flat;   // kept in step for the flat legacy list
             settings.Save();

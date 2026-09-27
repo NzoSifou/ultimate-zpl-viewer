@@ -1568,7 +1568,7 @@
         },
         "reset": {
           "title": "Réinitialiser les paramètres",
-          "desc": "Rétablit tous les paramètres à leurs valeurs par défaut."
+          "desc": "Rétablit les valeurs par défaut de tous les paramètres du profil actif. Les fichiers récents et les fenêtres à rouvrir sont conservés."
         },
         "pngQuality": {
           "title": "Qualité de l'export PNG",
@@ -1595,7 +1595,7 @@
         "reset": "Réinitialiser",
         "cancel": "Annuler",
         "resetDlgTitle": "Réinitialiser les paramètres",
-        "resetDlgBody": "Rétablir tous les paramètres à leurs valeurs par défaut ?",
+        "resetDlgBody": "Rétablir tous les paramètres du profil actif à leurs valeurs par défaut ?",
         "setDefault": "Définir par défaut",
         "alreadyDefault": "Déjà par défaut",
         "setDefaultFailed": "Impossible de définir l'application par défaut automatiquement. Vous pouvez le faire depuis les paramètres Windows (Applications par défaut)."
@@ -2325,6 +2325,39 @@
       "armed": "La mise à jour sera installée quand vous fermerez l’application. Le téléchargement se poursuit en arrière-plan.",
       "published": "publiée le {date}",
       "onExitHint": "L’application se mettra à jour quand vous la fermerez, sans se rouvrir."
+    },
+    "profiles": {
+      "label": "Profil",
+      "defaultName": "Profil par défaut",
+      "pickerTip": "Tous les paramètres sont enregistrés dans le profil choisi, au fur et à mesure. Changer de profil les recharge aussitôt, dans toutes les fenêtres.",
+      "menuTip": "Gérer les profils",
+      "new": "Nouveau profil…",
+      "duplicate": "Dupliquer…",
+      "rename": "Renommer…",
+      "delete": "Supprimer…",
+      "export": "Exporter…",
+      "import": "Importer…",
+      "lastTip": "Il faut au moins un profil : le dernier ne peut pas être supprimé.",
+      "nameLabel": "Nom du profil",
+      "create": "Créer",
+      "cancel": "Annuler",
+      "newTitle": "Nouveau profil",
+      "newBody": "Le nouveau profil part des paramètres par défaut, et devient le profil actif.",
+      "newName": "Nouveau profil",
+      "duplicateTitle": "Dupliquer le profil",
+      "duplicateBody": "Le nouveau profil reprend tous les paramètres de « {name} », et devient le profil actif.",
+      "copyName": "{name} (copie)",
+      "renameTitle": "Renommer le profil",
+      "renameBody": "Langue de ce nom : {language}. Les noms du profil dans les autres langues ne changent pas.",
+      "renameButton": "Renommer",
+      "deleteTitle": "Supprimer le profil",
+      "deleteBody": "Supprimer « {name} » ? Ses paramètres seront perdus ; exportez-le d'abord pour les garder.",
+      "deleteButton": "Supprimer",
+      "fileType": "Profil Ultimate ZPL Viewer",
+      "importFailedTitle": "Import impossible",
+      "importFailedJson": "Ce fichier n'est pas un JSON valide.",
+      "importFailedFormat": "Ce fichier n'est pas un profil d'Ultimate ZPL Viewer : il lui manque ses paramètres (« settings »).",
+      "failedTitle": "Opération impossible"
     }
   },
   "shortcuts": {

@@ -93,6 +93,16 @@ public static class LocalizationService
         return key;
     }
 
+    /// <summary>
+    /// A key the ACTIVE language defines itself — no English fallback. For text
+    /// that has a better source than English when a language is silent about it.
+    /// </summary>
+    public static bool TryGetOwn(string key, out string value)
+    {
+        if (_flat is null) SetLanguage(_current);
+        return _flat!.TryGetValue(key, out value!);
+    }
+
     // The active language code (its "language" field value).
     public static string CurrentCode => _current;
 

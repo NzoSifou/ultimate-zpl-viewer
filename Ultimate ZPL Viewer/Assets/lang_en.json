@@ -1568,7 +1568,7 @@
         },
         "reset": {
           "title": "Reset settings",
-          "desc": "Restores all settings to their default values."
+          "desc": "Restores every setting of the active profile to its default. Recent files and the windows to reopen are kept."
         },
         "pngQuality": {
           "title": "PNG export quality",
@@ -1595,7 +1595,7 @@
         "reset": "Reset",
         "cancel": "Cancel",
         "resetDlgTitle": "Reset settings",
-        "resetDlgBody": "Restore all settings to their default values?",
+        "resetDlgBody": "Restore every setting of the active profile to its default?",
         "setDefault": "Set as default",
         "alreadyDefault": "Already default",
         "setDefaultFailed": "Couldn't set the default app automatically. You can do it from Windows Settings (Default apps)."
@@ -2325,6 +2325,39 @@
       "armed": "The update will be installed when you close the application. The download continues in the background.",
       "published": "published {date}",
       "onExitHint": "The application updates itself when you close it, and does not reopen."
+    },
+    "profiles": {
+      "label": "Profile",
+      "defaultName": "Default profile",
+      "pickerTip": "Every setting is saved in the chosen profile as you change it. Switching profile loads its settings at once, in every window.",
+      "menuTip": "Manage profiles",
+      "new": "New profile…",
+      "duplicate": "Duplicate…",
+      "rename": "Rename…",
+      "delete": "Delete…",
+      "export": "Export…",
+      "import": "Import…",
+      "lastTip": "There must be at least one profile: the last one cannot be deleted.",
+      "nameLabel": "Profile name",
+      "create": "Create",
+      "cancel": "Cancel",
+      "newTitle": "New profile",
+      "newBody": "The new profile starts from the default settings and becomes the active profile.",
+      "newName": "New profile",
+      "duplicateTitle": "Duplicate profile",
+      "duplicateBody": "The new profile takes every setting of “{name}” and becomes the active profile.",
+      "copyName": "{name} (copy)",
+      "renameTitle": "Rename profile",
+      "renameBody": "Language of this name: {language}. The profile's names in other languages do not change.",
+      "renameButton": "Rename",
+      "deleteTitle": "Delete profile",
+      "deleteBody": "Delete “{name}”? Its settings will be lost; export it first to keep them.",
+      "deleteButton": "Delete",
+      "fileType": "Ultimate ZPL Viewer profile",
+      "importFailedTitle": "Cannot import",
+      "importFailedJson": "This file is not valid JSON.",
+      "importFailedFormat": "This file is not an Ultimate ZPL Viewer profile: it has no settings (“settings”).",
+      "failedTitle": "Cannot do that"
     }
   },
   "shortcuts": {

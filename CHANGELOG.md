@@ -6,6 +6,46 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [Non publié] — des profils de paramètres
+
+### ✨ Ajouté
+
+- **Des profils** 🗂️ En bas de la colonne des paramètres, une liste choisit le
+  **profil** en cours : un ensemble complet de paramètres — thème, langue,
+  impression, éditeur, barre d'outils, positions des plaques… Il n'y a rien à
+  enregistrer : chaque changement est écrit dans le profil actif au moment où il
+  est fait, et **choisir un autre profil le charge aussitôt, dans toutes les
+  fenêtres**. Le menu « … » à côté de la liste permet d'en **créer** un (depuis
+  les réglages par défaut), d'en **dupliquer**, **renommer**, **supprimer**
+  (jamais le dernier), **exporter** et **importer**.
+- **Un fichier JSON par profil**, lisible et modifiable à la main
+  (`%LOCALAPPDATA%\Ultimate ZPL Viewer\profiles`). Le nom d'un profil est
+  **traduit dans le fichier lui-même** : `"names": { "fr": …, "en": … }`, avec
+  une langue de repli (`"fallbackLanguage"`) quand la langue affichée n'y figure
+  pas. Le profil livré avec l'application s'appelle « Profil par défaut » /
+  « Default profile », et une nouvelle langue peut lui donner son nom depuis son
+  propre fichier de langue.
+- **Un import ne touche jamais ce qui appartient à la machine** : fichiers
+  récents, fenêtres à rouvrir, types d'imprimantes, tailles d'écran, vérification
+  des mises à jour restent hors des profils. Un profil importé arrive toujours
+  comme un nouveau profil, sans en écraser un existant.
+
+### 🔧 Modifié
+
+- À la première ouverture, **les paramètres existants deviennent le « Profil par
+  défaut »** : rien n'est perdu.
+- **« Réinitialiser les paramètres » remet à zéro le profil actif** et garde les
+  fichiers récents et les fenêtres à rouvrir, qu'il effaçait jusqu'ici.
+
+### 🐛 Corrigé
+
+- **Un réglage changé dans une fenêtre pouvait être perdu.** Chaque fenêtre
+  gardait sa propre copie des paramètres : un changement fait dans l'une
+  n'atteignait pas les autres, et la dernière à enregistrer écrasait le reste.
+  Toutes les fenêtres partagent maintenant les mêmes paramètres.
+
+---
+
 ## [1.6.1] — 2026-09-16 — la ligne de commande, refaite
 
 La ligne de commande est **réécrite de zéro**. Elle savait ouvrir un fichier et

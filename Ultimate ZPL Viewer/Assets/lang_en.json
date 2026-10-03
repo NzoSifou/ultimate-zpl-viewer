@@ -1554,6 +1554,10 @@
       "commandLine": "Command line",
       "about": "About"
     },
+    "search": {
+      "placeholder": "Search settings",
+      "none": "No setting matches"
+    },
     "general": {
       "title": "General",
       "subtitle": "General application behaviour.",

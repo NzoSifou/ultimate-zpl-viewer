@@ -4104,6 +4104,7 @@ public sealed partial class PreviewPage : Page
         LocalizeSettingsNav();
         BuildSettingsCategories();
         BuildProfileFooter();
+        InitSettingsSearch();
         SettingsOverlay.Visibility = Visibility.Visible;
         var navItem = SettingsNav.MenuItems
             .OfType<NavigationViewItem>()
@@ -4255,6 +4256,7 @@ public sealed partial class PreviewPage : Page
         foreach (var item in SettingsNav.MenuItems.OfType<NavigationViewItem>())
             if (item.Tag is string tag && SettingsNavKey.TryGetValue(tag, out var k))
                 item.Content = LocalizationService.Get($"settings.nav.{k}");
+        LocalizeSettingsSearch();
     }
 
     // Localized settings string / string-array shortcuts (settings.* keys).

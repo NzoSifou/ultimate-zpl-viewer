@@ -1554,6 +1554,10 @@
       "commandLine": "Ligne de commande",
       "about": "À propos"
     },
+    "search": {
+      "placeholder": "Rechercher un paramètre",
+      "none": "Aucun paramètre ne correspond"
+    },
     "general": {
       "title": "Général",
       "subtitle": "Comportement général de l'application.",

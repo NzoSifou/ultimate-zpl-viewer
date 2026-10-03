@@ -37,6 +37,12 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   barre, et revient en le glissant vers une ligne. Les raccourcis clavier et le
   reste de l'application continuent de fonctionner comme avant. Un bouton ajouté
   par une future version n'est jamais masqué d'office.
+- **Rechercher dans les paramètres** 🔎 Une zone de recherche en haut de la
+  colonne des catégories (Ctrl+F dans les paramètres) trouve un réglage d'après
+  le titre de sa carte, sa description ou les mots de ses options, sans tenir
+  compte des majuscules ni des accents, dans la langue de l'interface. Choisir un
+  résultat ouvre la bonne catégorie, fait défiler jusqu'à la carte et l'entoure
+  un instant de la couleur d'accentuation.
 - **Les fichiers à plusieurs étiquettes se parcourent comme les pages d'un PDF**
   📑 Quand un fichier enchaîne plusieurs `^XA…^XZ`, l'aperçu montre une
   étiquette à la fois, et une barre apparaît en bas de l'aperçu : les flèches

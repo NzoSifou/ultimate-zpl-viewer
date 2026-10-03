@@ -2634,5 +2634,11 @@
       "image": "Modifier l’image (taille, noir et blanc, écriture)",
       "several": "{0} éléments"
     }
+  },
+  "labels": {
+    "label": "Étiquette",
+    "previous": "Étiquette précédente (Page préc.)",
+    "next": "Étiquette suivante (Page suiv.)",
+    "numberTip": "Tapez un numéro puis Entrée ; ↑ et ↓ passent d'une étiquette à l'autre."
   }
 }

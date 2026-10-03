@@ -101,6 +101,16 @@ public sealed class ZplRenderModel
     // What the reversed fields toggle, in drawing order (see ZplInkPatch).
     public IReadOnlyList<ZplInkPatch> Patches { get; init; } = Array.Empty<ZplInkPatch>();
 
+    // A document can hold several labels, one ^XA…^XZ format each: how many draw
+    // something, and which of them this model is (0-based). A format that draws
+    // nothing — printer configuration, a stored ^DF — is not a label.
+    public int LabelCount { get; init; } = 1;
+    public int LabelIndex { get; init; }
+
+    // Where each label lies in the text, from its ^XA to its ^XZ: what tells which
+    // label the caret is in.
+    public IReadOnlyList<(int Start, int End)> LabelSpans { get; init; } = Array.Empty<(int, int)>();
+
     // ^POI: the whole label prints upside-down (180° rotation of the content).
     public bool InvertOrientation { get; init; }
 
@@ -123,7 +133,13 @@ public static partial class ZplRenderer
     // Smallest label the preview will DEDUCE from the content (see below).
     private const double MinDeducedSizeMm = 5d;
 
-    public static ZplRenderModel Parse(string zpl, double fallbackDpmm)
+    /// <summary>
+    /// Reads a document and renders ONE of its labels: <paramref name="labelIndex"/>,
+    /// 0-based, clamped to the last one. The model also says how many there are.
+    /// Positions in the drawables stay those of the whole text, so editing a label
+    /// further down edits it where it is.
+    /// </summary>
+    public static ZplRenderModel Parse(string zpl, double fallbackDpmm, int labelIndex = 0)
     {
         var src = zpl ?? string.Empty;
         var x = 0d;
@@ -195,7 +211,18 @@ public static partial class ZplRenderer
         var drawables = new List<ZplDrawable>();
         var fieldXor = false;       // ^FR seen for the field being built
         var storedGraphics = new Dictionary<string, (int W, int H, byte[] Bits)>(StringComparer.OrdinalIgnoreCase);
-        var stop = false;
+
+        // Labels seen so far, the one asked for once it is complete, and — past it —
+        // a cheaper walk that only counts what is left (see the loop).
+        labelIndex = Math.Max(0, labelIndex);
+        var labelsDone = 0;
+        var picked = false;
+        var counting = false;
+        var formatHasInk = false;
+        LabelSnapshot? snap = null;
+        var labelSpans = new List<(int Start, int End)>();
+        int formatStart = 0;        // where the label being read began (its ^XA)
+        int lastTokenEnd = 0;
 
         // A field only prints once its ^FS arrives: elements accumulate in fieldBuf
         // and are committed on ^FS. A new ^FO/^FT (or end of label) before the ^FS
@@ -242,6 +269,24 @@ public static partial class ZplRenderer
             growBuf.Clear();
             fieldStart = -1;
             fieldEnd = -1;
+        }
+
+        // A label just ended (^XZ, or the end of the text). One that drew something
+        // counts; the one asked for — or, until it turns up, the latest — is kept,
+        // and everything starts afresh for the next.
+        void EndLabel()
+        {
+            if (drawables.Count == 0) return;
+            labelsDone++;
+            labelSpans.Add((formatStart, lastTokenEnd));
+            if (!picked)
+            {
+                snap = new LabelSnapshot(drawables, maxXCommitted, maxYCommitted, width, height,
+                                         lhX, lhY, dpmm, poi, mirror);
+                if (labelsDone - 1 == labelIndex) { picked = true; counting = true; }
+            }
+            drawables = new List<ZplDrawable>();
+            maxXCommitted = 0; maxYCommitted = 0;
         }
 
         // Emits a text field (with ^FB word-wrap, justification, bitmap-font quirks).
@@ -589,9 +634,27 @@ public static partial class ZplRenderer
 
         foreach (var token in ExpandStoredFormats(Tokenize(src)))
         {
-            if (stop) break;
             var command = token.Command;
             var args = token.Args.Trim();
+            if (command == "XA") formatStart = token.Start;
+            lastTokenEnd = Math.Max(lastTokenEnd, token.End);
+
+            // Past the label asked for, the rest only has to be COUNTED: drawing
+            // hundreds of labels nobody is looking at — barcodes encoded, images
+            // decoded — would make every keystroke in a long batch file pay for
+            // all of them. A format counts if it has something that prints.
+            if (counting)
+            {
+                if (command == "XZ")
+                {
+                    if (formatHasInk) { labelsDone++; labelSpans.Add((formatStart, token.End)); }
+                    formatHasInk = false;
+                }
+                else if (command is "FD" or "FV" or "SN" or "GB" or "GC" or "GE" or "GD"
+                         or "GF" or "XG" or "IM" or "IL" or "GS")
+                    formatHasInk = true;
+                continue;
+            }
 
             // Any two-letter ^Ax command is a font selection (^AA…^AH, ^A0…).
             if (command.Length == 2 && command[0] == 'A')
@@ -709,11 +772,12 @@ public static partial class ZplRenderer
                     swallowFd = true;
                     break;
                 case "XZ":
-                    // Multi-label streams: like Labelary, only the first label that
-                    // produced content is previewed.
+                    // The end of a label: the next one, if any, starts from nothing
+                    // (EndLabel). The printer's own settings — ^PW, ^LH, ^CF… — carry
+                    // on from one label to the next, as they do on a printer.
                     AbandonField();
                     fieldXor = false;
-                    if (drawables.Count > 0) stop = true;
+                    EndLabel();
                     break;
                 case "DG":
                 {
@@ -1278,6 +1342,19 @@ public static partial class ZplRenderer
             }
         }
 
+        // A last label left without its ^XZ still prints what it committed.
+        if (!counting) EndLabel();
+        else if (formatHasInk) { labelsDone++; labelSpans.Add((formatStart, lastTokenEnd)); }
+        if (snap is { } chosen)
+        {
+            drawables = chosen.Drawables;
+            maxXCommitted = chosen.MaxX; maxYCommitted = chosen.MaxY;
+            width = chosen.Width; height = chosen.Height;
+            lhX = chosen.LhX; lhY = chosen.LhY;
+            dpmm = chosen.Dpmm; poi = chosen.Poi; mirror = chosen.Mirror;
+        }
+        int shownIndex = picked ? labelIndex : Math.Max(0, labelsDone - 1);
+
         var effectiveDpmm = dpmm ?? fallbackDpmm;
         // No ^PW/^LL → size from the content bounding box, mirroring the label-home
         // offset as the far margin so the content is framed symmetrically.
@@ -1306,8 +1383,15 @@ public static partial class ZplRenderer
             Patches = ComputeInkPatches(drawables),
             InvertOrientation = poi,
             MirrorImage = mirror,
+            LabelCount = Math.Max(1, labelsDone),
+            LabelIndex = shownIndex,
+            LabelSpans = labelSpans,
         };
     }
+
+    // One label as it stood when its ^XZ arrived.
+    private sealed record LabelSnapshot(List<ZplDrawable> Drawables, double MaxX, double MaxY,
+        double Width, double Height, double LhX, double LhY, double? Dpmm, bool Poi, bool Mirror);
 
     // ── Reversed fields ──────────────────────────────────────────────────────
     //

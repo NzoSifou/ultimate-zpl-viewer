@@ -93,6 +93,7 @@ public sealed partial class PreviewPage : Page
         InitResize();
         InitElementOrder();
         InitImageEditing();
+        InitLabelPager();
         // The cursor is worked out from the state, but the state is not the only
         // thing that changes it: redrawing the label replaces the very element the
         // pointer is over, and the framework re-resolves the cursor from scratch
@@ -1320,11 +1321,17 @@ public sealed partial class PreviewPage : Page
                 Size      = new LabelSize(finalW, finalH),
                 Drawables = parsed.Drawables,
                 Patches   = parsed.Patches,
+                LabelCount = parsed.LabelCount,
+                LabelIndex = parsed.LabelIndex,
+                LabelSpans = parsed.LabelSpans,
                 InvertOrientation = parsed.InvertOrientation,
+                // ^PMY was read, then dropped here: the preview never mirrored.
+                MirrorImage = parsed.MirrorImage,
             };
 
             UpdateSizeBoxes(fillEmptyBoxes: kind == SizeUpdate.DocumentLoaded);
             DrawPreviewModel();
+            UpdateLabelPager();
             // The canvas was rebuilt: the frame has to find its element again.
             // Low priority so the new children have been measured by then.
             DispatcherQueue.TryEnqueue(
@@ -1352,16 +1359,19 @@ public sealed partial class PreviewPage : Page
     // things it reads, and repeats only when one of them changes.
     private string? _parsedText;
     private double _parsedDpmm;
+    private int _parsedLabel;
     private ZplRenderModel? _parsedCache;
 
     private ZplRenderModel ParseCurrentText()
     {
         var dpmm = SelectedDpmm;
-        if (_parsedCache is not null && _parsedDpmm == dpmm && _parsedText == _currentText)
+        int label = _activeTab?.LabelIndex ?? 0;
+        if (_parsedCache is not null && _parsedDpmm == dpmm && _parsedText == _currentText && _parsedLabel == label)
             return _parsedCache;
-        _parsedCache = ZplRenderer.Parse(_currentText, dpmm);
+        _parsedCache = ZplRenderer.Parse(_currentText, dpmm, label);
         _parsedText = _currentText;
         _parsedDpmm = dpmm;
+        _parsedLabel = label;
         return _parsedCache;
     }
 
@@ -1696,6 +1706,9 @@ public sealed partial class PreviewPage : Page
         if (svW <= 0 || svH <= 0 || cvW <= 2 || cvH <= 2) return;
 
         const double margin = 24;
+        // The label pager floats over the bottom of the preview: leave it a strip
+        // on both sides, so the centred label clears it.
+        if (_model.LabelCount > 1) svH -= 2 * 64;
         var zoom = (float)Math.Max(0.01, Math.Min(
             (svW - margin) / cvW,
             (svH - margin) / cvH));
@@ -6145,6 +6158,7 @@ public sealed partial class PreviewPage : Page
             case "cursorChanged":
                 _cursorOffset = doc.RootElement.GetProperty("offset").GetInt32();
                 if (DocBadge.IsChecked == true) UpdateDocPanel();
+                if (!_syncingCaret) FollowCaretToLabel(_cursorOffset);
                 OnEditorCaretMoved(_cursorOffset);
                 break;
             case "save":
@@ -6640,6 +6654,9 @@ public sealed class DocTab
     // A transform the command line asked for, run once the document is in the
     // editor: from then on it is an ordinary change, and Ctrl+Z takes it back.
     public DocumentOptions? PendingTransform { get; set; }
+
+    // Which label of a multi-label document is on screen (0-based).
+    public int LabelIndex { get; set; }
 }
 
 public static class AppWindowLookup

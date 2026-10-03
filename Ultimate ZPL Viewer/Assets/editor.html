@@ -400,6 +400,15 @@
                         }
                     } else if (msg.type === 'clearHighlight') {
                         clearInspect();
+                    } else if (msg.type === 'revealOffset') {
+                        // A label brought up from the preview's pager: its code is
+                        // scrolled to, at the top of the view, without moving the
+                        // caret — moving it would bring the previous label back.
+                        var rm = editor.getModel();
+                        if (rm) {
+                            var at = rm.getPositionAt(msg.offset || 0);
+                            editor.revealLineNearTop(at.lineNumber);
+                        }
                     } else if (msg.type === 'setTheme') {
                         monaco.editor.setTheme(msg.dark ? 'zpl-dark' : 'vs');
                         // On #container, never on body: a body background propagates

@@ -2634,5 +2634,11 @@
       "several": "{0} elements",
       "image": "Change the image (size, black and white, encoding)"
     }
+  },
+  "labels": {
+    "label": "Label",
+    "previous": "Previous label (Page Up)",
+    "next": "Next label (Page Down)",
+    "numberTip": "Type a number and press Enter; Up and Down go from one label to the next."
   }
 }

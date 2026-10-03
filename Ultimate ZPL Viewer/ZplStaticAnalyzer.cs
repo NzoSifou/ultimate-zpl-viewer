@@ -132,23 +132,39 @@ public static class ZplStaticAnalyzer
             Add(diags, lineStarts, Math.Max(0, text.Length - 1), text.Length,
                 "Il manque ^XZ (fin de format)", Error);
 
-        // Duplicates and mis-ordered commands are warnings, not errors.
-        if (xaCount > 1)
-            foreach (var cmd in commands.Where(c => c.Cmd == "^XA").Skip(1))
-                Add(diags, lineStarts, cmd.Start, cmd.TokenEnd,
-                    "Plusieurs ^XA — un seul format d'étiquette par document est recommandé", Warning);
-        if (xzCount > 1)
-            foreach (var cmd in commands.Where(c => c.Cmd == "^XZ").Skip(1))
-                Add(diags, lineStarts, cmd.Start, cmd.TokenEnd,
-                    "Plusieurs ^XZ — un seul format d'étiquette par document est recommandé", Warning);
-        if (firstXaStart >= 0)
-            foreach (var cmd in commands.Where(c => c.Cmd != "^XA" && c.Start < firstXaStart))
-                Add(diags, lineStarts, cmd.Start, cmd.TokenEnd,
-                    $"{cmd.Cmd} se trouve avant ^XA (le format devrait commencer par ^XA)", Warning);
-        if (lastXzStart >= 0)
-            foreach (var cmd in commands.Where(c => c.Cmd != "^XZ" && c.Start > lastXzStart))
-                Add(diags, lineStarts, cmd.Start, cmd.TokenEnd,
-                    $"{cmd.Cmd} se trouve après ^XZ (le format devrait se terminer par ^XZ)", Warning);
+        // A document may hold several labels, one ^XA…^XZ format after another —
+        // the preview pages through them. What is wrong is a format left open or
+        // closed twice, and a command standing outside every format.
+        if (xaCount > 0 && xzCount > 0)
+        {
+            bool open = false;
+            foreach (var cmd in commands)
+            {
+                if (cmd.Cmd == "^XA")
+                {
+                    if (open)
+                        Add(diags, lineStarts, cmd.Start, cmd.TokenEnd,
+                            "^XA alors que l'étiquette précédente n'est pas fermée par ^XZ", Warning);
+                    open = true;
+                }
+                else if (cmd.Cmd == "^XZ")
+                {
+                    if (!open)
+                        Add(diags, lineStarts, cmd.Start, cmd.TokenEnd,
+                            "^XZ sans ^XA : aucune étiquette n'est ouverte", Warning);
+                    open = false;
+                }
+                else if (!open)
+                {
+                    string message = cmd.Start < firstXaStart
+                        ? $"{cmd.Cmd} se trouve avant ^XA (le format devrait commencer par ^XA)"
+                        : cmd.Start > lastXzStart
+                            ? $"{cmd.Cmd} se trouve après ^XZ (le format devrait se terminer par ^XZ)"
+                            : $"{cmd.Cmd} se trouve entre deux étiquettes, hors de tout ^XA…^XZ";
+                    Add(diags, lineStarts, cmd.Start, cmd.TokenEnd, message, Warning);
+                }
+            }
+        }
 
         // Elements drawn off-canvas: outside the declared size, or at negative
         // coordinates — invisible / troublesome at print time.

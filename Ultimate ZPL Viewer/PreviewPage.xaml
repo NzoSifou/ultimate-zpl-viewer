@@ -636,6 +636,17 @@
                             Width="22" IsHitTestVisible="False"
                             Visibility="Collapsed"/>
                     <!-- Corner covering the top-left intersection (both rulers on). -->
+                    <!-- Pager for documents holding several labels (PreviewPage.Labels.cs):
+                         filled in code, shown only when there is more than one label. -->
+                    <Border x:Name="LabelPager"
+                            HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                            Margin="0,0,0,14" Padding="6,4,8,4"
+                            CornerRadius="8" BorderThickness="1"
+                            Canvas.ZIndex="28"
+                            Visibility="Collapsed"
+                            Background="{ThemeResource FloatPlateBrush}"
+                            BorderBrush="{ThemeResource SurfaceStrokeBrush}"/>
+
                     <Border x:Name="RulerCorner"
                             HorizontalAlignment="Left" VerticalAlignment="Top"
                             Width="22" Height="22"

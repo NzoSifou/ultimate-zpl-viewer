@@ -37,6 +37,20 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   barre, et revient en le glissant vers une ligne. Les raccourcis clavier et le
   reste de l'application continuent de fonctionner comme avant. Un bouton ajouté
   par une future version n'est jamais masqué d'office.
+- **Les fichiers à plusieurs étiquettes se parcourent comme les pages d'un PDF**
+  📑 Quand un fichier enchaîne plusieurs `^XA…^XZ`, l'aperçu montre une
+  étiquette à la fois, et une barre apparaît en bas de l'aperçu : les flèches
+  précédente / suivante, une piste où un clic mène directement à l'étiquette
+  correspondante (au milieu d'un lot de dix, on tombe sur la cinquième ou la
+  sixième), et le numéro de l'étiquette affichée sur le total, qu'on peut taper
+  (Entrée pour y aller, ↑ / ↓ pour avancer ou reculer). Page préc. / Page suiv.
+  et Ctrl+Début / Ctrl+Fin font de même quand l'aperçu a le clavier. Le code
+  suit : l'étiquette choisie défile dans l'éditeur, et placer le curseur dans le
+  code d'une étiquette l'affiche. Les formats qui ne dessinent rien (une simple
+  configuration `^XA^LL10^JUS^XZ`) ne comptent pas comme des étiquettes.
+  L'analyseur ne signale plus « plusieurs ^XA/^XZ » : il ne relève que ce qui
+  pose vraiment problème, un `^XA` ouvert avant que le précédent soit fermé, un
+  `^XZ` sans `^XA`, ou des commandes laissées entre deux étiquettes.
 - **Un import ne touche jamais ce qui appartient à la machine** : fichiers
   récents, fenêtres à rouvrir, types d'imprimantes, tailles d'écran, vérification
   des mises à jour restent hors des profils. Un profil importé arrive toujours
@@ -67,6 +81,8 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   maintenant à chaque fois : d'abord sur la case en cours de saisie s'il y a de
   quoi, sinon sur le document. Ils sont ignorés pendant un glisser ou un
   redimensionnement, le temps que le geste se termine.
+- **L'aperçu ignorait `^PMY`** (étiquette imprimée en miroir) alors que l'export
+  PDF l'appliquait : les deux le suivent maintenant.
 - **La plaque de sélection pouvait garder les propriétés d'un autre élément**
   (le « Contenu » d'un QR code affiché pour un rectangle tout juste posé). Le
   panneau était repéré par la position de l'élément dans le texte, qu'un nouvel

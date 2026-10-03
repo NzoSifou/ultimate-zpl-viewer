@@ -375,6 +375,9 @@ public sealed class AppSettings
     private static AppSettings? _current;
     public static AppSettings Current => _current ??= ProfileService.Initialize(Load());
 
+    /// <summary>The saved settings with the active profile's values over them; writes nothing.</summary>
+    public static AppSettings LoadResolved() => ProfileService.Peek(Load());
+
     public static AppSettings Load()
     {
         try

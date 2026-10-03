@@ -129,6 +129,23 @@ internal static class ProfileService
         return settings;
     }
 
+    /// <summary>
+    /// The active profile's values laid over <paramref name="settings"/>, without
+    /// writing anything: for what reads the settings before the application has
+    /// started properly (the accent, the language) and for the command line,
+    /// which never writes.
+    /// </summary>
+    public static AppSettings Peek(AppSettings settings)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(settings.ActiveProfile) && ReadSettings(settings.ActiveProfile) is { } stored)
+                Apply(stored, settings);
+        }
+        catch { /* the settings file alone is still a valid answer */ }
+        return settings;
+    }
+
     // ── The list ─────────────────────────────────────────────────────────────
 
     /// <summary>Every profile on disk, the shipped one first, then by name.</summary>

@@ -55,6 +55,10 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   gardait sa propre copie des paramètres : un changement fait dans l'une
   n'atteignait pas les autres, et la dernière à enregistrer écrasait le reste.
   Toutes les fenêtres partagent maintenant les mêmes paramètres.
+- **Le dégradé de la page d'accueil ignorait la couleur d'accentuation
+  personnalisée** et reprenait toujours celle de Windows ; le cadre de sélection
+  du mode édition et l'accueil de première ouverture aussi. Ils suivent
+  maintenant la couleur choisie, et le dégradé se repeint dès qu'on la change.
 
 ---
 

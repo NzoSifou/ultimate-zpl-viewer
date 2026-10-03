@@ -142,8 +142,7 @@ internal sealed class OnboardingFlow
     // deliberate, faint enough to stay out of the way of the text.
     private static Brush BackdropBrush()
     {
-        var accent = Application.Current.Resources["SystemAccentColor"] is Color c
-            ? c : Microsoft.UI.Colors.DodgerBlue;
+        var accent = AccentColorService.Current;
         var bg = (Application.Current.Resources["SolidBackgroundFillColorBaseBrush"] as SolidColorBrush)?.Color
                  ?? Microsoft.UI.Colors.Black;
 

@@ -296,8 +296,9 @@ public sealed partial class PreviewPage
         _inspectFrame.StrokeThickness = zoom > 0 ? Math.Max(0.5, px / zoom) : px;
     }
 
-    private static Color AccentColor() =>
-        Application.Current.Resources["SystemAccentColor"] is Color c ? c : Microsoft.UI.Colors.DodgerBlue;
+    // The accent in force, the custom one included ("SystemAccentColor" is
+    // always the system's).
+    private static Color AccentColor() => AccentColorService.Current;
 
     private static string AccentHex()
     {

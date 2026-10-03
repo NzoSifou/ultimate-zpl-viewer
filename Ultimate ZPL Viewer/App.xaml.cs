@@ -65,7 +65,7 @@ namespace Ultimate_ZPL_Viewer
 
             // The language first: the help screen, the error messages and the notes a
             // transform leaves are all read from it.
-            LocalizationService.SetLanguage(AppSettings.Load().Language);
+            LocalizationService.SetLanguage(AppSettings.LoadResolved().Language);
 
             // Everything that ends without a window is done here and exits: help,
             // version, the lists, a malformed line, and the actions (--pdf, --png,

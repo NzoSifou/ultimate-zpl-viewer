@@ -6218,6 +6218,10 @@ public sealed partial class PreviewPage : Page
         // follow the reloaded theme resources on their own.
         ApplyModeButtons();
         ApplyToolButtons();
+        // Nor does the home page's wash — in any window, the accent being the
+        // application's.
+        foreach (var window in WindowManager.Windows.ToList())
+            window.Page?.RepaintHomeWash();
     }
 
     private void ApplyEditorTheme()

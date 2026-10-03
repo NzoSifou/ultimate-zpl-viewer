@@ -1539,6 +1539,15 @@
       }
     }
   },
+  "split": {
+    "right": "Show on the right",
+    "down": "Show below",
+    "unsplit": "Stop splitting the preview",
+    "closePane": "Remove from the split (the tab stays open)",
+    "focusTip": "Click to work on this document",
+    "dropSplit": "Split the preview",
+    "dropHere": "Show here"
+  },
   "settings": {
     "nav": {
       "general": "General",

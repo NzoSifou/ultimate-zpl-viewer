@@ -94,6 +94,7 @@ public sealed partial class PreviewPage : Page
         InitElementOrder();
         InitImageEditing();
         InitLabelPager();
+        InitSplit();
         // The cursor is worked out from the state, but the state is not the only
         // thing that changes it: redrawing the label replaces the very element the
         // pointer is over, and the framework re-resolves the cursor from scratch
@@ -1148,7 +1149,7 @@ public sealed partial class PreviewPage : Page
         // be resizing text nobody can see.
         if (!_editorVisible) PreviewScrollViewer.Focus(FocusState.Programmatic);
         Grid.SetColumn(EditorHost, swap ? 2 : 0);
-        Grid.SetColumn(PreviewSurface, swap ? 0 : 2);
+        Grid.SetColumn(SplitHost, swap ? 0 : 2);
 
         if (swap)
         {
@@ -1332,6 +1333,7 @@ public sealed partial class PreviewPage : Page
             UpdateSizeBoxes(fillEmptyBoxes: kind == SizeUpdate.DocumentLoaded);
             DrawPreviewModel();
             UpdateLabelPager();
+            RefreshSplitPanes();
             // The canvas was rebuilt: the frame has to find its element again.
             // Low priority so the new children have been measured by then.
             DispatcherQueue.TryEnqueue(
@@ -2842,6 +2844,7 @@ public sealed partial class PreviewPage : Page
     // model in the editor page, so undo history and scroll survive switches.
 
     private DocTab? _activeTab;
+    private TabViewItem? _pressedTabItem;
     private bool _suppressTabEvents;
 
     // Creates the tab for the document loaded at startup (tab bar stays hidden).
@@ -2864,6 +2867,10 @@ public sealed partial class PreviewPage : Page
             Style = (Style)Resources["FloatingTabViewItemStyle"],
         };
         ApplyTabTooltip(item, tab);
+        // The tab under the finger: TabDragStarting names the SELECTED tab, not the
+        // one being dragged, when they differ.
+        item.AddHandler(UIElement.PointerPressedEvent,
+            new Microsoft.UI.Xaml.Input.PointerEventHandler((_, _) => _pressedTabItem = item), true);
         var menu = new MenuFlyout();
         menu.Opening += (_, _) => BuildTabContextMenu(menu, item, tab);
         item.ContextFlyout = menu;
@@ -2930,6 +2937,7 @@ public sealed partial class PreviewPage : Page
             {
                 item.Header = TabTitle(tab);
                 ApplyTabTooltip(item, tab);
+                if (_splitPanes.TryGetValue(tab, out var pane)) pane.Title.Text = TabTitle(tab);
                 break;
             }
     }
@@ -3012,6 +3020,7 @@ public sealed partial class PreviewPage : Page
         ScheduleHighlighting();
         UpdateDocumentTitle();
         RunPendingTransform();
+        SyncSplit();
     }
 
     private void DocTabs_AddTabButtonClick(TabView sender, object args)
@@ -3124,6 +3133,7 @@ public sealed partial class PreviewPage : Page
         if (path is not null)
             menu.Items.Add(Mk("Copier le chemin du fichier", GlyphTabCopyPath,
                 () => CopyTextToClipboard(path)));
+        AddSplitMenuItems(menu, tab);
     }
 
     private List<TabViewItem> TabsExcept(TabViewItem keep)
@@ -3177,6 +3187,7 @@ public sealed partial class PreviewPage : Page
     private void DocTabs_TabDragStarting(TabView sender, TabViewTabDragStartingEventArgs args)
     {
         if (args.Tab is not TabViewItem item || item.Tag is not DocTab tab) return;
+        if (_pressedTabItem is { Tag: DocTab pressed } p && DocTabs.TabItems.Contains(p)) { item = p; tab = pressed; }
         TabDragState.Begin(this, item, tab);
         args.Data.Properties.Add(TabDragState.Key, tab.Id);
         args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
@@ -3817,6 +3828,7 @@ public sealed partial class PreviewPage : Page
         bool any = DocTabs.TabItems.Count > 0;
         if (_homeVisible == any) SetHomeVisible(!any);
         DocTabs.Visibility = any && !_homeVisible ? Visibility.Visible : Visibility.Collapsed;
+        SyncSplit();
         WindowManager.SaveSessionLayout();
     }
 

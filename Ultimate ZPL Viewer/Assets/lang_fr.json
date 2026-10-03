@@ -1539,6 +1539,15 @@
       }
     }
   },
+  "split": {
+    "right": "Afficher à droite",
+    "down": "Afficher en dessous",
+    "unsplit": "Ne plus diviser l'aperçu",
+    "closePane": "Retirer de la division (l'onglet reste ouvert)",
+    "focusTip": "Cliquer pour travailler sur ce document",
+    "dropSplit": "Diviser l'aperçu",
+    "dropHere": "Afficher ici"
+  },
   "settings": {
     "nav": {
       "general": "Général",

@@ -37,6 +37,16 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   barre, et revient en le glissant vers une ligne. Les raccourcis clavier et le
   reste de l'application continuent de fonctionner comme avant. Un bouton ajouté
   par une future version n'est jamais masqué d'office.
+- **Diviser l'aperçu : jusqu'à quatre documents à l'écran** 🪟 Clic droit sur un
+  onglet › « Afficher à droite » ou « Afficher en dessous », ou glisser l'onglet
+  vers un bord de l'aperçu (une zone teintée montre où il ira ; au milieu, il
+  remplace le document de ce volet). Côte à côte, l'un sous l'autre, ou les deux
+  à la fois : quatre aperçus au plus, au-delà ils deviendraient illisibles.
+  L'éditeur de code et la barre d'outils travaillent sur le volet actif, souligné
+  de la couleur d'accentuation ; un clic sur un autre volet le rend actif, et un
+  onglet choisi dans la barre prend la place du volet actif. Le × d'un volet le
+  retire de la division sans fermer l'onglet ; « Ne plus diviser l'aperçu » remet
+  un seul aperçu.
 - **Rechercher dans les paramètres** 🔎 Une zone de recherche en haut de la
   colonne des catégories (Ctrl+F dans les paramètres) trouve un réglage d'après
   le titre de sa carte, sa description ou les mots de ses options, sans tenir
@@ -87,6 +97,9 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   maintenant à chaque fois : d'abord sur la case en cours de saisie s'il y a de
   quoi, sinon sur le document. Ils sont ignorés pendant un glisser ou un
   redimensionnement, le temps que le geste se termine.
+- **Glisser un onglet qui n'était pas sélectionné emportait l'onglet
+  sélectionné** (vers une autre fenêtre, par exemple) : c'est maintenant bien
+  l'onglet saisi qui part.
 - **L'aperçu ignorait `^PMY`** (étiquette imprimée en miroir) alors que l'export
   PDF l'appliquait : les deux le suivent maintenant.
 - **La plaque de sélection pouvait garder les propriétés d'un autre élément**

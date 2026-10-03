@@ -110,6 +110,8 @@ public sealed partial class PreviewPage
 
         // The frame is in the XAML, where its brushes follow the theme.
         LabelPager.Child = row;
+        LabelPager.SizeChanged += (_, _) => PlaceLabelPager();
+        PreviewSurface.SizeChanged += (_, _) => PlaceLabelPager();
 
         // Page Up / Page Down turn the labels when the preview has the keyboard.
         PreviewCursorHost.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler((_, e) =>
@@ -159,6 +161,17 @@ public sealed partial class PreviewPage
         bool many = _model.LabelCount > 1 && !_homeVisible;
         LabelPager.Visibility = many ? Visibility.Visible : Visibility.Collapsed;
         if (many) FillLabelPager();
+    }
+
+    // Centred at the bottom — unless the preview is narrow (a split pane) and the
+    // bar would run into the size caption in the corner: it then rises above it.
+    private void PlaceLabelPager()
+    {
+        double w = PreviewSurface.ActualWidth;
+        double barRight = (w + LabelPager.ActualWidth) / 2;
+        double captionLeft = w - CaptionHost.ActualWidth - CaptionHost.Margin.Right;
+        bool clash = barRight > captionLeft - 8;
+        LabelPager.Margin = new Thickness(0, 0, 0, clash ? 14 + CaptionHost.ActualHeight + 10 : 14);
     }
 
     private void FillLabelPager()

@@ -300,6 +300,7 @@ public sealed partial class PreviewPage
         ApplyEdits(edits);
         _selected.Clear();
         _selected.AddRange(starts);
+        NewSelection();
         _selStart = starts[^1];
         _selEnd = _selStart + (edits[^1].Text.Length - 1);
         UpdateInspectFrame();

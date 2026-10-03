@@ -59,6 +59,19 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   personnalisée** et reprenait toujours celle de Windows ; le cadre de sélection
   du mode édition et l'accueil de première ouverture aussi. Ils suivent
   maintenant la couleur choisie, et le dégradé se repeint dès qu'on la change.
+- **Ctrl+Z ne fonctionnait pas toujours sur l'aperçu.** Trois causes :
+  l'annulation envoyée à l'éditeur passait par son focus, et ne faisait plus
+  rien dès qu'on avait cliqué une fois dans le code ; une simple info-bulle
+  ouverte sous la souris bloquait le raccourci ; et dans une case de saisie, le
+  raccourci n'annulait ni la saisie ni le document. Ctrl+Z / Ctrl+Y agissent
+  maintenant à chaque fois : d'abord sur la case en cours de saisie s'il y a de
+  quoi, sinon sur le document. Ils sont ignorés pendant un glisser ou un
+  redimensionnement, le temps que le geste se termine.
+- **La plaque de sélection pouvait garder les propriétés d'un autre élément**
+  (le « Contenu » d'un QR code affiché pour un rectangle tout juste posé). Le
+  panneau était repéré par la position de l'élément dans le texte, qu'un nouvel
+  élément peut reprendre après une insertion ou une annulation ; il l'est
+  maintenant par la sélection elle-même et par le type d'élément.
 
 ---
 

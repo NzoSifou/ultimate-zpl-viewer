@@ -3424,8 +3424,11 @@ public sealed partial class PreviewPage : Page
         // A dialog is up (unsaved changes, print confirmation…): the user has a
         // question to answer first. Acting now would try to open a second
         // ContentDialog, which WinUI refuses — and took the app down with it.
+        // A TOOLTIP is a popup too, and one is open whenever the pointer rests on a
+        // button — the rotate button just clicked, a plate, a property: blocking on
+        // it is what made Ctrl+Z on the preview work only "sometimes".
         if (XamlRoot is not null
-            && VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot).Count > 0)
+            && VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot).Any(p => p.Child is not ToolTip))
             return;
 
         // The settings screen is not a document: only the shortcuts that make sense
@@ -3446,13 +3449,26 @@ public sealed partial class PreviewPage : Page
         {
             case "undo":
             case "redo":
+            {
+                bool redo = name == "redo";
                 // A text field with the focus keeps its own undo: retyping a label
-                // size should not roll back the document.
+                // size should not roll back the document. The accelerator has
+                // already marked the key handled, so the field never sees it — its
+                // undo is run here. Once it has nothing left to undo, the key goes
+                // on to the document, as anyone pressing it again would expect.
                 if (XamlRoot is not null
-                    && Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(XamlRoot)
-                        is TextBox or RichEditBox) break;
-                PostToEditor(name == "redo" ? "{\"type\":\"redo\"}" : "{\"type\":\"undo\"}");
+                    && Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(XamlRoot) is TextBox box)
+                {
+                    if (!redo && box.CanUndo) { box.Undo(); break; }
+                    if (redo && box.CanRedo) { box.Redo(); break; }
+                }
+                // Mid-gesture, the text under the hand is about to be written back
+                // from positions taken before the undo: undoing now would cut the
+                // document at the wrong offsets.
+                if (_dragging || _resizing != Grip.None) break;
+                PostToEditor(redo ? "{\"type\":\"redo\"}" : "{\"type\":\"undo\"}");
                 break;
+            }
             case "closeTab":
                 if (ActiveTabItem() is { Tag: DocTab selTab } sel)
                     _ = RequestCloseSingleAsync(sel, selTab);

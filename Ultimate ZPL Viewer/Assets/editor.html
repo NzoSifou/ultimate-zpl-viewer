@@ -454,7 +454,14 @@
                         // Asked for from the PREVIEW, where the focus sits after an
                         // element has been dragged. The history is Monaco's, so the
                         // request has to come back here rather than be kept twice.
-                        unlocked(function () { editor.trigger('app', msg.type, null); });
+                        //
+                        // Straight to the model, NOT editor.trigger('undo'): that
+                        // routes through the page's focus, and with the editor
+                        // blurred it ends up running the browser's own undo on
+                        // Monaco's hidden textarea — which does nothing. It only
+                        // worked until the code had been clicked once.
+                        var um = editor.getModel();
+                        if (um) { if (msg.type === 'undo') um.undo(); else um.redo(); }
                     } else if (msg.type === 'applyEdit') {
                         // See unlocked(): the view mode holds the editor read-only.
                         // An edit made from the PREVIEW (dragging an element,

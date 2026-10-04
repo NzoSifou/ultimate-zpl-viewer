@@ -1069,10 +1069,6 @@
                 <!-- Order: Général first, workflow categories (document → output),
                      then UI customisation, hardware, and Imprimante virtuelle /
                      À propos closing the list. -->
-                <!-- Searches the cards of every category (PreviewPage.SettingsSearch.cs). -->
-                <NavigationView.AutoSuggestBox>
-                    <AutoSuggestBox x:Name="SettingsSearchBox" QueryIcon="Find"/>
-                </NavigationView.AutoSuggestBox>
                 <NavigationView.MenuItems>
                     <NavigationViewItem Content="Général" Tag="general">
                         <NavigationViewItem.Icon><FontIcon Glyph="&#xE713;"/></NavigationViewItem.Icon>

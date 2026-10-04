@@ -1580,7 +1580,9 @@
     },
     "search": {
       "placeholder": "Search settings",
-      "none": "No setting matches"
+      "none": "No setting matches this search.",
+      "results": "Results for '{0}'",
+      "resultsHint": "Settings from every category, editable here."
     },
     "general": {
       "title": "General",
@@ -1800,16 +1802,16 @@
         },
         "chromeToggle": {
           "title": "Title bar arrow",
-          "desc": "What the arrow next to full screen shows or hides.",
+          "desc": "What it hides.",
           "options": [ "The toolbar", "The tabs", "Both" ]
         },
         "splitUnfold": {
           "title": "Unfold when opening a view",
-          "desc": "Clicking a split view's tab also shows its tabs; another click folds them. Off, they stay folded until that click."
+          "desc": "Opening a view shows its tabs."
         },
         "splitFold": {
           "title": "Fold when leaving a view",
-          "desc": "Showing another tab folds the split view. Off, it stays unfolded or folded the way you left it."
+          "desc": "Switching tabs folds the view."
         },
         "previewCaption": {
           "title": "Preview info",

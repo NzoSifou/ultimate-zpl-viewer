@@ -70,6 +70,15 @@
                            VerticalAlignment="Center"/>
             </StackPanel>
 
+            <!-- The settings' search, in the middle of the bar like Windows' Settings. -->
+            <AutoSuggestBox x:Name="TitleSearchBox"
+                            Grid.ColumnSpan="3"
+                            Width="420"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            QueryIcon="Find"
+                            Visibility="Collapsed"/>
+
             <!-- Toolbar toggle + fullscreen, left of the system caption buttons -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button x:Name="ToolbarToggleButton"
@@ -138,6 +147,12 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
+            <AutoSuggestBox x:Name="FsSearchBox"
+                            Width="420"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            QueryIcon="Find"
+                            Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <!-- The title bar's arrow, which the fullscreen bar replaces. -->
                 <Button x:Name="FsToolbarToggleButton"

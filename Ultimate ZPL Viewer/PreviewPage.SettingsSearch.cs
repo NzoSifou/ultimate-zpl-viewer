@@ -10,37 +10,29 @@ using System.Text;
 namespace Ultimate_ZPL_Viewer;
 
 // ── Searching the settings ──────────────────────────────────────────────────
-// A box at the top of the settings' left pane. What it searches is what is on
-// the cards themselves — titles, descriptions, the words of their options — so
-// it stays right in every language and never needs a list kept by hand. Picking
-// a result opens the category and brings the card into view, lit up for a
-// moment so the eye finds it.
+// A box in the middle of the title bar while the settings are open, the way a
+// browser's settings work: as soon as something is typed, no category is
+// selected any more, and the page shows every setting that matches, from every
+// category, as the cards themselves — set them right there, several in a row,
+// without searching again. Choosing a category, or emptying the box, ends it.
+//
+// What is searched is what the cards say: titles, descriptions, the words of
+// their options, and the title of the section they sit in — so it stays right
+// in every language and never needs a list kept by hand.
 public sealed partial class PreviewPage
 {
-    private sealed record SettingsHit(string Tag, FrameworkElement Target, string Title, string Category, int Rank);
-
     private bool _settingsSearchReady;
+    private bool _searchShown;            // the results are on screen
+    private string _settingsQuery = "";
+    private string? _categoryBeforeSearch;
+    private DispatcherTimer? _searchDebounce;
+    private NavigationViewItem? _searchNavItem;
+    private const string SearchNavTag = "__search";
 
     private void InitSettingsSearch()
     {
         if (_settingsSearchReady) return;
         _settingsSearchReady = true;
-        var box = SettingsSearchBox;
-        box.UpdateTextOnSelect = false;
-        box.TextChanged += (s, e) =>
-        {
-            if (e.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
-            s.ItemsSource = SettingsSuggestions(s.Text);
-        };
-        // Going down the list with the arrows only points; a click or Enter goes.
-        box.QuerySubmitted += (s, e) =>
-        {
-            // Enter without picking: the best match.
-            var hit = e.ChosenSuggestion is FrameworkElement { Tag: SettingsHit chosen }
-                ? chosen
-                : SearchSettings(s.Text).FirstOrDefault();
-            if (hit is not null) GoToSettingsHit(hit);
-        };
 
         // Ctrl+F in front of the settings goes to the box.
         var find = new Microsoft.UI.Xaml.Input.KeyboardAccelerator
@@ -48,90 +40,154 @@ public sealed partial class PreviewPage
             Key = Windows.System.VirtualKey.F,
             Modifiers = Windows.System.VirtualKeyModifiers.Control,
         };
-        find.Invoked += (_, e) => { box.Focus(FocusState.Keyboard); e.Handled = true; };
+        find.Invoked += (_, e) =>
+        {
+            (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.FocusSettingsSearch();
+            e.Handled = true;
+        };
         SettingsOverlay.KeyboardAccelerators.Add(find);
     }
 
-    private void LocalizeSettingsSearch()
+    /// <summary>The title bar's box changed. Searched once typing pauses.</summary>
+    private void OnSettingsSearchChanged(string text)
     {
-        SettingsSearchBox.PlaceholderText = SL("search.placeholder");
-    }
-
-    private List<object> SettingsSuggestions(string query)
-    {
-        var items = new List<object>();
-        if (string.IsNullOrWhiteSpace(query)) return items;
-        foreach (var hit in SearchSettings(query).Take(12))
+        _settingsQuery = text;
+        if (_searchDebounce is null)
         {
-            var row = new StackPanel { Tag = hit, Padding = new Thickness(0, 4, 0, 4) };
-            row.Children.Add(new TextBlock { Text = hit.Title, TextTrimming = TextTrimming.CharacterEllipsis });
-            row.Children.Add(new TextBlock
-            {
-                Text = hit.Category, FontSize = 12, Opacity = 0.6,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-            });
-            items.Add(row);
+            _searchDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(180) };
+            _searchDebounce.Tick += (_, _) => { _searchDebounce.Stop(); ShowSearchResults(); };
         }
-        if (items.Count == 0)
-            items.Add(new TextBlock { Text = SL("search.none"), Opacity = 0.6, Padding = new Thickness(0, 4, 0, 4) });
-        return items;
+        _searchDebounce.Stop();
+        _searchDebounce.Start();
     }
 
-    // Every word typed must be found (case and accents ignored). A word in the
-    // card's title ranks it before one only in its description, and that before
-    // one met in the card's options.
-    private List<SettingsHit> SearchSettings(string query)
+    private void ShowSearchResults()
     {
-        var words = Fold(query).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var hits = new List<SettingsHit>();
-        if (words.Length == 0 || _settingsCategories is null) return hits;
+        var words = Fold(_settingsQuery).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0) { EndSettingsSearch(); return; }
 
+        if (!_searchShown)
+        {
+            _categoryBeforeSearch = _currentSettingsTag;
+            _searchShown = true;
+        }
+        // No category is the one on screen any more.
+        // NavigationView will not let go of its selection: an invisible item takes it.
+        if (_searchNavItem is null)
+        {
+            _searchNavItem = new NavigationViewItem { Tag = SearchNavTag, Visibility = Visibility.Collapsed };
+            SettingsNav.MenuItems.Add(_searchNavItem);
+        }
+        if (!ReferenceEquals(SettingsNav.SelectedItem, _searchNavItem)) SettingsNav.SelectedItem = _searchNavItem;
+
+        // A fresh set of controls, the matching cards taken out of it.
+        var fresh = CreateSettingsCategories();
+        var page = SettingsPanel();
+        page.Children.Add(SettingsHeader(
+            string.Format(SL("search.results"), _settingsQuery.Trim()), SL("search.resultsHint")));
+
+        int found = 0;
         foreach (var item in SettingsNav.MenuItems.OfType<NavigationViewItem>())
         {
-            if (item.Tag is not string tag || !_settingsCategories.TryGetValue(tag, out var root)) continue;
-            var category = item.Content as string ?? tag;
-            var foldedCategory = Fold(category);
+            if (item.Tag is not string tag || !fresh.TryGetValue(tag, out var root)) continue;
+            var cards = new List<(FrameworkElement Card, List<string> Texts, string? Section, DependencyObject? Container)>();
+            string? section = null;
+            CollectSettingsCards(root, cards, null, ref section);
 
-            // The category itself: "impression" finds the Printing page.
-            if (words.All(foldedCategory.Contains) && root is FrameworkElement top)
-                hits.Add(new SettingsHit(tag, top, category, category, 0));
+            var matches = cards
+                .Where(c => words.All(Fold(string.Join(" ", c.Texts) + " " + c.Section).Contains))
+                .ToList();
+            if (matches.Count == 0) continue;
 
-            var targets = new List<(FrameworkElement Target, List<string> Texts)>();
-            CollectSearchTargets(root, targets, null);
-            foreach (var (target, texts) in targets)
+            page.Children.Add(SubHeader(item.Content as string ?? tag));
+            var wrap = new ToolbarWrapPanel { HorizontalSpacing = 8, VerticalSpacing = 0 };
+            int shownHere = 0;
+            foreach (var (card, _, _, container) in matches)
             {
-                if (texts.Count == 0) continue;
-                var title = Fold(texts[0]);
-                var description = texts.Count > 1 ? Fold(texts[1]) : "";
-                var all = Fold(string.Join(" ", texts)) + " " + foldedCategory;
-                if (!words.All(all.Contains)) continue;
-                int rank = words.All(title.Contains) ? 1
-                         : words.All(w => title.Contains(w) || description.Contains(w)) ? 2 : 3;
-                hits.Add(new SettingsHit(tag, target, texts[0], category, rank));
+                if (!DetachCard(card, container)) continue;
+                card.MaxWidth = double.PositiveInfinity;
+                card.HorizontalAlignment = HorizontalAlignment.Left;
+                wrap.Children.Add(card);
+                shownHere++;
             }
+            if (shownHere == 0) { page.Children.RemoveAt(page.Children.Count - 1); continue; }
+            page.Children.Add(wrap);
+            found += shownHere;
         }
-        // Stable: same rank keeps the order of the pages and of the cards in them.
-        return hits.Select((h, i) => (h, i)).OrderBy(x => x.h.Rank).ThenBy(x => x.i).Select(x => x.h).ToList();
+        if (found == 0)
+            page.Children.Add(new TextBlock
+            {
+                Text = SL("search.none"), Opacity = 0.7, Margin = new Thickness(0, 12, 0, 0),
+            });
+
+        SettingsContentHost.Children.Clear();
+        SettingsContentHost.Children.Add(WithThirdWidthCards(page));
     }
 
-    // The things a search can land on: every settings card, and every
-    // sub-section title (some pages, like the editor's, are laid out in sections
-    // rather than cards). Their texts are gathered title first.
-    private static void CollectSearchTargets(DependencyObject node,
-        List<(FrameworkElement, List<string>)> targets, List<string>? into)
+    // Takes a card out of the container it was found in (its Parent is not always
+    // set: a tree that was never shown). False when it cannot be.
+    private static bool DetachCard(FrameworkElement card, DependencyObject? container)
+    {
+        switch (container)
+        {
+            case Panel p: return p.Children.Remove(card);
+            case Border b: b.Child = null; return true;
+            case Viewbox v: v.Child = null; return true;
+            case ContentControl c: c.Content = null; return true;
+            default: return card.Parent is null;
+        }
+    }
+
+    /// <summary>
+    /// The box was emptied: back to the category that was on screen before the
+    /// search, with controls built again so they show what was just changed.
+    /// </summary>
+    private void EndSettingsSearch()
+    {
+        if (!_searchShown) return;
+        _searchShown = false;
+        _settingsCategories = null;
+        BuildSettingsCategories();
+        var tag = _categoryBeforeSearch ?? "general";
+        var nav = SettingsNav.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(i => (i.Tag as string) == tag)
+                  ?? (NavigationViewItem)SettingsNav.MenuItems[0];
+        if (ReferenceEquals(SettingsNav.SelectedItem, nav)) ShowSettingsCategory(tag);
+        else SettingsNav.SelectedItem = nav;
+    }
+
+    /// <summary>A category was chosen while searching: the search ends, the box empties.</summary>
+    private void LeaveSettingsSearch()
+    {
+        if (!_searchShown) return;
+        _searchShown = false;
+        _searchDebounce?.Stop();
+        _settingsQuery = "";
+        (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.ClearSettingsSearch();
+        // Rebuilt: the category must show what was changed in the results.
+        _settingsCategories = null;
+        BuildSettingsCategories();
+    }
+
+    /// <summary>In full screen, the settings sit under the bar that stays on top of them.</summary>
+    internal void SetSettingsTopInset(double inset) => SettingsOverlay.Margin = new Thickness(0, inset, 0, 0);
+
+    // Every settings card of a category, with the words it shows and the title of
+    // the section it sits in (a search for a section's name finds its cards).
+    private static void CollectSettingsCards(DependencyObject node,
+        List<(FrameworkElement, List<string>, string?, DependencyObject?)> cards, List<string>? into, ref string? section, DependencyObject? container = null)
     {
         if (node is UIElement { Visibility: Visibility.Collapsed }) return;
 
-        if (node is FrameworkElement card && (card.Tag as string) == "settings-card")
+        if (into is null && node is FrameworkElement card && (card.Tag as string) == "settings-card")
         {
             var texts = new List<string>();
-            targets.Add((card, texts));
+            cards.Add((card, texts, section, container));
             into = texts;
         }
         else if (into is null && node is TextBlock { FontWeight.Weight: >= 600 } heading
                  && !string.IsNullOrWhiteSpace(heading.Text) && heading.FontSize < 20)
         {
-            targets.Add((heading, new List<string> { heading.Text }));
+            section = heading.Text;
             return;
         }
 
@@ -153,83 +209,30 @@ public sealed partial class PreviewPage
                 return;
             case ContentControl cc:
                 if (into is not null && cc.Content is string text) into.Add(text);
-                if (cc.Content is DependencyObject content) CollectSearchTargets(content, targets, into);
+                if (cc.Content is DependencyObject content) CollectSettingsCards(content, cards, into, ref section, cc);
                 return;
             case Panel p:
-                foreach (var child in p.Children) CollectSearchTargets(child, targets, into);
+                foreach (var child in p.Children) CollectSettingsCards(child, cards, into, ref section, p);
                 return;
             case Border b when b.Child is not null:
-                CollectSearchTargets(b.Child, targets, into);
+                CollectSettingsCards(b.Child, cards, into, ref section, b);
                 return;
             case Viewbox v when v.Child is not null:
-                CollectSearchTargets(v.Child, targets, into);
+                CollectSettingsCards(v.Child, cards, into, ref section, v);
                 return;
         }
     }
 
+    // Case and accents ignored, punctuation as spaces.
     private static string Fold(string text)
     {
         var d = text.Normalize(NormalizationForm.FormD);
         var sb = new StringBuilder(d.Length);
         foreach (var c in d)
         {
-            var cat = CharUnicodeInfo.GetUnicodeCategory(c);
-            if (cat == UnicodeCategory.NonSpacingMark) continue;
+            if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark) continue;
             sb.Append(char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : ' ');
         }
         return sb.ToString();
-    }
-
-    private void GoToSettingsHit(SettingsHit hit)
-    {
-        var nav = SettingsNav.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(i => (i.Tag as string) == hit.Tag);
-        if (nav is not null && !ReferenceEquals(SettingsNav.SelectedItem, nav)) SettingsNav.SelectedItem = nav;
-        else ShowSettingsCategory(hit.Tag);
-
-        // The page has just been put in: wait for it to be laid out before
-        // scrolling to the card.
-        var target = hit.Target;
-        void Reveal(object? s, object e)
-        {
-            target.LayoutUpdated -= Reveal;
-            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
-            {
-                target.StartBringIntoView(new BringIntoViewOptions
-                {
-                    AnimationDesired = true,
-                    VerticalAlignmentRatio = 0.25,
-                });
-                FlashSettingsTarget(target);
-            });
-        }
-        if (target.ActualHeight > 0) Reveal(null, EventArgs.Empty);
-        else target.LayoutUpdated += Reveal;
-    }
-
-    // Lights the card's frame in the accent colour for a moment.
-    private readonly HashSet<Border> _flashing = new();
-
-    private void FlashSettingsTarget(FrameworkElement target)
-    {
-        if (target is not Border card || !_flashing.Add(card)) return;
-        var oldBrush = card.BorderBrush;
-        var oldThickness = card.BorderThickness;
-        var oldPadding = card.Padding;
-        // Two pixels of frame instead of one, taken off the padding so nothing moves.
-        card.BorderBrush = new SolidColorBrush(AccentColorService.Current);
-        card.BorderThickness = new Thickness(2);
-        card.Padding = new Thickness(
-            Math.Max(0, oldPadding.Left - 1), Math.Max(0, oldPadding.Top - 1),
-            Math.Max(0, oldPadding.Right - 1), Math.Max(0, oldPadding.Bottom - 1));
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1600) };
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-            card.BorderBrush = oldBrush;
-            card.BorderThickness = oldThickness;
-            card.Padding = oldPadding;
-            _flashing.Remove(card);
-        };
-        timer.Start();
     }
 }

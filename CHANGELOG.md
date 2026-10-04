@@ -84,12 +84,16 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   seulement « Ultimate ZPL Viewer »), le bouton des paramètres, et dans les
   paramètres la flèche de retour. Le bouton plein écran reste disponible dans
   les paramètres.
-- **Rechercher dans les paramètres** 🔎 Une zone de recherche en haut de la
-  colonne des catégories (Ctrl+F dans les paramètres) trouve un réglage d'après
-  le titre de sa carte, sa description ou les mots de ses options, sans tenir
-  compte des majuscules ni des accents, dans la langue de l'interface. Choisir un
-  résultat ouvre la bonne catégorie, fait défiler jusqu'à la carte et l'entoure
-  un instant de la couleur d'accentuation.
+- **Rechercher dans les paramètres** 🔎 Une zone de recherche au milieu de la
+  barre de titre des paramètres (Ctrl+F), comme dans les paramètres de Windows.
+  Dès qu'on tape, plus aucune catégorie n'est sélectionnée et la page montre
+  tous les réglages qui correspondent, de toutes les catégories, regroupés par
+  catégorie : on les modifie directement là, plusieurs d'affilée, sans relancer
+  de recherche. Elle trouve un réglage par le titre de sa carte, sa description,
+  les mots de ses options ou le titre de sa section, sans tenir compte des
+  majuscules ni des accents. Choisir une catégorie, ou vider la zone, met fin à
+  la recherche. En plein écran, la barre du haut reste affichée avec la
+  recherche tant que les paramètres sont ouverts.
 - **Les fichiers à plusieurs étiquettes se parcourent comme les pages d'un PDF**
   📑 Quand un fichier enchaîne plusieurs `^XA…^XZ`, l'aperçu montre une
   étiquette à la fois, et une barre apparaît en bas de l'aperçu : les flèches

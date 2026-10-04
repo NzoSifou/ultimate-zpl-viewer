@@ -1580,7 +1580,9 @@
     },
     "search": {
       "placeholder": "Rechercher un paramètre",
-      "none": "Aucun paramètre ne correspond"
+      "none": "Aucun paramètre ne correspond à cette recherche.",
+      "results": "Résultats pour « {0} »",
+      "resultsHint": "Les réglages de toutes les catégories, modifiables ici."
     },
     "general": {
       "title": "Général",
@@ -1800,16 +1802,16 @@
         },
         "chromeToggle": {
           "title": "Flèche de la barre de titre",
-          "desc": "Ce que la flèche à côté du plein écran affiche ou masque.",
+          "desc": "Ce qu'elle masque.",
           "options": [ "La barre d'outils", "Les onglets", "Les deux" ]
         },
         "splitUnfold": {
           "title": "Déplier en ouvrant une vue",
-          "desc": "Cliquer sur l'onglet d'une vue fractionnée montre aussi ses onglets ; un nouveau clic les replie. Désactivé, ils restent repliés jusqu'à ce clic."
+          "desc": "Ouvrir une vue montre ses onglets."
         },
         "splitFold": {
           "title": "Replier en quittant une vue",
-          "desc": "Afficher un autre onglet replie la vue fractionnée. Désactivé, elle reste dépliée ou repliée comme vous l'avez laissée."
+          "desc": "Changer d'onglet replie la vue."
         },
         "previewCaption": {
           "title": "Infos de l'aperçu",

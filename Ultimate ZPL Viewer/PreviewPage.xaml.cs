@@ -4217,6 +4217,7 @@ public sealed partial class PreviewPage : Page
         BuildSettingsCategories();
         BuildProfileFooter();
         InitSettingsSearch();
+        _searchShown = false;
         SettingsOverlay.Visibility = Visibility.Visible;
         var navItem = SettingsNav.MenuItems
             .OfType<NavigationViewItem>()
@@ -4224,7 +4225,7 @@ public sealed partial class PreviewPage : Page
         SettingsNav.SelectedItem = navItem;
         ShowSettingsCategory((navItem.Tag as string) ?? "doc");
         // Move the back arrow + title into the window title bar (Windows Settings style).
-        (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.EnterSettingsMode(CloseSettings);
+        (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.EnterSettingsMode(CloseSettings, OnSettingsSearchChanged);
     }
 
     private void CloseSettings()
@@ -4235,8 +4236,10 @@ public sealed partial class PreviewPage : Page
 
     private void SettingsNav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        if (args.SelectedItem is NavigationViewItem { Tag: string tag })
-            ShowSettingsCategory(tag);
+        if (args.SelectedItem is not NavigationViewItem { Tag: string tag } || tag == SearchNavTag) return;
+        // A category chosen during a search ends it, as in a browser's settings.
+        LeaveSettingsSearch();
+        ShowSettingsCategory(tag);
     }
 
     private string? _currentSettingsTag;
@@ -4319,9 +4322,13 @@ public sealed partial class PreviewPage : Page
 
     // Builds the four category panels with live-applied, immediately-saved
     // controls (no OK button — settings take effect as you change them).
-    private void BuildSettingsCategories()
+    private void BuildSettingsCategories() => _settingsCategories = CreateSettingsCategories();
+
+    // A fresh set of every category's controls. The search builds its own set and
+    // takes the matching cards out of it, so they stay live where they are shown.
+    private Dictionary<string, UIElement> CreateSettingsCategories()
     {
-        _settingsCategories = new Dictionary<string, UIElement>
+        return new Dictionary<string, UIElement>
         {
             // Every category except Editor (its own 5-column grid) and Toolbar
             // (a designer canvas) forces each card to exactly 1/3 of the container
@@ -4368,7 +4375,6 @@ public sealed partial class PreviewPage : Page
         foreach (var item in SettingsNav.MenuItems.OfType<NavigationViewItem>())
             if (item.Tag is string tag && SettingsNavKey.TryGetValue(tag, out var k))
                 item.Content = LocalizationService.Get($"settings.nav.{k}");
-        LocalizeSettingsSearch();
     }
 
     // Localized settings string / string-array shortcuts (settings.* keys).

@@ -4,6 +4,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using WinRT;
 
@@ -39,6 +40,7 @@ namespace Ultimate_ZPL_Viewer
             UpdateCaptionButtonColors();
 
             AppTitleBar.Loaded      += (_, _) => UpdateCaptionSpacer();
+            AppTitleBar.LayoutUpdated += (_, _) => UpdateTitleBarPassthrough();
             AppTitleBar.SizeChanged += (_, _) => UpdateCaptionSpacer();
 
             TrySetAcrylicBackdrop();
@@ -71,6 +73,7 @@ namespace Ultimate_ZPL_Viewer
             AppWindow.Closing += OnAppWindowClosing;
 
             LocalizeTitleBar();
+            InitSearchBoxes();
             rootFrame.Navigate(typeof(PreviewPage), launchOptions);
         }
 
@@ -84,6 +87,8 @@ namespace Ultimate_ZPL_Viewer
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(SettingsTitleButton, T("tooltipSettings"));
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FsSettingsButton, T("tooltipSettings"));
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FsBackButton, T("tooltipBack"));
+            TitleSearchBox.PlaceholderText = LocalizationService.Get("settings.search.placeholder");
+            FsSearchBox.PlaceholderText = TitleSearchBox.PlaceholderText;
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FullScreenButton, T("tooltipFullscreen"));
             // The toolbar-toggle tooltip depends on its current state; refresh it.
             SetToolbarToggleGlyph(_lastToolbarVisible);
@@ -203,10 +208,14 @@ namespace Ultimate_ZPL_Viewer
 
         private Action? _onTitleBarBack;
 
-        public void EnterSettingsMode(Action onBack)
+        public void EnterSettingsMode(Action onBack, Action<string>? onSearch = null)
         {
             _inSettings = true;
             _onTitleBarBack = onBack;
+            _onSearch = onSearch;
+            SetSearchText("");
+            TitleSearchBox.Visibility = onSearch is null ? Visibility.Collapsed : Visibility.Visible;
+            FsSearchBox.Visibility = TitleSearchBox.Visibility;
             TitleBarBackButton.Visibility = Visibility.Visible;
             TitleContent.Margin = new Thickness(48, 0, 0, 0); // aligned with normal mode (settings ↔ back button swap)
             AppTitleText.Text = SettingsTitle();
@@ -220,12 +229,17 @@ namespace Ultimate_ZPL_Viewer
             FsBackButton.Visibility = Visibility.Visible;
             FsToolbarToggleButton.Visibility = Visibility.Collapsed;
             UpdateTitleBarBackground();
+            UpdateFullScreenSettingsChrome();
         }
 
         public void ExitSettingsMode()
         {
             _inSettings = false;
             _onTitleBarBack = null;
+            _onSearch = null;
+            SetSearchText("");
+            TitleSearchBox.Visibility = Visibility.Collapsed;
+            FsSearchBox.Visibility = Visibility.Collapsed;
             TitleBarBackButton.Visibility = Visibility.Collapsed;
             TitleContent.Margin = new Thickness(48, 0, 0, 0); // right of the settings button
             AppTitleText.Text = _documentTitle;
@@ -237,6 +251,8 @@ namespace Ultimate_ZPL_Viewer
             FsBackButton.Visibility = Visibility.Collapsed;
             FsToolbarToggleButton.Visibility = ToolbarToggleButton.Visibility;
             UpdateTitleBarBackground();
+            UpdateFullScreenSettingsChrome();
+            if (AppWindow.Presenter.Kind == AppWindowPresenterKind.FullScreen) FullScreenBar.Visibility = Visibility.Collapsed;
         }
 
         // ── First-run wizard ─────────────────────────────────────────────────
@@ -278,6 +294,88 @@ namespace Ultimate_ZPL_Viewer
         }
 
         private void TitleBarBackButton_Click(object sender, RoutedEventArgs e) => _onTitleBarBack?.Invoke();
+
+        // ── What the title bar lets through ──────────────────────────────────
+        // The bar is the window's caption: the system takes the pointer there to
+        // drag the window, and a text box in it never got a keystroke. Its
+        // interactive parts are declared as passthrough regions instead.
+
+        private string? _passthroughShown;
+
+        private void UpdateTitleBarPassthrough()
+        {
+            if (AppTitleBar.XamlRoot is null) return;
+            double scale = AppTitleBar.XamlRoot.RasterizationScale;
+            var rects = new System.Collections.Generic.List<Windows.Graphics.RectInt32>();
+            foreach (FrameworkElement e in new FrameworkElement[]
+                     { TitleBarBackButton, SettingsTitleButton, ToolbarToggleButton, FullScreenButton, TitleSearchBox })
+            {
+                if (e.Visibility != Visibility.Visible || e.ActualWidth <= 0) continue;
+                var o = e.TransformToVisual(null).TransformPoint(new Windows.Foundation.Point(0, 0));
+                rects.Add(new Windows.Graphics.RectInt32(
+                    (int)Math.Round(o.X * scale), (int)Math.Round(o.Y * scale),
+                    (int)Math.Round(e.ActualWidth * scale), (int)Math.Round(e.ActualHeight * scale)));
+            }
+            var signature = string.Join(";", rects.Select(r => $"{r.X},{r.Y},{r.Width},{r.Height}"));
+            if (signature == _passthroughShown) return;
+            _passthroughShown = signature;
+            try
+            {
+                Microsoft.UI.Input.InputNonClientPointerSource.GetForWindowId(AppWindow.Id)
+                    .SetRegionRects(Microsoft.UI.Input.NonClientRegionKind.Passthrough, rects.ToArray());
+            }
+            catch { /* older systems: the bar keeps its default behaviour */ }
+        }
+
+        // ── The settings' search box ─────────────────────────────────────────
+        // One box in the title bar, its twin in the full-screen bar (which stands
+        // in for the title bar); both report to the page, kept with the same text.
+
+        private Action<string>? _onSearch;
+        private bool _settingSearchText;
+
+        private void InitSearchBoxes()
+        {
+            foreach (var box in new[] { TitleSearchBox, FsSearchBox })
+            {
+                box.TextChanged += (s, e) =>
+                {
+                    if (_settingSearchText || e.Reason != Microsoft.UI.Xaml.Controls.AutoSuggestionBoxTextChangeReason.UserInput) return;
+                    var other = ReferenceEquals(s, TitleSearchBox) ? FsSearchBox : TitleSearchBox;
+                    _settingSearchText = true;
+                    other.Text = s.Text;
+                    _settingSearchText = false;
+                    _onSearch?.Invoke(s.Text);
+                };
+            }
+        }
+
+        private void SetSearchText(string text)
+        {
+            _settingSearchText = true;
+            TitleSearchBox.Text = text;
+            FsSearchBox.Text = text;
+            _settingSearchText = false;
+        }
+
+        /// <summary>Ctrl+F in the settings.</summary>
+        public void FocusSettingsSearch()
+        {
+            var box = AppWindow.Presenter.Kind == AppWindowPresenterKind.FullScreen ? FsSearchBox : TitleSearchBox;
+            box.Focus(FocusState.Keyboard);
+        }
+
+        /// <summary>The page left the search (a category was chosen): the box empties.</summary>
+        public void ClearSettingsSearch() => SetSearchText("");
+
+        // In full screen, the settings keep the bar on screen (it holds the way
+        // back and the search) and sit below it.
+        private void UpdateFullScreenSettingsChrome()
+        {
+            bool pinned = _inSettings && AppWindow.Presenter.Kind == AppWindowPresenterKind.FullScreen;
+            if (pinned) FullScreenBar.Visibility = Visibility.Visible;
+            Page?.SetSettingsTopInset(pinned ? 40 : 0);
+        }
 
         private void SettingsTitleButton_Click(object sender, RoutedEventArgs e)
             => (rootFrame.Content as PreviewPage)?.RequestOpenSettings();
@@ -400,6 +498,7 @@ namespace Ultimate_ZPL_Viewer
             AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
             AppTitleBar.Visibility       = Visibility.Collapsed;
             FullScreenTopEdge.Visibility = Visibility.Visible;
+            UpdateFullScreenSettingsChrome();
         }
 
         /// <summary>F11: same button, both ways.</summary>
@@ -416,13 +515,17 @@ namespace Ultimate_ZPL_Viewer
             FullScreenTopEdge.Visibility = Visibility.Collapsed;
             FullScreenBar.Visibility     = Visibility.Collapsed;
             UpdateCaptionSpacer();
+            UpdateFullScreenSettingsChrome();
         }
 
         private void FullScreenTopEdge_PointerEntered(object sender, PointerRoutedEventArgs e)
             => FullScreenBar.Visibility = Visibility.Visible;
 
         private void FullScreenBar_PointerExited(object sender, PointerRoutedEventArgs e)
-            => FullScreenBar.Visibility = Visibility.Collapsed;
+        {
+            if (_inSettings) return;   // pinned while the settings are open
+            FullScreenBar.Visibility = Visibility.Collapsed;
+        }
 
         private void FsExitButton_Click(object sender, RoutedEventArgs e)
             => ExitFullScreen();

@@ -5218,6 +5218,8 @@ public sealed partial class PreviewPage : Page
         // must not break a drag already under way — so each gets a token for the
         // trip through the drag's data package.
         var tokens = new Dictionary<string, ToolbarSlot>();
+        // What is being dragged right now: a whole group, or one button.
+        bool draggingGroup = false;
         string TokenFor(ToolbarSlot slot)
         {
             foreach (var pair in tokens)
@@ -5348,6 +5350,7 @@ public sealed partial class PreviewPage : Page
                     ToolbarItemLabel(slot.Items.FirstOrDefault() ?? "")));
             view.DragStarting += (_, e) =>
             {
+                draggingGroup = slot.IsGroup;
                 e.Data.SetText(slot.IsGroup
                     ? "g|" + TokenFor(slot)
                     : "i|" + (slot.Items.FirstOrDefault() ?? ""));
@@ -5403,7 +5406,7 @@ public sealed partial class PreviewPage : Page
             };
             body.Children.Add(ToolbarChipView.BuildGrip());
 
-            var well = MakeChipPanel();
+            var well = MakeChipPanel(GroupChipGap);
             well.MinHeight = 34;
             well.MinWidth = slot.Items.Count == 0 ? 150 : 40;
             foreach (var id in slot.Items)
@@ -5411,6 +5414,7 @@ public sealed partial class PreviewPage : Page
                 var chip = new ToolbarChipView(id, ToolbarItemGlyph(id), ToolbarItemLabel(id));
                 chip.DragStarting += (_, e) =>
                 {
+                    draggingGroup = false;
                     e.Data.SetText("i|" + id);
                     e.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
                 };
@@ -5451,11 +5455,15 @@ public sealed partial class PreviewPage : Page
             };
             card.DragOver += (_, e) =>
             {
+                // A group dragged over a group goes to the row behind, which puts
+                // it before or after this one: groups do not go inside groups.
+                if (draggingGroup) return;
                 e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
                 e.Handled = true;   // the row behind must not claim this drop as well
             };
             card.Drop += async (_, e) =>
             {
+                if (draggingGroup) return;
                 e.Handled = true;
                 try
                 {
@@ -5494,25 +5502,34 @@ public sealed partial class PreviewPage : Page
         });
 
         // ── The rows ────────────────────────────────────────────────────────
-        ToolbarWrapPanel MakeDropRow(int rowIndex)
+        // A row of chips inside a frame that takes the drop: the frame's padding is
+        // room to drop BEFORE the first chip (there was none, so nothing could be put
+        // at the start of a row) and after the last. Where it lands is read off the
+        // chips, wherever the pointer is.
+        Border MakeDropRow(int rowIndex)
         {
-            var row = MakeChipPanel();
+            var row = MakeChipPanel(RowChipGap);
             row.MinHeight = 44;
-            row.Margin = new Thickness(0, 6, 8, 6);
-            row.DragOver += (_, e) =>
+            var host = new Border
+            {
+                Child = row,
+                Padding = new Thickness(12, 8, 16, 8),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                AllowDrop = true,
+            };
+            host.DragOver += (_, e) =>
                 e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
-            row.Drop += async (s, e) =>
+            host.Drop += async (_, e) =>
             {
                 try
                 {
-                    var target = (ToolbarWrapPanel)s;
-                    var (payload, insert) = await ReadDropAsync(e, target);
+                    var (payload, insert) = await ReadDropAsync(e, row);
                     if (payload is not null) DropOnRow(rowIndex, insert, payload);
                 }
                 catch (Exception ex) { App.LogCrash("Toolbar", ex.Message, ex); Reload(); }
             };
             rowPanels[rowIndex] = row;
-            return row;
+            return host;
         }
 
         var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -5532,7 +5549,7 @@ public sealed partial class PreviewPage : Page
                 FontSize = 12,
                 Opacity = 0.7,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(12, 0, 8, 0),
+                Margin = new Thickness(12, 0, 0, 0),
             };
             Grid.SetColumn(label, 0);
             Grid.SetColumn(row, 1);
@@ -5559,7 +5576,8 @@ public sealed partial class PreviewPage : Page
             FontSize = 12,
             Opacity = 0.55,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(4, 0, 0, 0),
+            // Where the frame's padding puts the first chip.
+            Margin = new Thickness(12, 0, 0, 0),
             IsHitTestVisible = false,
         };
         var hiddenWell = new Grid();
@@ -5577,7 +5595,9 @@ public sealed partial class PreviewPage : Page
             FontSize = 12, Opacity = 0.7, TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(12, 2, 12, 0),
         });
-        var hiddenGrid = new Grid { MinHeight = 56, Margin = new Thickness(76, 0, 0, 0) };
+        // Aligned on the tray's own title, not on the rows' « Ligne N » column: the
+        // tray has no such labels, and the gap read as a mistake.
+        var hiddenGrid = new Grid { MinHeight = 56, Margin = new Thickness(0, 0, 0, 4) };
         hiddenGrid.Children.Add(hiddenWell);
         hiddenBody.Children.Add(hiddenGrid);
 
@@ -5613,10 +5633,14 @@ public sealed partial class PreviewPage : Page
     // A wrapping panel that accepts drops. The transparent background is what
     // makes the empty space between chips hit-testable — without it a drop only
     // lands when it happens to be over a chip.
-    private static ToolbarWrapPanel MakeChipPanel() => new()
+    // Room between chips: enough on a row for a drop to land BETWEEN two groups
+    // without aiming at a sliver; tighter inside a group.
+    private const double RowChipGap = 16, GroupChipGap = 10;
+
+    private static ToolbarWrapPanel MakeChipPanel(double gap) => new()
     {
-        HorizontalSpacing = 6,
-        VerticalSpacing = 6,
+        HorizontalSpacing = gap,
+        VerticalSpacing = 10,
         AllowDrop = true,
         Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
     };

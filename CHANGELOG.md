@@ -149,6 +149,12 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   beaucoup de documents étaient ouverts : l'espace entre les onglets n'était pas
   compté dans le partage de la largeur. Les onglets se partagent maintenant la
   barre, onglets masqués d'une vue repliée exclus.
+- **Paramètres › Barre d'outils : on pouvait mal placer un groupe.** Rien ne
+  pouvait être déposé avant le premier groupe d'une ligne (aucune place à
+  gauche), et un groupe lâché sur un autre groupe disparaissait du geste. Les
+  lignes ont maintenant de la place au début et à la fin, plus d'espace entre
+  les groupes et les boutons, et un groupe lâché sur un autre se place avant ou
+  après lui. Les éléments masqués s'alignent sur le titre de leur zone.
 - **L'aperçu ignorait `^PMY`** (étiquette imprimée en miroir) alors que l'export
   PDF l'appliquait : les deux le suivent maintenant.
 - **La plaque de sélection pouvait garder les propriétés d'un autre élément**

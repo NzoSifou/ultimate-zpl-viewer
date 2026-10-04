@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Windows.Foundation;
 
 namespace Ultimate_ZPL_Viewer;
 
@@ -15,17 +16,24 @@ namespace Ultimate_ZPL_Viewer;
 // live preview (zoom, rulers, edit mode, everything); the others are drawn from
 // their document as it stands, and a click on one makes it the focused one.
 //
-// The panes are columns, left to right, each holding one or two documents top
-// to bottom. A document is in one pane at most. Choosing a tab that is not on
-// screen puts it in the focused pane, as an editor group would.
+// The arrangement is a list of groups — columns, or rows — of one or two panes
+// each: two columns of which one is cut in two, two rows of which one is cut in
+// two, a plain 2 × 2. That is every layout of up to four panes on a 2 × 2 grid,
+// and none that would need a third column or row. Where a document can go is
+// therefore one of the grid's halves or quarters still free, and both the tab
+// menu and a dragged tab offer exactly those.
+//
+// A document is in one pane at most. Choosing a tab that is not on screen puts
+// it in the focused pane, as an editor group would.
 public sealed partial class PreviewPage
 {
-    private enum SplitSide { Right, Down, Left, Up, Center }
-
     private const int MaxSplitPanes = 4;
 
+    // False: the groups are columns (left to right), their panes stacked top to
+    // bottom. True: the groups are rows (top to bottom), their panes side by side.
+    private bool _splitRows;
     // Empty while the preview is not split.
-    private List<List<DocTab>> _splitCols = new();
+    private List<List<DocTab>> _splitGroups = new();
     private readonly Dictionary<DocTab, SplitPane> _splitPanes = new();
     // The document the live surface showed last: the pane a newly chosen tab replaces.
     private DocTab? _splitFocus;
@@ -41,9 +49,15 @@ public sealed partial class PreviewPage
         public string? RenderedKey { get; set; }
     }
 
+    /// <summary>
+    /// One place a document can be shown: the arrangement it leads to, and the part
+    /// of the preview (as fractions of it) the document will then occupy.
+    /// </summary>
+    private sealed record SplitOption(string Key, bool Rows, List<List<DocTab>> Groups, Rect Cell);
+
     private static string SpL(string key) => LocalizationService.Get("split." + key);
 
-    private int SplitCount => _splitCols.Sum(c => c.Count);
+    private int SplitCount => _splitGroups.Sum(g => g.Count);
     private bool IsSplit => SplitCount > 1;
 
     private void InitSplit()
@@ -54,12 +68,28 @@ public sealed partial class PreviewPage
         SplitHost.Drop += SplitHost_Drop;
     }
 
-    private static (int Col, int Row)? FindSlot(List<List<DocTab>> cols, DocTab tab)
+    private static (int Group, int Index)? FindSlot(List<List<DocTab>> groups, DocTab tab)
     {
-        for (int c = 0; c < cols.Count; c++)
-            for (int r = 0; r < cols[c].Count; r++)
-                if (ReferenceEquals(cols[c][r], tab)) return (c, r);
+        for (int g = 0; g < groups.Count; g++)
+            for (int i = 0; i < groups[g].Count; i++)
+                if (ReferenceEquals(groups[g][i], tab)) return (g, i);
         return null;
+    }
+
+    private static List<List<DocTab>> CopyGroups(List<List<DocTab>> groups)
+        => groups.Select(g => g.ToList()).ToList();
+
+    /// <summary>
+    /// One way of writing each arrangement: no empty group, and a lone group of two
+    /// written the other way round (one column of two panes IS two rows of one).
+    /// </summary>
+    private static (bool Rows, List<List<DocTab>> Groups) Canonical(bool rows, List<List<DocTab>> groups)
+    {
+        groups = groups.Where(g => g.Count > 0).Select(g => g.ToList()).ToList();
+        if (groups.Count == 1 && groups[0].Count == 2)
+            return (!rows, new List<List<DocTab>> { new() { groups[0][0] }, new() { groups[0][1] } });
+        if (groups.Count <= 1) return (false, groups);
+        return (rows, groups);
     }
 
     private IEnumerable<DocTab> OpenTabs()
@@ -68,107 +98,104 @@ public sealed partial class PreviewPage
     private TabViewItem? ItemOf(DocTab tab)
         => DocTabs.TabItems.OfType<TabViewItem>().FirstOrDefault(i => ReferenceEquals(i.Tag, tab));
 
-    // ── Planning a split ─────────────────────────────────────────────────────
+    // ── Where a document can go ──────────────────────────────────────────────
 
     /// <summary>
-    /// The arrangement after putting <paramref name="tab"/> on the given side of the
-    /// pane showing <paramref name="anchor"/> (the focused one by default), or null
-    /// when it cannot be done: no room left, or nothing else to show.
+    /// The places <paramref name="tab"/> can be shown, given what is on screen now.
+    /// One pane: left or right of it, above or below. Two: any of the four
+    /// quarters, the pane on that side giving up half its room. Three: the two
+    /// quarters of the pane that still has a half to itself. Four: none.
+    /// A document already on screen is counted as leaving its pane first.
     /// </summary>
-    private List<List<DocTab>>? PlanSplit(DocTab tab, SplitSide side, DocTab? anchor = null)
+    private List<SplitOption> SplitOptions(DocTab tab)
     {
-        if (_activeTab is null) return null;
-        anchor ??= _activeTab;
-        var cols = _splitCols.Count > 0
-            ? _splitCols.Select(c => c.ToList()).ToList()
+        var options = new List<SplitOption>();
+        if (_activeTab is null) return options;
+
+        var groups = _splitGroups.Count > 0
+            ? CopyGroups(_splitGroups)
             : new List<List<DocTab>> { new() { _activeTab } };
-        if (FindSlot(cols, anchor) is null) return null;
+        if (FindSlot(groups, tab) is { } from) groups[from.Group].RemoveAt(from.Index);
+        var (rows, layout) = Canonical(_splitGroups.Count > 0 && _splitRows, groups);
 
-        if (side == SplitSide.Center)
+        int total = layout.Sum(g => g.Count);
+        if (total == 0)
         {
-            if (ReferenceEquals(tab, anchor)) return null;
-            var a = FindSlot(cols, anchor)!.Value;
-            if (FindSlot(cols, tab) is { } t) cols[t.Col][t.Row] = anchor;   // the two swap
-            cols[a.Col][a.Row] = tab;
-            return cols;
+            // It was the only document on screen: another one stays beside it.
+            var other = OpenTabs().FirstOrDefault(t => !ReferenceEquals(t, tab));
+            if (other is null) return options;
+            layout = new List<List<DocTab>> { new() { other } };
+            rows = false;
+            total = 1;
+        }
+        if (total >= MaxSplitPanes) return options;
+
+        if (total == 1)
+        {
+            var a = layout[0][0];
+            options.Add(new("left",   false, new() { new() { tab }, new() { a } }, new Rect(0, 0, 0.5, 1)));
+            options.Add(new("right",  false, new() { new() { a }, new() { tab } }, new Rect(0.5, 0, 0.5, 1)));
+            options.Add(new("top",    true,  new() { new() { tab }, new() { a } }, new Rect(0, 0, 1, 0.5)));
+            options.Add(new("bottom", true,  new() { new() { a }, new() { tab } }, new Rect(0, 0.5, 1, 0.5)));
+            return options;
         }
 
-        // The document leaves the pane it is in. Out of its OWN pane, that pane
-        // keeps a document not on screen yet — there has to be one.
-        if (FindSlot(cols, tab) is { } from)
+        // Two or three panes: a pane that has a half to itself shares it.
+        for (int g = 0; g < layout.Count; g++)
         {
-            if (ReferenceEquals(tab, anchor))
+            if (layout[g].Count != 1) continue;
+            for (int i = 0; i < 2; i++)
             {
-                var other = OpenTabs().FirstOrDefault(t => FindSlot(cols, t) is null);
-                if (other is null) return null;
-                cols[from.Col][from.Row] = other;
-                anchor = other;
-            }
-            else
-            {
-                cols[from.Col].RemoveAt(from.Row);
-                if (cols[from.Col].Count == 0) cols.RemoveAt(from.Col);
+                var plan = CopyGroups(layout);
+                plan[g].Insert(i, tab);
+                int h = rows ? i : g;      // 0 = left, 1 = right
+                int v = rows ? g : i;      // 0 = top, 1 = bottom
+                var key = (v == 0 ? "top" : "bottom") + (h == 0 ? "Left" : "Right");
+                options.Add(new(key, rows, plan, new Rect(h * 0.5, v * 0.5, 0.5, 0.5)));
             }
         }
-        if (cols.Sum(c => c.Count) >= MaxSplitPanes) return null;
-
-        var (ac, ar) = FindSlot(cols, anchor)!.Value;
-        switch (side)
-        {
-            case SplitSide.Down:
-            case SplitSide.Up:
-                if (cols[ac].Count >= 2) return null;
-                cols[ac].Insert(side == SplitSide.Down ? ar + 1 : ar, tab);
-                return cols;
-
-            case SplitSide.Right:
-            case SplitSide.Left:
-            {
-                bool right = side == SplitSide.Right;
-                if (cols.Count < 2)
-                {
-                    cols.Insert(right ? ac + 1 : ac, new List<DocTab> { tab });
-                    return cols;
-                }
-                // Two columns already: the neighbour on that side takes it as a
-                // second row, level with the anchor.
-                int target = right ? ac + 1 : ac - 1;
-                if (target < 0 || target >= cols.Count || cols[target].Count >= 2) return null;
-                cols[target].Insert(Math.Min(ar, cols[target].Count), tab);
-                return cols;
-            }
-        }
-        return null;
+        // Reading order: top left, top right, bottom left, bottom right.
+        return options.OrderBy(o => o.Cell.Y).ThenBy(o => o.Cell.X).ToList();
     }
 
-    private void ApplySplit(List<List<DocTab>> plan, DocTab focus)
+    private void ApplySplit(bool rows, List<List<DocTab>> groups, DocTab focus)
     {
-        _splitCols = plan;
+        (_splitRows, _splitGroups) = Canonical(rows, groups);
+        if (SplitCount <= 1) _splitGroups.Clear();
         if (ReferenceEquals(focus, _activeTab)) SyncSplit();
         else if (ItemOf(focus) is { } item) DocTabs.SelectedItem = item;   // → ActivateTab → SyncSplit
     }
 
-    private void SplitTab(DocTab tab, SplitSide side, DocTab? anchor = null)
+    private void ApplySplitOption(SplitOption option, DocTab tab) => ApplySplit(option.Rows, option.Groups, tab);
+
+    /// <summary>The arrangement with <paramref name="tab"/> in the pane of
+    /// <paramref name="anchor"/> (the two swap when both are on screen).</summary>
+    private List<List<DocTab>>? PlanReplace(DocTab tab, DocTab anchor)
     {
-        if (PlanSplit(tab, side, anchor) is { } plan) ApplySplit(plan, tab);
+        if (ReferenceEquals(tab, anchor) || _splitGroups.Count == 0) return null;
+        var groups = CopyGroups(_splitGroups);
+        if (FindSlot(groups, anchor) is not { } a) return null;
+        if (FindSlot(groups, tab) is { } t) groups[t.Group][t.Index] = anchor;
+        groups[a.Group][a.Index] = tab;
+        return groups;
     }
 
     private void Unsplit()
     {
-        _splitCols.Clear();
+        _splitGroups.Clear();
         LayoutSplit();
     }
 
     /// <summary>Takes a document out of the split; it stays open in its tab.</summary>
     private void ClosePane(DocTab tab)
     {
-        if (FindSlot(_splitCols, tab) is not { } slot) return;
-        _splitCols[slot.Col].RemoveAt(slot.Row);
-        if (_splitCols[slot.Col].Count == 0) _splitCols.RemoveAt(slot.Col);
+        if (FindSlot(_splitGroups, tab) is not { } slot) return;
+        _splitGroups[slot.Group].RemoveAt(slot.Index);
+        (_splitRows, _splitGroups) = Canonical(_splitRows, _splitGroups);
         if (SplitCount <= 1)
         {
-            var left = _splitCols.SelectMany(c => c).FirstOrDefault();
-            _splitCols.Clear();
+            var left = _splitGroups.SelectMany(g => g).FirstOrDefault();
+            _splitGroups.Clear();
             if (left is not null && !ReferenceEquals(left, _activeTab) && ItemOf(left) is { } keep)
             {
                 DocTabs.SelectedItem = keep;
@@ -177,13 +204,13 @@ public sealed partial class PreviewPage
             LayoutSplit();
             return;
         }
-        // The focused pane went: the focus moves to the pane that took its place.
+        // The focused pane went: the focus moves to the pane nearest to it.
         if (ReferenceEquals(tab, _activeTab))
         {
-            int c = Math.Min(slot.Col, _splitCols.Count - 1);
-            int r = Math.Min(slot.Row, _splitCols[c].Count - 1);
-            _splitFocus = _splitCols[c][r];
-            if (ItemOf(_splitCols[c][r]) is { } next) { DocTabs.SelectedItem = next; return; }
+            int g = Math.Min(slot.Group, _splitGroups.Count - 1);
+            int i = Math.Min(slot.Index, _splitGroups[g].Count - 1);
+            _splitFocus = _splitGroups[g][i];
+            if (ItemOf(_splitGroups[g][i]) is { } next) { DocTabs.SelectedItem = next; return; }
         }
         LayoutSplit();
     }
@@ -203,7 +230,7 @@ public sealed partial class PreviewPage
     /// </summary>
     private void SyncSplit()
     {
-        if (_splitCols.Count == 0)
+        if (_splitGroups.Count == 0)
         {
             _splitFocus = _activeTab;
             if (_splitPanes.Count > 0) LayoutSplit();
@@ -211,27 +238,27 @@ public sealed partial class PreviewPage
         }
 
         var open = OpenTabs().ToHashSet();
-        bool activeShown = _activeTab is not null && FindSlot(_splitCols, _activeTab) is not null;
-        for (int c = 0; c < _splitCols.Count; c++)
-            for (int r = 0; r < _splitCols[c].Count; r++)
+        bool activeShown = _activeTab is not null && FindSlot(_splitGroups, _activeTab) is not null;
+        for (int g = 0; g < _splitGroups.Count; g++)
+            for (int i = 0; i < _splitGroups[g].Count; i++)
             {
-                if (open.Contains(_splitCols[c][r])) continue;
+                if (open.Contains(_splitGroups[g][i])) continue;
                 if (!activeShown && _activeTab is not null)
                 {
-                    _splitCols[c][r] = _activeTab;   // the one that replaced it takes its place
+                    _splitGroups[g][i] = _activeTab;   // the one that replaced it takes its place
                     activeShown = true;
                 }
-                else _splitCols[c].RemoveAt(r--);
+                else _splitGroups[g].RemoveAt(i--);
             }
-        _splitCols.RemoveAll(c => c.Count == 0);
+        (_splitRows, _splitGroups) = Canonical(_splitRows, _splitGroups);
 
-        if (_activeTab is not null && !activeShown && _splitCols.Count > 0)
+        if (_activeTab is not null && !activeShown && _splitGroups.Count > 0)
         {
-            var slot = _splitFocus is not null ? FindSlot(_splitCols, _splitFocus) : null;
-            var (c, r) = slot ?? (0, 0);
-            _splitCols[c][r] = _activeTab;
+            var slot = _splitFocus is not null ? FindSlot(_splitGroups, _splitFocus) : null;
+            var (g, i) = slot ?? (0, 0);
+            _splitGroups[g][i] = _activeTab;
         }
-        if (SplitCount <= 1) _splitCols.Clear();
+        if (SplitCount <= 1) _splitGroups.Clear();
         _splitFocus = _activeTab;
         LayoutSplit();
     }
@@ -252,52 +279,56 @@ public sealed partial class PreviewPage
         {
             _splitPanes.Clear();
             SplitHost.ColumnSpacing = SplitHost.RowSpacing = 0;
-            Grid.SetColumn(PreviewSurface, 0);
-            Grid.SetRow(PreviewSurface, 0);
-            Grid.SetRowSpan(PreviewSurface, 1);
+            PlaceInSplit(PreviewSurface, 0, 0, 1, 1);
             return;
         }
 
         // One-pixel gaps through which the host's own colour draws the dividers.
         SplitHost.ColumnSpacing = 1;
         SplitHost.RowSpacing = 0;
-        int rows = _splitCols.Max(c => c.Count);
-        foreach (var _ in _splitCols)
+        int inner = _splitGroups.Max(g => g.Count);
+        int columns = _splitRows ? inner : _splitGroups.Count;
+        int rowSlots = _splitRows ? _splitGroups.Count : inner;
+        for (int c = 0; c < columns; c++)
             SplitHost.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        for (int r = 0; r < rows; r++)
+        for (int r = 0; r < rowSlots; r++)
         {
             SplitHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             SplitHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         }
 
         var shown = new HashSet<DocTab>();
-        for (int c = 0; c < _splitCols.Count; c++)
+        for (int g = 0; g < _splitGroups.Count; g++)
         {
-            var col = _splitCols[c];
-            for (int r = 0; r < col.Count; r++)
+            var group = _splitGroups[g];
+            for (int i = 0; i < group.Count; i++)
             {
-                var tab = col[r];
+                var tab = group[i];
                 shown.Add(tab);
                 var pane = PaneFor(tab);
                 bool focused = ReferenceEquals(tab, _activeTab);
-                // A lone pane in its column runs the full height.
-                int span = col.Count == 1 ? rows * 2 - 1 : 1;
+                int col = _splitRows ? i : g;
+                int rowSlot = _splitRows ? g : i;
+                // A pane alone in its group takes the group's whole length.
+                bool lone = group.Count == 1;
+                int colSpan = _splitRows && lone ? columns : 1;
+                int bodyRowSpan = !_splitRows && lone ? rowSlots * 2 - 1 : 1;
 
                 pane.Title.Text = TabTitle(tab);
                 pane.Title.Opacity = focused ? 1 : 0.7;
                 pane.Underline.Visibility = focused ? Visibility.Visible : Visibility.Collapsed;
-                // A divider between the two rows of a column.
-                pane.Header.BorderThickness = new Thickness(0, r > 0 ? 1 : 0, 0, 1);
-                PlaceInSplit(pane.Header, c, r * 2, 1);
+                // A divider above a pane of the second row.
+                pane.Header.BorderThickness = new Thickness(0, rowSlot > 0 ? 1 : 0, 0, 1);
+                PlaceInSplit(pane.Header, col, rowSlot * 2, 1, colSpan);
 
                 if (focused)
                 {
-                    PlaceInSplit(PreviewSurface, c, r * 2 + 1, span);
+                    PlaceInSplit(PreviewSurface, col, rowSlot * 2 + 1, bodyRowSpan, colSpan);
                 }
                 else
                 {
                     pane.Body.Background = PreviewSurface.Background;
-                    PlaceInSplit(pane.Body, c, r * 2 + 1, span);
+                    PlaceInSplit(pane.Body, col, rowSlot * 2 + 1, bodyRowSpan, colSpan);
                     RenderPane(pane, tab);
                 }
             }
@@ -306,11 +337,12 @@ public sealed partial class PreviewPage
             _splitPanes.Remove(gone);
     }
 
-    private void PlaceInSplit(FrameworkElement element, int col, int row, int rowSpan)
+    private void PlaceInSplit(FrameworkElement element, int col, int row, int rowSpan, int colSpan)
     {
         Grid.SetColumn(element, col);
         Grid.SetRow(element, row);
         Grid.SetRowSpan(element, rowSpan);
+        Grid.SetColumnSpan(element, colSpan);
         if (!SplitHost.Children.Contains(element)) SplitHost.Children.Add(element);
     }
 
@@ -413,57 +445,64 @@ public sealed partial class PreviewPage
     }
 
     // ── Dragging a tab onto the preview ──────────────────────────────────────
-    // Dropped near an edge of a pane, the document opens on that side of it;
-    // dropped in the middle, it takes that pane. A tinted area shows where.
+    // The places offered are the menu's: over the half or quarter a document can
+    // still take, the tinted area shows it and a drop puts it there. In the
+    // middle of a pane — or anywhere over a pane that cannot be shared any more —
+    // the document takes that pane instead.
 
-    private (DocTab Tab, SplitSide Side, DocTab Anchor, Windows.Foundation.Rect Hint)? DropTarget(DragEventArgs e)
+    private sealed record SplitDrop(DocTab Tab, SplitOption? Option, DocTab? Replace, Rect Hint);
+
+    private SplitDrop? DropTarget(DragEventArgs e)
     {
         if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return null;
         if (!ReferenceEquals(TabDragState.SourcePage, this) || TabDragState.Tab is not { } tab) return null;
         if (_activeTab is null || DocTabs.TabItems.Count < 2) return null;
 
         var p = e.GetPosition(SplitHost);
-        // Every pane on screen, with the document it shows.
-        var panes = new List<(DocTab Tab, FrameworkElement Element)>();
-        if (!IsSplit) panes.Add((_activeTab, PreviewSurface));
-        else
-            foreach (var t in _splitCols.SelectMany(c => c))
-                panes.Add((t, ReferenceEquals(t, _activeTab) ? PreviewSurface : PaneFor(t).Body));
+        double w = SplitHost.ActualWidth, h = SplitHost.ActualHeight;
+        if (w <= 0 || h <= 0) return null;
 
-        foreach (var (anchor, element) in panes)
+        // The pane under the pointer, as it is on screen now.
+        DocTab? hovered = null;
+        var hoveredRect = Rect.Empty;
+        var panes = !IsSplit
+            ? new List<(DocTab Tab, FrameworkElement Element)> { (_activeTab, PreviewSurface) }
+            : _splitGroups.SelectMany(g => g)
+                .Select(t => (t, ReferenceEquals(t, _activeTab) ? (FrameworkElement)PreviewSurface : PaneFor(t).Body))
+                .ToList();
+        foreach (var (paneTab, element) in panes)
         {
-            var origin = element.TransformToVisual(SplitHost).TransformPoint(new Windows.Foundation.Point(0, 0));
-            var r = new Windows.Foundation.Rect(origin.X, origin.Y, element.ActualWidth, element.ActualHeight);
-            if (!r.Contains(p) || r.Width <= 0 || r.Height <= 0) continue;
-
-            double fx = (p.X - r.X) / r.Width, fy = (p.Y - r.Y) / r.Height;
-            // The nearest edge, if the pointer is in its outer third.
-            var edges = new (SplitSide Side, double Distance)[]
-            {
-                (SplitSide.Left, fx), (SplitSide.Right, 1 - fx), (SplitSide.Up, fy), (SplitSide.Down, 1 - fy),
-            };
-            var nearest = edges.OrderBy(x => x.Distance).First();
-            var side = nearest.Distance < 0.33 ? nearest.Side : SplitSide.Center;
-            if (PlanSplit(tab, side, anchor) is null) return null;
-
-            var hint = side switch
-            {
-                SplitSide.Left  => new Windows.Foundation.Rect(r.X, r.Y, r.Width / 2, r.Height),
-                SplitSide.Right => new Windows.Foundation.Rect(r.X + r.Width / 2, r.Y, r.Width / 2, r.Height),
-                SplitSide.Up    => new Windows.Foundation.Rect(r.X, r.Y, r.Width, r.Height / 2),
-                SplitSide.Down  => new Windows.Foundation.Rect(r.X, r.Y + r.Height / 2, r.Width, r.Height / 2),
-                _               => r,
-            };
-            return (tab, side, anchor, hint);
+            var origin = element.TransformToVisual(SplitHost).TransformPoint(new Point(0, 0));
+            var r = new Rect(origin.X, origin.Y, element.ActualWidth, element.ActualHeight);
+            if (r.Width > 0 && r.Height > 0 && r.Contains(p)) { hovered = paneTab; hoveredRect = r; break; }
         }
-        return null;
+        if (hovered is null) return null;
+
+        // The middle third of a pane: take it.
+        double fx = (p.X - hoveredRect.X) / hoveredRect.Width, fy = (p.Y - hoveredRect.Y) / hoveredRect.Height;
+        bool middle = fx > 0.33 && fx < 0.67 && fy > 0.33 && fy < 0.67;
+        if (!middle)
+        {
+            // The free half or quarter under the pointer; where two overlap (the
+            // corner of a lone pane is in its left half AND its top half), the one
+            // whose centre is nearer.
+            var best = SplitOptions(tab)
+                .Select(o => (Option: o, Area: new Rect(o.Cell.X * w, o.Cell.Y * h, o.Cell.Width * w, o.Cell.Height * h)))
+                .Where(x => x.Area.Contains(p))
+                .OrderBy(x => Math.Pow(x.Area.X + x.Area.Width / 2 - p.X, 2) / (x.Area.Width * x.Area.Width)
+                            + Math.Pow(x.Area.Y + x.Area.Height / 2 - p.Y, 2) / (x.Area.Height * x.Area.Height))
+                .FirstOrDefault();
+            if (best.Option is not null) return new SplitDrop(tab, best.Option, null, best.Area);
+        }
+        if (ReferenceEquals(hovered, tab) || !IsSplit) return null;
+        return new SplitDrop(tab, null, hovered, hoveredRect);
     }
 
     private void SplitHost_DragOver(object sender, DragEventArgs e)
     {
         if (DropTarget(e) is not { } target) { HideSplitDropHint(); return; }
         e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
-        e.DragUIOverride.Caption = target.Side == SplitSide.Center ? SpL("dropHere") : SpL("dropSplit");
+        e.DragUIOverride.Caption = target.Option is null ? SpL("dropHere") : SpL("dropSplit");
         e.Handled = true;
         ShowSplitDropHint(target.Hint);
     }
@@ -474,10 +513,12 @@ public sealed partial class PreviewPage
         if (DropTarget(e) is not { } target) return;
         e.Handled = true;
         TabDragState.Clear();
-        if (PlanSplit(target.Tab, target.Side, target.Anchor) is { } plan) ApplySplit(plan, target.Tab);
+        if (target.Option is { } option) ApplySplitOption(option, target.Tab);
+        else if (target.Replace is { } anchor && PlanReplace(target.Tab, anchor) is { } plan)
+            ApplySplit(_splitRows, plan, target.Tab);
     }
 
-    private void ShowSplitDropHint(Windows.Foundation.Rect r)
+    private void ShowSplitDropHint(Rect r)
     {
         if (_splitDropHint is null)
         {
@@ -511,21 +552,34 @@ public sealed partial class PreviewPage
     }
 
     // ── Tab menu entries ─────────────────────────────────────────────────────
+    // Only the places that exist right now, named after where the document will be.
+
+    private static readonly Dictionary<string, string> SplitGlyphs = new()
+    {
+        ["left"] = "", ["right"] = "", ["top"] = "", ["bottom"] = "",
+        ["topLeft"] = "", ["topRight"] = "", ["bottomLeft"] = "", ["bottomRight"] = "",
+    };
 
     private void AddSplitMenuItems(MenuFlyout menu, DocTab tab)
     {
-        MenuFlyoutItem Mk(string text, string glyph, Action action, bool enabled)
-        {
-            var mi = new MenuFlyoutItem { Text = text, Icon = new FontIcon { Glyph = glyph }, IsEnabled = enabled };
-            mi.Click += (_, _) => action();
-            return mi;
-        }
+        var options = SplitOptions(tab);
+        if (options.Count == 0 && !IsSplit) return;
         menu.Items.Add(new MenuFlyoutSeparator());
-        menu.Items.Add(Mk(SpL("right"), "", () => SplitTab(tab, SplitSide.Right),
-            PlanSplit(tab, SplitSide.Right) is not null));
-        menu.Items.Add(Mk(SpL("down"), "", () => SplitTab(tab, SplitSide.Down),
-            PlanSplit(tab, SplitSide.Down) is not null));
+        foreach (var option in options)
+        {
+            var mi = new MenuFlyoutItem
+            {
+                Text = SpL(option.Key),
+                Icon = new FontIcon { Glyph = SplitGlyphs.GetValueOrDefault(option.Key, "") },
+            };
+            mi.Click += (_, _) => ApplySplitOption(option, tab);
+            menu.Items.Add(mi);
+        }
         if (IsSplit)
-            menu.Items.Add(Mk(SpL("unsplit"), "", Unsplit, true));
+        {
+            var un = new MenuFlyoutItem { Text = SpL("unsplit"), Icon = new FontIcon { Glyph = "" } };
+            un.Click += (_, _) => Unsplit();
+            menu.Items.Add(un);
+        }
     }
 }

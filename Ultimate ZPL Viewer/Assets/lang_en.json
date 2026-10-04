@@ -1540,8 +1540,14 @@
     }
   },
   "split": {
+    "left": "Show on the left",
     "right": "Show on the right",
-    "down": "Show below",
+    "top": "Show at the top",
+    "bottom": "Show at the bottom",
+    "topLeft": "Show at the top left",
+    "topRight": "Show at the top right",
+    "bottomLeft": "Show at the bottom left",
+    "bottomRight": "Show at the bottom right",
     "unsplit": "Stop splitting the preview",
     "closePane": "Remove from the split (the tab stays open)",
     "focusTip": "Click to work on this document",

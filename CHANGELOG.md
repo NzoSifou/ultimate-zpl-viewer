@@ -37,11 +37,16 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   barre, et revient en le glissant vers une ligne. Les raccourcis clavier et le
   reste de l'application continuent de fonctionner comme avant. Un bouton ajouté
   par une future version n'est jamais masqué d'office.
-- **Diviser l'aperçu : jusqu'à quatre documents à l'écran** 🪟 Clic droit sur un
-  onglet › « Afficher à droite » ou « Afficher en dessous », ou glisser l'onglet
-  vers un bord de l'aperçu (une zone teintée montre où il ira ; au milieu, il
-  remplace le document de ce volet). Côte à côte, l'un sous l'autre, ou les deux
-  à la fois : quatre aperçus au plus, au-delà ils deviendraient illisibles.
+- **Diviser l'aperçu : jusqu'à quatre documents à l'écran** 🪟 Côte à côte, l'un
+  sous l'autre, ou les deux à la fois : quatre aperçus au plus, sur deux colonnes
+  et deux lignes, jamais trois. Le clic droit sur un onglet ne propose que les
+  places libres, nommées d'après l'endroit où le document arrivera : « à gauche »,
+  « à droite », « en haut », « en bas » quand un seul aperçu est affiché, les
+  quatre coins quand il y en a deux, les deux coins encore libres quand il y en a
+  trois (par exemple « en bas à gauche » et « en bas à droite » sous deux aperçus
+  côte à côte). Glisser l'onglet sur l'aperçu propose les mêmes places, montrées
+  par une zone teintée ; au milieu d'un volet, ou sur un volet qui ne peut plus
+  être partagé, le document prend la place de celui qui s'y trouve.
   L'éditeur de code et la barre d'outils travaillent sur le volet actif, souligné
   de la couleur d'accentuation ; un clic sur un autre volet le rend actif, et un
   onglet choisi dans la barre prend la place du volet actif. Le × d'un volet le

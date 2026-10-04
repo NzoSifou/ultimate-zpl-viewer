@@ -1540,8 +1540,14 @@
     }
   },
   "split": {
+    "left": "Afficher à gauche",
     "right": "Afficher à droite",
-    "down": "Afficher en dessous",
+    "top": "Afficher en haut",
+    "bottom": "Afficher en bas",
+    "topLeft": "Afficher en haut à gauche",
+    "topRight": "Afficher en haut à droite",
+    "bottomLeft": "Afficher en bas à gauche",
+    "bottomRight": "Afficher en bas à droite",
     "unsplit": "Ne plus diviser l'aperçu",
     "closePane": "Retirer de la division (l'onglet reste ouvert)",
     "focusTip": "Cliquer pour travailler sur ce document",

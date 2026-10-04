@@ -22,6 +22,14 @@ public enum ThemePreference
     DarkLightPreview
 }
 
+/// <summary>
+/// A setting that belongs to this machine or to the session rather than to a way
+/// of working: it stays out of the profiles (ProfileService), so switching profile
+/// or importing one never touches it.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class MachineSettingAttribute : Attribute { }
+
 public sealed class AppSettings
 {
     // Persisted as a plain JSON file under %LOCALAPPDATA%\Ultimate ZPL Viewer.
@@ -33,7 +41,7 @@ public sealed class AppSettings
     public LengthUnit Unit { get; set; } = LengthUnit.Millimeters;
     public double DefaultDpmm { get; set; } = 8;      // default density (new documents AND opening a file)
     public string DefaultPrinter { get; set; } = "last";
-    public string LastPrinter { get; set; } = string.Empty;
+    [MachineSetting] public string LastPrinter { get; set; } = string.Empty;
 
     // ── Printing ─────────────────────────────────────────────────────────────
     // Copies, layout and scale each choose between reusing whatever was used last
@@ -52,10 +60,10 @@ public sealed class AppSettings
     public double DefaultMarginsMm { get; set; }          // 0 = no margin
 
     // What the last print actually used, for the "last" modes.
-    public int LastCopies { get; set; } = 1;
-    public string LastLayout { get; set; } = "portrait";
-    public int LastPerPage { get; set; } = 1;
-    public double LastMarginsMm { get; set; }
+    [MachineSetting] public int LastCopies { get; set; } = 1;
+    [MachineSetting] public string LastLayout { get; set; } = "portrait";
+    [MachineSetting] public int LastPerPage { get; set; } = 1;
+    [MachineSetting] public double LastMarginsMm { get; set; }
     // Unit the margin box is shown in: "mm" or "cm". Purely a display choice.
     public string MarginsUnit { get; set; } = "mm";
 
@@ -72,7 +80,7 @@ public sealed class AppSettings
     // How each printer is driven: "raw" hands it the ZPL untouched (a label
     // printer speaks it natively), "image" prints the rendered label through
     // Windows. Keyed by printer name; absent means "work it out from the driver".
-    public Dictionary<string, string> PrinterSendModes { get; set; } = new();
+    [MachineSetting] public Dictionary<string, string> PrinterSendModes { get; set; } = new();
     public ThemePreference Theme { get; set; } = ThemePreference.System;
     public bool UseSystemAccent { get; set; } = true;
     public string CustomAccent { get; set; } = "#0078D4";
@@ -88,7 +96,7 @@ public sealed class AppSettings
     // only ever writes labels should not have to flip the switch every morning.
     public int StartMode { get; set; }
     // Remembered for StartMode == 2 only; written whenever the mode changes.
-    public bool LastModeEdit { get; set; }
+    [MachineSetting] public bool LastModeEdit { get; set; }
 
     // ---- The floating plates over the preview -----------------------------
     // Where each plate sits, and which way it is stacked. An anchor is one of
@@ -121,7 +129,7 @@ public sealed class AppSettings
     // Grid colour: default (faint, theme-based) or a custom ARGB (#AARRGGBB).
     public bool UseCustomGridColor { get; set; }
     public string CustomGridColor { get; set; } = "#40808080";
-    public bool SkipPrinterInstallPrompt { get; set; }
+    [MachineSetting] public bool SkipPrinterInstallPrompt { get; set; }
 
     // PNG export quality. Mode "ask" (default) pops the quality dialog on each
     // export; "default" silently uses PngQualityStep. Step 1..5 maps to a linear
@@ -130,7 +138,7 @@ public sealed class AppSettings
     public int PngQualityStep { get; set; } = 3;
 
     // Offer, at startup, to make Ultimate ZPL Viewer the default handler for .zpl.
-    public bool AskZplAssociation { get; set; } = true;
+    [MachineSetting] public bool AskZplAssociation { get; set; } = true;
 
     // Static analysis: show the low-priority warnings (clean-code hints) too.
     public bool ShowLowWarnings { get; set; } = true;
@@ -294,17 +302,27 @@ public sealed class AppSettings
 
     // General
     public bool ReopenLastFile { get; set; }
-    public string LastFilePath { get; set; } = string.Empty;
+    [MachineSetting] public string LastFilePath { get; set; } = string.Empty;
     // Most-recently-opened files, newest first (capped at RecentFilesMax).
-    public List<string> RecentFiles { get; set; } = new();
+    [MachineSetting] public List<string> RecentFiles { get; set; } = new();
     // Saved documents open at the last graceful exit (tab order); used by
     // ReopenLastFile to restore the whole tab set. Kept for the single-window
     // sessions written by earlier versions — WindowSessions supersedes it.
-    public List<string> OpenFiles { get; set; } = new();
+    [MachineSetting] public List<string> OpenFiles { get; set; } = new();
 
     // One entry per window at the last graceful exit, each holding that window's
     // documents in tab order, so the whole arrangement comes back.
-    public List<List<string>> WindowSessions { get; set; } = new();
+    [MachineSetting] public List<List<string>> WindowSessions { get; set; } = new();
+
+    // The split views of each window, same order as WindowSessions: which of its
+    // documents were shown together, and how.
+    [MachineSetting] public List<List<SplitViewState>> WindowSplitViews { get; set; } = new();
+
+    // Split views: a click on a view's tab also shows its documents' tabs (else
+    // they stay folded until a second click), and showing another tab folds them
+    // away (else the view keeps the state it was left in).
+    public bool SplitViewAutoUnfold { get; set; } = true;
+    public bool SplitViewFoldOnLeave { get; set; } = true;
 
     // Where a document opens when the app is ALREADY running. "tab" adds it to the
     // active window, "window" gives it a window of its own.
@@ -322,23 +340,25 @@ public sealed class AppSettings
     // Updates
     // Looks at the project's GitHub releases at startup. The only network call the
     // application makes; switching it off leaves the manual button in "À propos".
-    public bool CheckUpdatesOnStartup { get; set; } = true;
+    [MachineSetting] public bool CheckUpdatesOnStartup { get; set; } = true;
     // A release the user chose to ignore — its asset hash, or its name when the
     // release publishes no hash. Cleared as soon as a newer one appears.
-    public string SkippedUpdate { get; set; } = string.Empty;
-    public string LastUpdateCheck { get; set; } = string.Empty;
+    [MachineSetting] public string SkippedUpdate { get; set; } = string.Empty;
+    [MachineSetting] public string LastUpdateCheck { get; set; } = string.Empty;
 
     // Layout
     public bool SwapEditorPreview { get; set; }
     // Toolbar + editor visibility (title-bar / collapse-handle toggles); persist
     // across sessions (unless the app was launched with a --hide override).
     public bool ToolbarVisible { get; set; } = true;
+    // What the title-bar arrow shows and hides: "toolbar", "tabs" or "both".
+    public string ChromeToggleTarget { get; set; } = "toolbar";
     public bool EditorVisible { get; set; } = true;
     // Where the user left the editor/preview splitter, in pixels. Stored as a width
     // rather than a share of the window because that is what the drag manipulates:
     // a window resized during the session leaves the editor where it was put, and
     // reopening the app the same size puts it back exactly there.
-    public double EditorWidth { get; set; } = 420;
+    [MachineSetting] public double EditorWidth { get; set; } = 420;
     // Toolbar layout: three rows of slots, a slot being one button or a named
     // group of them. Each row still wraps automatically on narrow windows.
     //
@@ -349,13 +369,26 @@ public sealed class AppSettings
 
     // Manual physical screen sizes (monitor interface id → diagonal in inches),
     // used to render at real size when the EDID doesn't report a physical size.
-    public Dictionary<string, double> ManualScreenSizesInches { get; set; } = new();
-    public bool ScreenSizePromptDismissed { get; set; }
+    [MachineSetting] public Dictionary<string, double> ManualScreenSizesInches { get; set; } = new();
+    [MachineSetting] public bool ScreenSizePromptDismissed { get; set; }
 
     // Automatic document sizing.
     // AutoDocSizeMode: 0 = follow ^PW/^LL only; 1 = ^PW/^LL, else computed from elements.
     public bool AutoDocSize { get; set; } = true;
     public int AutoDocSizeMode { get; set; }
+
+    // The profile in force (ProfileService): its file receives every change.
+    [MachineSetting] public string ActiveProfile { get; set; } = ProfileService.DefaultId;
+
+    // ONE instance for the whole process. Each window used to load its own copy,
+    // so a change made in one never reached the others, and whichever saved last
+    // wrote its stale values over the rest. With profiles that became visible —
+    // switching in one window has to switch them all.
+    private static AppSettings? _current;
+    public static AppSettings Current => _current ??= ProfileService.Initialize(Load());
+
+    /// <summary>The saved settings with the active profile's values over them; writes nothing.</summary>
+    public static AppSettings LoadResolved() => ProfileService.Peek(Load());
 
     public static AppSettings Load()
     {
@@ -371,7 +404,20 @@ public sealed class AppSettings
         return new AppSettings();
     }
 
+    // Saves as it goes: settings.json holds everything in force (what an older
+    // version, the command line and the start-up code read), and the active
+    // profile file receives its share, so there is no "save profile" to press.
     public void Save()
+    {
+        SaveSettingsFile();
+        if (ReferenceEquals(this, _current))
+        {
+            try { ProfileService.SaveActive(this); }
+            catch { /* the profile file catches up on the next save */ }
+        }
+    }
+
+    internal void SaveSettingsFile()
     {
         try
         {
@@ -384,13 +430,14 @@ public sealed class AppSettings
         }
     }
 
-    // Resets every setting to its default value and persists.
+    // Puts the active profile's settings back to their defaults. What belongs to
+    // the machine — recent files, open windows, printer types… — is not a
+    // preference, and is left alone.
     public void ResetToDefaults()
     {
         var defaults = new AppSettings();
-        foreach (var p in typeof(AppSettings).GetProperties())
-            if (p.CanRead && p.CanWrite)
-                p.SetValue(this, p.GetValue(defaults));
+        foreach (var p in ProfileService.ProfileProperties)
+            p.SetValue(this, p.GetValue(defaults));
         Save();
     }
 
@@ -404,4 +451,13 @@ public sealed class AppSettings
             _ => ElementTheme.Default
         };
     }
+}
+
+/// <summary>A split view as saved with the session: its documents by path.</summary>
+public sealed class SplitViewState
+{
+    // False: Panes are columns of documents top to bottom; true: rows, left to right.
+    public bool Rows { get; set; }
+    public List<List<string>> Panes { get; set; } = new();
+    public string? Focus { get; set; }
 }

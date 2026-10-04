@@ -71,6 +71,7 @@ public sealed partial class PreviewPage
 
             _selected.Clear();
             foreach (var span in landed) _selected.Add(span.Start);
+            NewSelection();
             _selStart = landed[^1].Start;
             _selEnd = landed[^1].End;
             UpdateInspectFrame();

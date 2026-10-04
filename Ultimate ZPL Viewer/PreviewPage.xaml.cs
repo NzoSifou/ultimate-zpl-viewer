@@ -38,7 +38,7 @@ namespace Ultimate_ZPL_Viewer;
 
 public sealed partial class PreviewPage : Page
 {
-    private readonly AppSettings _settings = AppSettings.Load();
+    private readonly AppSettings _settings = AppSettings.Current;
     private readonly List<DpmmOption> _densityOptions = new();
     // Maximum physical size of a label dimension (50 cm). Enforced in millimetres so
     // it is density-independent — see the clamp in RefreshPreview.
@@ -93,6 +93,8 @@ public sealed partial class PreviewPage : Page
         InitResize();
         InitElementOrder();
         InitImageEditing();
+        InitLabelPager();
+        InitSplit();
         // The cursor is worked out from the state, but the state is not the only
         // thing that changes it: redrawing the label replaces the very element the
         // pointer is over, and the framework re-resolves the cursor from scratch
@@ -809,6 +811,8 @@ public sealed partial class PreviewPage : Page
                 Text = content.Replace("\r\n", "\n").Replace('\r', '\n'),
             }));
         UpdateTabBar();
+        RestoreSplitViews(_restoreViews);
+        _restoreViews = null;
         UpdateDocumentTitle();
         RefreshPreview(SizeUpdate.DocumentLoaded);
         RestoreRemainingWindows();
@@ -817,22 +821,25 @@ public sealed partial class PreviewPage : Page
 
     // The other windows of the saved arrangement. Filled while this (first) window
     // restores its own documents, then reopened once it is on screen.
-    private List<List<string>> _pendingWindowLayout = new();
+    private List<(List<string> Files, List<SplitViewState> Views)> _pendingWindowLayout = new();
+    // This window's own split views from the saved session, rebuilt once its tabs are in.
+    private List<SplitViewState>? _restoreViews;
 
     private void RestoreRemainingWindows()
     {
         if (_pendingWindowLayout.Count == 0) return;
         var layout = _pendingWindowLayout;
-        _pendingWindowLayout = new List<List<string>>();
+        _pendingWindowLayout = new();
         // Deferred: this window is still being navigated into.
         DispatcherQueue.TryEnqueue(async () =>
         {
-            foreach (var files in layout)
+            foreach (var (files, views) in layout)
             {
                 var window = WindowManager.Open(
                     LaunchOptions.ForFile(files[0]));
                 foreach (var extra in files.Skip(1))
                     if (window.Page is { } page) await page.OpenFileFromAnotherLaunchAsync(extra);
+                window.Page?.RestoreSplitViews(views);
             }
         });
     }
@@ -844,13 +851,16 @@ public sealed partial class PreviewPage : Page
     {
         // With several windows saved, this one takes the first arrangement and the
         // others are reopened as their own windows once this page is up.
+        var savedViews = _settings.WindowSplitViews;
         var layout = _settings.WindowSessions
-            .Select(w => w.Where(File.Exists).Distinct().ToList())
-            .Where(w => w.Count > 0)
+            .Select((w, i) => (Files: w.Where(File.Exists).Distinct().ToList(),
+                               Views: i < savedViews.Count ? savedViews[i] : new List<SplitViewState>()))
+            .Where(w => w.Files.Count > 0)
             .ToList();
         var files = layout.Count > 0
-            ? layout[0]
+            ? layout[0].Files
             : _settings.OpenFiles.Where(File.Exists).Distinct().ToList();
+        _restoreViews = layout.Count > 0 ? layout[0].Views : null;
         _pendingWindowLayout = layout.Skip(1).ToList();
         if (files.Count == 0
             && !string.IsNullOrWhiteSpace(_settings.LastFilePath) && File.Exists(_settings.LastFilePath))
@@ -952,7 +962,14 @@ public sealed partial class PreviewPage : Page
             if (GetToolbarItem(id) is { } c) Detach(c);
         ToolbarLines.Children.Clear();
 
-        foreach (var row in _settings.ToolbarLayout)
+        // What sits in the hidden row goes back to the holder it came from: out of
+        // sight, but still loaded — the density list, the size boxes and the zoom
+        // box keep doing their work for the document when nobody can see them.
+        foreach (var slot in _settings.ToolbarLayout[ToolbarItems.HiddenRow])
+            foreach (var id in slot.Items)
+                if (GetToolbarItem(id) is { } hidden) ToolbarItemHolder.Children.Add(hidden);
+
+        foreach (var row in _settings.ToolbarLayout.Take(ToolbarItems.RowCount))
         {
             // An empty group shows nothing at all: it is a thing half-made, not a
             // gap to leave in the toolbar.
@@ -1077,9 +1094,54 @@ public sealed partial class PreviewPage : Page
 
     // The home page has no toolbar to show or hide: the preference is kept, it
     // simply does not apply while there is no document to act on.
-    private void ApplyToolbarVisibility() =>
-        ToolbarBorder.Visibility = _toolbarVisible && !_homeVisible
+    //
+    // What the title-bar arrow hides is a setting: the toolbar (as always), the tab
+    // strip, or both — _toolbarVisible is the arrow's state, whatever it acts on.
+    private void ApplyToolbarVisibility()
+    {
+        bool hidesToolbar = _settings.ChromeToggleTarget is not "tabs";
+        ToolbarBorder.Visibility = (_toolbarVisible || !hidesToolbar) && !_homeVisible
             ? Visibility.Visible : Visibility.Collapsed;
+        ApplyTabStripVisibility();
+    }
+
+    // The tab strip: there as soon as there is a document — unless the title-bar
+    // arrow is set to hide it and has.
+    private void ApplyTabStripVisibility()
+    {
+        bool hidesTabs = _settings.ChromeToggleTarget is "tabs" or "both";
+        DocTabs.Visibility = DocCount > 0 && !_homeVisible && (_toolbarVisible || !hidesTabs)
+            ? Visibility.Visible : Visibility.Collapsed;
+        UpdateTabGroupFrames();
+    }
+
+    private static readonly string[] ChromeToggleTargets = { "toolbar", "tabs", "both" };
+
+    private ComboBox ChromeTogglePicker()
+    {
+        var box = new ComboBox
+        {
+            MinWidth = 150,
+            ItemsSource = SA("editor.cards.chromeToggle.options"),
+            SelectedIndex = Math.Max(0, Array.IndexOf(ChromeToggleTargets, _settings.ChromeToggleTarget)),
+        };
+        box.SelectionChanged += (_, _) =>
+        {
+            if (box.SelectedIndex < 0) return;
+            _settings.ChromeToggleTarget = ChromeToggleTargets[box.SelectedIndex];
+            _settings.Save();
+            // Every window: they share the setting.
+            foreach (var w in WindowManager.Windows) w.Page?.ApplyChromeToggleTarget();
+        };
+        return box;
+    }
+
+    /// <summary>The arrow's setting changed: applies it, and the arrow's tooltip follows.</summary>
+    internal void ApplyChromeToggleTarget()
+    {
+        ApplyToolbarVisibility();
+        (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.SetToolbarToggleGlyph(_toolbarVisible);
+    }
 
     // Editor collapse handle (the thin full-height strip): flips the editor's
     // visibility, same persistence rule as the toolbar.
@@ -1140,7 +1202,7 @@ public sealed partial class PreviewPage : Page
         // be resizing text nobody can see.
         if (!_editorVisible) PreviewScrollViewer.Focus(FocusState.Programmatic);
         Grid.SetColumn(EditorHost, swap ? 2 : 0);
-        Grid.SetColumn(PreviewSurface, swap ? 0 : 2);
+        Grid.SetColumn(SplitHost, swap ? 0 : 2);
 
         if (swap)
         {
@@ -1313,11 +1375,18 @@ public sealed partial class PreviewPage : Page
                 Size      = new LabelSize(finalW, finalH),
                 Drawables = parsed.Drawables,
                 Patches   = parsed.Patches,
+                LabelCount = parsed.LabelCount,
+                LabelIndex = parsed.LabelIndex,
+                LabelSpans = parsed.LabelSpans,
                 InvertOrientation = parsed.InvertOrientation,
+                // ^PMY was read, then dropped here: the preview never mirrored.
+                MirrorImage = parsed.MirrorImage,
             };
 
             UpdateSizeBoxes(fillEmptyBoxes: kind == SizeUpdate.DocumentLoaded);
             DrawPreviewModel();
+            UpdateLabelPager();
+            RefreshSplitPanes();
             // The canvas was rebuilt: the frame has to find its element again.
             // Low priority so the new children have been measured by then.
             DispatcherQueue.TryEnqueue(
@@ -1345,16 +1414,19 @@ public sealed partial class PreviewPage : Page
     // things it reads, and repeats only when one of them changes.
     private string? _parsedText;
     private double _parsedDpmm;
+    private int _parsedLabel;
     private ZplRenderModel? _parsedCache;
 
     private ZplRenderModel ParseCurrentText()
     {
         var dpmm = SelectedDpmm;
-        if (_parsedCache is not null && _parsedDpmm == dpmm && _parsedText == _currentText)
+        int label = _activeTab?.LabelIndex ?? 0;
+        if (_parsedCache is not null && _parsedDpmm == dpmm && _parsedText == _currentText && _parsedLabel == label)
             return _parsedCache;
-        _parsedCache = ZplRenderer.Parse(_currentText, dpmm);
+        _parsedCache = ZplRenderer.Parse(_currentText, dpmm, label);
         _parsedText = _currentText;
         _parsedDpmm = dpmm;
+        _parsedLabel = label;
         return _parsedCache;
     }
 
@@ -1689,6 +1761,11 @@ public sealed partial class PreviewPage : Page
         if (svW <= 0 || svH <= 0 || cvW <= 2 || cvH <= 2) return;
 
         const double margin = 24;
+        // The label pager floats over the bottom of the preview: leave it a strip
+        // on both sides, so the centred label clears it.
+        if (_model.LabelCount > 1) svH -= 2 * 64;
+        // In a split view, the pane's name floats at the top of it.
+        if (IsSplit) svH -= 2 * 48;
         var zoom = (float)Math.Max(0.01, Math.Min(
             (svW - margin) / cvW,
             (svH - margin) / cvH));
@@ -1906,10 +1983,21 @@ public sealed partial class PreviewPage : Page
 
     // Restores the active document's own zoom, if it has one. Returns false when
     // the document still follows the default-zoom setting.
+    private (DocTab Tab, double X, double Y)? _pendingScroll;
+
     private bool RestoreTabZoom()
     {
         if (_activeTab?.ZoomPercent is not double percent) return false;
-        ApplyZoomFactor(ZoomFactorForDisplay(percent));
+        var factor = Math.Clamp(ZoomFactorForDisplay(percent), PreviewScrollViewer.MinZoomFactor, PreviewScrollViewer.MaxZoomFactor);
+        if (_pendingScroll is { } at && ReferenceEquals(at.Tab, _activeTab))
+        {
+            // Back on a document that was scrolled somewhere: there again, once.
+            _pendingScroll = null;
+            _selfAppliedZoomFactor = factor;
+            PreviewScrollViewer.ChangeView(at.X, at.Y, factor, true);
+            return true;
+        }
+        ApplyZoomFactor(factor);
         return true;
     }
 
@@ -2822,6 +2910,7 @@ public sealed partial class PreviewPage : Page
     // model in the editor page, so undo history and scroll survive switches.
 
     private DocTab? _activeTab;
+    private TabViewItem? _pressedTabItem;
     private bool _suppressTabEvents;
 
     // Creates the tab for the document loaded at startup (tab bar stays hidden).
@@ -2844,6 +2933,10 @@ public sealed partial class PreviewPage : Page
             Style = (Style)Resources["FloatingTabViewItemStyle"],
         };
         ApplyTabTooltip(item, tab);
+        // The tab under the finger: TabDragStarting names the SELECTED tab, not the
+        // one being dragged, when they differ.
+        item.AddHandler(UIElement.PointerPressedEvent,
+            new Microsoft.UI.Xaml.Input.PointerEventHandler((_, _) => _pressedTabItem = item), true);
         var menu = new MenuFlyout();
         menu.Opening += (_, _) => BuildTabContextMenu(menu, item, tab);
         item.ContextFlyout = menu;
@@ -2910,6 +3003,7 @@ public sealed partial class PreviewPage : Page
             {
                 item.Header = TabTitle(tab);
                 ApplyTabTooltip(item, tab);
+                if (_splitPanes.TryGetValue(tab, out var pane)) pane.Title.Text = TabTitle(tab);
                 break;
             }
     }
@@ -2923,6 +3017,11 @@ public sealed partial class PreviewPage : Page
         _activeTab.IsDirty = _isDirty;
         _activeTab.EditMode = _editMode;
         _activeTab.Dpmm = SelectedDpmm;
+        if (_activeTab.ZoomPercent is not null)
+        {
+            _activeTab.ScrollX = PreviewScrollViewer.HorizontalOffset;
+            _activeTab.ScrollY = PreviewScrollViewer.VerticalOffset;
+        }
     }
 
     // Puts the toolbar's density list on the density THIS document is read at,
@@ -2966,6 +3065,12 @@ public sealed partial class PreviewPage : Page
     private void DocTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_suppressTabEvents) return;
+        // While TabView moves a dragged tab it takes it out of the strip and puts it
+        // back, and the selection flickers in between: choosing a tab then, in the
+        // middle of its move, crashes XAML. The selection is put right once the drag
+        // is over (HandleStripReorder).
+        if (_tabDragging) return;
+        if (DocTabs.SelectedItem is TabViewItem { Tag: SplitView view }) { OpenSplitView(view); return; }
         if (DocTabs.SelectedItem is not TabViewItem item || item.Tag is not DocTab tab) return;
         if (ReferenceEquals(tab, _activeTab)) return;
         CaptureActiveTab();
@@ -2981,6 +3086,7 @@ public sealed partial class PreviewPage : Page
         _currentFilePath = tab.FilePath;
         _currentText = tab.Text;
         _isDirty = tab.IsDirty;
+        _pendingScroll = tab is { ZoomPercent: not null, ScrollX: double sx, ScrollY: double sy } ? (tab, sx, sy) : null;
         ApplyTabDensity(tab);
         RestoreTabMode();
         if (_editorReady) PostToEditor(BuildSwitchDocMessage(tab.Id, tab.Text));
@@ -2992,6 +3098,7 @@ public sealed partial class PreviewPage : Page
         ScheduleHighlighting();
         UpdateDocumentTitle();
         RunPendingTransform();
+        SyncSplit();
     }
 
     private void DocTabs_AddTabButtonClick(TabView sender, object args)
@@ -3090,10 +3197,10 @@ public sealed partial class PreviewPage : Page
             () => _ = RequestCloseSingleAsync(item, tab)));
         menu.Items.Add(Mk("Fermer les autres onglets", GlyphTabCloseOthers,
             () => _ = CloseManyAsync(TabsExcept(item), item),
-            enabled: DocTabs.TabItems.Count > 1));
+            enabled: DocCount > 1));
         menu.Items.Add(Mk("Fermer les onglets à droite", GlyphTabCloseRight,
             () => _ = CloseManyAsync(TabsRightOf(item), item),
-            enabled: index >= 0 && index < DocTabs.TabItems.Count - 1));
+            enabled: TabsRightOf(item).Count > 0));
         menu.Items.Add(new MenuFlyoutSeparator());
         menu.Items.Add(Mk("Ouvrir dans une nouvelle fenêtre", GlyphTabNewWindow,
             () => MoveTabToNewWindow(item, tab)));
@@ -3104,15 +3211,16 @@ public sealed partial class PreviewPage : Page
         if (path is not null)
             menu.Items.Add(Mk("Copier le chemin du fichier", GlyphTabCopyPath,
                 () => CopyTextToClipboard(path)));
+        AddSplitMenuItems(menu, tab);
     }
 
     private List<TabViewItem> TabsExcept(TabViewItem keep)
-        => DocTabs.TabItems.OfType<TabViewItem>().Where(t => !ReferenceEquals(t, keep)).ToList();
+        => DocItems().Where(t => !ReferenceEquals(t, keep)).ToList();
 
     private List<TabViewItem> TabsRightOf(TabViewItem item)
     {
         int i = DocTabs.TabItems.IndexOf(item);
-        return DocTabs.TabItems.OfType<TabViewItem>().Skip(i + 1).ToList();
+        return DocTabs.TabItems.OfType<TabViewItem>().Skip(i + 1).Where(t => t.Tag is DocTab).ToList();
     }
 
     // Mass close ("close others" / "close to the right"). Every dirty document is
@@ -3156,6 +3264,17 @@ public sealed partial class PreviewPage : Page
     // is handed over through TabDragState instead of being serialised.
     private void DocTabs_TabDragStarting(TabView sender, TabViewTabDragStartingEventArgs args)
     {
+        // The strip is TabView's until the drag completes (see PreviewPage.Split.cs).
+        _tabDragging = true;
+        _draggedItem = _pressedTabItem is { } held && DocTabs.TabItems.Contains(held) ? held : args.Tab;
+        if (_pressedTabItem is { } p && DocTabs.TabItems.Contains(p))
+        {
+            if (p.Tag is not DocTab pressed) { TabDragState.Clear(); return; }   // a split view's tab
+            args.Data.Properties.Add(TabDragState.Key, pressed.Id);
+            TabDragState.Begin(this, p, pressed);
+            args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+            return;
+        }
         if (args.Tab is not TabViewItem item || item.Tag is not DocTab tab) return;
         TabDragState.Begin(this, item, tab);
         args.Data.Properties.Add(TabDragState.Key, tab.Id);
@@ -3186,10 +3305,16 @@ public sealed partial class PreviewPage : Page
         // Landing on another window's strip is handled by that window's Drop, which
         // already took the tab away — nothing left to do here.
         if (TabDragState.Tab is null) return;
-        if (args.Tab is TabViewItem item && item.Tag is DocTab tab)
+        // The tab that was dragged — args.Tab names the selected one when they differ.
+        if (TabDragState.Item is { } item && TabDragState.Tab is { } tab && DocTabs.TabItems.Contains(item))
         {
             var (cx, cy) = CursorPosition();
-            MoveTabToNewWindow(item, tab, cx, cy);
+            // Once TabView has finished with its drag: taking a tab out of the strip
+            // while it is still busy with it crashes XAML.
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                if (DocTabs.TabItems.Contains(item)) MoveTabToNewWindow(item, tab, cx, cy);
+            });
         }
         TabDragState.Clear();
     }
@@ -3201,7 +3326,7 @@ public sealed partial class PreviewPage : Page
     internal DocTab GiveAwayTab(TabViewItem item, DocTab tab)
     {
         var carried = Snapshot(tab);
-        if (DocTabs.TabItems.Count <= 1) CloseOwnWindow();
+        if (DocCount <= 1) CloseOwnWindow();
         else CloseTab(item, tab, remember: false);   // it moved, it was not closed
         return carried;
     }
@@ -3245,8 +3370,8 @@ public sealed partial class PreviewPage : Page
     /// <summary>The lone document of this window, or null when it holds several.</summary>
     internal (TabViewItem Item, DocTab Tab)? SingleDocument()
     {
-        if (DocTabs.TabItems.Count != 1) return null;
-        return DocTabs.TabItems[0] is TabViewItem item && item.Tag is DocTab tab ? (item, tab) : null;
+        if (DocCount != 1) return null;
+        return DocItems().First() is { Tag: DocTab tab } item ? (item, tab) : null;
     }
 
     private static (int X, int Y) CursorPosition()
@@ -3278,7 +3403,7 @@ public sealed partial class PreviewPage : Page
     public void MoveTabToNewWindow(TabViewItem item, DocTab tab, int? screenX = null, int? screenY = null)
     {
         var carried = Snapshot(tab);
-        bool wasLast = DocTabs.TabItems.Count <= 1;
+        bool wasLast = DocCount <= 1;
 
         var window = WindowManager.Open(
             LaunchOptions.ForFile(null) with { Adopt = carried });
@@ -3417,8 +3542,11 @@ public sealed partial class PreviewPage : Page
         // A dialog is up (unsaved changes, print confirmation…): the user has a
         // question to answer first. Acting now would try to open a second
         // ContentDialog, which WinUI refuses — and took the app down with it.
+        // A TOOLTIP is a popup too, and one is open whenever the pointer rests on a
+        // button — the rotate button just clicked, a plate, a property: blocking on
+        // it is what made Ctrl+Z on the preview work only "sometimes".
         if (XamlRoot is not null
-            && VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot).Count > 0)
+            && VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot).Any(p => p.Child is not ToolTip))
             return;
 
         // The settings screen is not a document: only the shortcuts that make sense
@@ -3439,13 +3567,26 @@ public sealed partial class PreviewPage : Page
         {
             case "undo":
             case "redo":
+            {
+                bool redo = name == "redo";
                 // A text field with the focus keeps its own undo: retyping a label
-                // size should not roll back the document.
+                // size should not roll back the document. The accelerator has
+                // already marked the key handled, so the field never sees it — its
+                // undo is run here. Once it has nothing left to undo, the key goes
+                // on to the document, as anyone pressing it again would expect.
                 if (XamlRoot is not null
-                    && Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(XamlRoot)
-                        is TextBox or RichEditBox) break;
-                PostToEditor(name == "redo" ? "{\"type\":\"redo\"}" : "{\"type\":\"undo\"}");
+                    && Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(XamlRoot) is TextBox box)
+                {
+                    if (!redo && box.CanUndo) { box.Undo(); break; }
+                    if (redo && box.CanRedo) { box.Redo(); break; }
+                }
+                // Mid-gesture, the text under the hand is about to be written back
+                // from positions taken before the undo: undoing now would cut the
+                // document at the wrong offsets.
+                if (_dragging || _resizing != Grip.None) break;
+                PostToEditor(redo ? "{\"type\":\"redo\"}" : "{\"type\":\"undo\"}");
                 break;
+            }
             case "closeTab":
                 if (ActiveTabItem() is { Tag: DocTab selTab } sel)
                     _ = RequestCloseSingleAsync(sel, selTab);
@@ -3464,7 +3605,7 @@ public sealed partial class PreviewPage : Page
                 break;
             case "nextTab": StepTab(+1); break;
             case "prevTab": StepTab(-1); break;
-            case "lastTab": SelectTabAt(DocTabs.TabItems.Count - 1); break;
+            case "lastTab": SelectTabAt(TabStops().Count - 1); break;
             case "print": _ = StartPrintAsync(); break;
             case "zoomIn": StepZoom(+1); break;
             case "zoomOut": StepZoom(-1); break;
@@ -3523,9 +3664,10 @@ public sealed partial class PreviewPage : Page
     // Ctrl+Tab / Ctrl+Shift+Tab, wrapping around at both ends.
     private void StepTab(int delta)
     {
-        int count = DocTabs.TabItems.Count;
+        var stops = TabStops();
+        int count = stops.Count;
         if (count < 2) return;
-        int index = DocTabs.SelectedIndex + delta;
+        int index = CurrentStopIndex(stops) + delta;
         SelectTabAt(((index % count) + count) % count);
     }
 
@@ -3550,8 +3692,9 @@ public sealed partial class PreviewPage : Page
 
     private void SelectTabAt(int index)
     {
-        if (index < 0 || index >= DocTabs.TabItems.Count) return;
-        DocTabs.SelectedIndex = index;
+        var stops = TabStops();
+        if (index < 0 || index >= stops.Count) return;
+        SelectStop(stops[index]);
     }
 
     // Ctrl+N: a new window that starts on a blank label instead of the sample one.
@@ -3580,9 +3723,9 @@ public sealed partial class PreviewPage : Page
     /// <summary>Runs the "New file" flow, then drops the sample tab this window opened on.</summary>
     internal async Task StartAsNewDocumentAsync()
     {
-        var sample = DocTabs.TabItems.Count == 1 ? DocTabs.TabItems[0] as TabViewItem : null;
+        var sample = DocCount == 1 ? DocItems().First() : null;
         await NewDocumentAsync();
-        if (sample is not null && DocTabs.TabItems.Count > 1 && sample.Tag is DocTab tab)
+        if (sample is not null && DocCount > 1 && sample.Tag is DocTab tab)
             CloseTab(sample, tab, remember: false);
     }
 
@@ -3624,7 +3767,7 @@ public sealed partial class PreviewPage : Page
 
     /// <summary>Every document of this window, for the reopen-closed history.</summary>
     internal List<ClosedDoc> SnapshotAllDocuments()
-        => DocTabs.TabItems.OfType<TabViewItem>()
+        => DocItems()
             .Select(t => SnapshotClosed((DocTab)t.Tag))
             .ToList();
 
@@ -3632,7 +3775,7 @@ public sealed partial class PreviewPage : Page
     public List<string> OpenFilePaths()
     {
         CaptureActiveTab();
-        return DocTabs.TabItems.OfType<TabViewItem>()
+        return DocItems()
             .Select(t => ((DocTab)t.Tag).FilePath)
             .Where(p => !string.IsNullOrWhiteSpace(p))
             .Select(p => p!)
@@ -3705,7 +3848,7 @@ public sealed partial class PreviewPage : Page
         // "Quitter l'application" when the window IS the app; "Fermer tous les onglets"
         // when the user asked for that with Ctrl+Shift+W.
         title ??= "Quitter l'application";
-        foreach (var item in DocTabs.TabItems.OfType<TabViewItem>().ToList())
+        foreach (var item in DocItems().ToList())
         {
             var tab = (DocTab)item.Tag;
             bool dirty = ReferenceEquals(tab, _activeTab) ? _isDirty : tab.IsDirty;
@@ -3727,7 +3870,7 @@ public sealed partial class PreviewPage : Page
         // date live by WindowManager and must NOT be rewritten while the windows are
         // being closed one after another — the last one would shrink it to itself.
         if (WindowManager.Windows.Count <= 1)
-            _settings.OpenFiles = DocTabs.TabItems.OfType<TabViewItem>()
+            _settings.OpenFiles = DocItems()
                 .Select(t => ((DocTab)t.Tag).FilePath)
                 .Where(p => p is not null)
                 .Distinct()
@@ -3745,17 +3888,21 @@ public sealed partial class PreviewPage : Page
         bool wasActive = ReferenceEquals(tab, _activeTab);
         _suppressTabEvents = true;
         DocTabs.TabItems.Remove(item);
-        if (wasActive && DocTabs.TabItems.Count > 0)
+        if (wasActive && DocCount > 0)
         {
-            var next = (TabViewItem)DocTabs.TabItems[Math.Min(idx, DocTabs.TabItems.Count - 1)];
-            DocTabs.SelectedItem = next;
-            ActivateTab((DocTab)next.Tag);
+            // The item now in its place — a split view's tab stands for its focused
+            // document — or, failing that, any document.
+            var near = DocTabs.TabItems.Count > 0
+                ? DocTabs.TabItems[Math.Min(idx, DocTabs.TabItems.Count - 1)] as TabViewItem : null;
+            var nextDoc = DocOfItem(near) ?? OpenTabs().First();
+            DocTabs.SelectedItem = ItemOf(nextDoc);
+            ActivateTab(nextDoc);
         }
         _suppressTabEvents = false;
         // After the switch, so the editor page never disposes the model in use.
         if (_editorReady) PostToEditor($"{{\"type\":\"closeDoc\",\"id\":\"{tab.Id}\"}}");
 
-        if (DocTabs.TabItems.Count == 0)
+        if (DocCount == 0)
         {
             // A document that MOVED to another window is not a document closed, and
             // the window it left is dealt with by the caller.
@@ -3778,9 +3925,10 @@ public sealed partial class PreviewPage : Page
     // remembering for the next launch.
     private void UpdateTabBar()
     {
-        bool any = DocTabs.TabItems.Count > 0;
+        bool any = DocCount > 0;
         if (_homeVisible == any) SetHomeVisible(!any);
-        DocTabs.Visibility = any && !_homeVisible ? Visibility.Visible : Visibility.Collapsed;
+        ApplyTabStripVisibility();
+        SyncSplit();
         WindowManager.SaveSessionLayout();
     }
 
@@ -4067,6 +4215,9 @@ public sealed partial class PreviewPage : Page
     {
         LocalizeSettingsNav();
         BuildSettingsCategories();
+        BuildProfileFooter();
+        InitSettingsSearch();
+        _searchShown = false;
         SettingsOverlay.Visibility = Visibility.Visible;
         var navItem = SettingsNav.MenuItems
             .OfType<NavigationViewItem>()
@@ -4074,7 +4225,7 @@ public sealed partial class PreviewPage : Page
         SettingsNav.SelectedItem = navItem;
         ShowSettingsCategory((navItem.Tag as string) ?? "doc");
         // Move the back arrow + title into the window title bar (Windows Settings style).
-        (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.EnterSettingsMode(CloseSettings);
+        (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.EnterSettingsMode(CloseSettings, OnSettingsSearchChanged);
     }
 
     private void CloseSettings()
@@ -4085,8 +4236,10 @@ public sealed partial class PreviewPage : Page
 
     private void SettingsNav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        if (args.SelectedItem is NavigationViewItem { Tag: string tag })
-            ShowSettingsCategory(tag);
+        if (args.SelectedItem is not NavigationViewItem { Tag: string tag } || tag == SearchNavTag) return;
+        // A category chosen during a search ends it, as in a browser's settings.
+        LeaveSettingsSearch();
+        ShowSettingsCategory(tag);
     }
 
     private string? _currentSettingsTag;
@@ -4141,6 +4294,7 @@ public sealed partial class PreviewPage : Page
         ReloadEditorForLanguage();  // reload Monaco in the new UI language (no-op if unchanged)
         _settingsCategories = null; // force rebuild with the new strings / language list
         BuildSettingsCategories();
+        BuildProfileFooter();       // its label, and the profiles' names in the new language
         var tag = _currentSettingsTag ?? "appearance";
         SettingsNav.SelectedItem = SettingsNav.MenuItems.OfType<NavigationViewItem>()
             .FirstOrDefault(i => (i.Tag as string) == tag);
@@ -4168,9 +4322,13 @@ public sealed partial class PreviewPage : Page
 
     // Builds the four category panels with live-applied, immediately-saved
     // controls (no OK button — settings take effect as you change them).
-    private void BuildSettingsCategories()
+    private void BuildSettingsCategories() => _settingsCategories = CreateSettingsCategories();
+
+    // A fresh set of every category's controls. The search builds its own set and
+    // takes the matching cards out of it, so they stay live where they are shown.
+    private Dictionary<string, UIElement> CreateSettingsCategories()
     {
-        _settingsCategories = new Dictionary<string, UIElement>
+        return new Dictionary<string, UIElement>
         {
             // Every category except Editor (its own 5-column grid) and Toolbar
             // (a designer canvas) forces each card to exactly 1/3 of the container
@@ -4794,7 +4952,19 @@ public sealed partial class PreviewPage : Page
         };
         panel.Children.Add(SubHeader(SL("editor.sub.layout")));
         panel.Children.Add(Row(MakeCard("\uE8AB", SL("editor.cards.swap.title"),
-            SL("editor.cards.swap.desc"), swap)));
+            SL("editor.cards.swap.desc"), swap),
+            MakeCard("", SL("editor.cards.chromeToggle.title"), SL("editor.cards.chromeToggle.desc"),
+                ChromeTogglePicker())));
+
+        // ── Vues fractionnées ───────────────────────────────────────────────
+        var splitUnfold = MakeToggle(_settings.SplitViewAutoUnfold);
+        splitUnfold.Toggled += (_, _) => { _settings.SplitViewAutoUnfold = splitUnfold.IsOn; _settings.Save(); };
+        var splitFold = MakeToggle(_settings.SplitViewFoldOnLeave);
+        splitFold.Toggled += (_, _) => { _settings.SplitViewFoldOnLeave = splitFold.IsOn; _settings.Save(); };
+        panel.Children.Add(SubHeader(SL("editor.sub.splitViews")));
+        panel.Children.Add(Row(
+            MakeCard("", SL("editor.cards.splitUnfold.title"), SL("editor.cards.splitUnfold.desc"), splitUnfold),
+            MakeCard("", SL("editor.cards.splitFold.title"), SL("editor.cards.splitFold.desc"), splitFold)));
 
         // Resolve card widths on a shared grid that fills the container width.
         // Targets 5 columns, but drops to fewer when the window is too narrow to
@@ -5041,12 +5211,15 @@ public sealed partial class PreviewPage : Page
     private UIElement BuildToolbarDesigner(out Button resetBtn, out Button addGroupBtn)
     {
         var model = ToolbarItems.Normalize(_settings.ToolbarLayout);
-        var rowPanels = new ToolbarWrapPanel[ToolbarItems.RowCount];
+        var rowPanels = new ToolbarWrapPanel[ToolbarItems.TotalRows];
+        TextBlock? hiddenHint = null;
 
         // A group has no name to be found by — two can share one, and renaming
         // must not break a drag already under way — so each gets a token for the
         // trip through the drag's data package.
         var tokens = new Dictionary<string, ToolbarSlot>();
+        // What is being dragged right now: a whole group, or one button.
+        bool draggingGroup = false;
         string TokenFor(ToolbarSlot slot)
         {
             foreach (var pair in tokens)
@@ -5065,11 +5238,14 @@ public sealed partial class PreviewPage : Page
 
         void Reload()
         {
-            for (int r = 0; r < ToolbarItems.RowCount; r++)
+            for (int r = 0; r < ToolbarItems.TotalRows; r++)
             {
                 rowPanels[r].Children.Clear();
                 foreach (var slot in model[r]) rowPanels[r].Children.Add(BuildSlotView(slot));
             }
+            if (hiddenHint is not null)
+                hiddenHint.Visibility = model[ToolbarItems.HiddenRow].Count == 0
+                    ? Visibility.Visible : Visibility.Collapsed;
         }
 
         // The chips are rebuilt on the NEXT turn, never inside the event that
@@ -5174,6 +5350,7 @@ public sealed partial class PreviewPage : Page
                     ToolbarItemLabel(slot.Items.FirstOrDefault() ?? "")));
             view.DragStarting += (_, e) =>
             {
+                draggingGroup = slot.IsGroup;
                 e.Data.SetText(slot.IsGroup
                     ? "g|" + TokenFor(slot)
                     : "i|" + (slot.Items.FirstOrDefault() ?? ""));
@@ -5229,7 +5406,7 @@ public sealed partial class PreviewPage : Page
             };
             body.Children.Add(ToolbarChipView.BuildGrip());
 
-            var well = MakeChipPanel();
+            var well = MakeChipPanel(GroupChipGap);
             well.MinHeight = 34;
             well.MinWidth = slot.Items.Count == 0 ? 150 : 40;
             foreach (var id in slot.Items)
@@ -5237,6 +5414,7 @@ public sealed partial class PreviewPage : Page
                 var chip = new ToolbarChipView(id, ToolbarItemGlyph(id), ToolbarItemLabel(id));
                 chip.DragStarting += (_, e) =>
                 {
+                    draggingGroup = false;
                     e.Data.SetText("i|" + id);
                     e.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
                 };
@@ -5277,11 +5455,15 @@ public sealed partial class PreviewPage : Page
             };
             card.DragOver += (_, e) =>
             {
+                // A group dragged over a group goes to the row behind, which puts
+                // it before or after this one: groups do not go inside groups.
+                if (draggingGroup) return;
                 e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
                 e.Handled = true;   // the row behind must not claim this drop as well
             };
             card.Drop += async (_, e) =>
             {
+                if (draggingGroup) return;
                 e.Handled = true;
                 try
                 {
@@ -5319,28 +5501,42 @@ public sealed partial class PreviewPage : Page
             Commit();
         });
 
-        // ── The three rows ──────────────────────────────────────────────────
-        var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
-
-        for (int i = 0; i < ToolbarItems.RowCount; i++)
+        // ── The rows ────────────────────────────────────────────────────────
+        // A row of chips inside a frame that takes the drop: the frame's padding is
+        // room to drop BEFORE the first chip (there was none, so nothing could be put
+        // at the start of a row) and after the last. Where it lands is read off the
+        // chips, wherever the pointer is.
+        Border MakeDropRow(int rowIndex)
         {
-            int rowIndex = i;
-            var row = MakeChipPanel();
+            var row = MakeChipPanel(RowChipGap);
             row.MinHeight = 44;
-            row.Margin = new Thickness(0, 6, 8, 6);
-            row.DragOver += (_, e) =>
+            var host = new Border
+            {
+                Child = row,
+                Padding = new Thickness(12, 8, 16, 8),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                AllowDrop = true,
+            };
+            host.DragOver += (_, e) =>
                 e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
-            row.Drop += async (s, e) =>
+            host.Drop += async (_, e) =>
             {
                 try
                 {
-                    var target = (ToolbarWrapPanel)s;
-                    var (payload, insert) = await ReadDropAsync(e, target);
+                    var (payload, insert) = await ReadDropAsync(e, row);
                     if (payload is not null) DropOnRow(rowIndex, insert, payload);
                 }
                 catch (Exception ex) { App.LogCrash("Toolbar", ex.Message, ex); Reload(); }
             };
-            rowPanels[i] = row;
+            rowPanels[rowIndex] = row;
+            return host;
+        }
+
+        var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
+
+        for (int i = 0; i < ToolbarItems.RowCount; i++)
+        {
+            var row = MakeDropRow(i);
 
             // "Ligne N" label on the left + the row's chips.
             var rowGrid = new Grid { MinHeight = 56 };
@@ -5353,7 +5549,7 @@ public sealed partial class PreviewPage : Page
                 FontSize = 12,
                 Opacity = 0.7,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(12, 0, 8, 0),
+                Margin = new Thickness(12, 0, 0, 0),
             };
             Grid.SetColumn(label, 0);
             Grid.SetColumn(row, 1);
@@ -5370,6 +5566,41 @@ public sealed partial class PreviewPage : Page
                 });
         }
 
+        // ── The hidden row ──────────────────────────────────────────────────
+        // A card of its own under the toolbar's, not a fourth line inside it:
+        // what is here is not a place on the toolbar but the absence of one.
+        var hiddenRow = MakeDropRow(ToolbarItems.HiddenRow);
+        hiddenHint = new TextBlock
+        {
+            Text = SL("toolbar.lbl.hiddenEmpty"),
+            FontSize = 12,
+            Opacity = 0.55,
+            VerticalAlignment = VerticalAlignment.Center,
+            // Where the frame's padding puts the first chip.
+            Margin = new Thickness(12, 0, 0, 0),
+            IsHitTestVisible = false,
+        };
+        var hiddenWell = new Grid();
+        hiddenWell.Children.Add(hiddenHint);
+        hiddenWell.Children.Add(hiddenRow);
+
+        var hiddenHead = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(12, 10, 12, 0) };
+        hiddenHead.Children.Add(new FontIcon { Glyph = "\uED1A", FontSize = 14, Opacity = 0.8 });
+        hiddenHead.Children.Add(new TextBlock { Text = SL("toolbar.lbl.hiddenTitle"), FontWeight = FontWeights.SemiBold });
+        var hiddenBody = new StackPanel();
+        hiddenBody.Children.Add(hiddenHead);
+        hiddenBody.Children.Add(new TextBlock
+        {
+            Text = SL("toolbar.lbl.hiddenDesc"),
+            FontSize = 12, Opacity = 0.7, TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(12, 2, 12, 0),
+        });
+        // Aligned on the tray's own title, not on the rows' « Ligne N » column: the
+        // tray has no such labels, and the gap read as a mistake.
+        var hiddenGrid = new Grid { MinHeight = 56, Margin = new Thickness(0, 0, 0, 4) };
+        hiddenGrid.Children.Add(hiddenWell);
+        hiddenBody.Children.Add(hiddenGrid);
+
         Reload();
 
         var card = new Border
@@ -5382,18 +5613,34 @@ public sealed partial class PreviewPage : Page
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = stack,
         };
+        // A step back in tone: a tray, not part of the toolbar.
+        var hiddenCard = new Border
+        {
+            Background = (Brush)Application.Current.Resources["CardBackgroundFillColorSecondaryBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Margin = new Thickness(0, 12, 0, 4),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = hiddenBody,
+        };
         var section = new StackPanel();
         section.Children.Add(card);
+        section.Children.Add(hiddenCard);
         return section;
     }
 
     // A wrapping panel that accepts drops. The transparent background is what
     // makes the empty space between chips hit-testable — without it a drop only
     // lands when it happens to be over a chip.
-    private static ToolbarWrapPanel MakeChipPanel() => new()
+    // Room between chips: enough on a row for a drop to land BETWEEN two groups
+    // without aiming at a sliver; tighter inside a group.
+    private const double RowChipGap = 16, GroupChipGap = 10;
+
+    private static ToolbarWrapPanel MakeChipPanel(double gap) => new()
     {
-        HorizontalSpacing = 6,
-        VerticalSpacing = 6,
+        HorizontalSpacing = gap,
+        VerticalSpacing = 10,
         AllowDrop = true,
         Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
     };
@@ -5860,22 +6107,13 @@ public sealed partial class PreviewPage : Page
         return panel;
     }
 
+    // Resets the ACTIVE profile (the machine's own state — recent files, open
+    // windows… — is not a preference and stays), then puts it into effect in
+    // every window, as a profile switch does.
     private void ResetSettings()
     {
         _settings.ResetToDefaults();
-        Root.RequestedTheme = _settings.ToElementTheme();
-        (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.SetTheme(_settings.ToElementTheme());
-        ApplyAccentFromSettings();
-        _editorWidth = _settings.EditorWidth;   // reset by ResetToDefaults above
-        ApplyEditorLayout();
-        ApplyEditorOptions();
-        LoadDensityOptions(SelectedDpmm);
-        UpdateSizeBoxes();
-        UpdateSizeBoxLocks();
-        DrawPreviewGrid();
-        PostToEditor("{\"type\":\"setLineNumbers\",\"show\":" + (_settings.ShowLineNumbers ? "true" : "false") + "}");
-        BuildSettingsCategories();
-        ShowSettingsCategory("general");
+        ApplySettingsEverywhere();
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, ApplyDefaultZoom);
     }
 
@@ -6076,6 +6314,7 @@ public sealed partial class PreviewPage : Page
             case "cursorChanged":
                 _cursorOffset = doc.RootElement.GetProperty("offset").GetInt32();
                 if (DocBadge.IsChecked == true) UpdateDocPanel();
+                if (!_syncingCaret) FollowCaretToLabel(_cursorOffset);
                 OnEditorCaretMoved(_cursorOffset);
                 break;
             case "save":
@@ -6165,6 +6404,10 @@ public sealed partial class PreviewPage : Page
         // follow the reloaded theme resources on their own.
         ApplyModeButtons();
         ApplyToolButtons();
+        // Nor does the home page's wash — in any window, the accent being the
+        // application's.
+        foreach (var window in WindowManager.Windows.ToList())
+            window.Page?.RepaintHomeWash();
     }
 
     private void ApplyEditorTheme()
@@ -6553,6 +6796,11 @@ public sealed class DocTab
     // switching tabs brings each document back to its own level.
     public double? ZoomPercent { get; set; }
 
+    // Where the view of THIS document was scrolled, at its own zoom: a split view's
+    // pane out of focus shows it there, and taking the focus back keeps it.
+    public double? ScrollX { get; set; }
+    public double? ScrollY { get; set; }
+
     // The density this document is READ at, in dots per millimetre. It belongs to
     // the document, not to the window: two tabs can be written for two different
     // printers, and the toolbar list must follow the tab rather than the other way
@@ -6567,6 +6815,9 @@ public sealed class DocTab
     // A transform the command line asked for, run once the document is in the
     // editor: from then on it is an ordinary change, and Ctrl+Z takes it back.
     public DocumentOptions? PendingTransform { get; set; }
+
+    // Which label of a multi-label document is on screen (0-based).
+    public int LabelIndex { get; set; }
 }
 
 public static class AppWindowLookup

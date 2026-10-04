@@ -70,6 +70,7 @@
                            VerticalAlignment="Center"/>
             </StackPanel>
 
+
             <!-- Toolbar toggle + fullscreen, left of the system caption buttons -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button x:Name="ToolbarToggleButton"
@@ -114,17 +115,38 @@
               BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
               BorderThickness="0,0,0,1"
               PointerExited="FullScreenBar_PointerExited">
-            <StackPanel Orientation="Horizontal"
-                        Spacing="10"
-                        VerticalAlignment="Center"
-                        Margin="16,0,0,0"
-                        IsHitTestVisible="False">
-                <Image x:Name="FullScreenIcon" Width="16" Height="16"/>
-                <TextBlock Text="Ultimate ZPL Viewer"
-                           Style="{StaticResource CaptionTextBlockStyle}"
-                           VerticalAlignment="Center"/>
+            <!-- Like the title bar it replaces: the settings (or, in the settings, the
+                 way back), the icon and the document's name. -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="FsSettingsButton"
+                        Width="40" Height="40"
+                        Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0"
+                        Click="SettingsTitleButton_Click">
+                    <FontIcon Glyph="&#xE713;" FontSize="13"/>
+                </Button>
+                <Button x:Name="FsBackButton"
+                        Visibility="Collapsed"
+                        Width="40" Height="40"
+                        Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0"
+                        Click="TitleBarBackButton_Click">
+                    <FontIcon Glyph="&#xE72B;" FontSize="14"/>
+                </Button>
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="8,0,0,0" IsHitTestVisible="False">
+                    <Image x:Name="FullScreenIcon" Width="16" Height="16"/>
+                    <TextBlock x:Name="FsTitleText"
+                               Text="Ultimate ZPL Viewer"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- The title bar's arrow, which the fullscreen bar replaces. -->
+                <Button x:Name="FsToolbarToggleButton"
+                        Width="46" Height="40"
+                        Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0"
+                        Click="ToolbarToggleButton_Click">
+                    <FontIcon x:Name="FsToolbarToggleIcon" Glyph="&#xE70E;" FontSize="12"/>
+                </Button>
                 <Button x:Name="FsMinimizeButton"
                         Width="46" Height="40"
                         Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0"

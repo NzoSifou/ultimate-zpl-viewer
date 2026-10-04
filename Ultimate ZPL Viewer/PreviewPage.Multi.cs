@@ -76,6 +76,7 @@ public sealed partial class PreviewPage
             return;
         }
         _selected.Add(start);
+        NewSelection();
         _selStart = start;
         _selEnd = end;
         UpdateInspectFrame();
@@ -84,6 +85,7 @@ public sealed partial class PreviewPage
 
     private void PromoteTo(int start)
     {
+        NewSelection();
         _selStart = start;
         _selEnd = EndOf(start);
         UpdateInspectFrame();
@@ -107,6 +109,7 @@ public sealed partial class PreviewPage
         if (spans.Count == 0) return;
         _selected.Clear();
         foreach (var span in spans) _selected.Add(span.Start);
+        NewSelection();
         _selStart = spans[^1].Start;
         _selEnd = spans[^1].End;
         UpdateInspectFrame();
@@ -232,6 +235,7 @@ public sealed partial class PreviewPage
         foreach (var span in caught)
             if (!_selected.Contains(span.Start)) _selected.Add(span.Start);
 
+        NewSelection();
         _selStart = caught[^1].Start;
         _selEnd = caught[^1].End;
         UpdateInspectFrame();

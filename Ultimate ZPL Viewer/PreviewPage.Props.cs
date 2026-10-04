@@ -22,7 +22,8 @@ public sealed partial class PreviewPage
     private ZplPatcher.FieldFacts? _facts;
     private bool _fillingProps;          // guards the controls against their own events
     private bool _aspectLocked = true;
-    private int _propsBuiltFor = -1;     // the selection the open panel was built for
+    private int _propsBuiltFor = -1;     // the selection (_selGen) the open panel was built for
+    private object? _propsBuiltKind;      // …and the kind of element it was built for
 
     private void InitSelectionProperties()
     {
@@ -137,13 +138,17 @@ public sealed partial class PreviewPage
         if (SelectionMoreButton.IsChecked != true || _facts is null || _selStart < 0)
             return;
         SetMoreGlyph(open: true);
-        if (_propsBuiltFor == _selStart && SelectionProps.Children.Count > 0)
+        // The kind is part of the key: whatever happened to the text under the
+        // selection, a panel for a barcode is never shown for a box.
+        var kind = (_facts.FontName is not null, _facts.Barcode, _facts.Shape);
+        if (_propsBuiltFor == _selGen && Equals(_propsBuiltKind, kind) && SelectionProps.Children.Count > 0)
         {
             SelectionProps.Visibility = Visibility.Visible;
             return;
         }
 
-        _propsBuiltFor = _selStart;
+        _propsBuiltFor = _selGen;
+        _propsBuiltKind = kind;
         SelectionProps.Children.Clear();
         if (_facts.FontName is not null) BuildTextProperties(SelectionProps);
         if (_facts.Barcode is not null) BuildBarcodeProperties(SelectionProps);

@@ -62,13 +62,16 @@ internal static class WindowManager
         if (_windows.Count == 0) return;
         try
         {
-            var layout = _windows
-                .Select(w => w.Page?.OpenFilePaths() ?? new List<string>())
-                .Where(files => files.Count > 0)
+            var windows = _windows
+                .Select(w => (Files: w.Page?.OpenFilePaths() ?? new List<string>(),
+                              Views: w.Page?.SplitViewStates() ?? new List<SplitViewState>()))
+                .Where(w => w.Files.Count > 0)
                 .ToList();
+            var layout = windows.Select(w => w.Files).ToList();
+            AppSettings.Current.WindowSplitViews = windows.Select(w => w.Views).ToList();
             var flat = layout.SelectMany(f => f).Distinct().ToList();
 
-            var settings = AppSettings.Load();
+            var settings = AppSettings.Current;
             settings.WindowSessions = layout;
             settings.OpenFiles = flat;   // kept in step for the flat legacy list
             settings.Save();

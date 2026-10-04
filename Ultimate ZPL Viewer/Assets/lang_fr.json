@@ -7,6 +7,10 @@
     "tooltipSettings": "Paramètres",
     "tooltipShowToolbar": "Afficher la barre d'outils",
     "tooltipHideToolbar": "Masquer la barre d'outils",
+    "tooltipShowTabs": "Afficher les onglets",
+    "tooltipHideTabs": "Masquer les onglets",
+    "tooltipShowBoth": "Afficher la barre d'outils et les onglets",
+    "tooltipHideBoth": "Masquer la barre d'outils et les onglets",
     "tooltipFullscreen": "Plein écran",
     "tooltipBack": "Retour"
   },
@@ -1539,6 +1543,26 @@
       }
     }
   },
+  "split": {
+    "left": "Afficher à gauche",
+    "right": "Afficher à droite",
+    "top": "Afficher en haut",
+    "bottom": "Afficher en bas",
+    "topLeft": "Afficher en haut à gauche",
+    "topRight": "Afficher en haut à droite",
+    "bottomLeft": "Afficher en bas à gauche",
+    "bottomRight": "Afficher en bas à droite",
+    "viewName": "Vue fractionnée",
+    "swapTip": "Intervertir ce document avec un autre de la vue",
+    "swapHere": "Intervertir ici",
+    "swapSource": "Document à intervertir",
+    "swapWith": "Intervertir avec",
+    "unsplit": "Défaire la vue fractionnée",
+    "closePane": "Retirer de la vue fractionnée (l'onglet reste ouvert)",
+    "focusTip": "Cliquer pour travailler sur ce document",
+    "dropSplit": "Diviser l'aperçu",
+    "dropHere": "Afficher ici"
+  },
   "settings": {
     "nav": {
       "general": "Général",
@@ -1554,6 +1578,12 @@
       "commandLine": "Ligne de commande",
       "about": "À propos"
     },
+    "search": {
+      "placeholder": "Rechercher un paramètre",
+      "none": "Aucun paramètre ne correspond à cette recherche.",
+      "results": "Résultats pour « {0} »",
+      "resultsHint": "Les réglages de toutes les catégories, modifiables ici."
+    },
     "general": {
       "title": "Général",
       "subtitle": "Comportement général de l'application.",
@@ -1568,7 +1598,7 @@
         },
         "reset": {
           "title": "Réinitialiser les paramètres",
-          "desc": "Rétablit tous les paramètres à leurs valeurs par défaut."
+          "desc": "Rétablit les valeurs par défaut de tous les paramètres du profil actif. Les fichiers récents et les fenêtres à rouvrir sont conservés."
         },
         "pngQuality": {
           "title": "Qualité de l'export PNG",
@@ -1595,7 +1625,7 @@
         "reset": "Réinitialiser",
         "cancel": "Annuler",
         "resetDlgTitle": "Réinitialiser les paramètres",
-        "resetDlgBody": "Rétablir tous les paramètres à leurs valeurs par défaut ?",
+        "resetDlgBody": "Rétablir tous les paramètres du profil actif à leurs valeurs par défaut ?",
         "setDefault": "Définir par défaut",
         "alreadyDefault": "Déjà par défaut",
         "setDefaultFailed": "Impossible de définir l'application par défaut automatiquement. Vous pouvez le faire depuis les paramètres Windows (Applications par défaut)."
@@ -1705,7 +1735,8 @@
         "preview": "Aperçu",
         "rulers": "Règles",
         "layout": "Disposition",
-        "mode": "Mode"
+        "mode": "Mode",
+        "splitViews": "Vues fractionnées"
       },
       "cards": {
         "fontSize": {
@@ -1768,6 +1799,19 @@
         "swap": {
           "title": "Intervertir éditeur et aperçu",
           "desc": "Place l'éditeur ZPL à droite et l'aperçu à gauche."
+        },
+        "chromeToggle": {
+          "title": "Flèche de la barre de titre",
+          "desc": "Ce qu'elle masque.",
+          "options": [ "La barre d'outils", "Les onglets", "Les deux" ]
+        },
+        "splitUnfold": {
+          "title": "Déplier en ouvrant une vue",
+          "desc": "Ouvrir une vue montre ses onglets."
+        },
+        "splitFold": {
+          "title": "Replier en quittant une vue",
+          "desc": "Changer d'onglet replie la vue."
         },
         "previewCaption": {
           "title": "Infos de l'aperçu",
@@ -2025,7 +2069,10 @@
         "addGroup": "Ajouter un groupe",
         "deleteGroup": "Supprimer le groupe (ses boutons restent à sa place)",
         "emptyGroup": "Groupe vide",
-        "groupName": "Nom du groupe"
+        "groupName": "Nom du groupe",
+        "hiddenTitle": "Éléments masqués",
+        "hiddenDesc": "Ce qui est glissé ici n'apparaît plus dans la barre d'outils. Les raccourcis clavier restent actifs ; glissez un élément vers une ligne pour le faire revenir.",
+        "hiddenEmpty": "Glissez ici les éléments à ne pas afficher"
       },
       "groups": {
         "file": "Fichier",
@@ -2325,6 +2372,53 @@
       "armed": "La mise à jour sera installée quand vous fermerez l’application. Le téléchargement se poursuit en arrière-plan.",
       "published": "publiée le {date}",
       "onExitHint": "L’application se mettra à jour quand vous la fermerez, sans se rouvrir."
+    },
+    "profiles": {
+      "label": "Profil",
+      "defaultName": "Profil par défaut",
+      "pickerTip": "Tous les paramètres sont enregistrés dans le profil choisi, au fur et à mesure. Changer de profil les recharge aussitôt, dans toutes les fenêtres.",
+      "menuTip": "Gérer les profils",
+      "new": "Nouveau profil…",
+      "duplicate": "Dupliquer…",
+      "rename": "Renommer…",
+      "delete": "Supprimer…",
+      "export": "Exporter…",
+      "import": "Importer…",
+      "lastTip": "Il faut au moins un profil : le dernier ne peut pas être supprimé.",
+      "nameLabel": "Nom du profil",
+      "create": "Créer",
+      "cancel": "Annuler",
+      "newTitle": "Nouveau profil",
+      "newBody": "Le nouveau profil part des paramètres par défaut, et devient le profil actif.",
+      "newName": "Nouveau profil",
+      "duplicateTitle": "Dupliquer le profil",
+      "duplicateBody": "Le nouveau profil reprend tous les paramètres de « {name} », et devient le profil actif.",
+      "copyName": "{name} (copie)",
+      "renameTitle": "Renommer le profil",
+      "renameBody": "Langue de ce nom : {language}. Les noms du profil dans les autres langues ne changent pas.",
+      "renameButton": "Renommer",
+      "deleteTitle": "Supprimer le profil",
+      "deleteBody": "Supprimer « {name} » ? Ses paramètres seront perdus ; exportez-le d'abord pour les garder.",
+      "deleteButton": "Supprimer",
+      "fileType": "Profil Ultimate ZPL Viewer",
+      "importFailedTitle": "Import impossible",
+      "importFailedJson": "Ce fichier n'est pas un JSON valide.",
+      "importFailedFormat": "Ce fichier n'est pas un profil d'Ultimate ZPL Viewer : il lui manque ses paramètres (« settings »).",
+      "failedTitle": "Opération impossible",
+      "advancedShow": "Noms dans d'autres langues…",
+      "advancedHide": "Revenir à l'affichage simple",
+      "advancedBody": "Un nom par langue. Le nom affiché est celui de la langue de l'interface ; si elle n'en a pas, c'est celui de la langue de repli.",
+      "codeColumn": "Code langue",
+      "nameColumn": "Nom",
+      "addLanguage": "Ajouter une langue",
+      "removeLanguage": "Retirer cette langue",
+      "fallbackLabel": "Langue de repli",
+      "fallbackTip": "Le nom utilisé quand l'interface est dans une langue qui n'a pas de nom pour ce profil.",
+      "installed": "Langues installées : {list}. Tout autre code de langue est accepté (nl, de, fr-CA…).",
+      "errEmpty": "Il faut au moins un nom.",
+      "errIncomplete": "Chaque ligne a besoin d'un code de langue et d'un nom.",
+      "errCode": "« {code} » n'est pas un code de langue (exemples : fr, en, fr-CA).",
+      "errTwice": "La langue « {code} » apparaît deux fois."
     }
   },
   "shortcuts": {
@@ -2584,5 +2678,11 @@
       "image": "Modifier l’image (taille, noir et blanc, écriture)",
       "several": "{0} éléments"
     }
+  },
+  "labels": {
+    "label": "Étiquette",
+    "previous": "Étiquette précédente (Page préc.)",
+    "next": "Étiquette suivante (Page suiv.)",
+    "numberTip": "Tapez un numéro puis Entrée ; ↑ et ↓ passent d'une étiquette à l'autre."
   }
 }

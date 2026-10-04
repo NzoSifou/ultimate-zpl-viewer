@@ -41,9 +41,7 @@ public sealed partial class PreviewPage
 
         HomeOverlay.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
         ContentArea.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
-        DocTabs.Visibility = on || DocTabs.TabItems.Count == 0
-            ? Visibility.Collapsed : Visibility.Visible;
-        ApplyToolbarVisibility();
+        ApplyToolbarVisibility();   // the tab strip too
 
         ApplyHomeChrome();
     }
@@ -105,9 +103,11 @@ public sealed partial class PreviewPage
     // A tint of the accent in the top-left corner, gone by the middle of the page.
     // Half-transparent throughout, so what shows through is the window's acrylic
     // rather than a flat colour painted over it.
+    // The accent in force, custom or not: "SystemAccentColor" is always the
+    // system's, whatever the settings say (AccentColorService.Current).
     private static Brush HomeWash()
     {
-        var accent = Application.Current.Resources["SystemAccentColor"] is Color c ? c : Colors.DodgerBlue;
+        var accent = AccentColorService.Current;
         var gradient = new LinearGradientBrush
         {
             StartPoint = new Windows.Foundation.Point(0, 0),
@@ -117,6 +117,16 @@ public sealed partial class PreviewPage
         gradient.GradientStops.Add(new GradientStop { Offset = 0.45, Color = Color.FromArgb(0x16, accent.R, accent.G, accent.B) });
         gradient.GradientStops.Add(new GradientStop { Offset = 1.0, Color = Color.FromArgb(0x00, accent.R, accent.G, accent.B) });
         return gradient;
+    }
+
+    /// <summary>
+    /// Repaints the wash after the accent changed. The rest of the page draws with
+    /// theme brushes, which the accent change reloads; the wash is a brush built
+    /// here, from a colour, and nothing rebuilds it but this.
+    /// </summary>
+    internal void RepaintHomeWash()
+    {
+        if (_homeVisible) HomeOverlay.Background = HomeWash();
     }
 
     private static string HL(string key) => LocalizationService.Get("home." + key);

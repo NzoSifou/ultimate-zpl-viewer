@@ -14,6 +14,13 @@ namespace Ultimate_ZPL_Viewer;
 // normal, hover and pressed — is re-resolved from the new values.
 public static class AccentColorService
 {
+    /// <summary>
+    /// The accent in force — the custom one, or the system's. "SystemAccentColor"
+    /// itself cannot be overridden (see SetColors), so anything that paints with
+    /// the accent directly rather than through a brush reads it here.
+    /// </summary>
+    public static Windows.UI.Color Current { get; private set; } = Microsoft.UI.Colors.DodgerBlue;
+
     // Sets the startup accent from the saved settings; must run before the main
     // window is created so controls resolve the colors on first load (no reload
     // needed). Defensive: a failure here must never block startup.
@@ -21,7 +28,7 @@ public static class AccentColorService
     {
         try
         {
-            var settings = AppSettings.Load();
+            var settings = AppSettings.LoadResolved();
             SetColors(app, settings.UseSystemAccent
                 ? null
                 : ZplColorSchemeService.ParseHexColor(settings.CustomAccent, Microsoft.UI.Colors.DodgerBlue));
@@ -56,6 +63,7 @@ public static class AccentColorService
         if (custom is null)
         {
             var ui = new Windows.UI.ViewManagement.UISettings();
+            Current = ui.GetColorValue(Windows.UI.ViewManagement.UIColorType.Accent);
             light1 = ui.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight1);
             light2 = ui.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight2);
             light3 = ui.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight3);
@@ -66,6 +74,7 @@ public static class AccentColorService
         else
         {
             var accent = custom.Value;
+            Current = accent;
             light1 = Blend(accent, 0xFF, 0.2);
             light2 = Blend(accent, 0xFF, 0.4);
             light3 = Blend(accent, 0xFF, 0.6);

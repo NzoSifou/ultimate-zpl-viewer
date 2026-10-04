@@ -42,8 +42,18 @@ public static class ToolbarItems
         "transform", "pdf", "png", "print",
     };
 
-    /// <summary>Number of rows the designer offers.</summary>
+    /// <summary>Number of rows the toolbar shows.</summary>
     public const int RowCount = 3;
+
+    /// <summary>
+    /// The row after the shown ones: what is dropped there is not on the toolbar
+    /// at all. It is a row like the others in the saved layout — groups and all —
+    /// so that putting something back is the same drag that took it away.
+    /// </summary>
+    public const int HiddenRow = RowCount;
+
+    /// <summary>Rows in a saved layout: the shown ones, then the hidden one.</summary>
+    public const int TotalRows = RowCount + 1;
 
     /// <summary>
     /// The layout a fresh install starts on, and the one "Réinitialiser" returns
@@ -62,13 +72,14 @@ public static class ToolbarItems
                 ToolbarSlot.Named(Name("output"), "transform", "pdf", "png", "print"),
             },
         };
-        while (rows.Count < RowCount) rows.Add(new List<ToolbarSlot>());
+        while (rows.Count < TotalRows) rows.Add(new List<ToolbarSlot>());
         return rows;
     }
 
     /// <summary>
-    /// Repairs a layout read back from the settings: always RowCount rows, every
-    /// known button present exactly once, unknown ones dropped. A group with no
+    /// Repairs a layout read back from the settings: always TotalRows rows (a
+    /// layout from before the hidden row simply has nothing hidden), every known
+    /// button present exactly once, unknown ones dropped. A group with no
     /// buttons left in it is kept — an empty group is a legitimate thing to be
     /// half-way through making, and it simply does not show on the toolbar.
     /// </summary>
@@ -79,7 +90,7 @@ public static class ToolbarItems
         var result = new List<List<ToolbarSlot>>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
 
-        for (int i = 0; i < RowCount; i++)
+        for (int i = 0; i < TotalRows; i++)
         {
             var row = new List<ToolbarSlot>();
             if (i < rows.Count && rows[i] is not null)
@@ -99,7 +110,8 @@ public static class ToolbarItems
         }
 
         // A button the layout never mentioned — one a new version added — goes
-        // loose at the end of the first row rather than disappearing.
+        // loose at the end of the first row rather than disappearing: hiding is
+        // something a person does, never something an update does for them.
         foreach (var id in AllIds)
             if (seen.Add(id)) result[0].Add(ToolbarSlot.Loose(id));
 

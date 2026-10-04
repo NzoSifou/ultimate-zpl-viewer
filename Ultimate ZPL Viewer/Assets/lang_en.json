@@ -7,6 +7,10 @@
     "tooltipSettings": "Settings",
     "tooltipShowToolbar": "Show toolbar",
     "tooltipHideToolbar": "Hide toolbar",
+    "tooltipShowTabs": "Show tabs",
+    "tooltipHideTabs": "Hide tabs",
+    "tooltipShowBoth": "Show toolbar and tabs",
+    "tooltipHideBoth": "Hide toolbar and tabs",
     "tooltipFullscreen": "Full screen",
     "tooltipBack": "Back"
   },
@@ -1539,6 +1543,26 @@
       }
     }
   },
+  "split": {
+    "left": "Show on the left",
+    "right": "Show on the right",
+    "top": "Show at the top",
+    "bottom": "Show at the bottom",
+    "topLeft": "Show at the top left",
+    "topRight": "Show at the top right",
+    "bottomLeft": "Show at the bottom left",
+    "bottomRight": "Show at the bottom right",
+    "viewName": "Split view",
+    "swapTip": "Swap this document with another one of the view",
+    "swapHere": "Swap here",
+    "swapSource": "Document to swap",
+    "swapWith": "Swap with",
+    "unsplit": "Undo the split view",
+    "closePane": "Remove from the split view (the tab stays open)",
+    "focusTip": "Click to work on this document",
+    "dropSplit": "Split the preview",
+    "dropHere": "Show here"
+  },
   "settings": {
     "nav": {
       "general": "General",
@@ -1554,6 +1578,12 @@
       "commandLine": "Command line",
       "about": "About"
     },
+    "search": {
+      "placeholder": "Search settings",
+      "none": "No setting matches this search.",
+      "results": "Results for '{0}'",
+      "resultsHint": "Settings from every category, editable here."
+    },
     "general": {
       "title": "General",
       "subtitle": "General application behaviour.",
@@ -1568,7 +1598,7 @@
         },
         "reset": {
           "title": "Reset settings",
-          "desc": "Restores all settings to their default values."
+          "desc": "Restores every setting of the active profile to its default. Recent files and the windows to reopen are kept."
         },
         "pngQuality": {
           "title": "PNG export quality",
@@ -1595,7 +1625,7 @@
         "reset": "Reset",
         "cancel": "Cancel",
         "resetDlgTitle": "Reset settings",
-        "resetDlgBody": "Restore all settings to their default values?",
+        "resetDlgBody": "Restore every setting of the active profile to its default?",
         "setDefault": "Set as default",
         "alreadyDefault": "Already default",
         "setDefaultFailed": "Couldn't set the default app automatically. You can do it from Windows Settings (Default apps)."
@@ -1705,7 +1735,8 @@
         "preview": "Preview",
         "rulers": "Rulers",
         "layout": "Layout",
-        "mode": "Mode"
+        "mode": "Mode",
+        "splitViews": "Split views"
       },
       "cards": {
         "fontSize": {
@@ -1768,6 +1799,19 @@
         "swap": {
           "title": "Swap editor and preview",
           "desc": "Puts the ZPL editor on the right and the preview on the left."
+        },
+        "chromeToggle": {
+          "title": "Title bar arrow",
+          "desc": "What it hides.",
+          "options": [ "The toolbar", "The tabs", "Both" ]
+        },
+        "splitUnfold": {
+          "title": "Unfold when opening a view",
+          "desc": "Opening a view shows its tabs."
+        },
+        "splitFold": {
+          "title": "Fold when leaving a view",
+          "desc": "Switching tabs folds the view."
         },
         "previewCaption": {
           "title": "Preview info",
@@ -2025,7 +2069,10 @@
         "addGroup": "Add a group",
         "deleteGroup": "Delete the group (its buttons stay where it was)",
         "emptyGroup": "Empty group",
-        "groupName": "Group name"
+        "groupName": "Group name",
+        "hiddenTitle": "Hidden items",
+        "hiddenDesc": "Anything dragged here no longer appears on the toolbar. Keyboard shortcuts still work; drag an item back onto a row to bring it back.",
+        "hiddenEmpty": "Drag here the items you do not want to see"
       },
       "groups": {
         "file": "File",
@@ -2325,6 +2372,53 @@
       "armed": "The update will be installed when you close the application. The download continues in the background.",
       "published": "published {date}",
       "onExitHint": "The application updates itself when you close it, and does not reopen."
+    },
+    "profiles": {
+      "label": "Profile",
+      "defaultName": "Default profile",
+      "pickerTip": "Every setting is saved in the chosen profile as you change it. Switching profile loads its settings at once, in every window.",
+      "menuTip": "Manage profiles",
+      "new": "New profile…",
+      "duplicate": "Duplicate…",
+      "rename": "Rename…",
+      "delete": "Delete…",
+      "export": "Export…",
+      "import": "Import…",
+      "lastTip": "There must be at least one profile: the last one cannot be deleted.",
+      "nameLabel": "Profile name",
+      "create": "Create",
+      "cancel": "Cancel",
+      "newTitle": "New profile",
+      "newBody": "The new profile starts from the default settings and becomes the active profile.",
+      "newName": "New profile",
+      "duplicateTitle": "Duplicate profile",
+      "duplicateBody": "The new profile takes every setting of “{name}” and becomes the active profile.",
+      "copyName": "{name} (copy)",
+      "renameTitle": "Rename profile",
+      "renameBody": "Language of this name: {language}. The profile's names in other languages do not change.",
+      "renameButton": "Rename",
+      "deleteTitle": "Delete profile",
+      "deleteBody": "Delete “{name}”? Its settings will be lost; export it first to keep them.",
+      "deleteButton": "Delete",
+      "fileType": "Ultimate ZPL Viewer profile",
+      "importFailedTitle": "Cannot import",
+      "importFailedJson": "This file is not valid JSON.",
+      "importFailedFormat": "This file is not an Ultimate ZPL Viewer profile: it has no settings (“settings”).",
+      "failedTitle": "Cannot do that",
+      "advancedShow": "Names in other languages…",
+      "advancedHide": "Back to the simple view",
+      "advancedBody": "One name per language. The name shown is the one in the interface language; if it has none, the fallback language's is used.",
+      "codeColumn": "Language code",
+      "nameColumn": "Name",
+      "addLanguage": "Add a language",
+      "removeLanguage": "Remove this language",
+      "fallbackLabel": "Fallback language",
+      "fallbackTip": "The name used when the interface is in a language this profile has no name for.",
+      "installed": "Installed languages: {list}. Any other language code is accepted (nl, de, fr-CA…).",
+      "errEmpty": "At least one name is needed.",
+      "errIncomplete": "Each line needs a language code and a name.",
+      "errCode": "“{code}” is not a language code (for example: fr, en, fr-CA).",
+      "errTwice": "The language “{code}” appears twice."
     }
   },
   "shortcuts": {
@@ -2584,5 +2678,11 @@
       "several": "{0} elements",
       "image": "Change the image (size, black and white, encoding)"
     }
+  },
+  "labels": {
+    "label": "Label",
+    "previous": "Previous label (Page Up)",
+    "next": "Next label (Page Down)",
+    "numberTip": "Type a number and press Enter; Up and Down go from one label to the next."
   }
 }

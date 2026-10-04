@@ -6,6 +6,172 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.7.0] — 2026-10-04 — profils, vues fractionnées et recherche
+
+Trois nouveautés de fond. Les **profils** rassemblent chacun un jeu complet de
+paramètres, qu'on change d'un clic. Les **vues fractionnées** montrent jusqu'à
+quatre documents à la fois, et ont leur propre onglet. Un fichier qui contient
+**plusieurs étiquettes** se parcourt comme les pages d'un PDF. Les paramètres ont
+aussi une **recherche** qui affiche les réglages de toutes les catégories et les
+rend modifiables sur place, et la barre d'outils peut **masquer** des boutons.
+
+### ✨ Ajouté
+
+- **Des profils** 🗂️ En bas de la colonne des paramètres, une liste choisit le
+  **profil** en cours : un ensemble complet de paramètres — thème, langue,
+  impression, éditeur, barre d'outils, positions des plaques… Il n'y a rien à
+  enregistrer : chaque changement est écrit dans le profil actif au moment où il
+  est fait, et **choisir un autre profil le charge aussitôt, dans toutes les
+  fenêtres**. Le menu « … » à côté de la liste permet d'en **créer** un (depuis
+  les réglages par défaut), d'en **dupliquer**, **renommer**, **supprimer**
+  (jamais le dernier), **exporter** et **importer**.
+- **Un fichier JSON par profil**, lisible et modifiable à la main
+  (`%LOCALAPPDATA%\Ultimate ZPL Viewer\profiles`). Le nom d'un profil est
+  **traduit dans le fichier lui-même** : `"names": { "fr": …, "en": … }`, avec
+  une langue de repli (`"fallbackLanguage"`) quand la langue affichée n'y figure
+  pas. Le profil livré avec l'application s'appelle « Profil par défaut » /
+  « Default profile », et une nouvelle langue peut lui donner son nom depuis son
+  propre fichier de langue.
+- **Renommer, simplement ou dans toutes les langues.** La fenêtre « Renommer »
+  change par défaut le nom dans la langue affichée. Son lien « Noms dans
+  d'autres langues… » ouvre la liste complète : une ligne par langue (code et
+  nom), l'ajout ou le retrait de langues, et le choix de la langue de repli. Les
+  erreurs (code invalide, langue en double, ligne incomplète) sont signalées
+  avant d'enregistrer.
+- **Masquer des boutons de la barre d'outils** 🙈 Sous les trois lignes de
+  **Paramètres › Barre d'outils**, une zone « Éléments masqués » reçoit ce qu'on
+  ne veut pas voir : un bouton, ou un groupe entier, glissé là disparaît de la
+  barre, et revient en le glissant vers une ligne. Les raccourcis clavier et le
+  reste de l'application continuent de fonctionner comme avant. Un bouton ajouté
+  par une future version n'est jamais masqué d'office.
+- **Les vues fractionnées : jusqu'à quatre documents à l'écran** 🪟 Dès qu'un
+  deuxième document est affiché à côté du premier, les deux forment une **vue
+  fractionnée**, avec son propre onglet « Vue fractionnée » dans la barre. Ses
+  documents se rangent juste après lui, dans l'ordre de leurs volets, et un cadre
+  de la couleur d'accentuation les entoure. Choisir un autre onglet affiche ce
+  document seul et replie la vue derrière son onglet ; cliquer sur « Vue
+  fractionnée » la rouvre, sur le document qui avait la main. Dans une vue
+  ouverte, cliquer sur un volet ou sur son onglet lui donne la main : l'éditeur de
+  code et la barre d'outils travaillent sur lui. Une fenêtre peut avoir plusieurs
+  vues fractionnées (« Vue fractionnée 2 »…), et elles reviennent au prochain
+  lancement avec les documents.
+  Côte à côte, l'un sous l'autre, ou les deux à la fois : quatre aperçus au plus,
+  sur deux colonnes et deux lignes, jamais trois. Le clic droit sur un onglet ne
+  propose que les places libres : « à gauche », « à droite », « en haut », « en
+  bas » avec un seul aperçu, les quatre coins avec deux, les deux coins encore
+  libres avec trois. Glisser l'onglet sur l'aperçu propose les mêmes places, une
+  pastille au milieu de chacune et la zone visée teintée ; ailleurs, rien n'est
+  déposé. Chaque place est illustrée par une petite fenêtre dont la partie que
+  prendra le document est remplie. Un onglet déjà dans la vue peut en être retiré
+  (le × de son volet, ou son menu) ; « Défaire la vue fractionnée », dans le menu
+  de la vue, rend leurs onglets simples à tous ses documents.
+  Un clic sur l'onglet de la vue affichée replie ses onglets (la vue reste à
+  l'écran, la barre gagne de la place) ; un autre les déplie. Glisser un onglet
+  de la vue parmi ses voisins intervertit aussi leurs volets ; le glisser hors du
+  groupe le retire de la vue. Deux réglages (**Paramètres › Éditeur et aperçu ›
+  Vues fractionnées**) décident si ouvrir une vue la déplie d'office, et si en
+  afficher une autre la replie ou la laisse comme elle était.
+  Le bouton ⇄ de la barre d'un volet l'intervertit avec un autre : directement
+  avec deux volets, et avec trois ou quatre chaque autre volet propose
+  « Intervertir ici » (un clic ailleurs ou Échap annule). Le clic droit sur un
+  onglet de la vue propose aussi « Intervertir avec › », chaque document avec
+  l'image de sa place. Un onglet simple lâché parmi les onglets d'une vue la
+  rejoint, s'il reste de la place, à l'endroit où il a été lâché. L'onglet de la
+  vue affichée a toujours l'aspect d'un onglet sélectionné, qu'elle soit
+  repliée ou non. Dans la vue, chaque aperçu est une carte arrondie, comme
+  l'éditeur, séparée des autres par un espace ; celle qui a la main est
+  entourée de la couleur d'accentuation, et le nom de chaque document flotte en
+  haut de sa carte avec ses boutons ⇄ et ×. Un aperçu qui perd la main garde
+  son zoom et l'endroit où il était, et les retrouve en la reprenant.
+- **Choisir ce que masque la flèche de la barre de titre** : la barre d'outils
+  (comme jusqu'ici), les onglets, ou les deux (**Paramètres › Éditeur et
+  aperçu › Disposition**). La flèche est aussi dans la barre du plein écran,
+  qui n'en avait pas.
+- **Le plein écran a sa vraie barre de titre** : le nom du document (et non plus
+  seulement « Ultimate ZPL Viewer »), le bouton des paramètres, et dans les
+  paramètres la flèche de retour. Le bouton plein écran reste disponible dans
+  les paramètres.
+- **Rechercher dans les paramètres** 🔎 Une zone de recherche au milieu de la
+  barre de titre des paramètres (Ctrl+F), comme dans les paramètres de Windows.
+  Dès qu'on tape, plus aucune catégorie n'est sélectionnée et la page montre
+  tous les réglages qui correspondent, de toutes les catégories, regroupés par
+  catégorie : on les modifie directement là, plusieurs d'affilée, sans relancer
+  de recherche. Elle trouve un réglage par le titre de sa carte, sa description,
+  les mots de ses options ou le titre de sa section, sans tenir compte des
+  majuscules ni des accents. Choisir une catégorie, ou vider la zone, met fin à
+  la recherche. Les résultats sont rangés en lignes, chaque carte d'une ligne
+  à la hauteur de la plus haute. La zone a l'allure de celle des paramètres de
+  Windows (loupe à gauche, coins arrondis), dans une barre de titre plus haute
+  dont tous les boutons, y compris réduire, agrandir et fermer, occupent toute
+  la hauteur. En plein écran, où il n'y a pas de barre de titre, elle se place
+  au-dessus des paramètres, centrée sur eux.
+- **Les fichiers à plusieurs étiquettes se parcourent comme les pages d'un PDF**
+  📑 Quand un fichier enchaîne plusieurs `^XA…^XZ`, l'aperçu montre une
+  étiquette à la fois, et une barre apparaît en bas de l'aperçu : les flèches
+  précédente / suivante, une piste où un clic mène directement à l'étiquette
+  correspondante (au milieu d'un lot de dix, on tombe sur la cinquième ou la
+  sixième), et le numéro de l'étiquette affichée sur le total, qu'on peut taper
+  (Entrée pour y aller, ↑ / ↓ pour avancer ou reculer). Page préc. / Page suiv.
+  et Ctrl+Début / Ctrl+Fin font de même quand l'aperçu a le clavier. Le code
+  suit : l'étiquette choisie défile dans l'éditeur, et placer le curseur dans le
+  code d'une étiquette l'affiche. Les formats qui ne dessinent rien (une simple
+  configuration `^XA^LL10^JUS^XZ`) ne comptent pas comme des étiquettes.
+  L'analyseur ne signale plus « plusieurs ^XA/^XZ » : il ne relève que ce qui
+  pose vraiment problème, un `^XA` ouvert avant que le précédent soit fermé, un
+  `^XZ` sans `^XA`, ou des commandes laissées entre deux étiquettes.
+- **Un import ne touche jamais ce qui appartient à la machine** : fichiers
+  récents, fenêtres à rouvrir, types d'imprimantes, tailles d'écran, vérification
+  des mises à jour restent hors des profils. Un profil importé arrive toujours
+  comme un nouveau profil, sans en écraser un existant.
+
+### 🔧 Modifié
+
+- À la première ouverture, **les paramètres existants deviennent le « Profil par
+  défaut »** : rien n'est perdu.
+- **« Réinitialiser les paramètres » remet à zéro le profil actif** et garde les
+  fichiers récents et les fenêtres à rouvrir, qu'il effaçait jusqu'ici.
+
+### 🐛 Corrigé
+
+- **Un réglage changé dans une fenêtre pouvait être perdu.** Chaque fenêtre
+  gardait sa propre copie des paramètres : un changement fait dans l'une
+  n'atteignait pas les autres, et la dernière à enregistrer écrasait le reste.
+  Toutes les fenêtres partagent maintenant les mêmes paramètres.
+- **Le dégradé de la page d'accueil ignorait la couleur d'accentuation
+  personnalisée** et reprenait toujours celle de Windows ; le cadre de sélection
+  du mode édition et l'accueil de première ouverture aussi. Ils suivent
+  maintenant la couleur choisie, et le dégradé se repeint dès qu'on la change.
+- **Ctrl+Z ne fonctionnait pas toujours sur l'aperçu.** Trois causes :
+  l'annulation envoyée à l'éditeur passait par son focus, et ne faisait plus
+  rien dès qu'on avait cliqué une fois dans le code ; une simple info-bulle
+  ouverte sous la souris bloquait le raccourci ; et dans une case de saisie, le
+  raccourci n'annulait ni la saisie ni le document. Ctrl+Z / Ctrl+Y agissent
+  maintenant à chaque fois : d'abord sur la case en cours de saisie s'il y a de
+  quoi, sinon sur le document. Ils sont ignorés pendant un glisser ou un
+  redimensionnement, le temps que le geste se termine.
+- **Glisser un onglet qui n'était pas sélectionné emportait l'onglet
+  sélectionné** (vers une autre fenêtre, par exemple) : c'est maintenant bien
+  l'onglet saisi qui part.
+- **Les derniers onglets et le bouton « + » sortaient de la barre** quand
+  beaucoup de documents étaient ouverts : l'espace entre les onglets n'était pas
+  compté dans le partage de la largeur. Les onglets se partagent maintenant la
+  barre, onglets masqués d'une vue repliée exclus.
+- **Paramètres › Barre d'outils : on pouvait mal placer un groupe.** Rien ne
+  pouvait être déposé avant le premier groupe d'une ligne (aucune place à
+  gauche), et un groupe lâché sur un autre groupe disparaissait du geste. Les
+  lignes ont maintenant de la place au début et à la fin, plus d'espace entre
+  les groupes et les boutons, et un groupe lâché sur un autre se place avant ou
+  après lui. Les éléments masqués s'alignent sur le titre de leur zone.
+- **L'aperçu ignorait `^PMY`** (étiquette imprimée en miroir) alors que l'export
+  PDF l'appliquait : les deux le suivent maintenant.
+- **La plaque de sélection pouvait garder les propriétés d'un autre élément**
+  (le « Contenu » d'un QR code affiché pour un rectangle tout juste posé). Le
+  panneau était repéré par la position de l'élément dans le texte, qu'un nouvel
+  élément peut reprendre après une insertion ou une annulation ; il l'est
+  maintenant par la sélection elle-même et par le type d'élément.
+
+---
+
 ## [1.6.1] — 2026-09-16 — la ligne de commande, refaite
 
 La ligne de commande est **réécrite de zéro**. Elle savait ouvrir un fichier et

@@ -30,6 +30,13 @@ public sealed partial class PreviewPage
 
     // The selected field, as a span in the ZPL text. -1 means nothing is selected.
     private int _selStart = -1;
+    // Bumped whenever the selection becomes ANOTHER element (NewSelection). What is
+    // built for a selection — the properties panel — is keyed on this, not on
+    // _selStart: an offset is not an identity, and after an insert, an undo or a
+    // delete a new element can start exactly where the previous one did.
+    private int _selGen;
+
+    private void NewSelection() => _selGen++;
     private int _selEnd = -1;
 
     private Rectangle? _inspectFrame;
@@ -156,6 +163,7 @@ public sealed partial class PreviewPage
     /// </summary>
     private void SelectSpan(int start, int end, bool revealInEditor, bool moveCaret = false)
     {
+        if (start != _selStart) NewSelection();
         _selStart = start;
         _selEnd = end;
         // Picking one element is picking ONE element: whatever else was held goes.
@@ -183,6 +191,7 @@ public sealed partial class PreviewPage
     private void ClearInspectSelection()
     {
         _selStart = _selEnd = -1;
+        NewSelection();
         _selected.Clear();
         UpdateExtraFrames();
         if (_inspectFrame is not null) _inspectFrame.Visibility = Visibility.Collapsed;
@@ -296,8 +305,9 @@ public sealed partial class PreviewPage
         _inspectFrame.StrokeThickness = zoom > 0 ? Math.Max(0.5, px / zoom) : px;
     }
 
-    private static Color AccentColor() =>
-        Application.Current.Resources["SystemAccentColor"] is Color c ? c : Microsoft.UI.Colors.DodgerBlue;
+    // The accent in force, the custom one included ("SystemAccentColor" is
+    // always the system's).
+    private static Color AccentColor() => AccentColorService.Current;
 
     private static string AccentHex()
     {

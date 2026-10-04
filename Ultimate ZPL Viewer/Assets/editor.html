@@ -400,6 +400,15 @@
                         }
                     } else if (msg.type === 'clearHighlight') {
                         clearInspect();
+                    } else if (msg.type === 'revealOffset') {
+                        // A label brought up from the preview's pager: its code is
+                        // scrolled to, at the top of the view, without moving the
+                        // caret — moving it would bring the previous label back.
+                        var rm = editor.getModel();
+                        if (rm) {
+                            var at = rm.getPositionAt(msg.offset || 0);
+                            editor.revealLineNearTop(at.lineNumber);
+                        }
                     } else if (msg.type === 'setTheme') {
                         monaco.editor.setTheme(msg.dark ? 'zpl-dark' : 'vs');
                         // On #container, never on body: a body background propagates
@@ -454,7 +463,14 @@
                         // Asked for from the PREVIEW, where the focus sits after an
                         // element has been dragged. The history is Monaco's, so the
                         // request has to come back here rather than be kept twice.
-                        unlocked(function () { editor.trigger('app', msg.type, null); });
+                        //
+                        // Straight to the model, NOT editor.trigger('undo'): that
+                        // routes through the page's focus, and with the editor
+                        // blurred it ends up running the browser's own undo on
+                        // Monaco's hidden textarea — which does nothing. It only
+                        // worked until the code had been clicked once.
+                        var um = editor.getModel();
+                        if (um) { if (msg.type === 'undo') um.undo(); else um.redo(); }
                     } else if (msg.type === 'applyEdit') {
                         // See unlocked(): the view mode holds the editor read-only.
                         // An edit made from the PREVIEW (dragging an element,

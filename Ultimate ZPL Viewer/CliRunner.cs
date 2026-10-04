@@ -49,7 +49,7 @@ internal static class CliRunner
 
     public static int ListPrinters()
     {
-        var settings = AppSettings.Load();
+        var settings = AppSettings.LoadResolved();
         var printers = Printers();
         if (printers.Count == 0) { Out(M("noPrinters")); return Ok; }
 
@@ -69,7 +69,7 @@ internal static class CliRunner
 
     public static int ListPapers(string? requested)
     {
-        var settings = AppSettings.Load();
+        var settings = AppSettings.LoadResolved();
         var printer = ResolvePrinter(requested, settings, out var error);
         if (printer is null) return Fail(error!);
 
@@ -104,7 +104,7 @@ internal static class CliRunner
         try { original = File.ReadAllText(job.Input); }
         catch (Exception ex) { return Fail(M("readFailed", job.Input, ex.Message)); }
 
-        var settings = AppSettings.Load();
+        var settings = AppSettings.LoadResolved();
         var doc = job.Document;
 
         // The density the file is READ at, then the one it is written for after the

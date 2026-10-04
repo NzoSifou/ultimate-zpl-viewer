@@ -6,7 +6,14 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
-## [Non publié] — des profils de paramètres
+## [1.7.0] — 2026-10-04 — profils, vues fractionnées et recherche
+
+Trois nouveautés de fond. Les **profils** rassemblent chacun un jeu complet de
+paramètres, qu'on change d'un clic. Les **vues fractionnées** montrent jusqu'à
+quatre documents à la fois, et ont leur propre onglet. Un fichier qui contient
+**plusieurs étiquettes** se parcourt comme les pages d'un PDF. Les paramètres ont
+aussi une **recherche** qui affiche les réglages de toutes les catégories et les
+rend modifiables sur place, et la barre d'outils peut **masquer** des boutons.
 
 ### ✨ Ajouté
 

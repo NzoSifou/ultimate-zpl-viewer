@@ -204,12 +204,17 @@ public sealed partial class PreviewPage
     /// </summary>
     private List<SplitOption> SplitOptions(DocTab tab)
     {
-        var options = new List<SplitOption>();
-        if (_activeTab is null || IsOnScreen(tab)) return options;
+        if (_activeTab is null || IsOnScreen(tab)) return new List<SplitOption>();
+        return _view is not null
+            ? OptionsFor(_view.Rows, _view.Groups, tab)
+            : OptionsFor(false, new List<List<DocTab>> { new() { _activeTab } }, tab);
+    }
 
-        var (rows, layout) = _view is not null
-            ? Canonical(_view.Rows, CopyGroups(_view.Groups))
-            : (false, new List<List<DocTab>> { new() { _activeTab } });
+    /// <summary>The places a document can take in a given arrangement.</summary>
+    private static List<SplitOption> OptionsFor(bool viewRows, List<List<DocTab>> groups, DocTab tab)
+    {
+        var options = new List<SplitOption>();
+        var (rows, layout) = Canonical(viewRows, CopyGroups(groups));
         int total = layout.Sum(g => g.Count);
         if (total >= MaxSplitPanes) return options;
 
@@ -474,6 +479,10 @@ public sealed partial class PreviewPage
             }
             WindowManager.SaveSessionLayout();
         }
+        else if (moved is not null && DocTabs.TabItems.Contains(moved) && moved.Tag is DocTab single)
+        {
+            JoinViewDroppedInto(moved, single);
+        }
         NormalizeStrip();
         SyncSplit();
         RefreshTabWidths();
@@ -486,6 +495,43 @@ public sealed partial class PreviewPage
         }
     }
 
+    /// <summary>
+    /// A plain tab dropped among a split view's tabs (right after its own tab or one
+    /// of its documents) joins the view, if it has room: in the place that keeps it
+    /// where it was dropped in the reading order. A view that is full lets it go
+    /// back out (NormalizeStrip).
+    /// </summary>
+    private void JoinViewDroppedInto(TabViewItem moved, DocTab tab)
+    {
+        int at = DocTabs.TabItems.IndexOf(moved);
+        if (at <= 0) return;
+        var before = DocTabs.TabItems[at - 1] as TabViewItem;
+        var view = before?.Tag switch
+        {
+            SplitView v => v,
+            DocTab d => ViewOf(d),
+            _ => null,
+        };
+        if (view is null) return;
+        var options = OptionsFor(view.Rows, view.Groups, tab);
+        if (options.Count == 0) return;                     // four panes already
+
+        // Where it landed among the view's documents, counted from the left.
+        int wanted = view.Members.Count(m => DocTabs.TabItems.IndexOf(ItemOf(m)) < at);
+        SplitOption Pick()
+        {
+            return options.OrderBy(o =>
+            {
+                var probe = new SplitView { Rows = o.Rows, Groups = o.Groups };
+                int index = ReadingSlots(probe).FindIndex(s => ReferenceEquals(o.Groups[s.Group][s.Index], tab));
+                return Math.Abs(index - wanted);
+            }).First();
+        }
+        var option = Pick();
+        (view.Rows, view.Groups) = Canonical(option.Rows, option.Groups);
+        WindowManager.SaveSessionLayout();
+    }
+
     /// <summary>A view's panes in reading order: top left, top right, bottom left, bottom right.</summary>
     private static List<(int Group, int Index)> ReadingSlots(SplitView view)
         => view.Groups
@@ -496,7 +542,8 @@ public sealed partial class PreviewPage
             .Select(x => (x.Group, x.Index))
             .ToList();
 
-    // Moves a strip item without the move counting as a choice of tab. The place    // is worked out once the item is out of the strip.
+    // Moves a strip item without the move counting as a choice of tab. The place
+    // is worked out once the item is out of the strip.
     private void MoveItem(TabViewItem item, Func<int> indexAfterRemoval)
     {
         int current = DocTabs.TabItems.IndexOf(item);
@@ -555,6 +602,7 @@ public sealed partial class PreviewPage
         item.Loaded += (_, _) =>
         {
             if (FindDescendant<Button>(item, "CloseButton") is { } close) close.Visibility = Visibility.Collapsed;
+            ApplyPillLook(view);
         };
         var menu = new MenuFlyout();
         menu.Opening += (_, _) =>
@@ -593,7 +641,9 @@ public sealed partial class PreviewPage
     private void UpdateSplitPill(SplitView view, bool unfolded)
     {
         var name = SpL("viewName") + (view.Number > 1 ? " " + view.Number : "");
-        var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        // As tall as a tab with its cross: alone in the strip, a shorter pill made
+        // the strip shorter and moved the « + ».
+        var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, MinHeight = 22 };
         header.Children.Add(new Viewbox { Width = 16, Height = 16, Child = LayoutIcon(view) });
         header.Children.Add(new TextBlock
         {
@@ -611,6 +661,24 @@ public sealed partial class PreviewPage
         var names = string.Join("\n", view.Members.Select(TabTitle));
         ToolTipService.SetToolTip(view.Pill, new TextBlock { Text = name + "\n" + names, MaxWidth = 260, TextWrapping = TextWrapping.Wrap });
         ToolTipService.SetPlacement(view.Pill, Microsoft.UI.Xaml.Controls.Primitives.PlacementMode.Bottom);
+        ApplyPillLook(view);
+    }
+
+    /// <summary>
+    /// The split view on screen has its tab drawn as a selected tab — folded or not,
+    /// so there is never a doubt about what is on screen. (The selection itself is
+    /// its focused document's tab, which is selected too when it is unfolded.)
+    /// </summary>
+    private void ApplyPillLook(SplitView view)
+    {
+        if (FindDescendant<Border>(view.Pill, "TabContainer") is not { } container) return;
+        bool shown = ReferenceEquals(view, _view);
+        container.Background = shown
+            ? (Brush)Application.Current.Resources["ControlFillColorDefaultBrush"]
+            : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        container.BorderBrush = shown
+            ? (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"]
+            : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
     }
 
     private string? _framesShown;
@@ -737,6 +805,7 @@ public sealed partial class PreviewPage
 
     private void LayoutSplit()
     {
+        _swapSource = null;   // its overlay goes with the other children below
         // The live preview's frame changes size: once laid out, it fits again.
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
             () => { ApplyDefaultZoom(); DrawRulers(); });
@@ -839,11 +908,25 @@ public sealed partial class PreviewPage
         ToolTipService.SetToolTip(close, TipBlock(SpL("closePane")));
         close.Click += (_, _) => ClosePane(tab);
 
+        var swap = new Button
+        {
+            Width = 26, Height = 22, Padding = new Thickness(0), MinWidth = 0,
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            BorderThickness = new Thickness(0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Content = new FontIcon { Glyph = "", FontSize = 11 },
+        };
+        ToolTipService.SetToolTip(swap, TipBlock(SpL("swapTip")));
+        swap.Click += (_, _) => StartSwap(tab);
+
         var row = new Grid { Height = 30, Padding = new Thickness(12, 0, 4, 0) };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.Children.Add(title);
-        Grid.SetColumn(close, 1);
+        Grid.SetColumn(swap, 1);
+        row.Children.Add(swap);
+        Grid.SetColumn(close, 2);
         row.Children.Add(close);
 
         var underline = new Border
@@ -914,6 +997,118 @@ public sealed partial class PreviewPage
             pane.Body.Background = PreviewSurface.Background;
             RenderPane(pane, tab);
         }
+    }
+
+    // ── Swapping two panes ───────────────────────────────────────────────────
+    // The ⇄ button of a pane's bar. With two panes they simply change places;
+    // with three or four, every other pane offers « swap here », and a click on
+    // one of them does it — a click anywhere else, or Esc, gives up.
+
+    private DocTab? _swapSource;
+    private Grid? _swapLayer;
+
+    private void StartSwap(DocTab source)
+    {
+        if (_view is not { } view || view.Count < 2) return;
+        if (ReferenceEquals(_swapSource, source)) { EndSwap(); return; }   // the button again: never mind
+        var others = view.Members.Where(m => !ReferenceEquals(m, source)).ToList();
+        if (others.Count == 1) { SwapPanes(source, others[0]); return; }
+
+        EndSwap();
+        _swapSource = source;
+        var accent = AccentColorService.Current;
+        var layer = new Grid { Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent) };
+        Canvas.SetZIndex(layer, 90);
+        Grid.SetRowSpan(layer, Math.Max(1, SplitHost.RowDefinitions.Count));
+        Grid.SetColumnSpan(layer, Math.Max(1, SplitHost.ColumnDefinitions.Count));
+        layer.Tapped += (_, e) => { if (e.OriginalSource == layer) EndSwap(); };
+        var esc = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = Windows.System.VirtualKey.Escape };
+        esc.Invoked += (_, e) => { EndSwap(); e.Handled = true; };
+        layer.KeyboardAccelerators.Add(esc);
+
+        var canvas = new Canvas();
+        layer.Children.Add(canvas);
+        foreach (var member in view.Members)
+        {
+            FrameworkElement body = ReferenceEquals(member, _activeTab) ? PreviewSurface : PaneFor(member).Body;
+            var o = body.TransformToVisual(SplitHost).TransformPoint(new Point(0, 0));
+            bool isSource = ReferenceEquals(member, source);
+            var zone = new Border
+            {
+                Width = Math.Max(0, body.ActualWidth - 8), Height = Math.Max(0, body.ActualHeight - 8),
+                CornerRadius = new CornerRadius(6),
+                BorderThickness = new Thickness(2),
+                BorderBrush = new SolidColorBrush(isSource ? Windows.UI.Color.FromArgb(160, 128, 128, 128) : accent),
+                Background = new SolidColorBrush(isSource
+                    ? Windows.UI.Color.FromArgb(70, 0, 0, 0)
+                    : Windows.UI.Color.FromArgb(40, accent.R, accent.G, accent.B)),
+            };
+            Canvas.SetLeft(zone, o.X + 4);
+            Canvas.SetTop(zone, o.Y + 4);
+            canvas.Children.Add(zone);
+
+            FrameworkElement label;
+            if (isSource)
+            {
+                label = new Border
+                {
+                    Padding = new Thickness(12, 6, 12, 6), CornerRadius = new CornerRadius(6),
+                    Background = (Brush)Application.Current.Resources["SolidBackgroundFillColorBaseBrush"],
+                    Child = new TextBlock { Text = SpL("swapSource") },
+                };
+            }
+            else
+            {
+                var target = member;
+                var go = new Button
+                {
+                    Style = (Style)Application.Current.Resources["AccentButtonStyle"],
+                    Content = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal, Spacing = 8,
+                        Children = { new FontIcon { Glyph = "", FontSize = 14 }, new TextBlock { Text = SpL("swapHere") } },
+                    },
+                };
+                go.Click += (_, _) => SwapPanes(source, target);
+                label = go;
+            }
+            label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(label, o.X + (body.ActualWidth - label.DesiredSize.Width) / 2);
+            Canvas.SetTop(label, o.Y + (body.ActualHeight - label.DesiredSize.Height) / 2);
+            canvas.Children.Add(label);
+        }
+        _swapLayer = layer;
+        SplitHost.Children.Add(layer);
+    }
+
+    private void EndSwap()
+    {
+        _swapSource = null;
+        if (_swapLayer is not null) SplitHost.Children.Remove(_swapLayer);
+        _swapLayer = null;
+    }
+
+    /// <summary>Two documents of the view on screen change places; the focus stays on its document.</summary>
+    private void SwapPanes(DocTab a, DocTab b)
+    {
+        EndSwap();
+        if (_view is not { } view || FindSlot(view.Groups, a) is not { } sa || FindSlot(view.Groups, b) is not { } sb) return;
+        view.Groups[sa.Group][sa.Index] = b;
+        view.Groups[sb.Group][sb.Index] = a;
+        NormalizeStrip();      // the tabs follow the panes' new order
+        LayoutSplit();
+        WindowManager.SaveSessionLayout();
+    }
+
+    /// <summary>Where a document sits in a view, as fractions of the preview.</summary>
+    private static Rect CellOf(SplitView view, DocTab tab)
+    {
+        if (FindSlot(view.Groups, tab) is not { } s) return new Rect(0, 0, 1, 1);
+        int groups = view.Groups.Count, inGroup = view.Groups[s.Group].Count;
+        double along = 1.0 / groups, across = 1.0 / inGroup;
+        return view.Rows
+            ? new Rect(s.Index * across, s.Group * along, across, along)
+            : new Rect(s.Group * along, s.Index * across, along, across);
     }
 
     // ── Dragging a tab onto the preview ──────────────────────────────────────
@@ -1079,7 +1274,20 @@ public sealed partial class PreviewPage
         bool inPane = IsSplit && FindSlot(_splitGroups, tab) is not null;
         if (options.Count == 0 && !IsSplit) return;
         menu.Items.Add(new MenuFlyoutSeparator());
-        // A document on screen already: it can only leave the split.
+        // A document on screen already: it can only leave the split — or change
+        // places with another document of the view.
+        if (inPane && _view is { } shownView)
+        {
+            var swapWith = new MenuFlyoutSubItem { Text = SpL("swapWith"), Icon = new FontIcon { Glyph = "" } };
+            foreach (var other in shownView.Members.Where(m => !ReferenceEquals(m, tab)))
+            {
+                var target = other;
+                var mi = new MenuFlyoutItem { Text = TabTitle(other), Icon = SplitIcon(CellOf(shownView, other)) };
+                mi.Click += (_, _) => SwapPanes(tab, target);
+                swapWith.Items.Add(mi);
+            }
+            menu.Items.Add(swapWith);
+        }
         if (inPane)
         {
             var leave = new MenuFlyoutItem { Text = SpL("closePane"), Icon = new FontIcon { Glyph = "\uE711" } };

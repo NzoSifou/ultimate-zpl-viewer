@@ -64,6 +64,14 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   groupe le retire de la vue. Deux réglages (**Paramètres › Éditeur et aperçu ›
   Vues fractionnées**) décident si ouvrir une vue la déplie d'office, et si en
   afficher une autre la replie ou la laisse comme elle était.
+  Le bouton ⇄ de la barre d'un volet l'intervertit avec un autre : directement
+  avec deux volets, et avec trois ou quatre chaque autre volet propose
+  « Intervertir ici » (un clic ailleurs ou Échap annule). Le clic droit sur un
+  onglet de la vue propose aussi « Intervertir avec › », chaque document avec
+  l'image de sa place. Un onglet simple lâché parmi les onglets d'une vue la
+  rejoint, s'il reste de la place, à l'endroit où il a été lâché. L'onglet de la
+  vue affichée a toujours l'aspect d'un onglet sélectionné, qu'elle soit
+  repliée ou non.
 - **Rechercher dans les paramètres** 🔎 Une zone de recherche en haut de la
   colonne des catégories (Ctrl+F dans les paramètres) trouve un réglage d'après
   le titre de sa carte, sa description ou les mots de ses options, sans tenir

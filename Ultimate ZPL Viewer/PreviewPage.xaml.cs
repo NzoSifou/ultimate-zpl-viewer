@@ -3002,6 +3002,11 @@ public sealed partial class PreviewPage : Page
     private void DocTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_suppressTabEvents) return;
+        // While TabView moves a dragged tab it takes it out of the strip and puts it
+        // back, and the selection flickers in between: choosing a tab then, in the
+        // middle of its move, crashes XAML. The selection is put right once the drag
+        // is over (HandleStripReorder).
+        if (_tabDragging) return;
         if (DocTabs.SelectedItem is TabViewItem { Tag: SplitView view }) { OpenSplitView(view); return; }
         if (DocTabs.SelectedItem is not TabViewItem item || item.Tag is not DocTab tab) return;
         if (ReferenceEquals(tab, _activeTab)) return;
@@ -3195,6 +3200,9 @@ public sealed partial class PreviewPage : Page
     // is handed over through TabDragState instead of being serialised.
     private void DocTabs_TabDragStarting(TabView sender, TabViewTabDragStartingEventArgs args)
     {
+        // The strip is TabView's until the drag completes (see PreviewPage.Split.cs).
+        _tabDragging = true;
+        _draggedItem = _pressedTabItem is { } held && DocTabs.TabItems.Contains(held) ? held : args.Tab;
         if (_pressedTabItem is { } p && DocTabs.TabItems.Contains(p))
         {
             if (p.Tag is not DocTab pressed) { TabDragState.Clear(); return; }   // a split view's tab
@@ -3233,13 +3241,16 @@ public sealed partial class PreviewPage : Page
         // Landing on another window's strip is handled by that window's Drop, which
         // already took the tab away — nothing left to do here.
         if (TabDragState.Tab is null) return;
-        if (args.Tab is TabViewItem item && item.Tag is DocTab tab)
+        // The tab that was dragged — args.Tab names the selected one when they differ.
+        if (TabDragState.Item is { } item && TabDragState.Tab is { } tab && DocTabs.TabItems.Contains(item))
         {
             var (cx, cy) = CursorPosition();
-            // Let go over the preview, where the places to split are shown: a
-            // drop there that was not on a place is a drag given up, not a tab
-            // sent to a window of its own.
-            if (!IsOverPreview(cx, cy)) MoveTabToNewWindow(item, tab, cx, cy);
+            // Once TabView has finished with its drag: taking a tab out of the strip
+            // while it is still busy with it crashes XAML.
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                if (DocTabs.TabItems.Contains(item)) MoveTabToNewWindow(item, tab, cx, cy);
+            });
         }
         TabDragState.Clear();
     }
@@ -4872,6 +4883,16 @@ public sealed partial class PreviewPage : Page
         panel.Children.Add(SubHeader(SL("editor.sub.layout")));
         panel.Children.Add(Row(MakeCard("\uE8AB", SL("editor.cards.swap.title"),
             SL("editor.cards.swap.desc"), swap)));
+
+        // ── Vues fractionnées ───────────────────────────────────────────────
+        var splitUnfold = MakeToggle(_settings.SplitViewAutoUnfold);
+        splitUnfold.Toggled += (_, _) => { _settings.SplitViewAutoUnfold = splitUnfold.IsOn; _settings.Save(); };
+        var splitFold = MakeToggle(_settings.SplitViewFoldOnLeave);
+        splitFold.Toggled += (_, _) => { _settings.SplitViewFoldOnLeave = splitFold.IsOn; _settings.Save(); };
+        panel.Children.Add(SubHeader(SL("editor.sub.splitViews")));
+        panel.Children.Add(Row(
+            MakeCard("", SL("editor.cards.splitUnfold.title"), SL("editor.cards.splitUnfold.desc"), splitUnfold),
+            MakeCard("", SL("editor.cards.splitFold.title"), SL("editor.cards.splitFold.desc"), splitFold)));
 
         // Resolve card widths on a shared grid that fills the container width.
         // Targets 5 columns, but drops to fewer when the window is too narrow to

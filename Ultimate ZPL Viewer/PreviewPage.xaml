@@ -42,7 +42,10 @@
             <Style x:Key="FloatingTabViewItemStyle" TargetType="TabViewItem">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="MinHeight" Value="0"/>
-                <Setter Property="Margin" Value="0,0,4,0"/>
+                <!-- The gap between pills is INSIDE the item (TabContainer's margin): TabView
+                     shares its width between the items without counting their margins, so
+                     an outer margin pushed the last tabs and the + out of the strip. -->
+                <Setter Property="Margin" Value="0"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabViewItem">
@@ -81,6 +84,7 @@
                                     </VisualStateGroup>
                                 </VisualStateManager.VisualStateGroups>
                                 <Border x:Name="TabContainer"
+                                        Margin="0,0,4,0"
                                         Background="Transparent"
                                         BorderBrush="Transparent"
                                         BorderThickness="1"
@@ -153,6 +157,7 @@
                  Visibility="Collapsed"
                  VerticalAlignment="Top"
                  Margin="6,5,6,7"
+                 TabWidthMode="SizeToContent"
                  CanReorderTabs="True"
                  CanDragTabs="True"
                  AllowDrop="True"

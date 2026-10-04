@@ -45,6 +45,8 @@ public sealed partial class PreviewPage
         // The pane that had the focus when the view was left: it gets it back.
         public DocTab? Focus { get; set; }
         public TabViewItem Pill { get; set; } = null!;
+        // Its documents' tabs shown in the strip (unfolded) or hidden behind its own.
+        public bool Unfolded { get; set; } = true;
         public IEnumerable<DocTab> Members => Groups.SelectMany(g => g);
         public int Count => Groups.Sum(g => g.Count);
     }
@@ -54,6 +56,13 @@ public sealed partial class PreviewPage
     private SplitView? _view;
     private readonly Dictionary<DocTab, SplitPane> _splitPanes = new();
     private bool _normalizingStrip;
+    // TabView owns the strip while one of its tabs is dragged: nothing may move
+    // in it until the drag is over (doing so crashed the app, 0xc000027b).
+    private bool _tabDragging;
+    private TabViewItem? _draggedItem;
+    // The split view a click has just opened: that same click must not fold it.
+    private SplitView? _viewJustOpened;
+    private long _viewJustOpenedAt;
 
     private sealed class SplitPane
     {
@@ -85,11 +94,26 @@ public sealed partial class PreviewPage
         SplitHost.Drop += SplitHost_Drop;
         // A tab moved by hand inside the strip: the split views' tabs follow their
         // own tab again, in the order of their panes.
-        DocTabs.TabItemsChanged += (_, _) =>
+        DocTabs.TabItemsChanged += (_, e) =>
         {
-            if (!_normalizingStrip) DispatcherQueue.TryEnqueue(NormalizeStrip);
+            if (!_normalizingStrip && !_tabDragging) DispatcherQueue.TryEnqueue(NormalizeStrip);
+            if (!_tabDragging) DispatcherQueue.TryEnqueue(RefreshTabWidths);
         };
-        DocTabs.LayoutUpdated += (_, _) => UpdateTabGroupFrames();
+        // Once TabView has finished moving a tab, see what the move means.
+        DocTabs.TabDragCompleted += (_, _) =>
+        {
+            _tabDragging = false;
+            var moved = _draggedItem;
+            _draggedItem = null;
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                () => HandleStripReorder(moved));
+        };
+        DocTabs.SizeChanged += (_, _) => RefreshTabWidths();
+        DocTabs.LayoutUpdated += (_, _) =>
+        {
+            if (_tabDragging) return;
+            UpdateTabGroupFrames();
+        };
     }
 
     // ── The strip: documents and split views ─────────────────────────────────
@@ -125,7 +149,7 @@ public sealed partial class PreviewPage
     /// </summary>
     private List<TabViewItem> TabStops()
         => DocTabs.TabItems.OfType<TabViewItem>()
-            .Where(i => i.Visibility == Visibility.Visible && !(i.Tag is SplitView v && ReferenceEquals(v, _view)))
+            .Where(i => i.Visibility == Visibility.Visible && !(i.Tag is SplitView v && v.Unfolded))
             .ToList();
 
     private int CurrentStopIndex(List<TabViewItem> stops)
@@ -280,6 +304,7 @@ public sealed partial class PreviewPage
         finally { _normalizingStrip = false; }
         foreach (var member in view.Members)
             if (ItemOf(member) is { } item) item.Visibility = Visibility.Visible;
+        RefreshTabWidths();
     }
 
     /// <summary>The menu's « undo the split view » on the view on screen.</summary>
@@ -327,6 +352,12 @@ public sealed partial class PreviewPage
     /// <summary>A split view's own tab was chosen: its arrangement comes back.</summary>
     private void OpenSplitView(SplitView view)
     {
+        if (!ReferenceEquals(view, _view))
+        {
+            if (_settings.SplitViewAutoUnfold) view.Unfolded = true;
+            _viewJustOpened = view;
+            _viewJustOpenedAt = Environment.TickCount64;
+        }
         if (DocOfItem(view.Pill) is { } doc && ItemOf(doc) is { } item) DocTabs.SelectedItem = item;
     }
 
@@ -340,6 +371,7 @@ public sealed partial class PreviewPage
     /// </summary>
     private void SyncSplit()
     {
+        var previous = _view;
         var open = OpenTabs().ToHashSet();
         foreach (var view in _views.ToList())
         {
@@ -349,21 +381,122 @@ public sealed partial class PreviewPage
 
         _view = ViewOf(_activeTab);
         if (_view is not null) _view.Focus = _activeTab;
+        // The view just left folds away — or keeps the state it was left in.
+        if (previous is not null && !ReferenceEquals(previous, _view) && _views.Contains(previous)
+            && _settings.SplitViewFoldOnLeave)
+            previous.Unfolded = false;
 
+        ApplyFolding();
+        LayoutSplit();
+    }
+
+    /// <summary>
+    /// Shows or hides each split view's tabs as its fold state says, refreshes the
+    /// views' own tabs and their frames, and lets the strip share its width again.
+    /// </summary>
+    private void ApplyFolding()
+    {
         foreach (var view in _views)
         {
-            bool unfolded = ReferenceEquals(view, _view);
+            var visibility = view.Unfolded ? Visibility.Visible : Visibility.Collapsed;
             foreach (var member in view.Members)
-                if (ItemOf(member) is { } item)
-                    item.Visibility = unfolded ? Visibility.Visible : Visibility.Collapsed;
-            UpdateSplitPill(view, unfolded);
+                if (ItemOf(member) is { } item && item.Visibility != visibility)
+                    item.Visibility = visibility;
+            UpdateSplitPill(view, view.Unfolded);
         }
-        LayoutSplit();
+        if (!_tabDragging) RefreshTabWidths();
         UpdateTabGroupFrames();
     }
 
-    // Moves a strip item without the move counting as a choice of tab. The place
-    // is worked out once the item is out of the strip.
+    // Every visible tab gets the same width, shared out over the strip — the way
+    // TabView's own « Equal » mode does it, except that a hidden tab (the tabs of a
+    // folded split view) takes no share: folding a view gives the room back to the
+    // others, and unfolding one never pushes the last tabs and the « + » out of
+    // reach. TabView sizes its tabs to their content (XAML); the width is set here
+    // through MinWidth / MaxWidth, which TabView never touches.
+    private const double TabMinWidth = 100, TabMaxWidth = 240;
+    // The « + » button and the strip's own padding.
+    private const double TabStripReserved = 48;
+
+    private void RefreshTabWidths()
+    {
+        var items = DocTabs.TabItems.OfType<TabViewItem>().Where(i => i.Visibility == Visibility.Visible).ToList();
+        if (items.Count == 0 || DocTabs.ActualWidth <= 0) return;
+        double width = Math.Clamp(Math.Floor((DocTabs.ActualWidth - TabStripReserved) / items.Count),
+                                  TabMinWidth, TabMaxWidth);
+        foreach (var item in items)
+        {
+            if (Math.Abs(item.MinWidth - width) < 0.5 && Math.Abs(item.MaxWidth - width) < 0.5) continue;
+            item.MinWidth = width;
+            item.MaxWidth = width;
+        }
+    }
+    /// <summary>
+    /// A click on a split view's tab. Opening the view is the selection's business
+    /// (OpenSplitView); a click on the view already on screen folds or unfolds its
+    /// tabs, and the arrangement stays.
+    /// </summary>
+    private void SplitPillTapped(SplitView view)
+    {
+        bool justOpened = ReferenceEquals(_viewJustOpened, view)
+                          && Environment.TickCount64 - _viewJustOpenedAt < 800;
+        _viewJustOpened = null;
+        if (justOpened || !ReferenceEquals(view, _view)) return;
+        view.Unfolded = !view.Unfolded;
+        ApplyFolding();
+    }
+
+    /// <summary>
+    /// After a tab was dragged inside the strip. A split view's tab dropped among
+    /// its own documents' tabs puts them in that order, and their panes follow —
+    /// that is how two panes are swapped; dropped outside them, it leaves the view.
+    /// </summary>
+    private void HandleStripReorder(TabViewItem? moved)
+    {
+        if (moved is not null && DocTabs.TabItems.Contains(moved)
+            && moved.Tag is DocTab tab && ViewOf(tab) is { } view)
+        {
+            int pill = DocTabs.TabItems.IndexOf(view.Pill);
+            var places = view.Members.Select(m => DocTabs.TabItems.IndexOf(ItemOf(m))).OrderBy(i => i).ToList();
+            bool together = places.Select((index, k) => index == pill + 1 + k).All(b => b);
+            if (together)
+            {
+                var inStripOrder = view.Members.OrderBy(m => DocTabs.TabItems.IndexOf(ItemOf(m))).ToList();
+                var slots = ReadingSlots(view);
+                var groups = CopyGroups(view.Groups);
+                for (int k = 0; k < slots.Count && k < inStripOrder.Count; k++)
+                    groups[slots[k].Group][slots[k].Index] = inStripOrder[k];
+                view.Groups = groups;
+            }
+            else
+            {
+                RemoveMember(view, tab);
+            }
+            WindowManager.SaveSessionLayout();
+        }
+        NormalizeStrip();
+        SyncSplit();
+        RefreshTabWidths();
+        // The selection the drag may have moved goes back to the document on screen.
+        if (ItemOf(_activeTab) is { } current && !ReferenceEquals(DocTabs.SelectedItem, current))
+        {
+            _suppressTabEvents = true;
+            try { DocTabs.SelectedItem = current; }
+            finally { _suppressTabEvents = false; }
+        }
+    }
+
+    /// <summary>A view's panes in reading order: top left, top right, bottom left, bottom right.</summary>
+    private static List<(int Group, int Index)> ReadingSlots(SplitView view)
+        => view.Groups
+            .SelectMany((g, gi) => g.Select((_, ii) => (Group: gi, Index: ii,
+                Row: view.Rows ? gi : (g.Count == 1 ? 0 : ii),
+                Col: view.Rows ? (g.Count == 1 ? 0 : ii) : gi)))
+            .OrderBy(x => x.Row).ThenBy(x => x.Col)
+            .Select(x => (x.Group, x.Index))
+            .ToList();
+
+    // Moves a strip item without the move counting as a choice of tab. The place    // is worked out once the item is out of the strip.
     private void MoveItem(TabViewItem item, Func<int> indexAfterRemoval)
     {
         int current = DocTabs.TabItems.IndexOf(item);
@@ -392,14 +525,11 @@ public sealed partial class PreviewPage
     /// </summary>
     private void NormalizeStrip()
     {
+        if (_tabDragging) return;
         foreach (var view in _views)
         {
-            var ordered = view.Groups
-                .SelectMany((g, gi) => g.Select((t, ii) => (Tab: t,
-                    Row: view.Rows ? gi : (g.Count == 1 ? 0 : ii),
-                    Col: view.Rows ? (g.Count == 1 ? 0 : ii) : gi)))
-                .OrderBy(x => x.Row).ThenBy(x => x.Col)
-                .Select(x => ItemOf(x.Tab)).OfType<TabViewItem>().ToList();
+            var ordered = ReadingSlots(view)
+                .Select(s => ItemOf(view.Groups[s.Group][s.Index])).OfType<TabViewItem>().ToList();
             for (int k = 0; k < ordered.Count; k++)
             {
                 if (DocTabs.TabItems.IndexOf(ordered[k]) == DocTabs.TabItems.IndexOf(view.Pill) + 1 + k) continue;
@@ -442,6 +572,8 @@ public sealed partial class PreviewPage
         item.ContextFlyout = menu;
         item.AddHandler(UIElement.PointerPressedEvent,
             new Microsoft.UI.Xaml.Input.PointerEventHandler((_, _) => _pressedTabItem = item), true);
+        item.AddHandler(UIElement.TappedEvent,
+            new Microsoft.UI.Xaml.Input.TappedEventHandler((_, _) => SplitPillTapped(view)), true);
         view.Pill = item;
         UpdateSplitPill(view, false);
         return item;
@@ -463,7 +595,12 @@ public sealed partial class PreviewPage
         var name = SpL("viewName") + (view.Number > 1 ? " " + view.Number : "");
         var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         header.Children.Add(new Viewbox { Width = 16, Height = 16, Child = LayoutIcon(view) });
-        header.Children.Add(new TextBlock { Text = name, VerticalAlignment = VerticalAlignment.Center });
+        header.Children.Add(new TextBlock
+        {
+            Text = name, VerticalAlignment = VerticalAlignment.Center,
+            // The view on screen, even with its tabs folded away.
+            FontWeight = ReferenceEquals(view, _view) ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal,
+        });
         // Folded away: a chevron says there is more behind it.
         header.Children.Add(new FontIcon
         {
@@ -576,7 +713,11 @@ public sealed partial class PreviewPage
             int count = layout.Sum(g => g.Count);
             if (count < 2 || count > MaxSplitPanes || layout.SelectMany(g => g).Distinct().Count() != count) continue;
 
-            var view = new SplitView { Number = NextViewNumber(), Rows = rows, Groups = layout };
+            var view = new SplitView
+            {
+                Number = NextViewNumber(), Rows = rows, Groups = layout,
+                Unfolded = !_settings.SplitViewFoldOnLeave,
+            };
             view.Focus = state.Focus is null ? null : view.Members.FirstOrDefault(t =>
                 string.Equals(FilePathOf(t), state.Focus, StringComparison.OrdinalIgnoreCase));
             view.Pill = MakeSplitPill(view);
@@ -588,6 +729,7 @@ public sealed partial class PreviewPage
         }
         NormalizeStrip();
         SyncSplit();
+        if (_view is not null && _settings.SplitViewAutoUnfold) { _view.Unfolded = true; ApplyFolding(); }
         WindowManager.SaveSessionLayout();
     }
 
@@ -805,24 +947,6 @@ public sealed partial class PreviewPage
                         + Math.Pow((o.Cell.Y + o.Cell.Height / 2 - fy) / o.Cell.Height, 2))
             .FirstOrDefault();
         return (options, active);
-    }
-
-    /// <summary>True when a screen point (physical pixels, like the cursor) is over this window's preview.</summary>
-    internal bool IsOverPreview(int screenX, int screenY)
-    {
-        if (XamlRoot is null || SplitHost.ActualWidth <= 0
-            || AppWindowLookup.MainWindowForXamlRoot(XamlRoot) is not MainWindow window) return false;
-        double scale = XamlRoot.RasterizationScale;
-        var pos = window.AppWindow.Position;
-        // AppWindow.Position is the outer frame; the content starts at the client
-        // origin, which TransformToVisual(null) measures from.
-        var client = window.AppWindow.ClientSize;
-        var size = window.AppWindow.Size;
-        double offX = (size.Width - client.Width) / 2.0;
-        double offY = size.Height - client.Height - offX;
-        double x = (screenX - pos.X - offX) / scale, y = (screenY - pos.Y - offY) / scale;
-        var origin = SplitHost.TransformToVisual(null).TransformPoint(new Point(0, 0));
-        return new Rect(origin.X, origin.Y, SplitHost.ActualWidth, SplitHost.ActualHeight).Contains(new Point(x, y));
     }
 
     private void SplitHost_DragOver(object sender, DragEventArgs e)

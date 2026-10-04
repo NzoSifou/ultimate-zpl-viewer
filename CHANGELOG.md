@@ -58,6 +58,12 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   prendra le document est remplie. Un onglet déjà dans la vue peut en être retiré
   (le × de son volet, ou son menu) ; « Défaire la vue fractionnée », dans le menu
   de la vue, rend leurs onglets simples à tous ses documents.
+  Un clic sur l'onglet de la vue affichée replie ses onglets (la vue reste à
+  l'écran, la barre gagne de la place) ; un autre les déplie. Glisser un onglet
+  de la vue parmi ses voisins intervertit aussi leurs volets ; le glisser hors du
+  groupe le retire de la vue. Deux réglages (**Paramètres › Éditeur et aperçu ›
+  Vues fractionnées**) décident si ouvrir une vue la déplie d'office, et si en
+  afficher une autre la replie ou la laisse comme elle était.
 - **Rechercher dans les paramètres** 🔎 Une zone de recherche en haut de la
   colonne des catégories (Ctrl+F dans les paramètres) trouve un réglage d'après
   le titre de sa carte, sa description ou les mots de ses options, sans tenir
@@ -111,6 +117,10 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 - **Glisser un onglet qui n'était pas sélectionné emportait l'onglet
   sélectionné** (vers une autre fenêtre, par exemple) : c'est maintenant bien
   l'onglet saisi qui part.
+- **Les derniers onglets et le bouton « + » sortaient de la barre** quand
+  beaucoup de documents étaient ouverts : l'espace entre les onglets n'était pas
+  compté dans le partage de la largeur. Les onglets se partagent maintenant la
+  barre, onglets masqués d'une vue repliée exclus.
 - **L'aperçu ignorait `^PMY`** (étiquette imprimée en miroir) alors que l'export
   PDF l'appliquait : les deux le suivent maintenant.
 - **La plaque de sélection pouvait garder les propriétés d'un autre élément**

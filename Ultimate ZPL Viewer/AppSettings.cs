@@ -318,6 +318,12 @@ public sealed class AppSettings
     // documents were shown together, and how.
     [MachineSetting] public List<List<SplitViewState>> WindowSplitViews { get; set; } = new();
 
+    // Split views: a click on a view's tab also shows its documents' tabs (else
+    // they stay folded until a second click), and showing another tab folds them
+    // away (else the view keeps the state it was left in).
+    public bool SplitViewAutoUnfold { get; set; } = true;
+    public bool SplitViewFoldOnLeave { get; set; } = true;
+
     // Where a document opens when the app is ALREADY running. "tab" adds it to the
     // active window, "window" gives it a window of its own.
     public string OpenFromExplorer { get; set; } = "tab";   // double-click, "Open with"

@@ -1725,7 +1725,8 @@
         "preview": "Preview",
         "rulers": "Rulers",
         "layout": "Layout",
-        "mode": "Mode"
+        "mode": "Mode",
+        "splitViews": "Split views"
       },
       "cards": {
         "fontSize": {
@@ -1788,6 +1789,14 @@
         "swap": {
           "title": "Swap editor and preview",
           "desc": "Puts the ZPL editor on the right and the preview on the left."
+        },
+        "splitUnfold": {
+          "title": "Unfold when opening a view",
+          "desc": "Clicking a split view's tab also shows its tabs; another click folds them. Off, they stay folded until that click."
+        },
+        "splitFold": {
+          "title": "Fold when leaving a view",
+          "desc": "Showing another tab folds the split view. Off, it stays unfolded or folded the way you left it."
         },
         "previewCaption": {
           "title": "Preview info",

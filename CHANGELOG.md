@@ -48,7 +48,10 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   seulement elles : une pastille au milieu de chaque moitié ou quart disponible,
   et la zone visée teintée ; ailleurs, rien n'est déposé. Chaque place est
   illustrée, dans le menu comme sur les pastilles, par une petite fenêtre dont la
-  partie que prendra le document est remplie.
+  partie que prendra le document est remplie. Un onglet déjà affiché dans un
+  volet ne propose pas de place : il peut seulement être retiré de la division.
+  Lâcher un onglet sur l'aperçu ailleurs que sur une place annule le geste, au
+  lieu de l'ouvrir dans une nouvelle fenêtre.
   L'éditeur de code et la barre d'outils travaillent sur le volet actif, souligné
   de la couleur d'accentuation ; un clic sur un autre volet le rend actif, et un
   onglet choisi dans la barre prend la place du volet actif. Le × d'un volet le

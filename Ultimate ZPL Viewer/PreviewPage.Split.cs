@@ -104,7 +104,8 @@ public sealed partial class PreviewPage
     /// One pane: left or right of it, above or below. Two: any of the four
     /// quarters, the pane on that side giving up half its room. Three: the two
     /// quarters of the pane that still has a half to itself. Four: none.
-    /// A document already on screen is counted as leaving its pane first.
+    /// Always counted on what is on screen now; a document already on screen has no
+    /// place to go — it is shown already.
     /// </summary>
     private List<SplitOption> SplitOptions(DocTab tab)
     {
@@ -114,19 +115,10 @@ public sealed partial class PreviewPage
         var groups = _splitGroups.Count > 0
             ? CopyGroups(_splitGroups)
             : new List<List<DocTab>> { new() { _activeTab } };
-        if (FindSlot(groups, tab) is { } from) groups[from.Group].RemoveAt(from.Index);
+        if (IsOnScreen(tab)) return options;
         var (rows, layout) = Canonical(_splitGroups.Count > 0 && _splitRows, groups);
 
         int total = layout.Sum(g => g.Count);
-        if (total == 0)
-        {
-            // It was the only document on screen: another one stays beside it.
-            var other = OpenTabs().FirstOrDefault(t => !ReferenceEquals(t, tab));
-            if (other is null) return options;
-            layout = new List<List<DocTab>> { new() { other } };
-            rows = false;
-            total = 1;
-        }
         if (total >= MaxSplitPanes) return options;
 
         if (total == 1)
@@ -156,6 +148,10 @@ public sealed partial class PreviewPage
         // Reading order: top left, top right, bottom left, bottom right.
         return options.OrderBy(o => o.Cell.Y).ThenBy(o => o.Cell.X).ToList();
     }
+
+    /// <summary>Shown in a pane — or, unsplit, the one document on screen.</summary>
+    private bool IsOnScreen(DocTab tab)
+        => IsSplit ? FindSlot(_splitGroups, tab) is not null : ReferenceEquals(tab, _activeTab);
 
     private void ApplySplit(bool rows, List<List<DocTab>> groups, DocTab focus)
     {
@@ -464,6 +460,24 @@ public sealed partial class PreviewPage
         return (options, active);
     }
 
+    /// <summary>True when a screen point (physical pixels, like the cursor) is over this window's preview.</summary>
+    internal bool IsOverPreview(int screenX, int screenY)
+    {
+        if (XamlRoot is null || SplitHost.ActualWidth <= 0
+            || AppWindowLookup.MainWindowForXamlRoot(XamlRoot) is not MainWindow window) return false;
+        double scale = XamlRoot.RasterizationScale;
+        var pos = window.AppWindow.Position;
+        // AppWindow.Position is the outer frame; the content starts at the client
+        // origin, which TransformToVisual(null) measures from.
+        var client = window.AppWindow.ClientSize;
+        var size = window.AppWindow.Size;
+        double offX = (size.Width - client.Width) / 2.0;
+        double offY = size.Height - client.Height - offX;
+        double x = (screenX - pos.X - offX) / scale, y = (screenY - pos.Y - offY) / scale;
+        var origin = SplitHost.TransformToVisual(null).TransformPoint(new Point(0, 0));
+        return new Rect(origin.X, origin.Y, SplitHost.ActualWidth, SplitHost.ActualHeight).Contains(new Point(x, y));
+    }
+
     private void SplitHost_DragOver(object sender, DragEventArgs e)
     {
         if (DropTarget(e) is not { } target) { HideSplitDropHint(); return; }
@@ -591,8 +605,16 @@ public sealed partial class PreviewPage
     private void AddSplitMenuItems(MenuFlyout menu, DocTab tab)
     {
         var options = SplitOptions(tab);
+        bool inPane = IsSplit && FindSlot(_splitGroups, tab) is not null;
         if (options.Count == 0 && !IsSplit) return;
         menu.Items.Add(new MenuFlyoutSeparator());
+        // A document on screen already: it can only leave the split.
+        if (inPane)
+        {
+            var leave = new MenuFlyoutItem { Text = SpL("closePane"), Icon = new FontIcon { Glyph = "\uE711" } };
+            leave.Click += (_, _) => ClosePane(tab);
+            menu.Items.Add(leave);
+        }
         foreach (var option in options)
         {
             var mi = new MenuFlyoutItem { Text = SpL(option.Key), Icon = SplitIcon(option.Cell) };

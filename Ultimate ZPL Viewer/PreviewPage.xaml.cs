@@ -3220,7 +3220,10 @@ public sealed partial class PreviewPage : Page
         if (args.Tab is TabViewItem item && item.Tag is DocTab tab)
         {
             var (cx, cy) = CursorPosition();
-            MoveTabToNewWindow(item, tab, cx, cy);
+            // Let go over the preview, where the places to split are shown: a
+            // drop there that was not on a place is a drag given up, not a tab
+            // sent to a window of its own.
+            if (!IsOverPreview(cx, cy)) MoveTabToNewWindow(item, tab, cx, cy);
         }
         TabDragState.Clear();
     }

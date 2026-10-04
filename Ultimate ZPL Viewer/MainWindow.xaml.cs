@@ -215,7 +215,7 @@ namespace Ultimate_ZPL_Viewer
             SetSearchText("");
             _titleSearchHost.Visibility = onSearch is null ? Visibility.Collapsed : Visibility.Visible;
             // Taller, like Windows' Settings, to hold the search box.
-            AppTitleBar.Height = onSearch is null ? 32 : 48;
+            SetTallTitleBar(onSearch is not null);
             TitleBarBackButton.Visibility = Visibility.Visible;
             TitleContent.Margin = new Thickness(48, 0, 0, 0); // aligned with normal mode (settings ↔ back button swap)
             AppTitleText.Text = SettingsTitle();
@@ -239,7 +239,7 @@ namespace Ultimate_ZPL_Viewer
             _onSearch = null;
             SetSearchText("");
             _titleSearchHost.Visibility = Visibility.Collapsed;
-            AppTitleBar.Height = 32;
+            SetTallTitleBar(false);
             TitleBarBackButton.Visibility = Visibility.Collapsed;
             TitleContent.Margin = new Thickness(48, 0, 0, 0); // right of the settings button
             AppTitleText.Text = _documentTitle;
@@ -325,6 +325,25 @@ namespace Ultimate_ZPL_Viewer
                     .SetRegionRects(Microsoft.UI.Input.NonClientRegionKind.Passthrough, rects.ToArray());
             }
             catch { /* older systems: the bar keeps its default behaviour */ }
+        }
+
+        // The settings' title bar is 48 px, like Windows' Settings: every button
+        // in it takes the whole height — ours, and the system's caption buttons,
+        // which Windows draws tall on request.
+        private void SetTallTitleBar(bool tall)
+        {
+            double h = tall ? 48 : 32;
+            AppTitleBar.Height = h;
+            foreach (var b in new[] { TitleBarBackButton, SettingsTitleButton, ToolbarToggleButton, FullScreenButton })
+                b.Height = h;
+            try
+            {
+                AppWindow.TitleBar.PreferredHeightOption = tall
+                    ? Microsoft.UI.Windowing.TitleBarHeightOption.Tall
+                    : Microsoft.UI.Windowing.TitleBarHeightOption.Standard;
+            }
+            catch { /* not every system offers it */ }
+            UpdateCaptionSpacer();
         }
 
         // ── The settings' search box ─────────────────────────────────────────

@@ -94,8 +94,10 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   majuscules ni des accents. Choisir une catégorie, ou vider la zone, met fin à
   la recherche. Les résultats sont rangés en lignes, chaque carte d'une ligne
   à la hauteur de la plus haute. La zone a l'allure de celle des paramètres de
-  Windows (loupe à gauche, coins arrondis) ; en plein écran, où il n'y a pas de
-  barre de titre, elle se place en haut de la liste des catégories.
+  Windows (loupe à gauche, coins arrondis), dans une barre de titre plus haute
+  dont tous les boutons, y compris réduire, agrandir et fermer, occupent toute
+  la hauteur. En plein écran, où il n'y a pas de barre de titre, elle se place
+  au-dessus des paramètres, centrée sur eux.
 - **Les fichiers à plusieurs étiquettes se parcourent comme les pages d'un PDF**
   📑 Quand un fichier enchaîne plusieurs `^XA…^XZ`, l'aperçu montre une
   étiquette à la fois, et une barre apparaît en bas de l'aperçu : les flèches

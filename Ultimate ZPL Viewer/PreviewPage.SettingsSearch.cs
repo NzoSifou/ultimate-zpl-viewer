@@ -203,9 +203,10 @@ public sealed partial class PreviewPage
         BuildSettingsCategories();
     }
 
-    // ── Full screen: the search at the top of the categories ─────────────────
+    // ── Full screen: the search over the settings ────────────────────────────
     // There is no title bar in full screen, and the bar that stands in for it
-    // only shows under the pointer: the box moves into the page instead.
+    // only shows under the pointer: the box moves into the page instead, centred
+    // over the settings themselves.
 
     private Grid? _paneSearchHost;
     private TextBox? _paneSearchBox;
@@ -217,16 +218,15 @@ public sealed partial class PreviewPage
     {
         if (on && _paneSearchHost is null)
         {
-            (_paneSearchHost, _paneSearchBox) = SettingsSearchBox.Create(224);
-            _paneSearchHost.Margin = new Thickness(8, 12, 8, 8);
-            _paneSearchHost.HorizontalAlignment = HorizontalAlignment.Left;
+            (_paneSearchHost, _paneSearchBox) = SettingsSearchBox.Create(480);
+            SettingsSearchSlot.Child = _paneSearchHost;
             _paneSearchBox.TextChanged += (_, _) =>
             {
                 if (!_settingPaneText) OnSettingsSearchChanged(_paneSearchBox.Text);
             };
         }
         if (on && _paneSearchBox is not null) SetPaneSearchText(_settingsQuery);
-        SettingsNav.PaneHeader = on ? _paneSearchHost : null;
+        SettingsSearchSlot.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void SetPaneSearchText(string text)

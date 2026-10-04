@@ -71,6 +71,7 @@ public sealed partial class PreviewPage
         public required Microsoft.UI.Xaml.Shapes.Ellipse Dot { get; init; }
         public required Border Body { get; init; }
         public required Canvas Canvas { get; init; }
+        public required ScrollViewer Scroller { get; init; }
         public string? RenderedKey { get; set; }
     }
 
@@ -968,23 +969,32 @@ public sealed partial class PreviewPage
         };
         chip.Tapped += (_, _) => FocusPane(tab);
 
-        var canvas = new Canvas();
+        // The document as its live preview left it: same zoom, same place — or
+        // fitted, when it still follows the default zoom. Looked at, not handled:
+        // a click gives it the focus, and the live preview then takes over.
+        var canvas = new Canvas { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var scroller = new ScrollViewer
+        {
+            Content = canvas,
+            ZoomMode = ZoomMode.Enabled,
+            MinZoomFactor = 0.1f, MaxZoomFactor = 20f,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            HorizontalScrollMode = ScrollMode.Enabled,
+            VerticalScrollMode = ScrollMode.Enabled,
+            IsHitTestVisible = false,
+        };
         var body = new Border
         {
             CornerRadius = new CornerRadius(10),
             BorderThickness = new Thickness(1),
-            Child = new Viewbox
-            {
-                Child = canvas,
-                Stretch = Stretch.Uniform,
-                // Room at the top for the chip.
-                Margin = new Thickness(24, 56, 24, 24),
-            },
+            Child = scroller,
         };
+        scroller.SizeChanged += (_, _) => ApplyPaneZoom(scroller, canvas, tab);
         body.Tapped += (_, _) => FocusPane(tab);
         ToolTipService.SetToolTip(body, TipBlock(SpL("focusTip")));
 
-        var pane = new SplitPane { Chip = chip, Title = title, Dot = dot, Body = body, Canvas = canvas };
+        var pane = new SplitPane { Chip = chip, Title = title, Dot = dot, Body = body, Canvas = canvas, Scroller = scroller };
         _splitPanes[tab] = pane;
         return pane;
     }
@@ -996,18 +1006,46 @@ public sealed partial class PreviewPage
         double dpmm = tab.Dpmm > 0 ? tab.Dpmm : _settings.DefaultDpmm;
         // The text by identity: a document out of focus only gets a new string when
         // it is left, so this costs nothing per keystroke in the focused one.
-        var key = $"{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(tab.Text)}:{tab.Text.Length}|{dpmm}|{tab.LabelIndex}|{_rotationDegrees}";
+        var key = $"{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(tab.Text)}:{tab.Text.Length}|{dpmm}|{tab.LabelIndex}|{_rotationDegrees}|{tab.ZoomPercent}|{tab.ScrollX}|{tab.ScrollY}";
         if (pane.RenderedKey == key) return;
         pane.RenderedKey = key;
         try
         {
             var model = ZplRenderer.Parse(tab.Text, dpmm, tab.LabelIndex);
             ZplRenderer.Draw(pane.Canvas, model, dpmm, _rotationDegrees);
+            // Once the new canvas is measured.
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                () => ApplyPaneZoom(pane.Scroller, pane.Canvas, tab));
         }
         catch
         {
             pane.Canvas.Children.Clear();   // a document the renderer cannot read stays blank
         }
+    }
+
+    /// <summary>
+    /// A pane out of focus at the zoom its document was left at, scrolled where it
+    /// was — or fitted the way the live preview fits, for a document that follows
+    /// the default zoom.
+    /// </summary>
+    private void ApplyPaneZoom(ScrollViewer scroller, Canvas canvas, DocTab tab)
+    {
+        double vw = scroller.ViewportWidth, vh = scroller.ViewportHeight;
+        double cw = canvas.Width + 2, ch = canvas.Height + 2;
+        if (vw <= 0 || vh <= 0 || double.IsNaN(cw) || cw <= 2 || ch <= 2) return;
+        double dpmm = tab.Dpmm > 0 ? tab.Dpmm : _settings.DefaultDpmm;
+        float factor;
+        if (tab.ZoomPercent is double percent)
+            factor = (float)(percent / 100.0 * _refPxPerMm / dpmm);
+        else if (_settings.DefaultZoom > 0)
+            factor = (float)(_settings.DefaultZoom / 100.0 * _refPxPerMm / dpmm);
+        else
+            // FitPreviewToView's sum: a 24-DIP margin, and room for the name chip.
+            factor = (float)Math.Min((vw - 24) / cw, (vh - 2 * 48 - 24) / ch);
+        factor = Math.Clamp(factor, 0.1f, 20f);
+        double? x = tab.ZoomPercent is not null ? tab.ScrollX : null;
+        double? y = tab.ZoomPercent is not null ? tab.ScrollY : null;
+        scroller.ChangeView(x, y, factor, true);
     }
 
     /// <summary>After every redraw of the live preview: the rotation or the preview's

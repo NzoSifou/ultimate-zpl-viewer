@@ -82,6 +82,8 @@ namespace Ultimate_ZPL_Viewer
             string T(string k) => LocalizationService.Get("titlebar." + k);
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(TitleBarBackButton, T("tooltipBack"));
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(SettingsTitleButton, T("tooltipSettings"));
+            Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FsSettingsButton, T("tooltipSettings"));
+            Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FsBackButton, T("tooltipBack"));
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FullScreenButton, T("tooltipFullscreen"));
             // The toolbar-toggle tooltip depends on its current state; refresh it.
             SetToolbarToggleGlyph(_lastToolbarVisible);
@@ -194,6 +196,7 @@ namespace Ultimate_ZPL_Viewer
             _documentTitle = title;
             Title = title; // taskbar / alt-tab text
             if (!_inSettings) AppTitleText.Text = title;
+            if (!_inSettings) FsTitleText.Text = title;
         }
 
         // ── Settings mode (back arrow + title in the title bar) ──────────────
@@ -207,11 +210,15 @@ namespace Ultimate_ZPL_Viewer
             TitleBarBackButton.Visibility = Visibility.Visible;
             TitleContent.Margin = new Thickness(48, 0, 0, 0); // aligned with normal mode (settings ↔ back button swap)
             AppTitleText.Text = SettingsTitle();
-            // Settings look: opaque title bar (no acrylic see-through), and the
-            // settings / fullscreen buttons are pointless here — hide them.
+            FsTitleText.Text = SettingsTitle();
+            // Settings look: opaque title bar (no acrylic see-through). The settings
+            // button and the toolbar arrow have nothing to act on here; full screen
+            // stays — the settings can be read full screen too.
             SettingsTitleButton.Visibility = Visibility.Collapsed;
             ToolbarToggleButton.Visibility = Visibility.Collapsed;
-            FullScreenButton.Visibility = Visibility.Collapsed;
+            FsSettingsButton.Visibility = Visibility.Collapsed;
+            FsBackButton.Visibility = Visibility.Visible;
+            FsToolbarToggleButton.Visibility = Visibility.Collapsed;
             UpdateTitleBarBackground();
         }
 
@@ -222,9 +229,13 @@ namespace Ultimate_ZPL_Viewer
             TitleBarBackButton.Visibility = Visibility.Collapsed;
             TitleContent.Margin = new Thickness(48, 0, 0, 0); // right of the settings button
             AppTitleText.Text = _documentTitle;
+            FsTitleText.Text = _documentTitle;
             SettingsTitleButton.Visibility = Visibility.Visible;
             ToolbarToggleButton.Visibility = _inHome ? Visibility.Collapsed : Visibility.Visible;
             FullScreenButton.Visibility = Visibility.Visible;
+            FsSettingsButton.Visibility = Visibility.Visible;
+            FsBackButton.Visibility = Visibility.Collapsed;
+            FsToolbarToggleButton.Visibility = ToolbarToggleButton.Visibility;
             UpdateTitleBarBackground();
         }
 
@@ -238,6 +249,8 @@ namespace Ultimate_ZPL_Viewer
             SettingsTitleButton.Visibility = Visibility.Collapsed;
             ToolbarToggleButton.Visibility = Visibility.Collapsed;
             FullScreenButton.Visibility = Visibility.Collapsed;
+            FsSettingsButton.Visibility = Visibility.Collapsed;
+            FsToolbarToggleButton.Visibility = Visibility.Collapsed;
             AppTitleText.Text = "Ultimate ZPL Viewer";
         }
 
@@ -247,6 +260,8 @@ namespace Ultimate_ZPL_Viewer
             SettingsTitleButton.Visibility = Visibility.Visible;
             ToolbarToggleButton.Visibility = _inHome ? Visibility.Collapsed : Visibility.Visible;
             FullScreenButton.Visibility = Visibility.Visible;
+            FsSettingsButton.Visibility = Visibility.Visible;
+            FsToolbarToggleButton.Visibility = ToolbarToggleButton.Visibility;
             AppTitleText.Text = _documentTitle;
         }
 
@@ -283,6 +298,7 @@ namespace Ultimate_ZPL_Viewer
         {
             _inHome = on;
             ToolbarToggleButton.Visibility = on || _inSettings ? Visibility.Collapsed : Visibility.Visible;
+            FsToolbarToggleButton.Visibility = ToolbarToggleButton.Visibility;
         }
 
         public void SetToolbarToggleGlyph(bool toolbarVisible)

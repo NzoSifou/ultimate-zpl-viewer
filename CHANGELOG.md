@@ -74,11 +74,16 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   repliée ou non. Dans la vue, chaque aperçu est une carte arrondie, comme
   l'éditeur, séparée des autres par un espace ; celle qui a la main est
   entourée de la couleur d'accentuation, et le nom de chaque document flotte en
-  haut de sa carte avec ses boutons ⇄ et ×.
+  haut de sa carte avec ses boutons ⇄ et ×. Un aperçu qui perd la main garde
+  son zoom et l'endroit où il était, et les retrouve en la reprenant.
 - **Choisir ce que masque la flèche de la barre de titre** : la barre d'outils
   (comme jusqu'ici), les onglets, ou les deux (**Paramètres › Éditeur et
   aperçu › Disposition**). La flèche est aussi dans la barre du plein écran,
   qui n'en avait pas.
+- **Le plein écran a sa vraie barre de titre** : le nom du document (et non plus
+  seulement « Ultimate ZPL Viewer »), le bouton des paramètres, et dans les
+  paramètres la flèche de retour. Le bouton plein écran reste disponible dans
+  les paramètres.
 - **Rechercher dans les paramètres** 🔎 Une zone de recherche en haut de la
   colonne des catégories (Ctrl+F dans les paramètres) trouve un réglage d'après
   le titre de sa carte, sa description ou les mots de ses options, sans tenir

@@ -1983,10 +1983,21 @@ public sealed partial class PreviewPage : Page
 
     // Restores the active document's own zoom, if it has one. Returns false when
     // the document still follows the default-zoom setting.
+    private (DocTab Tab, double X, double Y)? _pendingScroll;
+
     private bool RestoreTabZoom()
     {
         if (_activeTab?.ZoomPercent is not double percent) return false;
-        ApplyZoomFactor(ZoomFactorForDisplay(percent));
+        var factor = Math.Clamp(ZoomFactorForDisplay(percent), PreviewScrollViewer.MinZoomFactor, PreviewScrollViewer.MaxZoomFactor);
+        if (_pendingScroll is { } at && ReferenceEquals(at.Tab, _activeTab))
+        {
+            // Back on a document that was scrolled somewhere: there again, once.
+            _pendingScroll = null;
+            _selfAppliedZoomFactor = factor;
+            PreviewScrollViewer.ChangeView(at.X, at.Y, factor, true);
+            return true;
+        }
+        ApplyZoomFactor(factor);
         return true;
     }
 
@@ -3006,6 +3017,11 @@ public sealed partial class PreviewPage : Page
         _activeTab.IsDirty = _isDirty;
         _activeTab.EditMode = _editMode;
         _activeTab.Dpmm = SelectedDpmm;
+        if (_activeTab.ZoomPercent is not null)
+        {
+            _activeTab.ScrollX = PreviewScrollViewer.HorizontalOffset;
+            _activeTab.ScrollY = PreviewScrollViewer.VerticalOffset;
+        }
     }
 
     // Puts the toolbar's density list on the density THIS document is read at,
@@ -3070,6 +3086,7 @@ public sealed partial class PreviewPage : Page
         _currentFilePath = tab.FilePath;
         _currentText = tab.Text;
         _isDirty = tab.IsDirty;
+        _pendingScroll = tab is { ZoomPercent: not null, ScrollX: double sx, ScrollY: double sy } ? (tab, sx, sy) : null;
         ApplyTabDensity(tab);
         RestoreTabMode();
         if (_editorReady) PostToEditor(BuildSwitchDocMessage(tab.Id, tab.Text));
@@ -6748,6 +6765,11 @@ public sealed class DocTab
     // toolbar/editor toggles, redraws — restores it instead of the default, and
     // switching tabs brings each document back to its own level.
     public double? ZoomPercent { get; set; }
+
+    // Where the view of THIS document was scrolled, at its own zoom: a split view's
+    // pane out of focus shows it there, and taking the focus back keeps it.
+    public double? ScrollX { get; set; }
+    public double? ScrollY { get; set; }
 
     // The density this document is READ at, in dots per millimetre. It belongs to
     // the document, not to the window: two tabs can be written for two different

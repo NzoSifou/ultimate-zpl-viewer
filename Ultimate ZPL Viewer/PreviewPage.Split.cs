@@ -37,7 +37,6 @@ public sealed partial class PreviewPage
     private readonly Dictionary<DocTab, SplitPane> _splitPanes = new();
     // The document the live surface showed last: the pane a newly chosen tab replaces.
     private DocTab? _splitFocus;
-    private Border? _splitDropHint;
 
     private sealed class SplitPane
     {
@@ -167,18 +166,6 @@ public sealed partial class PreviewPage
     }
 
     private void ApplySplitOption(SplitOption option, DocTab tab) => ApplySplit(option.Rows, option.Groups, tab);
-
-    /// <summary>The arrangement with <paramref name="tab"/> in the pane of
-    /// <paramref name="anchor"/> (the two swap when both are on screen).</summary>
-    private List<List<DocTab>>? PlanReplace(DocTab tab, DocTab anchor)
-    {
-        if (ReferenceEquals(tab, anchor) || _splitGroups.Count == 0) return null;
-        var groups = CopyGroups(_splitGroups);
-        if (FindSlot(groups, anchor) is not { } a) return null;
-        if (FindSlot(groups, tab) is { } t) groups[t.Group][t.Index] = anchor;
-        groups[a.Group][a.Index] = tab;
-        return groups;
-    }
 
     private void Unsplit()
     {
@@ -445,120 +432,161 @@ public sealed partial class PreviewPage
     }
 
     // ── Dragging a tab onto the preview ──────────────────────────────────────
-    // The places offered are the menu's: over the half or quarter a document can
-    // still take, the tinted area shows it and a drop puts it there. In the
-    // middle of a pane — or anywhere over a pane that cannot be shared any more —
-    // the document takes that pane instead.
+    // The places offered are the menu's, and only those: while a tab is dragged
+    // over the preview, each one shows as a pad bearing the menu's picture,
+    // standing in the middle of the half or quarter it would fill; the one under
+    // the pointer is tinted, and that is where a drop puts the document. Outside
+    // every place (the panes that cannot be shared any more), nothing is dropped.
 
-    private sealed record SplitDrop(DocTab Tab, SplitOption? Option, DocTab? Replace, Rect Hint);
+    private Canvas? _splitDropLayer;
+    private string? _splitDropShown;
 
-    private SplitDrop? DropTarget(DragEventArgs e)
+    private (List<SplitOption> Options, SplitOption? Active)? DropTarget(DragEventArgs e)
     {
         if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return null;
         if (!ReferenceEquals(TabDragState.SourcePage, this) || TabDragState.Tab is not { } tab) return null;
         if (_activeTab is null || DocTabs.TabItems.Count < 2) return null;
-
-        var p = e.GetPosition(SplitHost);
         double w = SplitHost.ActualWidth, h = SplitHost.ActualHeight;
         if (w <= 0 || h <= 0) return null;
 
-        // The pane under the pointer, as it is on screen now.
-        DocTab? hovered = null;
-        var hoveredRect = Rect.Empty;
-        var panes = !IsSplit
-            ? new List<(DocTab Tab, FrameworkElement Element)> { (_activeTab, PreviewSurface) }
-            : _splitGroups.SelectMany(g => g)
-                .Select(t => (t, ReferenceEquals(t, _activeTab) ? (FrameworkElement)PreviewSurface : PaneFor(t).Body))
-                .ToList();
-        foreach (var (paneTab, element) in panes)
-        {
-            var origin = element.TransformToVisual(SplitHost).TransformPoint(new Point(0, 0));
-            var r = new Rect(origin.X, origin.Y, element.ActualWidth, element.ActualHeight);
-            if (r.Width > 0 && r.Height > 0 && r.Contains(p)) { hovered = paneTab; hoveredRect = r; break; }
-        }
-        if (hovered is null) return null;
-
-        // The middle third of a pane: take it.
-        double fx = (p.X - hoveredRect.X) / hoveredRect.Width, fy = (p.Y - hoveredRect.Y) / hoveredRect.Height;
-        bool middle = fx > 0.33 && fx < 0.67 && fy > 0.33 && fy < 0.67;
-        if (!middle)
-        {
-            // The free half or quarter under the pointer; where two overlap (the
-            // corner of a lone pane is in its left half AND its top half), the one
-            // whose centre is nearer.
-            var best = SplitOptions(tab)
-                .Select(o => (Option: o, Area: new Rect(o.Cell.X * w, o.Cell.Y * h, o.Cell.Width * w, o.Cell.Height * h)))
-                .Where(x => x.Area.Contains(p))
-                .OrderBy(x => Math.Pow(x.Area.X + x.Area.Width / 2 - p.X, 2) / (x.Area.Width * x.Area.Width)
-                            + Math.Pow(x.Area.Y + x.Area.Height / 2 - p.Y, 2) / (x.Area.Height * x.Area.Height))
-                .FirstOrDefault();
-            if (best.Option is not null) return new SplitDrop(tab, best.Option, null, best.Area);
-        }
-        if (ReferenceEquals(hovered, tab) || !IsSplit) return null;
-        return new SplitDrop(tab, null, hovered, hoveredRect);
+        var options = SplitOptions(tab);
+        if (options.Count == 0) return null;
+        var p = e.GetPosition(SplitHost);
+        double fx = p.X / w, fy = p.Y / h;
+        // The place whose area holds the pointer; where two overlap (with a single
+        // pane, its left half and its top half share a corner), the one whose
+        // middle is nearer — which cuts the pane along its diagonals.
+        var active = options
+            .Where(o => o.Cell.Contains(new Point(fx, fy)))
+            .OrderBy(o => Math.Pow((o.Cell.X + o.Cell.Width / 2 - fx) / o.Cell.Width, 2)
+                        + Math.Pow((o.Cell.Y + o.Cell.Height / 2 - fy) / o.Cell.Height, 2))
+            .FirstOrDefault();
+        return (options, active);
     }
 
     private void SplitHost_DragOver(object sender, DragEventArgs e)
     {
         if (DropTarget(e) is not { } target) { HideSplitDropHint(); return; }
-        e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
-        e.DragUIOverride.Caption = target.Option is null ? SpL("dropHere") : SpL("dropSplit");
         e.Handled = true;
-        ShowSplitDropHint(target.Hint);
+        ShowSplitDropZones(target.Options, target.Active);
+        if (target.Active is not { } active) return;   // not over a place: no drop
+        e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+        e.DragUIOverride.Caption = SpL(active.Key);
     }
 
     private void SplitHost_Drop(object sender, DragEventArgs e)
     {
+        var target = DropTarget(e);
         HideSplitDropHint();
-        if (DropTarget(e) is not { } target) return;
+        if (target is not { Active: { } option } || TabDragState.Tab is not { } tab) return;
         e.Handled = true;
         TabDragState.Clear();
-        if (target.Option is { } option) ApplySplitOption(option, target.Tab);
-        else if (target.Replace is { } anchor && PlanReplace(target.Tab, anchor) is { } plan)
-            ApplySplit(_splitRows, plan, target.Tab);
+        ApplySplitOption(option, tab);
     }
 
-    private void ShowSplitDropHint(Rect r)
+    private void ShowSplitDropZones(List<SplitOption> options, SplitOption? active)
     {
-        if (_splitDropHint is null)
+        double w = SplitHost.ActualWidth, h = SplitHost.ActualHeight;
+        var signature = $"{w:0}x{h:0}|{active?.Key}|{string.Join(",", options.Select(o => o.Key))}";
+        if (_splitDropLayer is null)
         {
-            var accent = AccentColorService.Current;
-            _splitDropHint = new Border
+            _splitDropLayer = new Canvas { IsHitTestVisible = false };
+            Canvas.SetZIndex(_splitDropLayer, 100);
+        }
+        if (!SplitHost.Children.Contains(_splitDropLayer))
+        {
+            SplitHost.Children.Add(_splitDropLayer);
+            _splitDropShown = null;
+        }
+        Grid.SetRow(_splitDropLayer, 0);
+        Grid.SetColumn(_splitDropLayer, 0);
+        Grid.SetRowSpan(_splitDropLayer, Math.Max(1, SplitHost.RowDefinitions.Count));
+        Grid.SetColumnSpan(_splitDropLayer, Math.Max(1, SplitHost.ColumnDefinitions.Count));
+        if (signature == _splitDropShown) return;
+        _splitDropShown = signature;
+
+        var layer = _splitDropLayer;
+        layer.Children.Clear();
+        var accent = AccentColorService.Current;
+
+        // The area the document would fill, tinted.
+        if (active is not null)
+        {
+            var fill = new Border
             {
-                IsHitTestVisible = false,
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top,
+                Width = Math.Max(0, active.Cell.Width * w - 8),
+                Height = Math.Max(0, active.Cell.Height * h - 8),
                 CornerRadius = new CornerRadius(6),
                 BorderThickness = new Thickness(2),
                 BorderBrush = new SolidColorBrush(accent),
                 Background = new SolidColorBrush(Windows.UI.Color.FromArgb(48, accent.R, accent.G, accent.B)),
             };
-            Canvas.SetZIndex(_splitDropHint, 100);
+            Canvas.SetLeft(fill, active.Cell.X * w + 4);
+            Canvas.SetTop(fill, active.Cell.Y * h + 4);
+            layer.Children.Add(fill);
         }
-        if (!SplitHost.Children.Contains(_splitDropHint)) SplitHost.Children.Add(_splitDropHint);
-        Grid.SetRow(_splitDropHint, 0);
-        Grid.SetColumn(_splitDropHint, 0);
-        Grid.SetRowSpan(_splitDropHint, Math.Max(1, SplitHost.RowDefinitions.Count));
-        Grid.SetColumnSpan(_splitDropHint, Math.Max(1, SplitHost.ColumnDefinitions.Count));
-        _splitDropHint.Margin = new Thickness(r.X + 4, r.Y + 4, 0, 0);
-        _splitDropHint.Width = Math.Max(0, r.Width - 8);
-        _splitDropHint.Height = Math.Max(0, r.Height - 8);
-        _splitDropHint.Visibility = Visibility.Visible;
+
+        // One pad per place, in the middle of the area it stands for.
+        const double padW = 56, padH = 46;
+        foreach (var option in options)
+        {
+            bool on = ReferenceEquals(option, active);
+            var pad = new Border
+            {
+                Width = padW, Height = padH,
+                CornerRadius = new CornerRadius(8),
+                BorderThickness = new Thickness(on ? 2 : 1),
+                BorderBrush = on ? new SolidColorBrush(accent)
+                                 : (Brush)Application.Current.Resources["ControlStrongStrokeColorDefaultBrush"],
+                Background = (Brush)Application.Current.Resources["SolidBackgroundFillColorBaseBrush"],
+                Child = new Viewbox
+                {
+                    Width = 30, Height = 30,
+                    Child = SplitIcon(option.Cell, on ? accent : null),
+                },
+            };
+            Canvas.SetLeft(pad, (option.Cell.X + option.Cell.Width / 2) * w - padW / 2);
+            Canvas.SetTop(pad, (option.Cell.Y + option.Cell.Height / 2) * h - padH / 2);
+            layer.Children.Add(pad);
+        }
     }
 
     private void HideSplitDropHint()
     {
-        if (_splitDropHint is not null) SplitHost.Children.Remove(_splitDropHint);
+        if (_splitDropLayer is not null) SplitHost.Children.Remove(_splitDropLayer);
+        _splitDropShown = null;
+    }
+
+    // ── Pictures of the places ───────────────────────────────────────────────
+    // A window frame with the part the document would take filled in: the left
+    // half, the bottom right quarter… The same picture in the tab menu and on the
+    // pads shown while dragging. Without a place, the bare frame: one preview.
+
+    private static PathIcon SplitIcon(Rect? cell, Windows.UI.Color? color = null)
+    {
+        static string N(double v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        // 16 × 16: a 1-unit frame from (1,2) to (15,14); inside it, 12 × 10.
+        var data = "F1 M1,2 H15 V14 H1 Z M2,3 V13 H14 V3 Z";
+        if (cell is { } c)
+        {
+            // The dividers the place implies: the middle line for a half, the cross
+            // for a quarter — then the place itself, filled.
+            if (c.Width < 1) data += " M7.6,3 H8.4 V13 H7.6 Z";
+            if (c.Height < 1) data += " M2,7.6 H14 V8.4 H2 Z";
+            double x = 2 + c.X * 12 + 1, y = 3 + c.Y * 10 + 1;
+            double cw = c.Width * 12 - 2, ch = c.Height * 10 - 2;
+            data += $" M{N(x)},{N(y)} H{N(x + cw)} V{N(y + ch)} H{N(x)} Z";
+        }
+        var icon = new PathIcon
+        {
+            Data = (Geometry)Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Geometry), data),
+        };
+        if (color is { } fg) icon.Foreground = new SolidColorBrush(fg);
+        return icon;
     }
 
     // ── Tab menu entries ─────────────────────────────────────────────────────
     // Only the places that exist right now, named after where the document will be.
-
-    private static readonly Dictionary<string, string> SplitGlyphs = new()
-    {
-        ["left"] = "", ["right"] = "", ["top"] = "", ["bottom"] = "",
-        ["topLeft"] = "", ["topRight"] = "", ["bottomLeft"] = "", ["bottomRight"] = "",
-    };
 
     private void AddSplitMenuItems(MenuFlyout menu, DocTab tab)
     {
@@ -567,17 +595,13 @@ public sealed partial class PreviewPage
         menu.Items.Add(new MenuFlyoutSeparator());
         foreach (var option in options)
         {
-            var mi = new MenuFlyoutItem
-            {
-                Text = SpL(option.Key),
-                Icon = new FontIcon { Glyph = SplitGlyphs.GetValueOrDefault(option.Key, "") },
-            };
+            var mi = new MenuFlyoutItem { Text = SpL(option.Key), Icon = SplitIcon(option.Cell) };
             mi.Click += (_, _) => ApplySplitOption(option, tab);
             menu.Items.Add(mi);
         }
         if (IsSplit)
         {
-            var un = new MenuFlyoutItem { Text = SpL("unsplit"), Icon = new FontIcon { Glyph = "" } };
+            var un = new MenuFlyoutItem { Text = SpL("unsplit"), Icon = SplitIcon(null) };
             un.Click += (_, _) => Unsplit();
             menu.Items.Add(un);
         }

@@ -92,8 +92,10 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   de recherche. Elle trouve un réglage par le titre de sa carte, sa description,
   les mots de ses options ou le titre de sa section, sans tenir compte des
   majuscules ni des accents. Choisir une catégorie, ou vider la zone, met fin à
-  la recherche. En plein écran, la barre du haut reste affichée avec la
-  recherche tant que les paramètres sont ouverts.
+  la recherche. Les résultats sont rangés en lignes, chaque carte d'une ligne
+  à la hauteur de la plus haute. La zone a l'allure de celle des paramètres de
+  Windows (loupe à gauche, coins arrondis) ; en plein écran, où il n'y a pas de
+  barre de titre, elle se place en haut de la liste des catégories.
 - **Les fichiers à plusieurs étiquettes se parcourent comme les pages d'un PDF**
   📑 Quand un fichier enchaîne plusieurs `^XA…^XZ`, l'aperçu montre une
   étiquette à la fois, et une barre apparaît en bas de l'aperçu : les flèches

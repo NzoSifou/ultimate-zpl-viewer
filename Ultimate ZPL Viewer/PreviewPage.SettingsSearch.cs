@@ -99,20 +99,22 @@ public sealed partial class PreviewPage
                 .ToList();
             if (matches.Count == 0) continue;
 
-            page.Children.Add(SubHeader(item.Content as string ?? tag));
-            var wrap = new ToolbarWrapPanel { HorizontalSpacing = 8, VerticalSpacing = 0 };
-            int shownHere = 0;
+            var shownHere = new List<FrameworkElement>();
             foreach (var (card, _, _, container) in matches)
             {
                 if (!DetachCard(card, container)) continue;
+                // The grid sizes them: as wide as their column, as tall as their row.
+                card.Width = double.NaN;
                 card.MaxWidth = double.PositiveInfinity;
-                card.HorizontalAlignment = HorizontalAlignment.Left;
-                wrap.Children.Add(card);
-                shownHere++;
+                card.HorizontalAlignment = HorizontalAlignment.Stretch;
+                card.VerticalAlignment = VerticalAlignment.Stretch;
+                shownHere.Add(card);
             }
-            if (shownHere == 0) { page.Children.RemoveAt(page.Children.Count - 1); continue; }
-            page.Children.Add(wrap);
-            found += shownHere;
+            if (shownHere.Count == 0) continue;
+            page.Children.Add(SubHeader(item.Content as string ?? tag));
+            var grid = new Grid { ColumnSpacing = 8, Tag = shownHere };
+            page.Children.Add(grid);
+            found += shownHere.Count;
         }
         if (found == 0)
             page.Children.Add(new TextBlock
@@ -120,8 +122,40 @@ public sealed partial class PreviewPage
                 Text = SL("search.none"), Opacity = 0.7, Margin = new Thickness(0, 12, 0, 0),
             });
 
+        // Cards in rows of up to three, every card of a row as tall as the tallest:
+        // the columns follow the page's width, like the categories' cards.
+        int columns = -1;
+        void LayoutGrids()
+        {
+            double w = page.ActualWidth;
+            if (w <= 0) return;
+            int c = Math.Clamp((int)(w / MinCardWidth), 1, 3);
+            if (c == columns) return;
+            columns = c;
+            foreach (var grid in page.Children.OfType<Grid>())
+                if (grid.Tag is List<FrameworkElement> cards) FillResultGrid(grid, cards, c);
+        }
+        page.SizeChanged += (_, _) => LayoutGrids();
+        page.Loaded += (_, _) => LayoutGrids();
+
         SettingsContentHost.Children.Clear();
-        SettingsContentHost.Children.Add(WithThirdWidthCards(page));
+        SettingsContentHost.Children.Add(page);
+    }
+
+    private static void FillResultGrid(Grid grid, List<FrameworkElement> cards, int columns)
+    {
+        grid.Children.Clear();
+        grid.ColumnDefinitions.Clear();
+        grid.RowDefinitions.Clear();
+        for (int c = 0; c < columns; c++)
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        for (int i = 0; i < cards.Count; i++)
+        {
+            if (i % columns == 0) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetRow(cards[i], i / columns);
+            Grid.SetColumn(cards[i], i % columns);
+            grid.Children.Add(cards[i]);
+        }
     }
 
     // Takes a card out of the container it was found in (its Parent is not always
@@ -163,13 +197,47 @@ public sealed partial class PreviewPage
         _searchDebounce?.Stop();
         _settingsQuery = "";
         (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.ClearSettingsSearch();
+        SetPaneSearchText("");
         // Rebuilt: the category must show what was changed in the results.
         _settingsCategories = null;
         BuildSettingsCategories();
     }
 
-    /// <summary>In full screen, the settings sit under the bar that stays on top of them.</summary>
-    internal void SetSettingsTopInset(double inset) => SettingsOverlay.Margin = new Thickness(0, inset, 0, 0);
+    // ── Full screen: the search at the top of the categories ─────────────────
+    // There is no title bar in full screen, and the bar that stands in for it
+    // only shows under the pointer: the box moves into the page instead.
+
+    private Grid? _paneSearchHost;
+    private TextBox? _paneSearchBox;
+    private bool _settingPaneText;
+
+    internal string SettingsQuery => _settingsQuery;
+
+    internal void SetFullScreenSettings(bool on)
+    {
+        if (on && _paneSearchHost is null)
+        {
+            (_paneSearchHost, _paneSearchBox) = SettingsSearchBox.Create(224);
+            _paneSearchHost.Margin = new Thickness(8, 12, 8, 8);
+            _paneSearchHost.HorizontalAlignment = HorizontalAlignment.Left;
+            _paneSearchBox.TextChanged += (_, _) =>
+            {
+                if (!_settingPaneText) OnSettingsSearchChanged(_paneSearchBox.Text);
+            };
+        }
+        if (on && _paneSearchBox is not null) SetPaneSearchText(_settingsQuery);
+        SettingsNav.PaneHeader = on ? _paneSearchHost : null;
+    }
+
+    private void SetPaneSearchText(string text)
+    {
+        if (_paneSearchBox is null) return;
+        _settingPaneText = true;
+        _paneSearchBox.Text = text;
+        _settingPaneText = false;
+    }
+
+    internal void FocusPaneSearch() => _paneSearchBox?.Focus(FocusState.Keyboard);
 
     // Every settings card of a category, with the words it shows and the title of
     // the section it sits in (a search for a section's name finds its cards).

@@ -811,6 +811,8 @@ public sealed partial class PreviewPage : Page
                 Text = content.Replace("\r\n", "\n").Replace('\r', '\n'),
             }));
         UpdateTabBar();
+        RestoreSplitViews(_restoreViews);
+        _restoreViews = null;
         UpdateDocumentTitle();
         RefreshPreview(SizeUpdate.DocumentLoaded);
         RestoreRemainingWindows();
@@ -819,22 +821,25 @@ public sealed partial class PreviewPage : Page
 
     // The other windows of the saved arrangement. Filled while this (first) window
     // restores its own documents, then reopened once it is on screen.
-    private List<List<string>> _pendingWindowLayout = new();
+    private List<(List<string> Files, List<SplitViewState> Views)> _pendingWindowLayout = new();
+    // This window's own split views from the saved session, rebuilt once its tabs are in.
+    private List<SplitViewState>? _restoreViews;
 
     private void RestoreRemainingWindows()
     {
         if (_pendingWindowLayout.Count == 0) return;
         var layout = _pendingWindowLayout;
-        _pendingWindowLayout = new List<List<string>>();
+        _pendingWindowLayout = new();
         // Deferred: this window is still being navigated into.
         DispatcherQueue.TryEnqueue(async () =>
         {
-            foreach (var files in layout)
+            foreach (var (files, views) in layout)
             {
                 var window = WindowManager.Open(
                     LaunchOptions.ForFile(files[0]));
                 foreach (var extra in files.Skip(1))
                     if (window.Page is { } page) await page.OpenFileFromAnotherLaunchAsync(extra);
+                window.Page?.RestoreSplitViews(views);
             }
         });
     }
@@ -846,13 +851,16 @@ public sealed partial class PreviewPage : Page
     {
         // With several windows saved, this one takes the first arrangement and the
         // others are reopened as their own windows once this page is up.
+        var savedViews = _settings.WindowSplitViews;
         var layout = _settings.WindowSessions
-            .Select(w => w.Where(File.Exists).Distinct().ToList())
-            .Where(w => w.Count > 0)
+            .Select((w, i) => (Files: w.Where(File.Exists).Distinct().ToList(),
+                               Views: i < savedViews.Count ? savedViews[i] : new List<SplitViewState>()))
+            .Where(w => w.Files.Count > 0)
             .ToList();
         var files = layout.Count > 0
-            ? layout[0]
+            ? layout[0].Files
             : _settings.OpenFiles.Where(File.Exists).Distinct().ToList();
+        _restoreViews = layout.Count > 0 ? layout[0].Views : null;
         _pendingWindowLayout = layout.Skip(1).ToList();
         if (files.Count == 0
             && !string.IsNullOrWhiteSpace(_settings.LastFilePath) && File.Exists(_settings.LastFilePath))
@@ -2994,6 +3002,7 @@ public sealed partial class PreviewPage : Page
     private void DocTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_suppressTabEvents) return;
+        if (DocTabs.SelectedItem is TabViewItem { Tag: SplitView view }) { OpenSplitView(view); return; }
         if (DocTabs.SelectedItem is not TabViewItem item || item.Tag is not DocTab tab) return;
         if (ReferenceEquals(tab, _activeTab)) return;
         CaptureActiveTab();
@@ -3119,10 +3128,10 @@ public sealed partial class PreviewPage : Page
             () => _ = RequestCloseSingleAsync(item, tab)));
         menu.Items.Add(Mk("Fermer les autres onglets", GlyphTabCloseOthers,
             () => _ = CloseManyAsync(TabsExcept(item), item),
-            enabled: DocTabs.TabItems.Count > 1));
+            enabled: DocCount > 1));
         menu.Items.Add(Mk("Fermer les onglets à droite", GlyphTabCloseRight,
             () => _ = CloseManyAsync(TabsRightOf(item), item),
-            enabled: index >= 0 && index < DocTabs.TabItems.Count - 1));
+            enabled: TabsRightOf(item).Count > 0));
         menu.Items.Add(new MenuFlyoutSeparator());
         menu.Items.Add(Mk("Ouvrir dans une nouvelle fenêtre", GlyphTabNewWindow,
             () => MoveTabToNewWindow(item, tab)));
@@ -3137,12 +3146,12 @@ public sealed partial class PreviewPage : Page
     }
 
     private List<TabViewItem> TabsExcept(TabViewItem keep)
-        => DocTabs.TabItems.OfType<TabViewItem>().Where(t => !ReferenceEquals(t, keep)).ToList();
+        => DocItems().Where(t => !ReferenceEquals(t, keep)).ToList();
 
     private List<TabViewItem> TabsRightOf(TabViewItem item)
     {
         int i = DocTabs.TabItems.IndexOf(item);
-        return DocTabs.TabItems.OfType<TabViewItem>().Skip(i + 1).ToList();
+        return DocTabs.TabItems.OfType<TabViewItem>().Skip(i + 1).Where(t => t.Tag is DocTab).ToList();
     }
 
     // Mass close ("close others" / "close to the right"). Every dirty document is
@@ -3186,8 +3195,15 @@ public sealed partial class PreviewPage : Page
     // is handed over through TabDragState instead of being serialised.
     private void DocTabs_TabDragStarting(TabView sender, TabViewTabDragStartingEventArgs args)
     {
+        if (_pressedTabItem is { } p && DocTabs.TabItems.Contains(p))
+        {
+            if (p.Tag is not DocTab pressed) { TabDragState.Clear(); return; }   // a split view's tab
+            args.Data.Properties.Add(TabDragState.Key, pressed.Id);
+            TabDragState.Begin(this, p, pressed);
+            args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+            return;
+        }
         if (args.Tab is not TabViewItem item || item.Tag is not DocTab tab) return;
-        if (_pressedTabItem is { Tag: DocTab pressed } p && DocTabs.TabItems.Contains(p)) { item = p; tab = pressed; }
         TabDragState.Begin(this, item, tab);
         args.Data.Properties.Add(TabDragState.Key, tab.Id);
         args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
@@ -3235,7 +3251,7 @@ public sealed partial class PreviewPage : Page
     internal DocTab GiveAwayTab(TabViewItem item, DocTab tab)
     {
         var carried = Snapshot(tab);
-        if (DocTabs.TabItems.Count <= 1) CloseOwnWindow();
+        if (DocCount <= 1) CloseOwnWindow();
         else CloseTab(item, tab, remember: false);   // it moved, it was not closed
         return carried;
     }
@@ -3279,8 +3295,8 @@ public sealed partial class PreviewPage : Page
     /// <summary>The lone document of this window, or null when it holds several.</summary>
     internal (TabViewItem Item, DocTab Tab)? SingleDocument()
     {
-        if (DocTabs.TabItems.Count != 1) return null;
-        return DocTabs.TabItems[0] is TabViewItem item && item.Tag is DocTab tab ? (item, tab) : null;
+        if (DocCount != 1) return null;
+        return DocItems().First() is { Tag: DocTab tab } item ? (item, tab) : null;
     }
 
     private static (int X, int Y) CursorPosition()
@@ -3312,7 +3328,7 @@ public sealed partial class PreviewPage : Page
     public void MoveTabToNewWindow(TabViewItem item, DocTab tab, int? screenX = null, int? screenY = null)
     {
         var carried = Snapshot(tab);
-        bool wasLast = DocTabs.TabItems.Count <= 1;
+        bool wasLast = DocCount <= 1;
 
         var window = WindowManager.Open(
             LaunchOptions.ForFile(null) with { Adopt = carried });
@@ -3514,7 +3530,7 @@ public sealed partial class PreviewPage : Page
                 break;
             case "nextTab": StepTab(+1); break;
             case "prevTab": StepTab(-1); break;
-            case "lastTab": SelectTabAt(DocTabs.TabItems.Count - 1); break;
+            case "lastTab": SelectTabAt(TabStops().Count - 1); break;
             case "print": _ = StartPrintAsync(); break;
             case "zoomIn": StepZoom(+1); break;
             case "zoomOut": StepZoom(-1); break;
@@ -3573,9 +3589,10 @@ public sealed partial class PreviewPage : Page
     // Ctrl+Tab / Ctrl+Shift+Tab, wrapping around at both ends.
     private void StepTab(int delta)
     {
-        int count = DocTabs.TabItems.Count;
+        var stops = TabStops();
+        int count = stops.Count;
         if (count < 2) return;
-        int index = DocTabs.SelectedIndex + delta;
+        int index = CurrentStopIndex(stops) + delta;
         SelectTabAt(((index % count) + count) % count);
     }
 
@@ -3600,8 +3617,9 @@ public sealed partial class PreviewPage : Page
 
     private void SelectTabAt(int index)
     {
-        if (index < 0 || index >= DocTabs.TabItems.Count) return;
-        DocTabs.SelectedIndex = index;
+        var stops = TabStops();
+        if (index < 0 || index >= stops.Count) return;
+        SelectStop(stops[index]);
     }
 
     // Ctrl+N: a new window that starts on a blank label instead of the sample one.
@@ -3630,9 +3648,9 @@ public sealed partial class PreviewPage : Page
     /// <summary>Runs the "New file" flow, then drops the sample tab this window opened on.</summary>
     internal async Task StartAsNewDocumentAsync()
     {
-        var sample = DocTabs.TabItems.Count == 1 ? DocTabs.TabItems[0] as TabViewItem : null;
+        var sample = DocCount == 1 ? DocItems().First() : null;
         await NewDocumentAsync();
-        if (sample is not null && DocTabs.TabItems.Count > 1 && sample.Tag is DocTab tab)
+        if (sample is not null && DocCount > 1 && sample.Tag is DocTab tab)
             CloseTab(sample, tab, remember: false);
     }
 
@@ -3674,7 +3692,7 @@ public sealed partial class PreviewPage : Page
 
     /// <summary>Every document of this window, for the reopen-closed history.</summary>
     internal List<ClosedDoc> SnapshotAllDocuments()
-        => DocTabs.TabItems.OfType<TabViewItem>()
+        => DocItems()
             .Select(t => SnapshotClosed((DocTab)t.Tag))
             .ToList();
 
@@ -3682,7 +3700,7 @@ public sealed partial class PreviewPage : Page
     public List<string> OpenFilePaths()
     {
         CaptureActiveTab();
-        return DocTabs.TabItems.OfType<TabViewItem>()
+        return DocItems()
             .Select(t => ((DocTab)t.Tag).FilePath)
             .Where(p => !string.IsNullOrWhiteSpace(p))
             .Select(p => p!)
@@ -3755,7 +3773,7 @@ public sealed partial class PreviewPage : Page
         // "Quitter l'application" when the window IS the app; "Fermer tous les onglets"
         // when the user asked for that with Ctrl+Shift+W.
         title ??= "Quitter l'application";
-        foreach (var item in DocTabs.TabItems.OfType<TabViewItem>().ToList())
+        foreach (var item in DocItems().ToList())
         {
             var tab = (DocTab)item.Tag;
             bool dirty = ReferenceEquals(tab, _activeTab) ? _isDirty : tab.IsDirty;
@@ -3777,7 +3795,7 @@ public sealed partial class PreviewPage : Page
         // date live by WindowManager and must NOT be rewritten while the windows are
         // being closed one after another — the last one would shrink it to itself.
         if (WindowManager.Windows.Count <= 1)
-            _settings.OpenFiles = DocTabs.TabItems.OfType<TabViewItem>()
+            _settings.OpenFiles = DocItems()
                 .Select(t => ((DocTab)t.Tag).FilePath)
                 .Where(p => p is not null)
                 .Distinct()
@@ -3795,17 +3813,21 @@ public sealed partial class PreviewPage : Page
         bool wasActive = ReferenceEquals(tab, _activeTab);
         _suppressTabEvents = true;
         DocTabs.TabItems.Remove(item);
-        if (wasActive && DocTabs.TabItems.Count > 0)
+        if (wasActive && DocCount > 0)
         {
-            var next = (TabViewItem)DocTabs.TabItems[Math.Min(idx, DocTabs.TabItems.Count - 1)];
-            DocTabs.SelectedItem = next;
-            ActivateTab((DocTab)next.Tag);
+            // The item now in its place — a split view's tab stands for its focused
+            // document — or, failing that, any document.
+            var near = DocTabs.TabItems.Count > 0
+                ? DocTabs.TabItems[Math.Min(idx, DocTabs.TabItems.Count - 1)] as TabViewItem : null;
+            var nextDoc = DocOfItem(near) ?? OpenTabs().First();
+            DocTabs.SelectedItem = ItemOf(nextDoc);
+            ActivateTab(nextDoc);
         }
         _suppressTabEvents = false;
         // After the switch, so the editor page never disposes the model in use.
         if (_editorReady) PostToEditor($"{{\"type\":\"closeDoc\",\"id\":\"{tab.Id}\"}}");
 
-        if (DocTabs.TabItems.Count == 0)
+        if (DocCount == 0)
         {
             // A document that MOVED to another window is not a document closed, and
             // the window it left is dealt with by the caller.
@@ -3828,7 +3850,7 @@ public sealed partial class PreviewPage : Page
     // remembering for the next launch.
     private void UpdateTabBar()
     {
-        bool any = DocTabs.TabItems.Count > 0;
+        bool any = DocCount > 0;
         if (_homeVisible == any) SetHomeVisible(!any);
         DocTabs.Visibility = any && !_homeVisible ? Visibility.Visible : Visibility.Collapsed;
         SyncSplit();

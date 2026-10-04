@@ -1548,8 +1548,9 @@
     "topRight": "Show at the top right",
     "bottomLeft": "Show at the bottom left",
     "bottomRight": "Show at the bottom right",
-    "unsplit": "Stop splitting the preview",
-    "closePane": "Remove from the split (the tab stays open)",
+    "viewName": "Split view",
+    "unsplit": "Undo the split view",
+    "closePane": "Remove from the split view (the tab stays open)",
     "focusTip": "Click to work on this document",
     "dropSplit": "Split the preview",
     "dropHere": "Show here"

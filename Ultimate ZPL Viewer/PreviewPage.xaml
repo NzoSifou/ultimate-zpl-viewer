@@ -144,6 +144,10 @@
         <!-- The whole strip (pills AND the "+" button) floats via the bottom
              margin here — the pills carry no inner margin, so everything in the
              strip stays vertically aligned by construction. -->
+        <!-- Behind the tab strip: the frames that hold each split view's tabs
+             together (PreviewPage.Split.cs). -->
+        <Canvas x:Name="TabGroupLayer" Grid.Row="1" IsHitTestVisible="False"/>
+
         <TabView x:Name="DocTabs"
                  Grid.Row="1"
                  Visibility="Collapsed"

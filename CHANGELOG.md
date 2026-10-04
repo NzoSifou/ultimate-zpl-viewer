@@ -37,26 +37,27 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   barre, et revient en le glissant vers une ligne. Les raccourcis clavier et le
   reste de l'application continuent de fonctionner comme avant. Un bouton ajouté
   par une future version n'est jamais masqué d'office.
-- **Diviser l'aperçu : jusqu'à quatre documents à l'écran** 🪟 Côte à côte, l'un
-  sous l'autre, ou les deux à la fois : quatre aperçus au plus, sur deux colonnes
-  et deux lignes, jamais trois. Le clic droit sur un onglet ne propose que les
-  places libres, nommées d'après l'endroit où le document arrivera : « à gauche »,
-  « à droite », « en haut », « en bas » quand un seul aperçu est affiché, les
-  quatre coins quand il y en a deux, les deux coins encore libres quand il y en a
-  trois (par exemple « en bas à gauche » et « en bas à droite » sous deux aperçus
-  côte à côte). Glisser l'onglet sur l'aperçu propose les mêmes places et
-  seulement elles : une pastille au milieu de chaque moitié ou quart disponible,
-  et la zone visée teintée ; ailleurs, rien n'est déposé. Chaque place est
-  illustrée, dans le menu comme sur les pastilles, par une petite fenêtre dont la
-  partie que prendra le document est remplie. Un onglet déjà affiché dans un
-  volet ne propose pas de place : il peut seulement être retiré de la division.
-  Lâcher un onglet sur l'aperçu ailleurs que sur une place annule le geste, au
-  lieu de l'ouvrir dans une nouvelle fenêtre.
-  L'éditeur de code et la barre d'outils travaillent sur le volet actif, souligné
-  de la couleur d'accentuation ; un clic sur un autre volet le rend actif, et un
-  onglet choisi dans la barre prend la place du volet actif. Le × d'un volet le
-  retire de la division sans fermer l'onglet ; « Ne plus diviser l'aperçu » remet
-  un seul aperçu.
+- **Les vues fractionnées : jusqu'à quatre documents à l'écran** 🪟 Dès qu'un
+  deuxième document est affiché à côté du premier, les deux forment une **vue
+  fractionnée**, avec son propre onglet « Vue fractionnée » dans la barre. Ses
+  documents se rangent juste après lui, dans l'ordre de leurs volets, et un cadre
+  de la couleur d'accentuation les entoure. Choisir un autre onglet affiche ce
+  document seul et replie la vue derrière son onglet ; cliquer sur « Vue
+  fractionnée » la rouvre, sur le document qui avait la main. Dans une vue
+  ouverte, cliquer sur un volet ou sur son onglet lui donne la main : l'éditeur de
+  code et la barre d'outils travaillent sur lui. Une fenêtre peut avoir plusieurs
+  vues fractionnées (« Vue fractionnée 2 »…), et elles reviennent au prochain
+  lancement avec les documents.
+  Côte à côte, l'un sous l'autre, ou les deux à la fois : quatre aperçus au plus,
+  sur deux colonnes et deux lignes, jamais trois. Le clic droit sur un onglet ne
+  propose que les places libres : « à gauche », « à droite », « en haut », « en
+  bas » avec un seul aperçu, les quatre coins avec deux, les deux coins encore
+  libres avec trois. Glisser l'onglet sur l'aperçu propose les mêmes places, une
+  pastille au milieu de chacune et la zone visée teintée ; ailleurs, rien n'est
+  déposé. Chaque place est illustrée par une petite fenêtre dont la partie que
+  prendra le document est remplie. Un onglet déjà dans la vue peut en être retiré
+  (le × de son volet, ou son menu) ; « Défaire la vue fractionnée », dans le menu
+  de la vue, rend leurs onglets simples à tous ses documents.
 - **Rechercher dans les paramètres** 🔎 Une zone de recherche en haut de la
   colonne des catégories (Ctrl+F dans les paramètres) trouve un réglage d'après
   le titre de sa carte, sa description ou les mots de ses options, sans tenir

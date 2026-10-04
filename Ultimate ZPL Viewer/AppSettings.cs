@@ -314,6 +314,10 @@ public sealed class AppSettings
     // documents in tab order, so the whole arrangement comes back.
     [MachineSetting] public List<List<string>> WindowSessions { get; set; } = new();
 
+    // The split views of each window, same order as WindowSessions: which of its
+    // documents were shown together, and how.
+    [MachineSetting] public List<List<SplitViewState>> WindowSplitViews { get; set; } = new();
+
     // Where a document opens when the app is ALREADY running. "tab" adds it to the
     // active window, "window" gives it a window of its own.
     public string OpenFromExplorer { get; set; } = "tab";   // double-click, "Open with"
@@ -439,4 +443,13 @@ public sealed class AppSettings
             _ => ElementTheme.Default
         };
     }
+}
+
+/// <summary>A split view as saved with the session: its documents by path.</summary>
+public sealed class SplitViewState
+{
+    // False: Panes are columns of documents top to bottom; true: rows, left to right.
+    public bool Rows { get; set; }
+    public List<List<string>> Panes { get; set; } = new();
+    public string? Focus { get; set; }
 }

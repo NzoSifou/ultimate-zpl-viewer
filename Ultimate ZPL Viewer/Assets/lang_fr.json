@@ -1548,8 +1548,9 @@
     "topRight": "Afficher en haut à droite",
     "bottomLeft": "Afficher en bas à gauche",
     "bottomRight": "Afficher en bas à droite",
-    "unsplit": "Ne plus diviser l'aperçu",
-    "closePane": "Retirer de la division (l'onglet reste ouvert)",
+    "viewName": "Vue fractionnée",
+    "unsplit": "Défaire la vue fractionnée",
+    "closePane": "Retirer de la vue fractionnée (l'onglet reste ouvert)",
     "focusTip": "Cliquer pour travailler sur ce document",
     "dropSplit": "Diviser l'aperçu",
     "dropHere": "Afficher ici"

@@ -71,7 +71,14 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   l'image de sa place. Un onglet simple lâché parmi les onglets d'une vue la
   rejoint, s'il reste de la place, à l'endroit où il a été lâché. L'onglet de la
   vue affichée a toujours l'aspect d'un onglet sélectionné, qu'elle soit
-  repliée ou non.
+  repliée ou non. Dans la vue, chaque aperçu est une carte arrondie, comme
+  l'éditeur, séparée des autres par un espace ; celle qui a la main est
+  entourée de la couleur d'accentuation, et le nom de chaque document flotte en
+  haut de sa carte avec ses boutons ⇄ et ×.
+- **Choisir ce que masque la flèche de la barre de titre** : la barre d'outils
+  (comme jusqu'ici), les onglets, ou les deux (**Paramètres › Éditeur et
+  aperçu › Disposition**). La flèche est aussi dans la barre du plein écran,
+  qui n'en avait pas.
 - **Rechercher dans les paramètres** 🔎 Une zone de recherche en haut de la
   colonne des catégories (Ctrl+F dans les paramètres) trouve un réglage d'après
   le titre de sa carte, sa description ou les mots de ses options, sans tenir

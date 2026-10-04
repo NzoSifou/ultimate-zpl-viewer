@@ -7,6 +7,10 @@
     "tooltipSettings": "Settings",
     "tooltipShowToolbar": "Show toolbar",
     "tooltipHideToolbar": "Hide toolbar",
+    "tooltipShowTabs": "Show tabs",
+    "tooltipHideTabs": "Hide tabs",
+    "tooltipShowBoth": "Show toolbar and tabs",
+    "tooltipHideBoth": "Hide toolbar and tabs",
     "tooltipFullscreen": "Full screen",
     "tooltipBack": "Back"
   },
@@ -1793,6 +1797,11 @@
         "swap": {
           "title": "Swap editor and preview",
           "desc": "Puts the ZPL editor on the right and the preview on the left."
+        },
+        "chromeToggle": {
+          "title": "Title bar arrow",
+          "desc": "What the arrow next to full screen shows or hides.",
+          "options": [ "The toolbar", "The tabs", "Both" ]
         },
         "splitUnfold": {
           "title": "Unfold when opening a view",

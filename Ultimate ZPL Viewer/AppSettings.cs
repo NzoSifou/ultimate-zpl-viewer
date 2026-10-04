@@ -351,6 +351,8 @@ public sealed class AppSettings
     // Toolbar + editor visibility (title-bar / collapse-handle toggles); persist
     // across sessions (unless the app was launched with a --hide override).
     public bool ToolbarVisible { get; set; } = true;
+    // What the title-bar arrow shows and hides: "toolbar", "tabs" or "both".
+    public string ChromeToggleTarget { get; set; } = "toolbar";
     public bool EditorVisible { get; set; } = true;
     // Where the user left the editor/preview splitter, in pixels. Stored as a width
     // rather than a share of the window because that is what the drag manipulates:

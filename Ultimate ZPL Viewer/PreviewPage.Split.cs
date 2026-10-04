@@ -66,9 +66,9 @@ public sealed partial class PreviewPage
 
     private sealed class SplitPane
     {
-        public required Border Header { get; init; }
+        public required Border Chip { get; init; }
         public required TextBlock Title { get; init; }
-        public required Border Underline { get; init; }
+        public required Microsoft.UI.Xaml.Shapes.Ellipse Dot { get; init; }
         public required Border Body { get; init; }
         public required Canvas Canvas { get; init; }
         public string? RenderedKey { get; set; }
@@ -702,10 +702,13 @@ public sealed partial class PreviewPage
                 Rect? union = null;
                 foreach (var i in items)
                 {
+                    // The pill itself, not the whole tab: the gap to the next tab is
+                    // inside the tab, and counting it made the frame wider on the right.
+                    FrameworkElement pill = FindDescendant<Border>(i, "TabContainer") is { ActualWidth: > 0 } c ? c : i;
                     Point o;
-                    try { o = i.TransformToVisual(TabGroupLayer).TransformPoint(new Point(0, 0)); }
+                    try { o = pill.TransformToVisual(TabGroupLayer).TransformPoint(new Point(0, 0)); }
                     catch { continue; }
-                    var r = new Rect(o.X, o.Y, i.ActualWidth, i.ActualHeight);
+                    var r = new Rect(o.X, o.Y, pill.ActualWidth, pill.ActualHeight);
                     if (union is { } u) { u.Union(r); union = u; } else union = r;
                 }
                 if (union is { } done) rects.Add(done);
@@ -803,6 +806,12 @@ public sealed partial class PreviewPage
 
     // ── Layout ───────────────────────────────────────────────────────────────
 
+    // Panes are cards, like the code editor: rounded, a hairline frame, a gap
+    // between them — the one with the focus framed in the accent colour. Each
+    // carries its name on a floating chip at the top, the way the preview's own
+    // plates float, with the ⇄ and × it needs; no title bar across the pane.
+    private const double PaneGap = 6;
+
     private void LayoutSplit()
     {
         _swapSource = null;   // its overlay goes with the other children below
@@ -817,27 +826,32 @@ public sealed partial class PreviewPage
         if (_view is null)
         {
             _splitPanes.Clear();
+            SplitHost.Background = null;
+            SplitHost.Padding = new Thickness(0);
             SplitHost.ColumnSpacing = SplitHost.RowSpacing = 0;
+            PreviewSurface.CornerRadius = new CornerRadius(0);
+            PreviewSurface.BorderThickness = new Thickness(0);
             PlaceInSplit(PreviewSurface, 0, 0, 1, 1);
             return;
         }
 
-        // One-pixel gaps through which the host's own colour draws the dividers.
-        SplitHost.ColumnSpacing = 1;
-        SplitHost.RowSpacing = 0;
+        // The window's backdrop shows between the cards.
+        SplitHost.Background = null;
+        SplitHost.Padding = new Thickness(PaneGap);
+        SplitHost.ColumnSpacing = SplitHost.RowSpacing = PaneGap;
         var groups = _view.Groups;
         bool byRows = _view.Rows;
         int inner = groups.Max(g => g.Count);
         int columns = byRows ? inner : groups.Count;
-        int rowSlots = byRows ? groups.Count : inner;
+        int rowCount = byRows ? groups.Count : inner;
         for (int c = 0; c < columns; c++)
             SplitHost.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        for (int r = 0; r < rowSlots; r++)
-        {
-            SplitHost.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        for (int r = 0; r < rowCount; r++)
             SplitHost.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        }
 
+        var stroke = PaneStroke();
+        var accent = new SolidColorBrush(AccentColorService.Current);
+        double chipTop = 10 + (_settings.ShowRulerHorizontal ? RulerBandDip : 0);
         var shown = new HashSet<DocTab>();
         for (int g = 0; g < groups.Count; g++)
         {
@@ -849,34 +863,42 @@ public sealed partial class PreviewPage
                 var pane = PaneFor(tab);
                 bool focused = ReferenceEquals(tab, _activeTab);
                 int col = byRows ? i : g;
-                int rowSlot = byRows ? g : i;
+                int row = byRows ? g : i;
                 // A pane alone in its group takes the group's whole length.
                 bool lone = group.Count == 1;
                 int colSpan = byRows && lone ? columns : 1;
-                int bodyRowSpan = !byRows && lone ? rowSlots * 2 - 1 : 1;
+                int rowSpan = !byRows && lone ? rowCount : 1;
 
                 pane.Title.Text = TabTitle(tab);
-                pane.Title.Opacity = focused ? 1 : 0.7;
-                pane.Underline.Visibility = focused ? Visibility.Visible : Visibility.Collapsed;
-                // A divider above a pane of the second row.
-                pane.Header.BorderThickness = new Thickness(0, rowSlot > 0 ? 1 : 0, 0, 1);
-                PlaceInSplit(pane.Header, col, rowSlot * 2, 1, colSpan);
+                pane.Title.Opacity = focused ? 1 : 0.75;
+                pane.Dot.Fill = focused ? accent : null;
+                pane.Dot.Stroke = focused ? accent : (Brush)Application.Current.Resources["TextFillColorTertiaryBrush"];
+                pane.Chip.Margin = new Thickness(0, chipTop, 0, 0);
 
+                FrameworkElement card = focused ? PreviewSurface : pane.Body;
                 if (focused)
                 {
-                    PlaceInSplit(PreviewSurface, col, rowSlot * 2 + 1, bodyRowSpan, colSpan);
+                    PreviewSurface.CornerRadius = new CornerRadius(10);
+                    PreviewSurface.BorderThickness = new Thickness(1.5);
+                    PreviewSurface.BorderBrush = accent;
                 }
                 else
                 {
                     pane.Body.Background = PreviewSurface.Background;
-                    PlaceInSplit(pane.Body, col, rowSlot * 2 + 1, bodyRowSpan, colSpan);
+                    pane.Body.BorderBrush = stroke;
                     RenderPane(pane, tab);
                 }
+                PlaceInSplit(card, col, row, rowSpan, colSpan);
+                PlaceInSplit(pane.Chip, col, row, rowSpan, colSpan);
+                Canvas.SetZIndex(pane.Chip, 10);
             }
         }
         foreach (var gone in _splitPanes.Keys.Where(t => !shown.Contains(t)).ToList())
             _splitPanes.Remove(gone);
     }
+
+    // The frame of a pane without the focus: the editor card's.
+    private Brush PaneStroke() => EditorHost.BorderBrush ?? (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"];
 
     private void PlaceInSplit(FrameworkElement element, int col, int row, int rowSpan, int colSpan)
     {
@@ -891,76 +913,78 @@ public sealed partial class PreviewPage
     {
         if (_splitPanes.TryGetValue(tab, out var existing)) return existing;
 
+        Button ChipButton(string glyph, string tip, Action click)
+        {
+            var b = new Button
+            {
+                Width = 26, Height = 24, Padding = new Thickness(0), MinWidth = 0,
+                CornerRadius = new CornerRadius(5),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                BorderThickness = new Thickness(0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Content = new FontIcon { Glyph = glyph, FontSize = 11 },
+            };
+            ToolTipService.SetToolTip(b, TipBlock(tip));
+            b.Click += (_, _) => click();
+            return b;
+        }
+
+        // A dot says which pane has the focus: filled in the accent colour.
+        var dot = new Microsoft.UI.Xaml.Shapes.Ellipse
+        {
+            Width = 8, Height = 8, StrokeThickness = 1.5,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(2, 0, 2, 0),
+        };
         var title = new TextBlock
         {
-            FontSize = 12,
+            FontSize = 12, MaxWidth = 260,
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
-        var close = new Button
-        {
-            Width = 26, Height = 22, Padding = new Thickness(0), MinWidth = 0,
-            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0),
-            VerticalAlignment = VerticalAlignment.Center,
-            Content = new FontIcon { Glyph = "", FontSize = 10 },
-        };
-        ToolTipService.SetToolTip(close, TipBlock(SpL("closePane")));
-        close.Click += (_, _) => ClosePane(tab);
-
-        var swap = new Button
-        {
-            Width = 26, Height = 22, Padding = new Thickness(0), MinWidth = 0,
-            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0),
-            VerticalAlignment = VerticalAlignment.Center,
-            Content = new FontIcon { Glyph = "", FontSize = 11 },
-        };
-        ToolTipService.SetToolTip(swap, TipBlock(SpL("swapTip")));
-        swap.Click += (_, _) => StartSwap(tab);
-
-        var row = new Grid { Height = 30, Padding = new Thickness(12, 0, 4, 0) };
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        row.Children.Add(dot);
         row.Children.Add(title);
-        Grid.SetColumn(swap, 1);
-        row.Children.Add(swap);
-        Grid.SetColumn(close, 2);
-        row.Children.Add(close);
-
-        var underline = new Border
+        row.Children.Add(new Microsoft.UI.Xaml.Shapes.Rectangle
         {
-            Height = 2,
-            VerticalAlignment = VerticalAlignment.Bottom,
-            Background = new SolidColorBrush(AccentColorService.Current),
-        };
-        var headerGrid = new Grid();
-        headerGrid.Children.Add(row);
-        headerGrid.Children.Add(underline);
+            Width = 1, Height = 14, Opacity = 0.5, Margin = new Thickness(4, 0, 0, 0),
+            Fill = (Brush)Application.Current.Resources["ControlStrongStrokeColorDefaultBrush"],
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        row.Children.Add(ChipButton("", SpL("swapTip"), () => StartSwap(tab)));
+        row.Children.Add(ChipButton("", SpL("closePane"), () => ClosePane(tab)));
 
-        var header = new Border
+        // The preview's floating plates' look (EditToolbar is one of them).
+        var chip = new Border
         {
-            Background = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
-            BorderBrush = (Brush)Application.Current.Resources["DividerStrokeColorDefaultBrush"],
-            Child = headerGrid,
+            Child = row,
+            Padding = new Thickness(10, 3, 3, 3),
+            CornerRadius = new CornerRadius(8),
+            BorderThickness = new Thickness(1),
+            Background = EditToolbar.Background,
+            BorderBrush = EditToolbar.BorderBrush,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
         };
-        header.Tapped += (_, _) => FocusPane(tab);
+        chip.Tapped += (_, _) => FocusPane(tab);
 
         var canvas = new Canvas();
         var body = new Border
         {
+            CornerRadius = new CornerRadius(10),
+            BorderThickness = new Thickness(1),
             Child = new Viewbox
             {
                 Child = canvas,
                 Stretch = Stretch.Uniform,
-                Margin = new Thickness(24),
+                // Room at the top for the chip.
+                Margin = new Thickness(24, 56, 24, 24),
             },
         };
         body.Tapped += (_, _) => FocusPane(tab);
         ToolTipService.SetToolTip(body, TipBlock(SpL("focusTip")));
 
-        var pane = new SplitPane { Header = header, Title = title, Underline = underline, Body = body, Canvas = canvas };
+        var pane = new SplitPane { Chip = chip, Title = title, Dot = dot, Body = body, Canvas = canvas };
         _splitPanes[tab] = pane;
         return pane;
     }

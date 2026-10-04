@@ -7,6 +7,10 @@
     "tooltipSettings": "Paramètres",
     "tooltipShowToolbar": "Afficher la barre d'outils",
     "tooltipHideToolbar": "Masquer la barre d'outils",
+    "tooltipShowTabs": "Afficher les onglets",
+    "tooltipHideTabs": "Masquer les onglets",
+    "tooltipShowBoth": "Afficher la barre d'outils et les onglets",
+    "tooltipHideBoth": "Masquer la barre d'outils et les onglets",
     "tooltipFullscreen": "Plein écran",
     "tooltipBack": "Retour"
   },
@@ -1793,6 +1797,11 @@
         "swap": {
           "title": "Intervertir éditeur et aperçu",
           "desc": "Place l'éditeur ZPL à droite et l'aperçu à gauche."
+        },
+        "chromeToggle": {
+          "title": "Flèche de la barre de titre",
+          "desc": "Ce que la flèche à côté du plein écran affiche ou masque.",
+          "options": [ "La barre d'outils", "Les onglets", "Les deux" ]
         },
         "splitUnfold": {
           "title": "Déplier en ouvrant une vue",

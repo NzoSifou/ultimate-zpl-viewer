@@ -125,6 +125,13 @@
                            VerticalAlignment="Center"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- The title bar's arrow, which the fullscreen bar replaces. -->
+                <Button x:Name="FsToolbarToggleButton"
+                        Width="46" Height="40"
+                        Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0"
+                        Click="ToolbarToggleButton_Click">
+                    <FontIcon x:Name="FsToolbarToggleIcon" Glyph="&#xE70E;" FontSize="12"/>
+                </Button>
                 <Button x:Name="FsMinimizeButton"
                         Width="46" Height="40"
                         Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="0"

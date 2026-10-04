@@ -41,9 +41,7 @@ public sealed partial class PreviewPage
 
         HomeOverlay.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
         ContentArea.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
-        DocTabs.Visibility = on || DocCount == 0
-            ? Visibility.Collapsed : Visibility.Visible;
-        ApplyToolbarVisibility();
+        ApplyToolbarVisibility();   // the tab strip too
 
         ApplyHomeChrome();
     }

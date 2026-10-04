@@ -1094,9 +1094,54 @@ public sealed partial class PreviewPage : Page
 
     // The home page has no toolbar to show or hide: the preference is kept, it
     // simply does not apply while there is no document to act on.
-    private void ApplyToolbarVisibility() =>
-        ToolbarBorder.Visibility = _toolbarVisible && !_homeVisible
+    //
+    // What the title-bar arrow hides is a setting: the toolbar (as always), the tab
+    // strip, or both — _toolbarVisible is the arrow's state, whatever it acts on.
+    private void ApplyToolbarVisibility()
+    {
+        bool hidesToolbar = _settings.ChromeToggleTarget is not "tabs";
+        ToolbarBorder.Visibility = (_toolbarVisible || !hidesToolbar) && !_homeVisible
             ? Visibility.Visible : Visibility.Collapsed;
+        ApplyTabStripVisibility();
+    }
+
+    // The tab strip: there as soon as there is a document — unless the title-bar
+    // arrow is set to hide it and has.
+    private void ApplyTabStripVisibility()
+    {
+        bool hidesTabs = _settings.ChromeToggleTarget is "tabs" or "both";
+        DocTabs.Visibility = DocCount > 0 && !_homeVisible && (_toolbarVisible || !hidesTabs)
+            ? Visibility.Visible : Visibility.Collapsed;
+        UpdateTabGroupFrames();
+    }
+
+    private static readonly string[] ChromeToggleTargets = { "toolbar", "tabs", "both" };
+
+    private ComboBox ChromeTogglePicker()
+    {
+        var box = new ComboBox
+        {
+            MinWidth = 150,
+            ItemsSource = SA("editor.cards.chromeToggle.options"),
+            SelectedIndex = Math.Max(0, Array.IndexOf(ChromeToggleTargets, _settings.ChromeToggleTarget)),
+        };
+        box.SelectionChanged += (_, _) =>
+        {
+            if (box.SelectedIndex < 0) return;
+            _settings.ChromeToggleTarget = ChromeToggleTargets[box.SelectedIndex];
+            _settings.Save();
+            // Every window: they share the setting.
+            foreach (var w in WindowManager.Windows) w.Page?.ApplyChromeToggleTarget();
+        };
+        return box;
+    }
+
+    /// <summary>The arrow's setting changed: applies it, and the arrow's tooltip follows.</summary>
+    internal void ApplyChromeToggleTarget()
+    {
+        ApplyToolbarVisibility();
+        (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.SetToolbarToggleGlyph(_toolbarVisible);
+    }
 
     // Editor collapse handle (the thin full-height strip): flips the editor's
     // visibility, same persistence rule as the toolbar.
@@ -1719,6 +1764,8 @@ public sealed partial class PreviewPage : Page
         // The label pager floats over the bottom of the preview: leave it a strip
         // on both sides, so the centred label clears it.
         if (_model.LabelCount > 1) svH -= 2 * 64;
+        // In a split view, the pane's name floats at the top of it.
+        if (IsSplit) svH -= 2 * 48;
         var zoom = (float)Math.Max(0.01, Math.Min(
             (svW - margin) / cvW,
             (svH - margin) / cvH));
@@ -3863,7 +3910,7 @@ public sealed partial class PreviewPage : Page
     {
         bool any = DocCount > 0;
         if (_homeVisible == any) SetHomeVisible(!any);
-        DocTabs.Visibility = any && !_homeVisible ? Visibility.Visible : Visibility.Collapsed;
+        ApplyTabStripVisibility();
         SyncSplit();
         WindowManager.SaveSessionLayout();
     }
@@ -4882,7 +4929,9 @@ public sealed partial class PreviewPage : Page
         };
         panel.Children.Add(SubHeader(SL("editor.sub.layout")));
         panel.Children.Add(Row(MakeCard("\uE8AB", SL("editor.cards.swap.title"),
-            SL("editor.cards.swap.desc"), swap)));
+            SL("editor.cards.swap.desc"), swap),
+            MakeCard("", SL("editor.cards.chromeToggle.title"), SL("editor.cards.chromeToggle.desc"),
+                ChromeTogglePicker())));
 
         // ── Vues fractionnées ───────────────────────────────────────────────
         var splitUnfold = MakeToggle(_settings.SplitViewAutoUnfold);

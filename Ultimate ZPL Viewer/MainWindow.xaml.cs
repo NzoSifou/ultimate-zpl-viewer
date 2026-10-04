@@ -287,11 +287,17 @@ namespace Ultimate_ZPL_Viewer
 
         public void SetToolbarToggleGlyph(bool toolbarVisible)
         {
-            ToolbarToggleIcon.Glyph = toolbarVisible ? "" : ""; // chevron up / down
+            var glyph = toolbarVisible ? "" : ""; // chevron up / down
+            ToolbarToggleIcon.Glyph = glyph;
+            FsToolbarToggleIcon.Glyph = glyph;
             _lastToolbarVisible = toolbarVisible;
-            Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(ToolbarToggleButton,
-                LocalizationService.Get(toolbarVisible ? "titlebar.tooltipHideToolbar" : "titlebar.tooltipShowToolbar"));
+            // The tooltip names what the arrow acts on (a setting).
+            var what = AppSettings.Current.ChromeToggleTarget switch { "tabs" => "Tabs", "both" => "Both", _ => "Toolbar" };
+            var tip = LocalizationService.Get((toolbarVisible ? "titlebar.tooltipHide" : "titlebar.tooltipShow") + what);
+            Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(ToolbarToggleButton, tip);
+            Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FsToolbarToggleButton, tip);
         }
+
 
         // ── Acrylic backdrop (tuned for a clearly visible effect in both themes) ──
 

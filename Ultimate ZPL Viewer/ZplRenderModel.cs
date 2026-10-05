@@ -1666,9 +1666,29 @@ public static partial class ZplRenderer
         'R' => 90, 'I' => 180, 'B' => 270, _ => 0,
     };
 
+    // Every keystroke parses the label again, and a label's 2D symbols almost never
+    // change between two of them: the Aztec code of a DPD label took a third of a
+    // parse to encode, again and again, to the same modules. The matrices are only
+    // ever read once encoded (turning one makes a new one), so they are shared.
+    private static readonly Dictionary<string, bool[,]?> SymbolCache = new(StringComparer.Ordinal);
+
+    private static bool[,]? Cached(string key, Func<bool[,]?> encode)
+    {
+        lock (SymbolCache)
+            if (SymbolCache.TryGetValue(key, out var hit)) return hit;
+        var matrix = encode();
+        lock (SymbolCache)
+        {
+            // A batch of hundreds of labels must not keep all of their symbols.
+            if (SymbolCache.Count >= 256) SymbolCache.Clear();
+            SymbolCache[key] = matrix;
+        }
+        return matrix;
+    }
+
     // Encodes the field data (byte-per-char) into an Aztec module matrix, or null
     // if it cannot be encoded (falls back to no symbol rather than crashing).
-    private static bool[,]? TryEncodeAztec(string data)
+    private static bool[,]? TryEncodeAztec(string data) => Cached("aztec|" + data, () =>
     {
         try
         {
@@ -1677,10 +1697,10 @@ public static partial class ZplRenderer
             return AztecEncoder.Encode(bytes);
         }
         catch { return null; }
-    }
+    });
 
     // Encodes the field data (byte-per-char) into a Data Matrix module matrix, or null.
-    private static bool[,]? TryEncodeDataMatrix(string data, int forcedSize = 0)
+    private static bool[,]? TryEncodeDataMatrix(string data, int forcedSize = 0) => Cached($"dm|{forcedSize}|{data}", () =>
     {
         try
         {
@@ -1689,9 +1709,9 @@ public static partial class ZplRenderer
             return DataMatrixEncoder.Encode(bytes, forcedSize);
         }
         catch { return null; }
-    }
+    });
 
-    private static bool[,]? TryEncodeQr(string data, char ecc)
+    private static bool[,]? TryEncodeQr(string data, char ecc) => Cached($"qr|{ecc}|{data}", () =>
     {
         try
         {
@@ -1699,16 +1719,17 @@ public static partial class ZplRenderer
             return QrEncoder.Encode(bytes, ecc);
         }
         catch { return null; }
-    }
+    });
 
     private static bool[,]? TryEncodePdf417(string data, int cols, int rows, int security)
+        => Cached($"pdf417|{cols}|{rows}|{security}|{data}", () =>
     {
         try
         {
             return Pdf417Encoder.Encode(data, cols, rows, security);
         }
         catch { return null; }
-    }
+    });
 
     // Converts ^FH hex escapes (indicator + two hex digits) into the raw bytes,
     // e.g. "_1E" → char 0x1E. Used for control chars in structured barcode data.
@@ -2236,13 +2257,10 @@ public static partial class ZplRenderer
     {
         var inner = new Canvas { Width = bars.Width, Height = bars.Height };
         var black = new SolidColorBrush(ink);
-        foreach (var s in bars.Segs)
-        {
-            var rect = new Rectangle { Width = Math.Max(1, s.W), Height = Math.Max(1, s.H), Fill = black };
-            Canvas.SetLeft(rect, s.X);
-            Canvas.SetTop(rect, s.Y);
-            inner.Children.Add(rect);
-        }
+        // Every bar in ONE shape (see RectsPath).
+        var path = new RectsPath();
+        foreach (var s in bars.Segs) path.Add(s.X, s.Y, Math.Max(1, s.W), Math.Max(1, s.H));
+        if (path.Build(black, bars.Width, bars.Height) is { } shape) inner.Children.Add(shape);
         foreach (var l in bars.Labels)
         {
             var tb = new TextBlock
@@ -2373,25 +2391,84 @@ public static partial class ZplRenderer
     }
 
     // Draws a 2D module matrix (Aztec / Data Matrix / QR / PDF417) as black rects,
-    // merging horizontal runs of set modules into a single rectangle.
+    // merging horizontal runs of set modules into a single rectangle — all of them
+    // in one shape placed at the symbol's corner (see RectsPath).
     private static void DrawModuleGrid(Canvas canvas, double x, double y, double mw, double mh, bool[,] matrix, Color ink)
     {
-        int rows = matrix.GetLength(0), cols = matrix.GetLength(1);
-        var brush = new SolidColorBrush(ink);
-        for (int r = 0; r < rows; r++)
+        // The same symbol comes back on every redraw (the encoders share their
+        // matrices), and so does its outline.
+        string markup;
+        if (GridMarkups.TryGetValue(matrix, out var known) && known.Value.Mw == mw && known.Value.Mh == mh)
+            markup = known.Value.Markup;
+        else
         {
-            int c = 0;
-            while (c < cols)
+            int rows = matrix.GetLength(0), cols = matrix.GetLength(1);
+            var path = new RectsPath();
+            for (int r = 0; r < rows; r++)
             {
-                if (!matrix[r, c]) { c++; continue; }
-                int c2 = c;
-                while (c2 < cols && matrix[r, c2]) c2++;   // merge a horizontal run
-                var rect = new Rectangle { Width = (c2 - c) * mw, Height = mh, Fill = brush };
-                Canvas.SetLeft(rect, x + c * mw);
-                Canvas.SetTop(rect, y + r * mh);
-                canvas.Children.Add(rect);
-                c = c2;
+                int c = 0;
+                while (c < cols)
+                {
+                    if (!matrix[r, c]) { c++; continue; }
+                    int c2 = c;
+                    while (c2 < cols && matrix[r, c2]) c2++;   // merge a horizontal run
+                    path.Add(c * mw, r * mh, (c2 - c) * mw, mh);
+                    c = c2;
+                }
             }
+            markup = path.Markup;
+            GridMarkups.AddOrUpdate(matrix, new System.Runtime.CompilerServices.StrongBox<(double, double, string)>((mw, mh, markup)));
+        }
+        if (RectsPath.Build(markup, new SolidColorBrush(ink),
+                matrix.GetLength(1) * mw, matrix.GetLength(0) * mh) is not { } shape) return;
+        Canvas.SetLeft(shape, x);
+        Canvas.SetTop(shape, y);
+        canvas.Children.Add(shape);
+    }
+
+    /// <summary>
+    /// Many filled rectangles as ONE Path. A symbol used to be one Rectangle per
+    /// run of modules: the Aztec code of a DPD label alone came to 1 380 elements,
+    /// two thirds of the time a redraw took, and every redraw threw them all away -
+    /// which is what makes XAML ask the runtime for a full garbage collection, five
+    /// of them per keystroke. The geometry is written as path markup so it is ONE
+    /// native object, not a RectangleGeometry per run. Coordinates are relative to
+    /// where the caller puts the shape, so its box is the symbol's (selection).
+    /// </summary>
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<bool[,], System.Runtime.CompilerServices.StrongBox<(double Mw, double Mh, string Markup)>> GridMarkups = new();
+
+    private sealed class RectsPath
+    {
+        private readonly StringBuilder _markup = new();
+
+        public string Markup => _markup.ToString();
+
+        public void Add(double x, double y, double w, double h)
+        {
+            if (w <= 0 || h <= 0) return;
+            var inv = CultureInfo.InvariantCulture;
+            _markup.Append('M').Append(x.ToString("R", inv)).Append(',').Append(y.ToString("R", inv))
+                   .Append('h').Append(w.ToString("R", inv))
+                   .Append('v').Append(h.ToString("R", inv))
+                   .Append('h').Append((-w).ToString("R", inv))
+                   .Append('z');
+        }
+
+        public Microsoft.UI.Xaml.Shapes.Path? Build(Brush fill, double width, double height)
+            => Build(Markup, fill, width, height);
+
+        // The size is the symbol's: a Path left to size itself in a Canvas comes out
+        // 0×0 to layout, and a click on it, its selection frame and its handles all
+        // read that size.
+        public static Microsoft.UI.Xaml.Shapes.Path? Build(string markup, Brush fill, double width, double height)
+        {
+            if (markup.Length == 0) return null;
+            var data = (Geometry)Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Geometry), markup);
+            return new Microsoft.UI.Xaml.Shapes.Path
+            {
+                Data = data, Fill = fill,
+                Width = Math.Max(1, width), Height = Math.Max(1, height),
+            };
         }
     }
 

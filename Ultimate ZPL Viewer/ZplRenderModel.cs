@@ -219,6 +219,12 @@ public static partial class ZplRenderer
         var picked = false;
         var counting = false;
         var formatHasInk = false;
+        // Before the label asked for, fields are only NOTED: the state they leave
+        // behind (^CF, ^BY, ^LH, stored graphics…) carries on into the next label,
+        // but encoding their barcodes and measuring their words would be thrown
+        // away. Going to the last label of a 96-label batch spent 220 ms on that.
+        var skipping = false;
+        var skippedInk = false;
         LabelSnapshot? snap = null;
         var labelSpans = new List<(int Start, int End)>();
         int formatStart = 0;        // where the label being read began (its ^XA)
@@ -276,7 +282,8 @@ public static partial class ZplRenderer
         // and everything starts afresh for the next.
         void EndLabel()
         {
-            if (drawables.Count == 0) return;
+            if (drawables.Count == 0 && !skippedInk) return;
+            skippedInk = false;
             labelsDone++;
             labelSpans.Add((formatStart, lastTokenEnd));
             if (!picked)
@@ -632,12 +639,13 @@ public static partial class ZplRenderer
             Grow(fx + bw, topY + bh);
         }
 
-        foreach (var token in ExpandStoredFormats(Tokenize(src)))
+        foreach (var token in TokensFor(src))
         {
             var command = token.Command;
             var args = token.Args.Trim();
             if (command == "XA") formatStart = token.Start;
             lastTokenEnd = Math.Max(lastTokenEnd, token.End);
+            skipping = !picked && labelsDone < labelIndex;
 
             // Past the label asked for, the rest only has to be COUNTED: drawing
             // hundreds of labels nobody is looking at — barcodes encoded, images
@@ -650,8 +658,13 @@ public static partial class ZplRenderer
                     if (formatHasInk) { labelsDone++; labelSpans.Add((formatStart, token.End)); }
                     formatHasInk = false;
                 }
-                else if (command is "FD" or "FV" or "SN" or "GB" or "GC" or "GE" or "GD"
-                         or "GF" or "XG" or "IM" or "IL" or "GS")
+                // An EMPTY ^FD prints nothing, and the labels before this one
+                // were counted by what they drew: counted here, it made the same
+                // batch one label longer seen from its first label than from the
+                // others.
+                else if (command is "FD" or "FV" ? token.Args.Length > 0
+                         : command == "SN" ? args.Split(',')[0].Length > 0
+                         : command is "GB" or "GC" or "GE" or "GD" or "GF" or "XG" or "IM" or "IL" or "GS")
                     formatHasInk = true;
                 continue;
             }
@@ -1116,6 +1129,7 @@ public static partial class ZplRenderer
                 case "GF":
                 case "GFA":
                 {
+                    if (skipping) { if (args.Length > 0) skippedInk = true; break; }
                     var img = DecodeGraphic(args);
                     if (img is { } g)
                     {
@@ -1137,7 +1151,8 @@ public static partial class ZplRenderer
                     break;
                 }
                 case "SN": // serial number field: render the initial value as text
-                    EmitTextField(args.Split(',')[0]);
+                    if (skipping) { if (args.Split(',')[0].Length > 0) skippedInk = true; }
+                    else EmitTextField(args.Split(',')[0]);
                     reverse = labelReverse;
                     break;
                 case "FD":
@@ -1156,7 +1171,17 @@ public static partial class ZplRenderer
                     data = data.Replace("\\&", "\n", StringComparison.Ordinal);
                     double fx = x + lhX + lsX, fy = y + lhY + ltY;
 
-                    if (swallowFd)
+                    if (skipping)
+                    {
+                        // Whether it would have printed, and nothing more.
+                        if (!swallowFd && (pendingMaxiCode || pendingGs || pendingAztec || pendingDataMatrix
+                                           || pendingQr || pendingPdf417 || pending2D || !string.IsNullOrEmpty(data)))
+                            skippedInk = true;
+                        swallowFd = pendingMaxiCode = pendingGs = pendingAztec = pendingDataMatrix
+                            = pendingQr = pendingPdf417 = pending2D = pendingBarcode = false;
+                        pendingSym = "";
+                    }
+                    else if (swallowFd)
                     {
                         swallowFd = false; // RFID / MaxiCode data: nothing to draw
                     }
@@ -1353,6 +1378,10 @@ public static partial class ZplRenderer
             lhX = chosen.LhX; lhY = chosen.LhY;
             dpmm = chosen.Dpmm; poi = chosen.Poi; mirror = chosen.Mirror;
         }
+        // Asked past the end: the last label shows, and it was one of those only
+        // noted on the way — read it properly.
+        if (!picked && labelsDone > 0 && labelsDone - 1 < labelIndex)
+            return Parse(src, fallbackDpmm, labelsDone - 1);
         int shownIndex = picked ? labelIndex : Math.Max(0, labelsDone - 1);
 
         var effectiveDpmm = dpmm ?? fallbackDpmm;
@@ -3371,6 +3400,22 @@ public static partial class ZplRenderer
     /// renderer does — a second scanner would drift away from this one.
     /// </summary>
     internal static IReadOnlyList<ZplToken> TokenizeForEditing(string zpl) => Tokenize(zpl);
+
+    // The last text read and its commands. Turning the pages of a batch reads the
+    // SAME text again for every label shown, and cutting a 1.2 MB batch into its
+    // commands was most of what a page turn cost (75 ms). Tokens are immutable.
+    private static readonly object TokenGate = new();
+    private static (string Text, IReadOnlyList<ZplToken> Tokens)? _lastTokens;
+
+    private static IReadOnlyList<ZplToken> TokensFor(string src)
+    {
+        lock (TokenGate)
+            if (_lastTokens is { } last && (ReferenceEquals(last.Text, src) || last.Text == src))
+                return last.Tokens;
+        var tokens = ExpandStoredFormats(Tokenize(src));
+        lock (TokenGate) _lastTokens = (src, tokens);
+        return tokens;
+    }
 
     private static IReadOnlyList<ZplToken> Tokenize(string zpl)
     {

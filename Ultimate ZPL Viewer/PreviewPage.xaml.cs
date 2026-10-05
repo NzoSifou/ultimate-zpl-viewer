@@ -59,7 +59,7 @@ public sealed partial class PreviewPage : Page
     private string _editorLang = "fr"; // Monaco UI language currently loaded
     private string? _currentFilePath;  // null = never saved
     private bool _isDirty;             // unsaved changes
-    private DispatcherTimer? _highlightTimer;
+    private DispatcherTimer? _analysisTimer;
     private bool _isPanning;
     private Windows.Foundation.Point _panStart;
     private double _panStartH;
@@ -209,6 +209,9 @@ public sealed partial class PreviewPage : Page
         PreviewScrollViewer.IsTabStop = true;
         PreviewScrollViewer.AddHandler(PointerPressedEvent,
             new PointerEventHandler((_, _) => PreviewScrollViewer.Focus(FocusState.Pointer)), true);
+        // A button anywhere on the page acts on the preview (export, print…): it
+        // has to be the text's. Its Click comes on the release, after this.
+        Root.AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) => FlushTextRefresh()), true);
         // No automatic "Ctrl+S" tooltip on hover (it even leaked into the settings).
         Root.KeyboardAcceleratorPlacementMode = KeyboardAcceleratorPlacementMode.Hidden;
         // The floating bar has to tell Monaco how much room it takes before Monaco
@@ -1294,9 +1297,12 @@ public sealed partial class PreviewPage : Page
         }
 
         _updating = true;
+        using var perf = PerfLog.Time($"RefreshPreview {kind}");
+        long refreshStart = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
-            var parsed = ParseCurrentText();
+            ZplRenderModel parsed;
+            using (PerfLog.Time("  parse")) parsed = ParseCurrentText();
 
             // Detect ^PW / ^LL additions, removals and value changes.
             var pw = parsed.DeclaredWidthDots;
@@ -1384,7 +1390,7 @@ public sealed partial class PreviewPage : Page
             };
 
             UpdateSizeBoxes(fillEmptyBoxes: kind == SizeUpdate.DocumentLoaded);
-            DrawPreviewModel();
+            using (PerfLog.Time("  draw")) DrawPreviewModel();
             UpdateLabelPager();
             RefreshSplitPanes();
             // The canvas was rebuilt: the frame has to find its element again.
@@ -1402,6 +1408,7 @@ public sealed partial class PreviewPage : Page
         finally
         {
             _updating = false;
+            _lastRefreshMs = System.Diagnostics.Stopwatch.GetElapsedTime(refreshStart).TotalMilliseconds;
         }
     }
 
@@ -1478,6 +1485,9 @@ public sealed partial class PreviewPage : Page
                                   + _model.Size.HeightDots * _model.Size.HeightDots);
         ApplyZoomBudget(diagonal, diagonal);
         ZplRenderer.Draw(PreviewCanvas, _model, SelectedDpmm, _rotationDegrees, _hitMap);
+        if (PerfLog.Enabled)
+            PerfLog.Write($"           {_model.Drawables.Count} drawables, {PreviewCanvas.Children.Count} elements, " +
+                          $"GC {GC.CollectionCount(0)}/{GC.CollectionCount(2)} (gen0/gen2), paused {GC.GetTotalPauseDuration().TotalMilliseconds:0} ms in all");
         ApplyZoomBudget();   // again, on the real canvas, which may allow more
     }
 
@@ -2188,14 +2198,22 @@ public sealed partial class PreviewPage : Page
 
         double zoom = PreviewScrollViewer.ZoomFactor;
         double tol = zoom > 0 ? 4.0 / zoom : 4.0;
-        foreach (var (span, box) in FieldBoxes())
+        // Only the held fields' boxes: this runs on every redraw and every move of
+        // the pointer, and measuring every element on the label to then keep one
+        // or two was most of what it cost.
+        var boxes = new Dictionary<int, Windows.Foundation.Rect>();
+        foreach (var (element, drawable) in _hitMap)
         {
             bool ours = false;
-            foreach (var (start, _) in held) if (start == span.Start) { ours = true; break; }
+            foreach (var (start, _) in held) if (start == drawable.SourceStart) { ours = true; break; }
             if (!ours) continue;
+            var b = BoundsInCanvas(element);
+            if (b.IsEmpty) continue;
+            boxes[drawable.SourceStart] = boxes.TryGetValue(drawable.SourceStart, out var acc) ? Union(acc, b) : b;
+        }
+        foreach (var box in boxes.Values)
             if (new Windows.Foundation.Rect(box.X - tol, box.Y - tol, box.Width + 2 * tol, box.Height + 2 * tol)
                     .Contains(_previewPointer)) return true;
-        }
         return false;
     }
 
@@ -2519,19 +2537,46 @@ public sealed partial class PreviewPage : Page
     // already ends with the cell size. The whole caption is then positioned so the
     // arrow occupies the rightmost COMPLETE grid cell — both arrow ends land on grid
     // lines — and the text grows leftwards from it.
+    // What the caption was last drawn from: every redraw asks for it again, and
+    // laying the text out through Win2D costs some 25 ms each time for the same
+    // words — a quarter of what moving an element with the arrow keys took.
+    private (string Text, double? Arrow, float Scale, double Width)? _captionDrawn;
+    private CanvasTextFormat? _captionFormat;
+    private CanvasDevice? _captionDevice;
+    private float _captionFormatScale;
+
     private void RenderCaption(string text, double? arrowStepDip)
     {
         BuildCaptionVisual();
         if (_captionSprite is null || _captionSurface is null) return;
 
         float scale = (float)(XamlRoot?.RasterizationScale ?? 1.0);
-        using var format = new CanvasTextFormat
+        var drawn = (text, arrowStepDip, scale, PreviewSurface.ActualWidth);
+        if (_captionDrawn == drawn) return;
+        _captionDrawn = drawn;
+        if (_captionFormat is null || _captionFormatScale != scale)
         {
-            FontFamily = "Segoe UI",
-            FontSize = CaptionFontSize * scale,
-        };
-        var device = CanvasDevice.GetSharedDevice();
-        using var layout = new CanvasTextLayout(device, text, format, 4096, 128);
+            _captionFormat?.Dispose();
+            _captionFormat = new CanvasTextFormat
+            {
+                FontFamily = "Segoe UI",
+                FontSize = CaptionFontSize * scale,
+            };
+            _captionFormatScale = scale;
+        }
+        var format = _captionFormat;
+        // Asking Win2D for its shared device costs some 28 ms every time — the
+        // whole of what redrawing this caption cost. It is asked once, and again
+        // only if that device has gone (driver update, GPU reset).
+        _captionDevice ??= CanvasDevice.GetSharedDevice();
+        CanvasTextLayout layout;
+        try { layout = new CanvasTextLayout(_captionDevice, text, format, 4096, 128); }
+        catch
+        {
+            _captionDevice = CanvasDevice.GetSharedDevice();
+            layout = new CanvasTextLayout(_captionDevice, text, format, 4096, 128);
+        }
+        using var _layout = layout;
 
         float gap = 6f * scale;
         float mainW = (float)layout.LayoutBounds.Width;
@@ -3082,6 +3127,7 @@ public sealed partial class PreviewPage : Page
     // Loads a tab's snapshot into the live fields and switches the Monaco model.
     private void ActivateTab(DocTab tab)
     {
+        using var perf = PerfLog.Time("ActivateTab");
         _activeTab = tab;
         _currentFilePath = tab.FilePath;
         _currentText = tab.Text;
@@ -3095,7 +3141,7 @@ public sealed partial class PreviewPage : Page
         // re-applies it once the canvas has been re-measured).
         RestoreTabZoom();
         RefreshPreview(SizeUpdate.DocumentLoaded);
-        ScheduleHighlighting();
+        ScheduleAnalysis();
         UpdateDocumentTitle();
         RunPendingTransform();
         SyncSplit();
@@ -3539,6 +3585,7 @@ public sealed partial class PreviewPage : Page
     // implementation, one behaviour.
     internal void RunShortcut(string name)
     {
+        FlushTextRefresh();
         // A dialog is up (unsaved changes, print confirmation…): the user has a
         // question to answer first. Acting now would try to open a second
         // ContentDialog, which WinUI refuses — and took the app down with it.
@@ -4061,7 +4108,12 @@ public sealed partial class PreviewPage : Page
         }
         else if (double.TryParse(sender.Text.Replace(',', '.'), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var angle))
         {
-            _rotationDegrees = Math.Clamp(angle, 0, 359.99);
+            angle = Math.Clamp(angle, 0, 359.99);
+            // The rotate button writes its new angle here after it has turned the
+            // label itself: drawing it a second time for the same angle was half of
+            // what every quarter turn cost.
+            if (Math.Abs(angle - _rotationDegrees) < 1e-9) return;
+            _rotationDegrees = angle;
             RefreshPreview(SizeUpdate.KeepCurrent);
         }
     }
@@ -6297,6 +6349,7 @@ public sealed partial class PreviewPage : Page
         if (string.IsNullOrEmpty(raw)) return;
         using var doc = JsonDocument.Parse(raw);
         var type = doc.RootElement.GetProperty("type").GetString();
+        using var perf = PerfLog.Time($"editor message {type} ({raw.Length} chars)");
         switch (type)
         {
             case "ready":
@@ -6431,6 +6484,7 @@ public sealed partial class PreviewPage : Page
     private void OnEditorReady()
     {
         _editorReady = true;
+        PostToEditor(ZplHighlighter.GetGrammarJson());
         ApplyEditorTheme();
         PostToEditor("{\"type\":\"setLineNumbers\",\"show\":" + (_settings.ShowLineNumbers ? "true" : "false") + "}");
         ApplyEditorOptions();
@@ -6442,8 +6496,6 @@ public sealed partial class PreviewPage : Page
         // build on (see RunPendingTransform).
         _editorTextPending = !string.IsNullOrEmpty(_currentText);
         PostToEditor(BuildSetTextMessage(_currentText));
-        if (!string.IsNullOrEmpty(_currentText))
-            PostToEditor(ZplHighlighter.GetDecorationsJson(_currentText));
         RunStaticAnalysis();
         RunPendingTransform();
     }
@@ -6492,8 +6544,6 @@ public sealed partial class PreviewPage : Page
     {
         if (!_editorReady) return;
         PostToEditor(ZplHighlighter.GetColorsJson(IsDarkTheme));
-        if (!string.IsNullOrEmpty(_currentText))
-            PostToEditor(ZplHighlighter.GetDecorationsJson(_currentText));
     }
 
     private void OnEditorTextChanged(string text, int version = 0)
@@ -6507,10 +6557,48 @@ public sealed partial class PreviewPage : Page
         if (text == _currentText) { RecordDocState(version); return; }
         _currentText = text;
         if (!_isDirty) { _isDirty = true; UpdateDocumentTitle(); }
+        ScheduleAnalysis();
+        if (_lastRefreshMs > HeavyRefreshMs) { DeferTextRefresh(version); return; }
         RefreshPreview(SizeUpdate.TextEdited);
-        ScheduleHighlighting();
         // Recorded AFTER the redraw, so the state filed against this version is the
         // one the document actually ends up in and not the one it came from.
+        RecordDocState(version);
+    }
+
+    // ── Typing in a long document ────────────────────────────────────────────
+    // The preview is redrawn on every keystroke, and the editor lives on the same
+    // thread: on a batch of several hundred labels a redraw took 120-150 ms, and
+    // typing stuttered with it. Once a redraw costs that much, the preview follows
+    // when the typing pauses instead. Anything that reads the preview — a click on
+    // it, a key it handles, a toolbar button — brings it up to date first.
+    private const double HeavyRefreshMs = 60;
+    private double _lastRefreshMs;
+    private DispatcherTimer? _textRefreshTimer;
+    private (DocTab? Tab, int Version) _pendingTextRefresh;
+
+    private void DeferTextRefresh(int version)
+    {
+        _pendingTextRefresh = (_activeTab, version);
+        if (_textRefreshTimer is null)
+        {
+            // The analysis waits as long: one pause, not two.
+            _textRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            _textRefreshTimer.Tick += (_, _) => FlushTextRefresh();
+        }
+        _textRefreshTimer.Stop();
+        _textRefreshTimer.Start();
+    }
+
+    /// <summary>Draws the text the editor last sent, if the preview is behind it.</summary>
+    private void FlushTextRefresh()
+    {
+        _textRefreshTimer?.Stop();
+        var (tab, version) = _pendingTextRefresh;
+        if (tab is null) return;
+        _pendingTextRefresh = default;
+        // Another document came up meanwhile: it was drawn when it did.
+        if (!ReferenceEquals(tab, _activeTab)) return;
+        RefreshPreview(SizeUpdate.TextEdited);
         RecordDocState(version);
     }
 
@@ -6552,7 +6640,7 @@ public sealed partial class PreviewPage : Page
         // recorded against the old one mean nothing any more.
         _activeTab?.StateByVersion.Clear();
         RefreshPreview(kind);
-        ScheduleHighlighting();
+        ScheduleAnalysis();
         // Guard: _currentText is set before posting so Monaco's textChanged reply is filtered.
         if (_editorReady)
         {
@@ -6561,21 +6649,19 @@ public sealed partial class PreviewPage : Page
         }
     }
 
-    private void ScheduleHighlighting()
+    private void ScheduleAnalysis()
     {
-        if (_highlightTimer is null)
+        if (_analysisTimer is null)
         {
-            _highlightTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
-            _highlightTimer.Tick += (_, _) =>
+            _analysisTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            _analysisTimer.Tick += (_, _) =>
             {
-                _highlightTimer!.Stop();
-                if (_editorReady && !string.IsNullOrEmpty(_currentText))
-                    PostToEditor(ZplHighlighter.GetDecorationsJson(_currentText));
-                RunStaticAnalysis();
+                _analysisTimer!.Stop();
+                using (PerfLog.Time("static analysis")) RunStaticAnalysis();
             };
         }
-        _highlightTimer.Stop();
-        _highlightTimer.Start();
+        _analysisTimer.Stop();
+        _analysisTimer.Start();
     }
 
     private List<ZplDiagnostic> _diagnostics = new();

@@ -1,4 +1,4 @@
-using Microsoft.UI;
+﻿using Microsoft.UI;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -344,56 +344,6 @@ public static class ZplHighlighter
         _commandRegex = new Regex($@"({alternation})([^\^~\r\n]*)", RegexOptions.Compiled);
     }
 
-    // Fills a per-character color array without touching the document.
-    private static Windows.UI.Color[] BuildColorMap(string text)
-    {
-        var colors = new Windows.UI.Color[text.Length];
-        Array.Fill(colors, _textColor);
-
-        foreach (Match m in _commandRegex!.Matches(text))
-        {
-            var cmdStr    = m.Groups[1].Value;
-            var argsStr   = m.Groups[2].Value;
-            int cmdStart  = m.Index;
-            int argsStart = cmdStart + m.Groups[1].Length;
-
-            // Command keyword → commandColor
-            for (int i = cmdStart; i < argsStart && i < colors.Length; i++)
-                colors[i] = _commandColor;
-
-            if (argsStr.Length == 0) continue;
-
-            _lookup!.TryGetValue(cmdStr, out var def);
-            var parameters = def?.Parameters ?? [];
-
-            int paramIndex = 0;
-            int segStart   = argsStart;
-
-            for (int i = 0; i <= argsStr.Length; i++)
-            {
-                bool boundary = i == argsStr.Length || argsStr[i] == ',';
-                if (!boundary) continue;
-
-                int segEnd    = argsStart + i;
-                var paramName = paramIndex < parameters.Count ? parameters[paramIndex].Name : null;
-                bool isText   = paramName is null || _textParams!.Contains(paramName);
-                var color     = isText ? _textColor : _parameterColor;
-
-                for (int j = segStart; j < segEnd && j < colors.Length; j++)
-                    colors[j] = color;
-
-                // Comma takes the color of the segment it closes
-                if (i < argsStr.Length && argsStart + i < colors.Length)
-                    colors[argsStart + i] = color;
-
-                segStart = argsStart + i + 1;
-                paramIndex++;
-            }
-        }
-
-        return colors;
-    }
-
     // Returns the JSON message that sets the three CSS color classes in Monaco.
     // Colors too close to the editor background are adapted so they stay readable
     // (the default scheme uses white text, invisible on the light theme).
@@ -416,34 +366,23 @@ public static class ZplHighlighter
         return c;
     }
 
-    // Returns the JSON message that applies run-length-encoded decoration ranges in Monaco.
-    public static string GetDecorationsJson(string text)
+    // The grammar the editor colours the code with, as a JSON message: every known
+    // command (both forms) with, per parameter, whether it holds free text (text
+    // colour) or a value (parameter colour). The colouring itself runs in Monaco,
+    // line by line and only where it is looked at: working it out here for the
+    // whole document after every keystroke, and shipping one decoration per run
+    // across, froze the editor for seconds on a long batch of labels.
+    public static string GetGrammarJson()
     {
         EnsureBuilt();
-        if (string.IsNullOrEmpty(text))
-            return "{\"type\":\"applyDecorations\",\"runs\":[]}";
-
-        var colors = BuildColorMap(text);
-        var sb = new StringBuilder("{\"type\":\"applyDecorations\",\"runs\":[");
-        bool first = true;
-        int runStart = 0;
-        var runColor = colors[0];
-        for (int i = 1; i <= text.Length; i++)
+        var cmds = new Dictionary<string, bool[]>(StringComparer.Ordinal);
+        foreach (var (name, def) in _lookup!)
         {
-            if (i < text.Length && colors[i] == runColor) continue;
-            var cssClass = runColor == _commandColor   ? "zpl-cmd"
-                         : runColor == _parameterColor ? "zpl-param"
-                         : "zpl-text";
-            if (!first) sb.Append(',');
-            sb.Append($"{{\"s\":{runStart},\"e\":{i},\"c\":\"{cssClass}\"}}");
-            first = false;
-            runStart = i;
-            if (i < text.Length) runColor = colors[i];
+            var parameters = def.Parameters ?? [];
+            cmds[name] = parameters.Select(p => _textParams!.Contains(p.Name)).ToArray();
         }
-        sb.Append("]}");
-        return sb.ToString();
+        return "{\"type\":\"setGrammar\",\"cmds\":" + System.Text.Json.JsonSerializer.Serialize(cmds) + "}";
     }
-
     private static string ColorToHex(Windows.UI.Color c)
         => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
 }

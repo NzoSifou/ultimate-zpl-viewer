@@ -815,6 +815,7 @@ public sealed partial class PreviewPage
 
     private void LayoutSplit()
     {
+        using var perf = PerfLog.Time("LayoutSplit");
         _swapSource = null;   // its overlay goes with the other children below
         // The live preview's frame changes size: once laid out, it fits again.
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
@@ -1009,6 +1010,7 @@ public sealed partial class PreviewPage
         var key = $"{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(tab.Text)}:{tab.Text.Length}|{dpmm}|{tab.LabelIndex}|{_rotationDegrees}|{tab.ZoomPercent}|{tab.ScrollX}|{tab.ScrollY}";
         if (pane.RenderedKey == key) return;
         pane.RenderedKey = key;
+        using var perf = PerfLog.Time($"RenderPane {System.IO.Path.GetFileName(tab.FilePath)}");
         try
         {
             var model = ZplRenderer.Parse(tab.Text, dpmm, tab.LabelIndex);

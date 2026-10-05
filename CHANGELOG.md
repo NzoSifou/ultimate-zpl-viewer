@@ -6,6 +6,16 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [Non publié]
+
+### 🐛 Corrigé
+
+- **En éditant un texte dans l'aperçu, le curseur restait collé à la dernière
+  lettre après un espace**, même après plusieurs espaces, et ne se remettait en
+  place qu'à la lettre suivante. Les espaces en fin de mot sont maintenant
+  comptés dans la position du curseur, comme pour la sélection et le clic.
+
+---
 ## [1.7.0] — 2026-10-04 — profils, vues fractionnées et recherche
 
 Trois nouveautés de fond. Les **profils** rassemblent chacun un jeu complet de

@@ -3374,12 +3374,14 @@ public sealed partial class PreviewPage : Page
             args.Data.Properties.Add(TabDragState.Key, pressed.Id);
             TabDragState.Begin(this, p, pressed);
             args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+            TabDropCatcher.Show();
             return;
         }
         if (args.Tab is not TabViewItem item || item.Tag is not DocTab tab) return;
         TabDragState.Begin(this, item, tab);
         args.Data.Properties.Add(TabDragState.Key, tab.Id);
         args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+        TabDropCatcher.Show();
     }
 
     private void DocTabs_TabStripDragOver(object sender, DragEventArgs e)
@@ -3479,6 +3481,7 @@ public sealed partial class PreviewPage : Page
 
     private void DocTabs_TabDroppedOutside(TabView sender, TabViewTabDroppedOutsideEventArgs args)
     {
+        TabDropCatcher.Hide();
         // Landing on another window's strip is handled by that window's Drop, which
         // already took the tab away — nothing left to do here.
         if (TabDragState.Tab is null) return;

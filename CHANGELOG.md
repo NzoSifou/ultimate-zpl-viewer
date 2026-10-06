@@ -6,6 +6,30 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [Non publié]
+
+### ⚡ Performances
+
+- **Démarrage plus rapide, sans écran noir.** Mesuré du clic à l'écran :
+  la fenêtre apparaît en ~0,65 s au lieu de ~1,3 s, la page en ~1,2 s au
+  lieu de ~1,8 s, le code dans l'éditeur en ~1,8 s au lieu de ~2,4 s — et
+  l'écran noir de ~450 ms n'est plus qu'une image.
+  - La fenêtre s'affiche d'abord (barre de titre et fond), la page se
+    construit juste après au lieu d'être attendue.
+  - **L'éditeur ne subit plus la vérification SmartScreen** de Windows : sa
+    page est un fichier de l'application, mais la vérification en ligne la
+    retenait ~2 s avant qu'une ligne s'exécute, à chaque fois que le verdict
+    mis en cache avait expiré (d'où un éditeur parfois long à apparaître).
+    Rien d'autre que cette page ne peut s'ouvrir dans l'éditeur.
+  - L'éditeur est créé avec la page au lieu d'attendre qu'elle soit affichée.
+  - Le code de l'application est précompilé à la publication (ReadyToRun) au
+    lieu d'être compilé à chaque lancement.
+  - Les fichiers de langue ne sont plus relus ni fusionnés plusieurs fois au
+    démarrage (la fusion avec la version livrée n'a lieu qu'après une mise à
+    jour), et la légende de l'aperçu est créée après le premier affichage.
+
+---
+
 ## [1.7.1] — 2026-10-06 — performances
 
 Une version consacrée à la fluidité en usage courant : modifier une étiquette,

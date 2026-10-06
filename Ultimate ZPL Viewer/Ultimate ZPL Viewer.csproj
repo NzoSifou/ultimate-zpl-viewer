@@ -130,10 +130,12 @@
 
   <!-- Publish Properties -->
   <PropertyGroup>
-    <!-- ReadyToRun désactivé : en Release, R2R casse le câblage XAML des éléments
-         nommés (x:Name) — plantage au démarrage « Unable to cast … to Image »
-         (icône de la barre de titre). R2R n'est qu'une optimisation de démarrage. -->
-    <PublishReadyToRun>false</PublishReadyToRun>
+    <!-- ReadyToRun : le code est compilé à la publication plutôt qu'au lancement.
+         Mesuré : la fenêtre s'affiche ~200 ms plus tôt (plus de 1 Mo d'IL à
+         compiler à la volée sinon). Il avait été coupé pour un plantage au démarrage
+         (« Unable to cast … to Image », câblage x:Name) qui venait en fait de
+         l'optimiseur AOT de CsWinRT, désactivé plus bas. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
     <!-- Never trim: the app serialises AppSettings via reflection and pulls in
          WinUI/Win2D/PDFtoImage native bits that the trimmer would strip. -->
     <PublishTrimmed>false</PublishTrimmed>

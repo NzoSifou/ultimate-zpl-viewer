@@ -117,6 +117,10 @@ public sealed partial class PreviewPage
         int columns = -1;
         void LayoutGrids()
         {
+            // A page replaced by a later search can still get its Loaded or
+            // SizeChanged: it must not take the cards back from the page on screen
+            // (adding a card that already has a parent throws, 0x800F1000).
+            if (!ReferenceEquals(page, _searchPage)) return;
             double w = page.ActualWidth;
             if (w <= 0) return;
             int c = Math.Clamp((int)(w / MinCardWidth), 1, 3);
@@ -170,6 +174,7 @@ public sealed partial class PreviewPage
             if (i % columns == 0) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             Grid.SetRow(cards[i], i / columns);
             Grid.SetColumn(cards[i], i % columns);
+            if (cards[i].Parent is Panel elsewhere) elsewhere.Children.Remove(cards[i]);
             grid.Children.Add(cards[i]);
         }
     }

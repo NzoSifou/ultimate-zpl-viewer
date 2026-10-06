@@ -58,12 +58,18 @@ public sealed class AppSettings
     public int DefaultPerPage { get; set; } = 1;
     public string MarginsMode { get; set; } = "fixed";    // last | fixed
     public double DefaultMarginsMm { get; set; }          // 0 = no margin
+    // One margin for all four sides, or one per side. Per side, the four values
+    // are top, right, bottom, left.
+    public bool MarginsPerSide { get; set; }
+    public double[] DefaultMarginSidesMm { get; set; } = new double[4];
 
     // What the last print actually used, for the "last" modes.
     [MachineSetting] public int LastCopies { get; set; } = 1;
     [MachineSetting] public string LastLayout { get; set; } = "portrait";
     [MachineSetting] public int LastPerPage { get; set; } = 1;
     [MachineSetting] public double LastMarginsMm { get; set; }
+    // Set when the last print gave each side its own margin; null when it used one.
+    [MachineSetting] public double[]? LastMarginSidesMm { get; set; }
     // Unit the margin box is shown in: "mm" or "cm". Purely a display choice.
     public string MarginsUnit { get; set; } = "mm";
 

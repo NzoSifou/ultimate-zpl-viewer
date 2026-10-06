@@ -1955,7 +1955,7 @@
           "blocked": "Indisponible tant que l'imprimante ou l'un des réglages ci-dessous reprend la dernière valeur utilisée : les valeurs ne seraient pas connues d'avance. L'imprimante choisie doit aussi être présente."
         },
         "copies": {
-          "title": "Nombre d'exemplaires par défaut",
+          "title": "Nombre de copies par défaut",
           "desc": "Combien de fois l'étiquette est imprimée."
         },
         "layout": {
@@ -1967,7 +1967,7 @@
           "desc": "Marge laissée autour de l'étiquette sur la page. Sans effet sur une imprimante thermique."
         },
         "perPage": {
-          "title": "Exemplaires par page par défaut",
+          "title": "Étiquettes par page par défaut",
           "desc": "Combien de fois la même étiquette est répétée sur une feuille. Sans effet sur une imprimante thermique."
         }
       },
@@ -1995,11 +1995,11 @@
       "field": {
         "printer": "Imprimante",
         "send": "Type d'imprimante",
-        "copies": "Nombre d'exemplaires",
+        "copies": "Nombre de copies",
         "layout": "Mise en page",
         "paper": "Taille du papier",
         "margins": "Marges",
-        "perPage": "Exemplaires par page"
+        "perPage": "Étiquettes par page"
       },
       "send": {
         "raw": "Imprimante thermique (ZPL brut)",
@@ -2015,7 +2015,25 @@
         "failedBody": "L'envoi à « {0} » a échoué : {1}"
       },
       "margins": {
-        "none": "aucune marge"
+        "none": "aucune marge",
+        "perSide": "Par côté",
+        "perSideTip": "Une marge différente pour chaque côté de la feuille",
+        "top": "Haut",
+        "right": "Droite",
+        "bottom": "Bas",
+        "left": "Gauche",
+        "unit": "Unité",
+        "sides": "haut {0}, droite {1}, bas {2}, gauche {3}"
+      },
+      "paperGroup": {
+        "common": "Les plus courants",
+        "isoA": "Série A (ISO)",
+        "isoB": "Série B (ISO, JIS)",
+        "northAmerica": "Formats nord-américains",
+        "envelopes": "Enveloppes",
+        "photoAndLabels": "Photos, cartes et étiquettes",
+        "asia": "Formats chinois et japonais",
+        "other": "Autres formats"
       },
       "perPage": {
         "summary": "{0} par page"
@@ -2193,7 +2211,7 @@
         "print": "Imprime l'étiquette.",
         "printer": "Nom de l'imprimante. Par défaut, celle des paramètres, sinon celle de Windows. La liste : --list-printers.",
         "printerType": "Comment l'étiquette part : thermal (le ZPL brut, pour une imprimante d'étiquettes) ou classic (une page rendue). Par défaut (auto), le type choisi ou détecté pour cette imprimante.",
-        "copies": "Nombre d'exemplaires : de feuilles sur une imprimante classique, d'étiquettes sur une imprimante thermique.",
+        "copies": "Nombre de copies : de feuilles sur une imprimante classique, d'étiquettes sur une imprimante thermique.",
         "perPage": "Nombre d'étiquettes par feuille (imprimante classique).",
         "paper": "Format du papier, par exemple A4 (imprimante classique). La liste : --list-papers.",
         "layout": "Mise en page : portrait, landscape (paysage), portrait-flipped ou landscape-flipped (retournés). Une imprimante thermique ne sait que retourner.",
@@ -2210,7 +2228,7 @@
         "convert": "Convertir en 12 points/mm (305 dpi) et enregistrer le ZPL",
         "rotate": "Faire pivoter le document, puis enregistrer le ZPL et le PDF",
         "print": "Imprimer quatre étiquettes par feuille A4 sur une imprimante classique",
-        "printRaw": "Envoyer dix exemplaires à une imprimante thermique"
+        "printRaw": "Envoyer dix copies à une imprimante thermique"
       },
       "val": {
         "degrees": "degrés",
@@ -2276,8 +2294,8 @@
         "rawLandscape": "Le paysage n'existe pas en ZPL : une imprimante thermique imprime l'étiquette telle quelle (pour la faire pivoter : --transform-rotate).",
         "rawViewRotate": "--view-rotate ne tourne que le rendu, et une imprimante thermique reçoit le ZPL (pour le faire pivoter : --transform-rotate).",
         "printFailed": "Impression impossible sur {0} : {1}",
-        "sentRaw": "Envoyé à {0} (thermique, ZPL brut) : {1} exemplaire(s)",
-        "sentClassic": "Envoyé à {0} (classique) : {1} exemplaire(s), {2} par page, {3}",
+        "sentRaw": "Envoyé à {0} (thermique, ZPL brut) : {1} copie(s)",
+        "sentClassic": "Envoyé à {0} (classique) : {1} copie(s), {2} par page, {3}",
         "margins": "marges de {0} mm",
         "printerNotFound": "Imprimante introuvable : « {0} ». Imprimantes : {1}.",
         "noDefaultPrinter": "Aucune imprimante par défaut : indiquez-la avec --printer."

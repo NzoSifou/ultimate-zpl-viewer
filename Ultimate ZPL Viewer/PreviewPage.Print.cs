@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -92,9 +92,19 @@ public sealed partial class PreviewPage
             _settings.CopiesMode == "last" ? _settings.LastCopies : _settings.DefaultCopies,
             PrintJobService.LayoutFromKey(_settings.LayoutMode == "last" ? _settings.LastLayout : _settings.DefaultLayout),
             PaperSize: "",   // the printer own default until the dialog says otherwise
-            _settings.MarginsMode == "last" ? _settings.LastMarginsMm : _settings.DefaultMarginsMm,
+            DefaultMargins(_settings),
             _settings.PerPageMode == "last" ? _settings.LastPerPage : _settings.DefaultPerPage);
     }
+
+    /// <summary>The margins a print starts from: the fixed default, or the last print's.</summary>
+    internal static Margins DefaultMargins(AppSettings s) => s.MarginsMode == "last"
+        ? Margins.From(s.LastMarginSidesMm, s.LastMarginsMm)
+        : s.MarginsPerSide ? Margins.From(s.DefaultMarginSidesMm, s.DefaultMarginsMm)
+                           : Margins.Uniform(s.DefaultMarginsMm);
+
+    /// <summary>Whether the margins field opens on its four sides.</summary>
+    private static bool DefaultMarginsPerSide(AppSettings s)
+        => s.MarginsMode == "last" ? s.LastMarginSidesMm is not null : s.MarginsPerSide;
 
     // ── The dialog ───────────────────────────────────────────────────────────
 
@@ -156,29 +166,14 @@ public sealed partial class PreviewPage
         };
         var layoutBox = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
         var paperBox = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+        // The sheet the preview draws on, from the list itself: asking the driver
+        // for it at each refresh is what made the spin buttons drag.
+        (double W, double H)? paperMm = null;
+        var defaultPaper = new Dictionary<string, (double W, double H)?>();
 
         // Margins are typed in whichever of the two units suits the user; the job
         // itself only ever carries millimetres.
-        bool cm = _settings.MarginsUnit == "cm";
-        var marginBox = new NumberBox
-        {
-            Minimum = 0, Maximum = 100, SmallChange = cm ? 0.5 : 1,
-            Value = cm ? job.MarginsMm / 10.0 : job.MarginsMm,
-            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        var marginUnit = new ComboBox
-        {
-            ItemsSource = new[] { "mm", "cm" },
-            SelectedIndex = cm ? 1 : 0,
-            MinWidth = 74,
-        };
-        var marginRow = new Grid { ColumnSpacing = 6 };
-        marginRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        marginRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        marginRow.Children.Add(marginBox);
-        Grid.SetColumn(marginUnit, 1);
-        marginRow.Children.Add(marginUnit);
+        var margins = new MarginEditor(_settings, job.Margins, DefaultMarginsPerSide(_settings));
 
         // The type is a guess until somebody settles it. This button settles it for
         // this printer, once: the combo then reads the answer rather than asking the
@@ -194,7 +189,15 @@ public sealed partial class PreviewPage
         right.Children.Add(Field(SL("print.field.perPage"), perPageBox));
         right.Children.Add(Field(SL("print.field.layout"), layoutBox));
         right.Children.Add(Field(SL("print.field.paper"), paperBox));
-        right.Children.Add(Field(SL("print.field.margins"), marginRow));
+        var marginsField = Field(SL("print.field.margins"), margins.Body);
+        var marginsHeader = new Grid();
+        var marginsLabel = marginsField.Children[0];
+        marginsField.Children.RemoveAt(0);
+        marginsHeader.Children.Add(marginsLabel);
+        marginsHeader.Children.Add(margins.Switch);
+        ((FrameworkElement)marginsLabel).VerticalAlignment = VerticalAlignment.Center;
+        marginsField.Children.Insert(0, marginsHeader);
+        right.Children.Add(marginsField);
 
         // ── Wiring ──────────────────────────────────────────────────────────
         bool loading = true;
@@ -217,27 +220,29 @@ public sealed partial class PreviewPage
             layoutBox.SelectedIndex = index;
             layoutBox.Tag = layouts;
 
-            var papers = raw ? new List<(string Name, double WMm, double HMm)>()
-                             : PrintJobService.PaperSizes(job.Printer);
-            paperBox.ItemsSource = papers.Select(p => string.Format("{0}  ({1:0.#} x {2:0.#} mm)", p.Name, p.WMm, p.HMm)).ToList();
-            paperBox.Tag = papers;
+            var papers = raw ? new List<Paper>() : PrintJobService.PaperSizes(job.Printer);
+            var items = FillPaperBox(paperBox, papers);
             paperBox.IsEnabled = !raw && papers.Count > 0;
             if (papers.Count > 0)
             {
-                int keep = papers.FindIndex(p => p.Name == job.PaperSize);
-                if (keep < 0)
+                var keep = papers.FirstOrDefault(p => p.Name == job.PaperSize);
+                if (keep is null)
                 {
-                    var current = PrintJobService.PaperSizeMm(job.Printer);
-                    keep = current is null ? 0 : Math.Max(0, papers.FindIndex(
-                        p => Math.Abs(p.WMm - current.Value.W) < 0.6 && Math.Abs(p.HMm - current.Value.H) < 0.6));
+                    var current = PrinterDefaultPaper(job.Printer);
+                    keep = (current is { } c ? papers.FirstOrDefault(
+                        p => Math.Abs(p.WMm - c.W) < 0.6 && Math.Abs(p.HMm - c.H) < 0.6) : null) ?? papers[0];
                 }
-                paperBox.SelectedIndex = keep;
-                job = job with { PaperSize = papers[keep].Name };
+                paperBox.SelectedItem = items.First(i => ReferenceEquals(i.Tag, keep));
+                job = job with { PaperSize = keep.Name };
+                paperMm = (keep.WMm, keep.HMm);
             }
-            else job = job with { PaperSize = "" };
+            else
+            {
+                job = job with { PaperSize = "" };
+                paperMm = raw ? null : PrinterDefaultPaper(job.Printer);
+            }
 
-            marginBox.IsEnabled = !raw;
-            marginUnit.IsEnabled = !raw;
+            margins.IsEnabled = !raw;
 
             // A thermal printer feeds one label at a time; there is no sheet to
             // share, so repeating it on a page means nothing there.
@@ -249,10 +254,23 @@ public sealed partial class PreviewPage
             }
         }
 
+        // The printer's own default sheet, asked once per printer.
+        (double W, double H)? PrinterDefaultPaper(string printer)
+        {
+            if (!defaultPaper.TryGetValue(printer, out var size))
+                defaultPaper[printer] = size = PrintJobService.PaperSizeMm(printer);
+            return size;
+        }
+
+        // One preview for the whole dialog: its drawings are kept and only moved
+        // about, so a value stepped up and down redraws at most the copy it adds.
+        var preview = new PrintPreview(this);
         void Refresh()
         {
             if (loading) return;
-            previewHost.Child = BuildPrintPreview(job);
+            using var perf = PerfLog.Time("print preview");
+            var view = preview.Update(job, paperMm);
+            if (!ReferenceEquals(previewHost.Child, view)) previewHost.Child = view;
         }
 
         // A pinned printer answers the question itself: the combo shows the answer
@@ -306,29 +324,25 @@ public sealed partial class PreviewPage
             job = job with { PerPage = (int)Math.Clamp(perPageBox.Value, 1, 20) };
             Refresh();
         };
+        object? lastPaperItem = paperBox.SelectedItem;
         paperBox.SelectionChanged += (_, _) =>
         {
-            if (paperBox.Tag is List<(string Name, double WMm, double HMm)> set
-                && paperBox.SelectedIndex >= 0 && paperBox.SelectedIndex < set.Count)
-                job = job with { PaperSize = set[paperBox.SelectedIndex].Name };
-            Refresh();
+            if (paperBox.SelectedItem is ComboBoxItem { Tag: Paper p })
+            {
+                lastPaperItem = paperBox.SelectedItem;
+                job = job with { PaperSize = p.Name };
+                paperMm = (p.WMm, p.HMm);
+                Refresh();
+            }
+            else if (paperBox.SelectedItem is not null && lastPaperItem is not null)
+            {
+                paperBox.SelectedItem = lastPaperItem;   // a heading is not a size
+            }
         };
-        void MarginsChanged()
+        margins.Changed += () =>
         {
-            if (double.IsNaN(marginBox.Value)) return;
-            bool inCm = marginUnit.SelectedIndex == 1;
-            job = job with { MarginsMm = Math.Max(0, inCm ? marginBox.Value * 10 : marginBox.Value) };
+            job = job with { Margins = margins.Value };
             Refresh();
-        }
-        marginBox.ValueChanged += (_, _) => MarginsChanged();
-        marginUnit.SelectionChanged += (_, _) =>
-        {
-            // Changing the unit re-expresses the same distance, it does not change it.
-            bool inCm = marginUnit.SelectedIndex == 1;
-            _settings.MarginsUnit = inCm ? "cm" : "mm";
-            _settings.Save();
-            marginBox.SmallChange = inCm ? 0.5 : 1;
-            marginBox.Value = inCm ? job.MarginsMm / 10.0 : job.MarginsMm;
         };
 
         modeBox.SelectedIndex = job.Mode == SendMode.Raw ? 0 : 1;
@@ -374,115 +388,195 @@ public sealed partial class PreviewPage
         return panel;
     }
 
+    // ── The paper list ───────────────────────────────────────────────────────
+
+    // The sizes under headings, the most common first. A heading is an item that
+    // cannot be picked; the sizes carry their Paper in Tag.
+    private static List<ComboBoxItem> FillPaperBox(ComboBox box, List<Paper> papers)
+    {
+        var sizes = new List<ComboBoxItem>();
+        var all = new List<object>();
+        bool first = true;
+        foreach (var (group, list) in PrintJobService.GroupPapers(papers))
+        {
+            all.Add(new ComboBoxItem
+            {
+                IsEnabled = false,
+                IsTabStop = false,
+                Padding = new Thickness(11, first ? 6 : 14, 11, 4),
+                Content = new TextBlock
+                {
+                    Text = SL("print.paperGroup." + char.ToLowerInvariant(group.ToString()[0]) + group.ToString()[1..]),
+                    FontWeight = FontWeights.SemiBold,
+                    FontSize = 12,
+                    Foreground = (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"],
+                },
+            });
+            first = false;
+            foreach (var p in list)
+            {
+                var item = new ComboBoxItem
+                {
+                    Tag = p,
+                    Content = string.Format("{0}  ({1:0.#} x {2:0.#} mm)", p.Name.Trim(), p.WMm, p.HMm),
+                    Padding = new Thickness(23, 5, 11, 7),
+                };
+                sizes.Add(item);
+                all.Add(item);
+            }
+        }
+        box.ItemsSource = all;
+        return sizes;
+    }
+
     // ── The preview column ───────────────────────────────────────────────────
 
     // What will actually come out. On the classic road that means the label filling
     // the sheet inside its margins, so the layout, the paper and the margins are
     // all visible as themselves rather than as numbers. On the thermal road the
     // printer decides the media, so there is no sheet to draw - only the label.
-    private FrameworkElement BuildPrintPreview(PrintJob job)
+    //
+    // One instance serves the whole dialog. Drawing a label is what costs, and a
+    // value stepped one at a time used to redraw the page from nothing - every copy
+    // of the label included, the driver asked for the sheet size on top. The
+    // drawings are now kept, one per copy shown, and each refresh only moves them:
+    // going from five copies to six draws one label.
+    private sealed class PrintPreview
     {
-        // The rendered road prints a snapshot of the main preview, so it must be
-        // shown the same way round here - including the Tourner rotation. The raw
-        // road hands the printer the ZPL, which carries no such rotation, so it is
-        // drawn upright whatever the preview is doing.
-        double previewAngle = job.Mode == SendMode.Raw ? 0 : _rotationDegrees;
-        var (labelWmm, labelHmm) = LabelSizeMm(previewAngle);
-        var canvas = new Canvas();
-        ZplRenderer.Draw(canvas, _model, SelectedDpmm, previewAngle);
-
-        double flip = job.Layout is PrintLayout.PortraitFlipped or PrintLayout.LandscapeFlipped ? 180 : 0;
-        var label = new Viewbox
+        private readonly PreviewPage _owner;
+        private readonly List<Border> _copies = new();   // each holds its own drawing for good
+        private double _angle = double.NaN;
+        private readonly Grid _page = new() { Background = new SolidColorBrush(Microsoft.UI.Colors.White) };
+        private readonly Rectangle _marginFrame = new()
         {
-            Child = canvas,
-            Stretch = Stretch.Uniform,
-            RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
-            RenderTransform = new RotateTransform { Angle = flip },
+            Stroke = new SolidColorBrush(Microsoft.UI.Colors.Gray),
+            StrokeThickness = 0.4,
+            StrokeDashArray = new DoubleCollection { 3, 3 },
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
         };
+        private readonly Viewbox _pageView;
 
-        if (job.Mode == SendMode.Raw || PrintJobService.PaperSizeMm(job.Printer, job.PaperSize) is not { } paper)
+        public PrintPreview(PreviewPage owner)
         {
-            return new Viewbox { Child = Sheet(label, labelWmm, labelHmm, null), Stretch = Stretch.Uniform };
-        }
-
-        bool sideways = job.Layout is PrintLayout.Landscape or PrintLayout.LandscapeFlipped;
-        double pageW = sideways ? paper.H : paper.W;
-        double pageH = sideways ? paper.W : paper.H;
-        // The label fills what the margins leave - split into one cell per copy -
-        // proportions kept. The cell maths comes from the printing code itself, so
-        // this really is what will come out rather than a lookalike.
-        double availW = Math.Max(1, pageW - 2 * job.MarginsMm);
-        double availH = Math.Max(1, pageH - 2 * job.MarginsMm);
-        var cells = PrintJobService.Cells((float)job.MarginsMm, (float)job.MarginsMm,
-                                          (float)availW, (float)availH, job,
-                                          (float)labelWmm, (float)labelHmm);
-
-        // One millimetre is one unit here; the Viewbox around it does the fitting.
-        var page = new Grid { Width = pageW, Height = pageH, Background = new SolidColorBrush(Microsoft.UI.Colors.White) };
-
-        // The margin boundary is drawn even when nothing overflows it, so moving the
-        // setting always shows something - otherwise a small label would make the
-        // field look broken.
-        if (job.MarginsMm > 0.01)
-        {
-            page.Children.Add(new Rectangle
+            _owner = owner;
+            _page.Children.Add(_marginFrame);
+            _pageView = new Viewbox
             {
-                Width = availW,
-                Height = availH,
-                Stroke = new SolidColorBrush(Microsoft.UI.Colors.Gray),
-                StrokeThickness = 0.4,
-                StrokeDashArray = new DoubleCollection { 3, 3 },
-                Fill = null,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-            });
-        }
-
-        for (int i = 0; i < cells.Count; i++)
-        {
-            var cell = cells[i];
-            double factor = Math.Min(cell.Width / Math.Max(0.1, labelWmm),
-                                     cell.Height / Math.Max(0.1, labelHmm));
-            // The first cell holds the live render; the others show the same picture,
-            // so the canvas is not rebuilt once per copy.
-            FrameworkElement copy = i == 0 ? label : CloneLabel(previewAngle, flip);
-            var placed = new Border
-            {
-                Child = copy,
-                Width = labelWmm * factor,
-                Height = labelHmm * factor,
-                Margin = new Thickness(cell.X + (cell.Width - labelWmm * factor) / 2,
-                                       cell.Y + (cell.Height - labelHmm * factor) / 2, 0, 0),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top,
+                Stretch = Stretch.Uniform,
+                Child = new Border
+                {
+                    Child = _page,
+                    BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
+                    BorderThickness = new Thickness(1),
+                },
             };
-            page.Children.Add(placed);
         }
 
-        var framed = new Border
+        public FrameworkElement Update(PrintJob job, (double W, double H)? paper)
         {
-            Child = page,
-            BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
-            BorderThickness = new Thickness(1),
-        };
-        return new Viewbox { Child = framed, Stretch = Stretch.Uniform };
-    }
+            // The rendered road prints a snapshot of the main preview, so it must be
+            // shown the same way round here - including the Tourner rotation. The raw
+            // road hands the printer the ZPL, which carries no such rotation, so it is
+            // drawn upright whatever the preview is doing.
+            double angle = job.Mode == SendMode.Raw ? 0 : _owner._rotationDegrees;
+            if (angle != _angle)
+            {
+                foreach (var c in _copies) Detach(c);
+                _copies.Clear();
+                _angle = angle;
+            }
+            var (labelWmm, labelHmm) = _owner.LabelSizeMm(angle);
+            double flip = job.Layout is PrintLayout.PortraitFlipped or PrintLayout.LandscapeFlipped ? 180 : 0;
 
-    // A second view of the same drawing. A Canvas can only have one parent, so a
-    // repeated label is redrawn into its own canvas rather than shared.
-    private FrameworkElement CloneLabel(double angle, double flip)
-    {
-        var canvas = new Canvas();
-        ZplRenderer.Draw(canvas, _model, SelectedDpmm, angle);
-        return new Viewbox
+            if (job.Mode == SendMode.Raw || paper is not { } sheet)
+            {
+                var only = Copy(0, flip);
+                Detach(only);
+                return new Viewbox { Child = Sheet(Unframed(only), labelWmm, labelHmm, null), Stretch = Stretch.Uniform };
+            }
+
+            bool sideways = job.Layout is PrintLayout.Landscape or PrintLayout.LandscapeFlipped;
+            double pageW = sideways ? sheet.H : sheet.W;
+            double pageH = sideways ? sheet.W : sheet.H;
+            _page.Width = pageW;
+            _page.Height = pageH;
+
+            // The label fills what the margins leave - split into one cell per copy -
+            // proportions kept. The cell maths comes from the printing code itself, so
+            // this really is what will come out rather than a lookalike.
+            var m = job.Margins;
+            double availW = Math.Max(1, pageW - m.Left - m.Right);
+            double availH = Math.Max(1, pageH - m.Top - m.Bottom);
+            var cells = PrintJobService.Cells((float)m.Left, (float)m.Top, (float)availW, (float)availH,
+                                              job, (float)labelWmm, (float)labelHmm);
+
+            // The margin boundary is drawn even when nothing overflows it, so moving the
+            // setting always shows something - otherwise a small label would make the
+            // field look broken.
+            _marginFrame.Visibility = m.IsZero ? Visibility.Collapsed : Visibility.Visible;
+            _marginFrame.Width = availW;
+            _marginFrame.Height = availH;
+            _marginFrame.Margin = new Thickness(m.Left, m.Top, 0, 0);
+
+            for (int i = 0; i < cells.Count; i++)
+            {
+                var cell = cells[i];
+                double factor = Math.Min(cell.Width / Math.Max(0.1, labelWmm),
+                                         cell.Height / Math.Max(0.1, labelHmm));
+                var copy = Copy(i, flip);
+                if (!ReferenceEquals(copy.Parent, _page)) { Detach(copy); _page.Children.Add(copy); }
+                copy.Width = labelWmm * factor;
+                copy.Height = labelHmm * factor;
+                copy.Margin = new Thickness(cell.X + (cell.Width - labelWmm * factor) / 2,
+                                            cell.Y + (cell.Height - labelHmm * factor) / 2, 0, 0);
+            }
+            // Copies no longer shown wait off the page, drawing kept.
+            for (int i = cells.Count; i < _copies.Count; i++) _page.Children.Remove(_copies[i]);
+
+            return _pageView;
+        }
+
+        // The n-th copy, drawn the first time it is needed and kept from then on.
+        private Border Copy(int index, double flip)
         {
-            Child = canvas,
-            Stretch = Stretch.Uniform,
-            RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
-            RenderTransform = new RotateTransform { Angle = flip },
-        };
-    }
+            while (_copies.Count <= index)
+            {
+                var canvas = new Canvas();
+                ZplRenderer.Draw(canvas, _owner._model, _owner.SelectedDpmm, _angle);
+                _copies.Add(new Border
+                {
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Child = new Viewbox
+                    {
+                        Child = canvas,
+                        Stretch = Stretch.Uniform,
+                        RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
+                        RenderTransform = new RotateTransform(),
+                    },
+                });
+            }
+            var copy = _copies[index];
+            ((RotateTransform)((Viewbox)copy.Child).RenderTransform).Angle = flip;
+            return copy;
+        }
 
+        private static void Detach(FrameworkElement element)
+        {
+            if (element.Parent is Panel panel) panel.Children.Remove(element);
+            else if (element.Parent is Border border) border.Child = null;
+        }
+
+        // The thermal road shows the label alone, at its own size.
+        private static Border Unframed(Border copy)
+        {
+            copy.Width = double.NaN;
+            copy.Height = double.NaN;
+            copy.Margin = new Thickness(0);
+            return copy;
+        }
+    }
     private static FrameworkElement Sheet(FrameworkElement content, double wMm, double hMm, Brush? background)
         => new Border
         {
@@ -545,7 +639,9 @@ public sealed partial class PreviewPage
         _settings.LastPrinter = job.Printer;
         _settings.LastCopies = job.Copies;
         _settings.LastLayout = PrintJobService.KeyOf(job.Layout);
-        _settings.LastMarginsMm = job.MarginsMm;
+        // Four different sides are remembered as such; four equal ones are one margin.
+        _settings.LastMarginsMm = job.Margins.Top;
+        _settings.LastMarginSidesMm = job.Margins.IsUniform ? null : job.Margins.ToArray();
         _settings.LastPerPage = job.PerPage;
         _settings.Save();
         ApplyPrintButtonTooltip();
@@ -567,20 +663,24 @@ public sealed partial class PreviewPage
                     ? ", " + string.Format(SL("print.perPage.summary"), job.PerPage) : "";
                 ToolTipService.SetToolTip(PrintButton,
                     string.Format("{0}, x{1}{2}, {3}, {4}", job.Printer, job.Copies, perPage,
-                                  PrintJobService.NameOf(job.Layout), MarginsLabel(job.MarginsMm)));
+                                  PrintJobService.NameOf(job.Layout), MarginsLabel(job.Margins)));
                 return;
             }
         }
         ToolTipService.SetToolTip(PrintButton, LocalizationService.Get("toolbar.print"));
     }
 
-    // The margin as the user would write it, in the unit they last chose.
-    private string MarginsLabel(double mm)
+    // The margins as the user would write them, in the unit they last chose: one
+    // number, or top / right / bottom / left.
+    private string MarginsLabel(Margins m)
     {
-        if (mm <= 0.01) return SL("print.margins.none");
-        return _settings.MarginsUnit == "cm"
-            ? (mm / 10.0).ToString("0.##", System.Globalization.CultureInfo.CurrentCulture) + " cm"
-            : mm.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture) + " mm";
+        if (m.IsZero) return SL("print.margins.none");
+        bool cm = _settings.MarginsUnit == "cm";
+        string N(double mm) => (cm ? mm / 10.0 : mm).ToString("0.##", System.Globalization.CultureInfo.CurrentCulture);
+        string unit = cm ? " cm" : " mm";
+        return m.IsUniform
+            ? N(m.Top) + unit
+            : string.Format(SL("print.margins.sides"), N(m.Top), N(m.Right), N(m.Bottom), N(m.Left)) + unit;
     }
 
     // ── Settings section ─────────────────────────────────────────────────────
@@ -679,35 +779,23 @@ public sealed partial class PreviewPage
         panel.Children.Add(DualModeCard("", "layout", layout,
             () => _settings.LayoutMode, m => _settings.LayoutMode = m, RefreshQuickAvailability));
 
-        // Margins are stored in millimetres whatever unit is on show.
-        var margins = new NumberBox
+        // Margins are stored in millimetres whatever unit is on show: one for the
+        // four sides, or one per side.
+        var margins = new MarginEditor(_settings,
+            _settings.MarginsPerSide ? Margins.From(_settings.DefaultMarginSidesMm, _settings.DefaultMarginsMm)
+                                     : Margins.Uniform(_settings.DefaultMarginsMm),
+            _settings.MarginsPerSide, minBoxWidth: 96);
+        margins.Changed += () =>
         {
-            Minimum = 0, Maximum = 100, SmallChange = _settings.MarginsUnit == "cm" ? 0.5 : 1,
-            Value = _settings.MarginsUnit == "cm" ? _settings.DefaultMarginsMm / 10.0 : _settings.DefaultMarginsMm,
-            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact, MinWidth = 96,
-        };
-        var marginsUnit = new ComboBox { ItemsSource = new[] { "mm", "cm" }, MinWidth = 74,
-            SelectedIndex = _settings.MarginsUnit == "cm" ? 1 : 0 };
-        void SaveMargins()
-        {
-            if (double.IsNaN(margins.Value)) return;
-            bool inCm = marginsUnit.SelectedIndex == 1;
-            _settings.DefaultMarginsMm = Math.Max(0, inCm ? margins.Value * 10 : margins.Value);
-            _settings.Save(); ApplyPrintButtonTooltip();
-        }
-        margins.ValueChanged += (_, _) => SaveMargins();
-        marginsUnit.SelectionChanged += (_, _) =>
-        {
-            bool inCm = marginsUnit.SelectedIndex == 1;
-            _settings.MarginsUnit = inCm ? "cm" : "mm";
-            margins.SmallChange = inCm ? 0.5 : 1;
-            margins.Value = inCm ? _settings.DefaultMarginsMm / 10.0 : _settings.DefaultMarginsMm;
+            var value = margins.Value;
+            _settings.MarginsPerSide = margins.PerSide;
+            if (margins.PerSide) _settings.DefaultMarginSidesMm = value.ToArray();
+            else _settings.DefaultMarginsMm = value.Top;
             _settings.Save(); ApplyPrintButtonTooltip();
         };
-        var marginsRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6,
-            VerticalAlignment = VerticalAlignment.Center };
-        marginsRow.Children.Add(margins);
-        marginsRow.Children.Add(marginsUnit);
+        var marginsRow = new StackPanel { Spacing = 8, Width = 300 };
+        marginsRow.Children.Add(margins.Switch);
+        marginsRow.Children.Add(margins.Body);
         panel.Children.Add(DualModeCard("", "margins", marginsRow,
             () => _settings.MarginsMode, m => _settings.MarginsMode = m, RefreshQuickAvailability));
 

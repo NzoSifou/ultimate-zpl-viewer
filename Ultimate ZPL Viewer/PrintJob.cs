@@ -29,8 +29,41 @@ public sealed record PrintJob(
     // for "whatever the printer defaults to"; PerPage repeats the label that many
     // times on one sheet.
     string PaperSize,
-    double MarginsMm,
+    Margins Margins,
     int PerPage);
+
+/// <summary>The four margins of a sheet, in millimetres.</summary>
+public readonly record struct Margins(double Top, double Right, double Bottom, double Left)
+{
+    public static Margins Uniform(double mm)
+    {
+        mm = Math.Max(0, mm);
+        return new Margins(mm, mm, mm, mm);
+    }
+
+    /// <summary>Top, right, bottom, left as stored in the settings; the uniform value without them.</summary>
+    public static Margins From(double[]? sides, double uniformMm)
+        => sides is { Length: 4 }
+            ? new Margins(Math.Max(0, sides[0]), Math.Max(0, sides[1]), Math.Max(0, sides[2]), Math.Max(0, sides[3]))
+            : Uniform(uniformMm);
+
+    public double[] ToArray() => new[] { Top, Right, Bottom, Left };
+
+    public bool IsUniform => Top == Right && Right == Bottom && Bottom == Left;
+    public bool IsZero => Top <= 0.01 && Right <= 0.01 && Bottom <= 0.01 && Left <= 0.01;
+}
+
+/// <summary>A paper size a printer offers.</summary>
+public sealed record Paper(string Name, double WMm, double HMm, PaperKind Kind)
+{
+    public void Deconstruct(out string name, out double wMm, out double hMm)
+    {
+        name = Name; wMm = WMm; hMm = HMm;
+    }
+}
+
+/// <summary>The headings the paper list is sorted under, in display order.</summary>
+public enum PaperGroup { Common, IsoA, IsoB, NorthAmerica, Envelopes, PhotoAndLabels, Asia, Other }
 
 // Printing, and the small amount of knowledge about printers the dialog needs.
 //
@@ -172,7 +205,9 @@ public static class PrintJobService
         // GDI+ page units are hundredths of an inch.
         float wUnits = (float)(wMm / 25.4 * 100);
         float hUnits = (float)(hMm / 25.4 * 100);
-        float marginUnits = (float)(Math.Max(0, job.MarginsMm) / 25.4 * 100);
+        static float Units(double mm) => (float)(Math.Max(0, mm) / 25.4 * 100);
+        float top = Units(job.Margins.Top), right = Units(job.Margins.Right);
+        float bottom = Units(job.Margins.Bottom), left = Units(job.Margins.Left);
 
         using var doc = new PrintDocument();
         doc.DocumentName = "Ultimate ZPL Viewer";
@@ -194,11 +229,11 @@ public static class PrintJobService
             var bounds = e.PageBounds;   // the sheet, not the printable area
 
             // The margins carve out the area the label may use.
-            float availW = Math.Max(1, bounds.Width - 2 * marginUnits);
-            float availH = Math.Max(1, bounds.Height - 2 * marginUnits);
+            float availW = Math.Max(1, bounds.Width - left - right);
+            float availH = Math.Max(1, bounds.Height - top - bottom);
 
             e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            foreach (var cell in Cells(marginUnits, marginUnits, availW, availH, job, wUnits, hUnits))
+            foreach (var cell in Cells(left, top, availW, availH, job, wUnits, hUnits))
             {
                 // The label takes all of its cell: whichever dimension runs out
                 // first decides the factor, so proportions hold and nothing is
@@ -274,19 +309,111 @@ public static class PrintJobService
     }
 
     /// <summary>The paper sizes this printer offers, in the order it lists them.</summary>
-    public static List<(string Name, double WMm, double HMm)> PaperSizes(string printer)
+    public static List<Paper> PaperSizes(string printer)
     {
-        var list = new List<(string, double, double)>();
+        var list = new List<Paper>();
         try
         {
             var settings = new PrinterSettings { PrinterName = printer };
             foreach (PaperSize p in settings.PaperSizes)
                 if (p.Width > 0 && p.Height > 0)
-                    list.Add((p.PaperName, p.Width * 25.4 / 100.0, p.Height * 25.4 / 100.0));
+                    list.Add(new Paper(p.PaperName, p.Width * 25.4 / 100.0, p.Height * 25.4 / 100.0, p.Kind));
         }
         catch { /* driver not reachable - the caller falls back to the default */ }
         return list;
     }
+
+    // ── Sorting the paper list ───────────────────────────────────────────────
+
+    // The sizes nearly everyone uses, in the order they are offered at the top of
+    // the list. Matched on the size as much as on the name: drivers give their own
+    // names, translated or decorated, to the same sheet.
+    private static readonly (PaperKind Kind, double W, double H)[] CommonSizes =
+    {
+        (PaperKind.A4, 210, 297),
+        (PaperKind.Letter, 215.9, 279.4),
+        (PaperKind.A5, 148, 210),
+        (PaperKind.Legal, 215.9, 355.6),
+        (PaperKind.A3, 297, 420),
+        (PaperKind.A6, 105, 148),
+        (PaperKind.Custom, 101.6, 152.4),   // 4 x 6 in, the shipping-label sheet
+        (PaperKind.Custom, 100, 150),       // its metric twin
+    };
+
+    /// <summary>
+    /// The paper list grouped under headings, the most common sizes first and in
+    /// their usual order; within the other groups the printer's own order is kept.
+    /// </summary>
+    public static List<(PaperGroup Group, List<Paper> Papers)> GroupPapers(IEnumerable<Paper> papers)
+    {
+        var groups = new Dictionary<PaperGroup, List<Paper>>();
+        foreach (var p in papers)
+        {
+            var g = GroupOf(p);
+            if (!groups.TryGetValue(g, out var list)) groups[g] = list = new List<Paper>();
+            list.Add(p);
+        }
+        if (groups.TryGetValue(PaperGroup.Common, out var common))
+        {
+            var ordered = common.OrderBy(CommonRank).ToList();
+            common.Clear();
+            common.AddRange(ordered);
+        }
+        return Enum.GetValues<PaperGroup>()
+            .Where(groups.ContainsKey)
+            .Select(g => (g, groups[g]))
+            .ToList();
+    }
+
+    private static int CommonRank(Paper p)
+    {
+        for (int i = 0; i < CommonSizes.Length; i++)
+            if (Matches(p, CommonSizes[i])) return i;
+        return CommonSizes.Length;
+    }
+
+    private static bool Matches(Paper p, (PaperKind Kind, double W, double H) size)
+    {
+        if (size.Kind != PaperKind.Custom && p.Kind == size.Kind) return true;
+        // A size listed under a name of the driver's own: same sheet, upright or
+        // not, within a millimetre.
+        if (p.Kind != PaperKind.Custom) return false;
+        bool upright = Math.Abs(p.WMm - size.W) < 1 && Math.Abs(p.HMm - size.H) < 1;
+        bool turned = Math.Abs(p.WMm - size.H) < 1 && Math.Abs(p.HMm - size.W) < 1;
+        return upright || turned;
+    }
+
+    public static PaperGroup GroupOf(Paper p)
+    {
+        if (CommonSizes.Any(s => Matches(p, s))) return PaperGroup.Common;
+
+        var kind = p.Kind.ToString();
+        var name = p.Name.ToLowerInvariant();
+        if (kind.Contains("Envelope") || name.Contains("envelop") || name.Contains("env.")
+            || name.StartsWith("env ") || name.Contains("monarch"))
+            return PaperGroup.Envelopes;
+        if (kind.StartsWith("Prc") || kind.StartsWith("Japan") || name.Contains("hagaki")
+            || name.Contains("prc") || name.Contains("japan") || name.Contains("japon"))
+            return PaperGroup.Asia;
+        if (IsSeries(kind, 'A') || IsSeries(p.Name, 'A') || kind == "APlus" || kind == "SuperA")
+            return PaperGroup.IsoA;
+        if (IsSeries(kind, 'B') || IsSeries(p.Name, 'B') || kind == "SuperB" || kind.StartsWith("IsoB")
+            || name.Contains("jis b"))
+            return PaperGroup.IsoB;
+        if (new[] { "Letter", "Legal", "Tabloid", "Ledger", "Executive", "Statement", "Folio", "Quarto",
+                    "Note", "CSheet", "DSheet", "ESheet", "USStandard", "GermanStandard", "GermanLegal",
+                    "Standard" }.Any(kind.StartsWith)
+            || new[] { "letter", "lettre", "legal", "tabloid", "ledger", "executive", "statement" }.Any(name.Contains))
+            return PaperGroup.NorthAmerica;
+        if (new[] { "photo", "label", "étiquette", "etiquette", "card", "carte", "index" }.Any(name.Contains)
+            || System.Text.RegularExpressions.Regex.IsMatch(name, @"\d\s*(x|×)\s*\d"))
+            return PaperGroup.PhotoAndLabels;
+        return PaperGroup.Other;
+    }
+
+    // "A4", "A4Extra", "A3 Rotated", "B5 (JIS)": a series letter right before a digit.
+    private static bool IsSeries(string text, char letter)
+        => text.Length >= 2 && char.ToUpperInvariant(text[0]) == letter && char.IsDigit(text[1]);
 
     /// <summary>The paper the printer will use, in millimetres (portrait).</summary>
     public static (double W, double H)? PaperSizeMm(string printer, string? paperName = null)

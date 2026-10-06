@@ -1967,7 +1967,7 @@
           "desc": "Margin left around the label on the page. No effect on a thermal printer."
         },
         "perPage": {
-          "title": "Default copies per sheet",
+          "title": "Default labels per sheet",
           "desc": "How many times the same label is repeated on one sheet. No effect on a thermal printer."
         }
       },
@@ -1995,11 +1995,11 @@
       "field": {
         "printer": "Printer",
         "send": "Printer type",
-        "copies": "Copies",
+        "copies": "Number of copies",
         "layout": "Layout",
         "paper": "Paper size",
         "margins": "Margins",
-        "perPage": "Copies per sheet"
+        "perPage": "Labels per sheet"
       },
       "send": {
         "raw": "Thermal printer (raw ZPL)",
@@ -2015,7 +2015,25 @@
         "failedBody": "Sending to “{0}” failed: {1}"
       },
       "margins": {
-        "none": "no margin"
+        "none": "no margin",
+        "perSide": "Per side",
+        "perSideTip": "A different margin for each side of the sheet",
+        "top": "Top",
+        "right": "Right",
+        "bottom": "Bottom",
+        "left": "Left",
+        "unit": "Unit",
+        "sides": "top {0}, right {1}, bottom {2}, left {3}"
+      },
+      "paperGroup": {
+        "common": "Most common",
+        "isoA": "A series (ISO)",
+        "isoB": "B series (ISO, JIS)",
+        "northAmerica": "North American sizes",
+        "envelopes": "Envelopes",
+        "photoAndLabels": "Photos, cards and labels",
+        "asia": "Chinese and Japanese sizes",
+        "other": "Other sizes"
       },
       "perPage": {
         "summary": "{0} per sheet"

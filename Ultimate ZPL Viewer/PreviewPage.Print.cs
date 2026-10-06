@@ -363,6 +363,11 @@ public sealed partial class PreviewPage
         };
         dialog.Resources["ContentDialogMaxWidth"] = width + 120;
 
+        // WinUI caps a dialog at ~756 px high and clips whatever is below, with no
+        // scrolling: on a large window the bottom of the settings column - the
+        // margins' unit box - was cut off. The grid is already sized to the window.
+        dialog.Resources["ContentDialogMaxHeight"] = Math.Max(756, XamlRoot.Size.Height - 40);
+
         // Enter must NOT print. Typing a number and pressing Enter to validate the
         // field is the natural gesture, and a NumberBox lets the key bubble on to
         // the dialog's default button: the job left for the printer, unprompted and

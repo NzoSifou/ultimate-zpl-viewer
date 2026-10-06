@@ -320,6 +320,12 @@ public sealed partial class PreviewPage : Page
         // title set there is lost — re-apply it now that the window exists.
         UpdateDocumentTitle();
 
+        // Window activation hands the focus to the first button it finds - the
+        // settings gear - drawn with its keyboard frame as if the user had tabbed
+        // there. The work area takes it instead, so typing can start at once.
+        if (_editorVisible) EditorWebView.Focus(FocusState.Programmatic);
+        else PreviewScrollViewer.Focus(FocusState.Programmatic);
+
         // The user color-scheme JSON must match the bundled schema. If not, the
         // only choices are to quit or open the file to fix it (the app exits
         // either way, then reloads a corrected file on the next launch).

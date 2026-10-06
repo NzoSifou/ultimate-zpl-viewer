@@ -8,7 +8,48 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ## [Non publié]
 
+### ✨ Ajouté
+
+- **Marges par côté** à l'impression : un interrupteur « Par côté » donne
+  une marge au haut, à la droite, au bas et à la gauche (deux par deux, l'unité
+  à côté de chaque case). Dans la fenêtre d'impression comme dans les
+  paramètres ; la marge unique reste disponible.
+- **Tailles de papier classées par catégories**, les plus courantes en tête
+  (A4, Lettre, A5, Legal, A3, A6, 4 × 6), puis séries A et B, formats
+  nord-américains, enveloppes, photos et étiquettes, formats chinois et
+  japonais.
+
+### 🔄 Modifié
+
+- « Nombre d'exemplaires » devient **« Nombre de copies »** et « Exemplaires
+  par page » devient **« Étiquettes par page »**.
+- **Mode clair plus lisible** : sur un fond d'écran sombre, la barre d'outils
+  et la barre d'onglets étaient d'un gris terne ; elles sont désormais claires,
+  et les noms de groupes de la barre d'outils sont plus contrastés.
+
+### 🐛 Corrigé
+
+- **Imprimante virtuelle, application fermée** : imprimer sur « Ultimate ZPL
+  Viewer » n'ouvrait jamais l'application — la tâche planifiée attendait le
+  nom de l'imprimante au mauvais endroit de l'événement Windows. L'application
+  installe maintenant elle-même sa tâche, sans demande d'administrateur, et
+  répare celle des installations existantes au démarrage. L'application ainsi
+  lancée n'est plus en priorité réduite ni arrêtée au bout de 72 h.
+- Imprimante virtuelle, application ouverte : le travail reçu va dans la
+  dernière fenêtre utilisée (il pouvait viser une fenêtre déjà fermée) ; le
+  message « format non pris en charge » suit la langue de l'interface.
+- **Onglets** :
+  - deux fenêtres d'un seul onglet ne fusionnaient plus : seul l'onglet
+    lui-même acceptait le dépôt, pas le reste de la barre ;
+  - hors de la fenêtre, le pointeur affichait « interdit » puis « Déplacer »,
+    et lâcher l'onglet n'ouvrait pas toujours de fenêtre. Il affiche
+    désormais « Ouvrir dans une nouvelle fenêtre », sur tous les écrans.
+
 ### ⚡ Performances
+
+- **Fenêtre d'impression** : augmenter les étiquettes par page cran par cran
+  ne rame plus (~13 ms par cran au lieu de redessiner toutes les copies et
+  d'interroger le pilote à chaque fois).
 
 - **Démarrage plus rapide, sans écran noir.** Mesuré du clic à l'écran :
   la fenêtre apparaît en ~0,65 s au lieu de ~1,3 s, la page en ~1,2 s au

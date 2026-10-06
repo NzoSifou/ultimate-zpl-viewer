@@ -6,7 +6,18 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
-## [Non publié]
+## [1.7.1] — 2026-10-06 — performances
+
+Une version consacrée à la fluidité en usage courant : modifier une étiquette,
+passer d'un volet ou d'un onglet à l'autre, parcourir un lot d'étiquettes,
+taper dans un long fichier, ouvrir les paramètres. Et l'éditeur de code
+fonctionne désormais **hors connexion**.
+
+### ✨ Ajouté
+
+- **L'éditeur de code est livré avec l'application.** Il était téléchargé à
+  chaque lancement depuis Internet : sans connexion, la zone de code restait
+  vide. Il fonctionne maintenant hors ligne.
 
 ### ⚡ Performances
 
@@ -32,6 +43,13 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   l'aperçu met du temps à se redessiner, il suit le texte dès que la frappe
   marque une pause plutôt qu'à chaque touche : une frappe coûte ~2 ms au lieu
   de ~140 ms dans un lot de 1,2 Mo.
+- **Les paramètres** s'ouvrent en ~100 ms au lieu de ~320 : chaque catégorie
+  est construite quand on l'affiche, et la liste des langues ne relit plus
+  chaque fichier de langue en entier. **La recherche** ne reconstruit plus
+  tous les réglages à chaque lettre tapée (~180 ms de gel à chaque fois) :
+  ils sont préparés une fois au début de la recherche.
+- **La grille de l'aperçu** est tracée d'un seul tenant au lieu d'une centaine
+  de lignes, redessinées à chaque redimensionnement.
 
 ### 🐛 Corrigé
 
@@ -39,6 +57,8 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   quand l'une d'elles ne contenait qu'un `^FD` vide : comptée depuis la
   première étiquette, pas depuis les suivantes (« / 9 » puis « / 8 »).
 - **Tourner l'étiquette la dessinait deux fois** à chaque quart de tour.
+- **Les menus de l'éditeur de code restaient en anglais** (clic droit,
+  recherche, palette de commandes) même avec l'application en français.
 
 - **En éditant un texte dans l'aperçu, le curseur restait collé à la dernière
   lettre après un espace**, même après plusieurs espaces, et ne se remettait en

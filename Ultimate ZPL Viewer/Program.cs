@@ -27,6 +27,7 @@ public static class Program
     [MethodImpl(MethodImplOptions.NoInlining)]
     static void StartApp()
     {
+        PerfLog.Mark("StartApp");
         WinRT.ComWrappersSupport.InitializeComWrappers();
         Microsoft.UI.Xaml.Application.Start(p =>
         {

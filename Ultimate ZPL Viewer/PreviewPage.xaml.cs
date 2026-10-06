@@ -68,6 +68,7 @@ public sealed partial class PreviewPage : Page
     public PreviewPage()
     {
         InitializeComponent();
+        PerfLog.Mark("PreviewPage: InitializeComponent");
         // Route captured print jobs (Ultimate ZPL Viewer printer) to this page.
         if (Application.Current is App app) app.ActivePreviewPage = this;
         ZplColorSchemeService.EnsureUserConfig();
@@ -247,22 +248,21 @@ public sealed partial class PreviewPage : Page
         DocPanelSplitter.PointerMoved       += DocPanelSplitter_PointerMoved;
         DocPanelSplitter.PointerReleased    += DocPanelSplitter_PointerReleased;
         DocPanelSplitter.PointerCaptureLost += (_, _) => _isResizingDocPanel = false;
+        PerfLog.Mark("PreviewPage: ctor done");
         Loaded += OnPageLoaded;
+        _ = StartEditorAsync().ContinueWith(_ => { }, TaskScheduler.Default);   // faults retried on Loaded
     }
 
-    private async void OnPageLoaded(object sender, RoutedEventArgs e)
+    // ── Starting the editor ──────────────────────────────────────────────────
+    // Started from the constructor, not once the page is on screen: creating the
+    // browser takes ~0.5 s and then Monaco loads, and none of it needs the window
+    // to be shown first. The page awaits the same task when it loads.
+    private Task? _editorStartup;
+
+    private Task StartEditorAsync() => _editorStartup ??= StartEditorCoreAsync();
+
+    private async Task StartEditorCoreAsync()
     {
-        Loaded -= OnPageLoaded;
-
-        // OnNavigatedTo runs while the window is still being constructed, so the
-        // title set there is lost — re-apply it now that the window exists.
-        UpdateDocumentTitle();
-
-        // The user color-scheme JSON must match the bundled schema. If not, the
-        // only choices are to quit or open the file to fix it (the app exits
-        // either way, then reloads a corrected file on the next launch).
-        if (!await ValidateColorSchemeOrExitAsync()) return;
-
         // Initialise WebView2 and navigate to the Monaco editor page.
         // Transparent default background: the browser otherwise paints an opaque
         // square surface that shows as dark corners behind the rounded clip.
@@ -283,14 +283,53 @@ public sealed partial class PreviewPage : Page
         Directory.CreateDirectory(wvUserData);
         var wvEnv = await Microsoft.Web.WebView2.Core.CoreWebView2Environment.CreateWithOptionsAsync(
             null, wvUserData, new Microsoft.Web.WebView2.Core.CoreWebView2EnvironmentOptions());
+        PerfLog.Mark("WebView2 environment");
         await EditorWebView.EnsureCoreWebView2Async(wvEnv);
+        PerfLog.Mark("WebView2 core ready");
+        // The editor only ever shows its own page, from the application's folder:
+        // SmartScreen has nothing to judge there, but its online reputation check
+        // held the page back ~2 s before a single line of it ran, at every launch
+        // its cached verdict had expired (measured: 1.9 s with it, 0.08 s without).
+        // Nothing else may load in this view, so the check guards nothing.
+        EditorWebView.CoreWebView2.Settings.IsReputationCheckingRequired = false;
+        EditorWebView.CoreWebView2.NavigationStarting += (_, args) =>
+        {
+            if (!Uri.TryCreate(args.Uri, UriKind.Absolute, out var target)
+                || !string.Equals(target.Host, EditorPageHost, StringComparison.OrdinalIgnoreCase))
+                args.Cancel = true;
+        };
+        EditorWebView.CoreWebView2.NewWindowRequested += (_, args) => args.Handled = true;
         EditorWebView.DefaultBackgroundColor = Microsoft.UI.Colors.Transparent;
         var assetsPath = Path.Combine(AppContext.BaseDirectory, "Assets");
         EditorWebView.CoreWebView2.SetVirtualHostNameToFolderMapping(
-            "zpl-editor.local", assetsPath, CoreWebView2HostResourceAccessKind.Allow);
+            EditorPageHost, assetsPath, CoreWebView2HostResourceAccessKind.Allow);
         EditorWebView.CoreWebView2.WebMessageReceived += EditorWebView_WebMessageReceived;
         _editorLang = _settings.Language == "en" ? "en" : "fr";
-        EditorWebView.Source = new Uri($"https://zpl-editor.local/editor.html?lang={_editorLang}");
+        EditorWebView.Source = new Uri($"https://{EditorPageHost}/editor.html?lang={_editorLang}");
+    }
+
+    // The editor page is served from the application's Assets folder under this name.
+    private const string EditorPageHost = "zpl-editor.local";
+
+    private async void OnPageLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnPageLoaded;
+        PerfLog.Mark("Page Loaded");
+
+        // OnNavigatedTo runs while the window is still being constructed, so the
+        // title set there is lost — re-apply it now that the window exists.
+        UpdateDocumentTitle();
+
+        // The user color-scheme JSON must match the bundled schema. If not, the
+        // only choices are to quit or open the file to fix it (the app exits
+        // either way, then reloads a corrected file on the next launch).
+        if (!await ValidateColorSchemeOrExitAsync()) return;
+        PerfLog.Mark("color scheme validated");
+
+        // The editor was started with the page (StartEditorAsync); a start that could
+        // not happen before the page was in the window is made again now.
+        try { await StartEditorAsync(); }
+        catch when (EditorWebView.CoreWebView2 is null) { _editorStartup = null; await StartEditorAsync(); }
 
         // Editor corner rounding happens inside the page (editor.html clip-path):
         // neither a XAML CornerRadius nor a composition clip affects the browser
@@ -706,6 +745,7 @@ public sealed partial class PreviewPage : Page
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
+        PerfLog.Mark("OnNavigatedTo");
         var options = e.Parameter as LaunchOptions ?? new LaunchOptions();
         // A --hide launch forces the panes hidden and, while it lasts, prevents the
         // visibility from being persisted on exit (it is a one-off override).
@@ -2542,14 +2582,27 @@ public sealed partial class PreviewPage : Page
     // laying the text out through Win2D costs some 25 ms each time for the same
     // words — a quarter of what moving an element with the arrow keys took.
     private (string Text, double? Arrow, float Scale, double Width)? _captionDrawn;
+    private bool _captionBuildQueued;
     private CanvasTextFormat? _captionFormat;
     private CanvasDevice? _captionDevice;
     private float _captionFormatScale;
 
     private void RenderCaption(string text, double? arrowStepDip)
     {
-        BuildCaptionVisual();
-        if (_captionSprite is null || _captionSurface is null) return;
+        // Bringing Win2D up for the first caption takes ~100 ms, and the window was
+        // waiting for it to show anything: the caption comes just after instead.
+        if (_captionSprite is null)
+        {
+            if (_captionBuildQueued) return;
+            _captionBuildQueued = true;
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                BuildCaptionVisual();
+                UpdatePreviewCaption();
+            });
+            return;
+        }
+        if (_captionSurface is null) return;
 
         float scale = (float)(XamlRoot?.RasterizationScale ?? 1.0);
         var drawn = (text, arrowStepDip, scale, PreviewSurface.ActualWidth);
@@ -6495,11 +6548,12 @@ public sealed partial class PreviewPage : Page
         if (lang == _editorLang || EditorWebView.CoreWebView2 is null) return;
         _editorLang = lang;
         _editorReady = false;
-        EditorWebView.Source = new Uri($"https://zpl-editor.local/editor.html?lang={lang}");
+        EditorWebView.Source = new Uri($"https://{EditorPageHost}/editor.html?lang={lang}");
     }
 
     private void OnEditorReady()
     {
+        PerfLog.Mark("Monaco ready");
         _editorReady = true;
         PostToEditor(ZplHighlighter.GetGrammarJson());
         ApplyEditorTheme();

@@ -45,6 +45,16 @@ internal static class PerfLog
         }
     }
 
+    private static DateTime? _processStart;
+
+    /// <summary>A milestone, written down as the time since the process started.</summary>
+    public static void Mark(string name)
+    {
+        if (!Enabled) return;
+        _processStart ??= Process.GetCurrentProcess().StartTime;
+        Write($"{(DateTime.Now - _processStart.Value).TotalMilliseconds,8:0} ms  @ {name}");
+    }
+
     private static bool _watching;
 
     /// <summary>Starts the stall watchdog on the given UI thread's queue.</summary>

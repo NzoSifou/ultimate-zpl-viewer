@@ -19,6 +19,7 @@ namespace Ultimate_ZPL_Viewer
 
         public App()
         {
+            PerfLog.Mark("App()");
             InitializeComponent();
             // Crash diagnostics. THREE channels, because the XAML one alone misses
             // the crashes that matter most: a failure inside a XAML callback dies as
@@ -56,6 +57,7 @@ namespace Ultimate_ZPL_Viewer
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             var commandLine = Environment.GetCommandLineArgs();
+            PerfLog.Mark("OnLaunched");
 
             // The print-capture scheduled task relaunches the app with this flag
             // (unpackaged: a plain command-line argument, no MSIX protocol). It is not a
@@ -116,17 +118,52 @@ namespace Ultimate_ZPL_Viewer
 
             AccentColorService.ApplyAtStartup(this);
 
-            _window = new MainWindow(parsed.Gui);
+            PerfLog.Mark("new MainWindow");
+            // The window comes up first, with its title bar on its backdrop, and the
+            // page is built once that has reached the screen: the page takes a few
+            // hundred milliseconds, and a window that waited for it showed late and
+            // then black until its first frame.
+            var mainWindow = new MainWindow(parsed.Gui, deferPage: true);
+            _window = mainWindow;
             _window.Activate();
+            PerfLog.Mark("Activate done");
             PerfLog.Watch(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+            var queue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+            bool pageStarted = false;
+            void StartPage()
+            {
+                if (pageStarted) return;
+                pageStarted = true;
+                Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= FirstFrame;
+                mainWindow.ShowPage();
+                if (PerfLog.Enabled)
+                {
+                    void PageFrame(object? s, object a) { Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= PageFrame; PerfLog.Mark("page frame"); }
+                    Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += PageFrame;
+                }
 
-            // From here on, later launches talk to this instance instead of starting
-            // their own (see InstanceRouter).
-            InstanceRouter.Listen(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+                // From here on, later launches talk to this instance instead of
+                // starting their own (see InstanceRouter).
+                InstanceRouter.Listen(queue);
 
-            // Watch the spool folder and process anything already pending. The
-            // printer install itself is offered to the user by PreviewPage.
-            StartSpoolWatcher();
+                // Watch the spool folder and process anything already pending. The
+                // printer install itself is offered to the user by PreviewPage.
+                StartSpoolWatcher();
+            }
+            void FirstFrame(object? sender, object e)
+            {
+                Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= FirstFrame;
+                PerfLog.Mark("first frame");
+                // Low: after the frame that is being prepared has been presented.
+                queue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, StartPage);
+            }
+            Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += FirstFrame;
+            // A window started minimized renders no frame: the page must not wait for one.
+            var fallback = queue.CreateTimer();
+            fallback.Interval = TimeSpan.FromSeconds(1);
+            fallback.IsRepeating = false;
+            fallback.Tick += (_, _) => StartPage();
+            fallback.Start();
         }
 
         private void StartSpoolWatcher()

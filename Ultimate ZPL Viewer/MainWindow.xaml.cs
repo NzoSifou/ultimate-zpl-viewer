@@ -18,7 +18,9 @@ namespace Ultimate_ZPL_Viewer
         /// <summary>The page hosting this window's documents.</summary>
         public PreviewPage? Page => rootFrame.Content as PreviewPage;
 
-        public MainWindow(LaunchOptions launchOptions, DocTab? adopt = null)
+        /// <param name="deferPage">The page is built by <see cref="ShowPage"/> instead,
+        /// once the window is on screen (the first window at launch).</param>
+        public MainWindow(LaunchOptions launchOptions, DocTab? adopt = null, bool deferPage = false)
         {
             InitializeComponent();
             WindowManager.Register(this);
@@ -74,7 +76,24 @@ namespace Ultimate_ZPL_Viewer
 
             InitSearchBoxes();
             LocalizeTitleBar();
-            rootFrame.Navigate(typeof(PreviewPage), launchOptions);
+            _launchOptions = launchOptions;
+            if (!deferPage) ShowPage();
+        }
+
+        private LaunchOptions? _launchOptions;
+
+        /// <summary>
+        /// Builds the page. The first window of a launch shows itself before doing
+        /// it: the page takes a few hundred milliseconds to build, and a window that
+        /// waited for it appeared late and then black until its first frame.
+        /// </summary>
+        public void ShowPage()
+        {
+            if (_launchOptions is not { } options) return;
+            _launchOptions = null;
+            PerfLog.Mark("MainWindow: navigate");
+            rootFrame.Navigate(typeof(PreviewPage), options);
+            PerfLog.Mark("MainWindow: navigated");
         }
 
         // Localizes the title-bar tooltips (titlebar.* keys). Called at startup and

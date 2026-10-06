@@ -2142,7 +2142,9 @@
         "reinstall": "Réinstaller",
         "uninstall": "Désinstaller",
         "opFailed": "Opération échouée.",
-        "dlgTitle": "Imprimante virtuelle"
+        "dlgTitle": "Imprimante virtuelle",
+        "unsupportedTitle": "Format non pris en charge",
+        "unsupportedBody": "Le document envoyé à l'imprimante « Ultimate ZPL Viewer » n'est pas du ZPL.\n\nCette imprimante n'accepte que du ZPL : les PDF et autres formats ne peuvent pas être ouverts."
       }
     },
     "commandLine": {

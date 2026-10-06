@@ -14,9 +14,8 @@ namespace Ultimate_ZPL_Viewer;
 // decides whether it is ZPL, and loads it (or reports an unsupported format).
 //
 // Installation needs admin rights and is done once by an elevated PowerShell
-// script (single UAC prompt). The script also registers a scheduled task that
-// relaunches the app (via its custom URI protocol) when a job prints while the
-// app is closed.
+// script (single UAC prompt). Opening the app when a job prints while it is
+// closed is a scheduled task the app registers itself, without elevation.
 public static class VirtualPrinterService
 {
     public const string PrinterName = "Ultimate ZPL Viewer";
@@ -31,6 +30,9 @@ public static class VirtualPrinterService
     public static string SpoolFile => Path.Combine(SpoolFolder, "spool.prn");
     public static string InstallLog => Path.Combine(SpoolFolder, "install.log");
 
+    // The task the elevated install used to register. Its filter looked for the
+    // printer in the wrong field of the event, so it never fired; the scripts now
+    // only remove it, and the app registers its own (see EnsureCaptureTask).
     private const string TaskName = "UltimateZplViewer_PrintCapture";
 
     // Argument that puts a fresh (elevated) instance of this exe into "run the
@@ -161,7 +163,7 @@ public static class VirtualPrinterService
     // diagnostic message read back from the script's log on failure.
     public static InstallResult EnsureInstalled()
     {
-        if (IsInstalled()) return new InstallResult(true, null);
+        if (IsInstalled()) { EnsureCaptureTask(); return new InstallResult(true, null); }
 
         string scriptPath;
         try
@@ -176,7 +178,7 @@ public static class VirtualPrinterService
         var err = ElevateAndRun(scriptPath);
         if (err == "cancelled") return new InstallResult(false, "Installation annulée (élévation refusée).");
 
-        if (IsInstalled()) return new InstallResult(true, null);
+        if (IsInstalled()) { EnsureCaptureTask(); return new InstallResult(true, null); }
 
         // Failed: surface the script log (or a generic message).
         string? log = null;
@@ -201,7 +203,7 @@ public static class VirtualPrinterService
         var err = ElevateAndRun(scriptPath);
         if (err == "cancelled") return new InstallResult(false, "Réinstallation annulée (élévation refusée).");
 
-        if (IsInstalled()) return new InstallResult(true, null);
+        if (IsInstalled()) { EnsureCaptureTask(); return new InstallResult(true, null); }
 
         string? log = null;
         try { if (File.Exists(InstallLog)) log = File.ReadAllText(InstallLog).Trim(); } catch { }
@@ -222,9 +224,118 @@ public static class VirtualPrinterService
         var err = ElevateAndRun(scriptPath);
         if (err == "cancelled") return new InstallResult(false, "Désinstallation annulée (élévation refusée).");
 
-        return IsInstalled()
-            ? new InstallResult(false, "La désinstallation n'a pas abouti.")
-            : new InstallResult(true, null);
+        if (IsInstalled()) return new InstallResult(false, "La désinstallation n'a pas abouti.");
+        RemoveCaptureTask();
+        return new InstallResult(true, null);
+    }
+
+    // ── Opening the app when a job prints while it is closed ─────────────────
+
+    // One task per user: each runs the app in its own session. A user may create
+    // tasks that run as themselves, so this needs no elevation - which is also
+    // what lets the app put a task right after the fact, on an existing install.
+    public static string CaptureTaskName { get; } =
+        "UltimateZplViewer_PrintCapture_" + string.Concat(Environment.UserName.Select(
+            c => "\\/:*?\"<>|".Contains(c) ? '_' : c));
+
+    // Bumped whenever the task below changes, so an older one gets replaced.
+    private const string CaptureTaskFormat = "capture-task 2";
+
+    /// <summary>
+    /// Registers (or puts right) the task that opens this exe when a job prints on
+    /// the virtual printer while the app is closed. Cheap when nothing changed;
+    /// meant to run off the UI thread.
+    /// </summary>
+    public static void EnsureCaptureTask()
+    {
+        try
+        {
+            if (!IsInstalled()) return;
+            var exe = Environment.ProcessPath;
+            if (string.IsNullOrEmpty(exe)) return;
+            var xml = CaptureTaskXml(exe);
+
+            dynamic service = Activator.CreateInstance(Type.GetTypeFromProgID("Schedule.Service")!)!;
+            service.Connect();
+            dynamic root = service.GetFolder("\\");
+            try
+            {
+                string current = root.GetTask(CaptureTaskName).Xml;
+                // The last exe launched is the one a job opens: an installed copy
+                // takes the task back from a build run from elsewhere, and the other
+                // way round.
+                if (current.Contains(CaptureTaskFormat) && current.Contains(SecurityElement(exe))) return;
+            }
+            catch { /* not there yet */ }
+
+            const int CreateOrUpdate = 6, InteractiveToken = 3;
+            root.RegisterTask(CaptureTaskName, xml, CreateOrUpdate, null, null, InteractiveToken, null);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"EnsureCaptureTask: {ex.Message}");
+        }
+    }
+
+    private static string SecurityElement(string text) => System.Security.SecurityElement.Escape(text) ?? text;
+
+    // Event 307 is "document printed"; Param5 carries the printer (Param4 is the
+    // machine). The app is started at normal priority and never stopped: a task's
+    // defaults are below-normal priority and a 72-hour limit, after which the app
+    // would have been killed.
+    private static string CaptureTaskXml(string exe)
+    {
+        var query = $"""
+<QueryList><Query Id="0" Path="Microsoft-Windows-PrintService/Operational"><Select Path="Microsoft-Windows-PrintService/Operational">*[System[(EventID=307)]] and *[UserData/DocumentPrinted[Param5='{PrinterName}']]</Select></Query></QueryList>
+""";
+        return $"""
+<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>Ultimate ZPL Viewer: opens the app when a label is printed on the "{PrinterName}" printer ({CaptureTaskFormat}).</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <EventTrigger>
+      <Enabled>true</Enabled>
+      <Subscription>{SecurityElement(query)}</Subscription>
+    </EventTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>false</AllowHardTerminate>
+    <StartWhenAvailable>false</StartWhenAvailable>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <Priority>4</Priority>
+    <Enabled>true</Enabled>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>{SecurityElement(exe)}</Command>
+      <Arguments>--print-capture</Arguments>
+    </Exec>
+  </Actions>
+</Task>
+""";
+    }
+
+    /// <summary>Takes the task away again (the printer is gone).</summary>
+    public static void RemoveCaptureTask()
+    {
+        try
+        {
+            dynamic service = Activator.CreateInstance(Type.GetTypeFromProgID("Schedule.Service")!)!;
+            service.Connect();
+            service.GetFolder("\\").DeleteTask(CaptureTaskName, 0);
+        }
+        catch { /* not there */ }
     }
 
     // Reads a captured job and clears the spool file. Returns null when there is
@@ -358,6 +469,7 @@ Set-Content -Path $logFile -Value ("[{0}] Debut desinstallation" -f (Get-Date -F
 Remove-Printer -Name '{{PrinterName}}' -EA SilentlyContinue
 Remove-PrinterPort -Name '{{SpoolFile.Replace("'", "''")}}' -EA SilentlyContinue
 Unregister-ScheduledTask -TaskName '{{TaskName}}' -Confirm:$false -EA SilentlyContinue
+Unregister-ScheduledTask -TaskName '{{CaptureTaskName.Replace("'", "''")}}' -Confirm:$false -EA SilentlyContinue
 # Delete the captured spool file but keep the folder + log (the elevation
 # heuristic checks the log timestamp right after this runs).
 Remove-Item '{{SpoolFile.Replace("'", "''")}}' -Force -EA SilentlyContinue
@@ -409,12 +521,9 @@ Log 'Ancienne installation supprimee'
 
     private static string InstallBody()
     {
-        // Note: the scheduled task is event-triggered on PrintService event 307
-        // (document printed) filtered by our printer name, and launches the app's
-        // exe directly with --print-capture so it opens even when closed (the app
-        // is unpackaged, so there is no MSIX URI protocol). The app-side capture
-        // logic verifies there is real pending content, so a mis-filtered event
-        // never pops the window.
+        // The task that opens the app when a job prints while it is closed is not
+        // registered here any more: the app registers it itself, for its user and
+        // without elevation (EnsureCaptureTask). This only takes the old one away.
         return """
 try {
     # In-box Generic / Text Only driver.
@@ -438,23 +547,8 @@ try {
     # Enable the PrintService operational log (source of the task trigger).
     try { wevtutil sl Microsoft-Windows-PrintService/Operational /e:true; Log 'Journal PrintService active' } catch { Log 'Journal PrintService: ignore' }
 
-    # Scheduled task: on 'document printed' for our printer, launch the app's exe
-    # directly (with --print-capture) so it opens even when closed.
-    $subscription = @"
-<QueryList>
-  <Query Id="0" Path="Microsoft-Windows-PrintService/Operational">
-    <Select Path="Microsoft-Windows-PrintService/Operational">*[System[(EventID=307)]] and *[UserData/DocumentPrinted[Param4='$printerName']]</Select>
-  </Query>
-</QueryList>
-"@
-    $action = New-ScheduledTaskAction -Execute $exePath -Argument '--print-capture'
-    $stt = New-CimInstance -CimClass (Get-CimClass -Namespace root/Microsoft/Windows/TaskScheduler -ClassName MSFT_TaskEventTrigger) -ClientOnly
-    $stt.Enabled = $true
-    $stt.Subscription = $subscription
-    $principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Limited
-    $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
-    Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $stt -Principal $principal -Settings $settings -Force | Out-Null
-    Log 'Tache planifiee enregistree'
+    # The old task (it never fired): the app registers its own now.
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -EA SilentlyContinue
 
     Log 'SUCCES'
     exit 0

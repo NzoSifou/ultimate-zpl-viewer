@@ -70,7 +70,6 @@ public sealed partial class PreviewPage : Page
         InitializeComponent();
         PerfLog.Mark("PreviewPage: InitializeComponent");
         // Route captured print jobs (Ultimate ZPL Viewer printer) to this page.
-        if (Application.Current is App app) app.ActivePreviewPage = this;
         ZplColorSchemeService.EnsureUserConfig();
         LocalizationService.SetLanguage(_settings.Language); // load languages/{code}.json
         // React live to language files being added/edited/removed on disk.
@@ -6488,9 +6487,7 @@ public sealed partial class PreviewPage : Page
     // Reports that a non-ZPL document was sent to the virtual printer.
     public async void ShowUnsupportedPrintFormat()
     {
-        await ShowMessageAsync("Format non pris en charge",
-            "Le document envoyé à l'imprimante « Ultimate ZPL Viewer » n'est pas un fichier ZPL.\n\n" +
-            "Cette imprimante n'accepte que des fichiers ZPL — les PDF et autres formats ne peuvent pas être ouverts.");
+        await ShowMessageAsync(SL("virtualPrinter.lbl.unsupportedTitle"), SL("virtualPrinter.lbl.unsupportedBody"));
     }
 
     // ── Monaco Editor bridge ─────────────────────────────────────────────────

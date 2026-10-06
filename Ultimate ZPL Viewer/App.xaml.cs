@@ -14,9 +14,6 @@ namespace Ultimate_ZPL_Viewer
         private Mutex? _singleInstanceMutex;
         private FileSystemWatcher? _spoolWatcher;
 
-        // Set when a print-capture window loads, so captured jobs can be routed to it.
-        public PreviewPage? ActivePreviewPage { get; set; }
-
         public App()
         {
             PerfLog.Mark("App()");
@@ -149,6 +146,9 @@ namespace Ultimate_ZPL_Viewer
                 // Watch the spool folder and process anything already pending. The
                 // printer install itself is offered to the user by PreviewPage.
                 StartSpoolWatcher();
+                // Puts right the task that opens the app when a job prints while it
+                // is closed (missing, from an older version, or pointing elsewhere).
+                System.Threading.Tasks.Task.Run(VirtualPrinterService.EnsureCaptureTask);
             }
             void FirstFrame(object? sender, object e)
             {
@@ -198,7 +198,10 @@ namespace Ultimate_ZPL_Viewer
             // Do not consume the spool file until we have somewhere to route it,
             // otherwise TryReadPending would delete the job and lose it. It stays
             // on disk and is retried on the next watcher event / readiness.
-            if (_window is null || ActivePreviewPage is null) return;
+            // The window used last, among those still open: the page built last may
+            // belong to a window closed since.
+            var target = WindowManager.Active ?? WindowManager.Windows.FirstOrDefault();
+            if (target?.Page is not { } page) return;
 
             _processing = true;
             try
@@ -207,11 +210,11 @@ namespace Ultimate_ZPL_Viewer
                 if (job is null) return;
 
                 if (job.IsZpl)
-                    ActivePreviewPage.LoadCapturedZpl(job.Content);
+                    page.LoadCapturedZpl(job.Content);
                 else
-                    ActivePreviewPage.ShowUnsupportedPrintFormat();
+                    page.ShowUnsupportedPrintFormat();
 
-                BringToForeground();
+                BringToForeground(target);
             }
             finally
             {
@@ -219,10 +222,10 @@ namespace Ultimate_ZPL_Viewer
             }
         }
 
-        private void BringToForeground()
+        private static void BringToForeground(Window window)
         {
-            if (_window is null) return;
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+            if (IsIconic(hwnd)) ShowWindow(hwnd, SW_RESTORE);   // Show() leaves it minimized
             var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
             appWindow?.Show();
@@ -238,5 +241,10 @@ namespace Ultimate_ZPL_Viewer
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
+        private const int SW_RESTORE = 9;
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool IsIconic(IntPtr hWnd);
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     }
 }

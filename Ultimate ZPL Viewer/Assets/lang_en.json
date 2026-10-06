@@ -2142,7 +2142,9 @@
         "reinstall": "Reinstall",
         "uninstall": "Uninstall",
         "opFailed": "Operation failed.",
-        "dlgTitle": "Virtual printer"
+        "dlgTitle": "Virtual printer",
+        "unsupportedTitle": "Unsupported format",
+        "unsupportedBody": "The document sent to the \"Ultimate ZPL Viewer\" printer is not ZPL.\n\nThis printer only accepts ZPL: PDFs and other formats cannot be opened."
       }
     },
     "commandLine": {

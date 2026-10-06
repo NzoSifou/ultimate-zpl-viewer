@@ -6,7 +6,13 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
-## [Non publié]
+## [1.7.2] — 2026-10-07 — démarrage, impression, onglets
+
+Le démarrage est plus rapide et sans écran noir, la fenêtre d'impression gagne
+les **marges par côté** et des **formats de papier classés**, l'imprimante
+virtuelle **ouvre enfin l'application quand elle est fermée**, et les onglets se
+détachent et se regroupent de nouveau comme on s'y attend. L'interface est aussi
+entièrement traduite : des dizaines de textes restaient en français en anglais.
 
 ### ✨ Ajouté
 
@@ -25,7 +31,10 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   par page » devient **« Étiquettes par page »**.
 - **Mode clair plus lisible** : sur un fond d'écran sombre, la barre d'outils
   et la barre d'onglets étaient d'un gris terne ; elles sont désormais claires,
-  et les noms de groupes de la barre d'outils sont plus contrastés.
+  et les noms de groupes et les séparateurs de la barre d'outils sont plus
+  contrastés.
+- Au démarrage, le curseur est dans l'éditeur : on peut taper tout de suite, et
+  l'engrenage des paramètres n'est plus entouré d'un cadre de focus.
 
 ### 🐛 Corrigé
 
@@ -34,22 +43,26 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   nom de l'imprimante au mauvais endroit de l'événement Windows. L'application
   installe maintenant elle-même sa tâche, sans demande d'administrateur, et
   répare celle des installations existantes au démarrage. L'application ainsi
-  lancée n'est plus en priorité réduite ni arrêtée au bout de 72 h.
+  lancée n'est plus en priorité réduite ni arrêtée au bout de 72 h, et la
+  désinstallation retire la tâche.
 - Imprimante virtuelle, application ouverte : le travail reçu va dans la
-  dernière fenêtre utilisée (il pouvait viser une fenêtre déjà fermée) ; le
-  message « format non pris en charge » suit la langue de l'interface.
+  dernière fenêtre utilisée (il pouvait viser une fenêtre déjà fermée).
 - **Onglets** :
   - deux fenêtres d'un seul onglet ne fusionnaient plus : seul l'onglet
     lui-même acceptait le dépôt, pas le reste de la barre ;
   - hors de la fenêtre, le pointeur affichait « interdit » puis « Déplacer »,
     et lâcher l'onglet n'ouvrait pas toujours de fenêtre. Il affiche
     désormais « Ouvrir dans une nouvelle fenêtre », sur tous les écrans.
+- **Textes restés en français** quelle que soit la langue : menu des onglets,
+  demandes d'enregistrement, erreurs d'ouverture et d'enregistrement, messages
+  de l'analyseur ZPL, installation des polices, taille de l'écran, schéma de
+  couleurs, imprimante virtuelle, boutons du plein écran.
+- **Fenêtre d'impression** : sur un grand écran, le bas de la colonne des
+  réglages était coupé (l'unité des marges par côté était hors d'atteinte).
+- **Recherche dans les paramètres** : taper vite pouvait provoquer une erreur
+  en remettant en place des résultats déjà remplacés.
 
 ### ⚡ Performances
-
-- **Fenêtre d'impression** : augmenter les étiquettes par page cran par cran
-  ne rame plus (~13 ms par cran au lieu de redessiner toutes les copies et
-  d'interroger le pilote à chaque fois).
 
 - **Démarrage plus rapide, sans écran noir.** Mesuré du clic à l'écran :
   la fenêtre apparaît en ~0,65 s au lieu de ~1,3 s, la page en ~1,2 s au
@@ -68,9 +81,14 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
   - Les fichiers de langue ne sont plus relus ni fusionnés plusieurs fois au
     démarrage (la fusion avec la version livrée n'a lieu qu'après une mise à
     jour), et la légende de l'aperçu est créée après le premier affichage.
+- **Fenêtre d'impression** :
+  - elle s'ouvre sans attendre le pilote de l'imprimante (~0,5 s de gel en
+    moins) : les formats de papier sont lus en arrière-plan et gardés ;
+  - augmenter les étiquettes par page cran par cran ne rame plus (~13 ms par
+    cran au lieu de redessiner toutes les copies et d'interroger le pilote à
+    chaque fois).
 
 ---
-
 ## [1.7.1] — 2026-10-06 — performances
 
 Une version consacrée à la fluidité en usage courant : modifier une étiquette,

@@ -418,7 +418,10 @@ public sealed partial class PreviewPage
                 var item = new ComboBoxItem
                 {
                     Tag = p,
-                    Content = string.Format("{0}  ({1:0.#} x {2:0.#} mm)", p.Name.Trim(), p.WMm, p.HMm),
+                    // Some drivers write the size into the name already: once is enough.
+                    Content = System.Text.RegularExpressions.Regex.IsMatch(p.Name, @"\d\s*[x×]\s*\d")
+                        ? p.Name.Trim()
+                        : string.Format("{0}  ({1:0.#} x {2:0.#} mm)", p.Name.Trim(), p.WMm, p.HMm),
                     Padding = new Thickness(23, 5, 11, 7),
                 };
                 sizes.Add(item);

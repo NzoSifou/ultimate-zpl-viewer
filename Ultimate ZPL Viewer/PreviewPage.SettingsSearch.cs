@@ -80,36 +80,26 @@ public sealed partial class PreviewPage
         }
         if (!ReferenceEquals(SettingsNav.SelectedItem, _searchNavItem)) SettingsNav.SelectedItem = _searchNavItem;
 
-        // A fresh set of controls, the matching cards taken out of it.
-        var fresh = CreateSettingsCategories();
+        // The cards of a search are built once, when it starts, and every word typed
+        // after that only picks among them: building every category again for each
+        // one froze the box for ~180 ms. The cards stay live, so a value changed in
+        // the results is still changed when the query changes.
+        _searchPool ??= BuildSearchPool();
+        if (_searchPage is not null)
+            foreach (var old in _searchPage.Children.OfType<Grid>()) old.Children.Clear();
         var page = SettingsPanel();
+        _searchPage = page;
         page.Children.Add(SettingsHeader(
             string.Format(SL("search.results"), _settingsQuery.Trim()), SL("search.resultsHint")));
 
         int found = 0;
         foreach (var item in SettingsNav.MenuItems.OfType<NavigationViewItem>())
         {
-            if (item.Tag is not string tag || !fresh.TryGetValue(tag, out var root)) continue;
-            var cards = new List<(FrameworkElement Card, List<string> Texts, string? Section, DependencyObject? Container)>();
-            string? section = null;
-            CollectSettingsCards(root, cards, null, ref section);
-
-            var matches = cards
-                .Where(c => words.All(Fold(string.Join(" ", c.Texts) + " " + c.Section).Contains))
+            if (item.Tag is not string tag) continue;
+            var shownHere = _searchPool
+                .Where(p => p.Tag == tag && words.All(p.Words.Contains))
+                .Select(p => p.Card)
                 .ToList();
-            if (matches.Count == 0) continue;
-
-            var shownHere = new List<FrameworkElement>();
-            foreach (var (card, _, _, container) in matches)
-            {
-                if (!DetachCard(card, container)) continue;
-                // The grid sizes them: as wide as their column, as tall as their row.
-                card.Width = double.NaN;
-                card.MaxWidth = double.PositiveInfinity;
-                card.HorizontalAlignment = HorizontalAlignment.Stretch;
-                card.VerticalAlignment = VerticalAlignment.Stretch;
-                shownHere.Add(card);
-            }
             if (shownHere.Count == 0) continue;
             page.Children.Add(SubHeader(item.Content as string ?? tag));
             var grid = new Grid { ColumnSpacing = 8, Tag = shownHere };
@@ -140,6 +130,32 @@ public sealed partial class PreviewPage
 
         SettingsContentHost.Children.Clear();
         SettingsContentHost.Children.Add(page);
+    }
+
+    private List<(string Tag, FrameworkElement Card, string Words)>? _searchPool;
+    private StackPanel? _searchPage;
+
+    /// <summary>Every card of every category, out of its page and ready for a grid.</summary>
+    private List<(string Tag, FrameworkElement Card, string Words)> BuildSearchPool()
+    {
+        var pool = new List<(string, FrameworkElement, string)>();
+        foreach (var (tag, root) in CreateSettingsCategories())
+        {
+            var cards = new List<(FrameworkElement Card, List<string> Texts, string? Section, DependencyObject? Container)>();
+            string? section = null;
+            CollectSettingsCards(root, cards, null, ref section);
+            foreach (var (card, texts, cardSection, container) in cards)
+            {
+                if (!DetachCard(card, container)) continue;
+                // The grid sizes them: as wide as their column, as tall as their row.
+                card.Width = double.NaN;
+                card.MaxWidth = double.PositiveInfinity;
+                card.HorizontalAlignment = HorizontalAlignment.Stretch;
+                card.VerticalAlignment = VerticalAlignment.Stretch;
+                pool.Add((tag, card, Fold(string.Join(" ", texts) + " " + cardSection)));
+            }
+        }
+        return pool;
     }
 
     private static void FillResultGrid(Grid grid, List<FrameworkElement> cards, int columns)
@@ -180,6 +196,7 @@ public sealed partial class PreviewPage
     {
         if (!_searchShown) return;
         _searchShown = false;
+        _searchPool = null; _searchPage = null;
         _settingsCategories = null;
         BuildSettingsCategories();
         var tag = _categoryBeforeSearch ?? "general";
@@ -199,6 +216,7 @@ public sealed partial class PreviewPage
         (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.ClearSettingsSearch();
         SetPaneSearchText("");
         // Rebuilt: the category must show what was changed in the results.
+        _searchPool = null; _searchPage = null;
         _settingsCategories = null;
         BuildSettingsCategories();
     }

@@ -1577,20 +1577,21 @@ public sealed partial class PreviewPage : Page
         // The spacing is stored in the chosen unit; convert to screen DIPs using
         // the real-size scale (mm/cm/in) or 1:1 (px). Clamp so lines never collapse.
         var step = GridStepDip;
+        // Every line in ONE shape: a hundred Line elements were rebuilt on every
+        // resize of the preview (the editor's splitter, the window, a split pane).
+        var inv = CultureInfo.InvariantCulture;
+        var markup = new StringBuilder();
         for (double x = step; x < width; x += step)
-        {
-            PreviewGridCanvas.Children.Add(new Microsoft.UI.Xaml.Shapes.Line
-            {
-                X1 = x, Y1 = 0, X2 = x, Y2 = height, Stroke = brush, StrokeThickness = 1,
-            });
-        }
+            markup.Append('M').Append(x.ToString("R", inv)).Append(",0V").Append(height.ToString("R", inv));
         for (double y = step; y < height; y += step)
-        {
-            PreviewGridCanvas.Children.Add(new Microsoft.UI.Xaml.Shapes.Line
+            markup.Append("M0,").Append(y.ToString("R", inv)).Append('H').Append(width.ToString("R", inv));
+        if (markup.Length > 0)
+            PreviewGridCanvas.Children.Add(new Microsoft.UI.Xaml.Shapes.Path
             {
-                X1 = 0, Y1 = y, X2 = width, Y2 = y, Stroke = brush, StrokeThickness = 1,
+                Data = (Geometry)Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Geometry), markup.ToString()),
+                Stroke = brush, StrokeThickness = 1,
+                Width = width, Height = height,
             });
-        }
         // The caption carries a scale bar matching one grid cell — it has to follow
         // any spacing change and re-align on the new grid lines.
         UpdatePreviewCaption();
@@ -4270,6 +4271,7 @@ public sealed partial class PreviewPage : Page
         BuildProfileFooter();
         InitSettingsSearch();
         _searchShown = false;
+        _searchPool = null; _searchPage = null;
         SettingsOverlay.Visibility = Visibility.Visible;
         var navItem = SettingsNav.MenuItems
             .OfType<NavigationViewItem>()
@@ -4301,7 +4303,10 @@ public sealed partial class PreviewPage : Page
         if (_settingsCategories is null) return;
         _currentSettingsTag = tag;
         SettingsContentHost.Children.Clear();
-        if (_settingsCategories.TryGetValue(tag, out var content))
+        if (!_settingsCategories.TryGetValue(tag, out var content)
+            && _settingsBuilders is not null && _settingsBuilders.TryGetValue(tag, out var build))
+            _settingsCategories[tag] = content = build();
+        if (content is not null)
             SettingsContentHost.Children.Add(content);
     }
 
@@ -4345,6 +4350,7 @@ public sealed partial class PreviewPage : Page
         UpdateDocumentTitle();      // refresh "Sans titre"/"Untitled" + tab headers
         ReloadEditorForLanguage();  // reload Monaco in the new UI language (no-op if unchanged)
         _settingsCategories = null; // force rebuild with the new strings / language list
+        _searchPool = null;         // its cards carry the old strings
         BuildSettingsCategories();
         BuildProfileFooter();       // its label, and the profiles' names in the new language
         var tag = _currentSettingsTag ?? "appearance";
@@ -4374,38 +4380,49 @@ public sealed partial class PreviewPage : Page
 
     // Builds the four category panels with live-applied, immediately-saved
     // controls (no OK button — settings take effect as you change them).
-    private void BuildSettingsCategories() => _settingsCategories = CreateSettingsCategories();
+    // Built when first shown: opening the settings used to build all twelve
+    // categories to show one of them (~100 ms of the click).
+    private void BuildSettingsCategories()
+    {
+        _settingsCategories = new Dictionary<string, UIElement>();
+        _settingsBuilders = SettingsBuilders();
+    }
+
+    private Dictionary<string, Func<UIElement>>? _settingsBuilders;
 
     // A fresh set of every category's controls. The search builds its own set and
     // takes the matching cards out of it, so they stay live where they are shown.
     private Dictionary<string, UIElement> CreateSettingsCategories()
+        => SettingsBuilders().ToDictionary(p => p.Key, p => p.Value());
+
+    private Dictionary<string, Func<UIElement>> SettingsBuilders()
     {
-        return new Dictionary<string, UIElement>
+        return new Dictionary<string, Func<UIElement>>
         {
             // Every category except Editor (its own 5-column grid) and Toolbar
             // (a designer canvas) forces each card to exactly 1/3 of the container
             // width, so every sub-category lines up identically.
             // Full width: the custom example label is a ZPL editor, and a third of
             // the window turns it into a keyhole.
-            ["home"]       = BuildHomeSettings(),
-            ["doc"]        = WithThirdWidthCards(BuildDocumentSettings()),
+            ["home"]       = () => BuildHomeSettings(),
+            ["doc"]        = () => WithThirdWidthCards(BuildDocumentSettings()),
             // Full width, not a third: the print defaults carry a mode selector
             // AND a value side by side, and a third-width card crushes the label
             // column down to one word per line.
-            ["print"]      = WithThirdWidthCards(BuildPrintSettingsSection()),
-            ["editor"]     = BuildEditorSettings(),
+            ["print"]      = () => WithThirdWidthCards(BuildPrintSettingsSection()),
+            ["editor"]     = () => BuildEditorSettings(),
             // Full width: the position cards carry a picture of the screen with
             // eight buttons in it, which a third of the window crushes.
-            ["editmode"]   = BuildEditModeSettings(),
-            ["appearance"] = WithThirdWidthCards(BuildAppearanceSettings()),
-            ["toolbar"]    = BuildToolbarDesignerSettings(), // designer card: not applicable
-            ["screen"]     = WithThirdWidthCards(BuildScreenSettings()),
-            ["printer"]    = WithThirdWidthCards(BuildVirtualPrinterSettings()),
-            ["general"]    = WithThirdWidthCards(BuildGeneralSettings()),
+            ["editmode"]   = () => BuildEditModeSettings(),
+            ["appearance"] = () => WithThirdWidthCards(BuildAppearanceSettings()),
+            ["toolbar"]    = () => BuildToolbarDesignerSettings(), // designer card: not applicable
+            ["screen"]     = () => WithThirdWidthCards(BuildScreenSettings()),
+            ["printer"]    = () => WithThirdWidthCards(BuildVirtualPrinterSettings()),
+            ["general"]    = () => WithThirdWidthCards(BuildGeneralSettings()),
             // Full width: a reference sheet reads as one column of lines, and a
             // third of the window would wrap every one of them.
-            ["cli"]        = BuildCommandLineSettings(),
-            ["about"]      = WithThirdWidthCards(BuildAboutSettings()),
+            ["cli"]        = () => BuildCommandLineSettings(),
+            ["about"]      = () => WithThirdWidthCards(BuildAboutSettings()),
         };
     }
 

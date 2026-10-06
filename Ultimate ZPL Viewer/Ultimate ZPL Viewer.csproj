@@ -59,6 +59,10 @@
     <Content Include="Assets\editor.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- The Monaco editor itself, so the editor works offline (see editor.html). -->
+    <Content Include="Assets\monaco\**" Exclude="Assets\monaco\.gitattributes">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\zpl_color_scheme.schema.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

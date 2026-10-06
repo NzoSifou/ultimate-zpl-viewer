@@ -25,26 +25,23 @@
     <div id="container"></div>
 
     <!--
-        Monaco is loaded from CDN for quick startup.
-        To use local files instead (recommended for offline / production):
-          1. Run in Assets\: npm init -y && npm install monaco-editor@0.52.2
-          2. Copy node_modules\monaco-editor\min\ to Assets\monaco-editor\min\
-          3. Replace the two CDN references below with:
-               <script src="monaco-editor/min/vs/loader.js"></script>
-               require.config({ paths: { 'vs': 'monaco-editor/min/vs' } });
+        Monaco 0.52.2 ships with the application (Assets\monaco, from the npm package's
+        min\vs): the editor works offline and starts without a network round trip.
+        Only what a ZPL editor uses is kept — the loader, the editor, its worker and
+        the French messages; the bundled languages (TypeScript, JSON, HTML…) are not.
+        To update: npm pack monaco-editor@<version>, then copy min\vs\loader.js,
+        min\vs\nls.messages.fr.js, min\vs\base and min\vs\editor.
     -->
-    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+    <script src="monaco/vs/loader.js"></script>
     <script>
-        // Monaco ships localized UI (menus, tooltips, context menu). The host passes
-        // the app language via ?lang= so we set availableLanguages before loading.
-        // Monaco ships fr/de/es/it/ja/ko/ru/zh-cn/zh-tw; anything else falls back to English.
-        var _lang = (new URLSearchParams(location.search).get('lang') || 'en').toLowerCase();
-        var _nls = _lang !== 'en' ? { availableLanguages: { '*': _lang } } : {};
-        require.config({
-            paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' },
-            'vs/nls': _nls
-        });
+        require.config({ paths: { 'vs': 'monaco/vs' } });
 
+        // Monaco's own UI (menus, tooltips, the find box) in the app's language. Since
+        // 0.50 a translation is a module that sets globalThis._VSCODE_NLS_MESSAGES and
+        // has to be loaded BEFORE the editor; the 'vs/nls' availableLanguages setting
+        // used until now is ignored, which left them in English whatever the app's.
+        var _lang = (new URLSearchParams(location.search).get('lang') || 'en').toLowerCase();
+        require(_lang === 'fr' ? ['vs/nls.messages.fr'] : [], function () {
         require(['vs/editor/editor.main'], function () {
             // App dark theme: same surface color as the editor card (#131313).
             // The ZPL colours are token colours of these two themes, defined
@@ -568,6 +565,7 @@
 
             // Signal C# that Monaco is fully initialised and ready to receive messages.
             window.chrome.webview.postMessage(JSON.stringify({ type: 'ready' }));
+        });
         });
     </script>
 </body>

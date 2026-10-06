@@ -1083,7 +1083,7 @@ public sealed partial class PreviewPage : Page
     // already spaces its children.
     private static Microsoft.UI.Xaml.Shapes.Rectangle MakeToolbarSeparator(double height, double leftGap = 0) => new()
     {
-        Width = 1, Height = height, Opacity = 0.5,
+        Width = 1, Height = height, Opacity = 0.75,
         Margin = new Thickness(leftGap, 0, 0, 0),
         VerticalAlignment = VerticalAlignment.Center,
         Fill = (Brush)Application.Current.Resources["ControlStrongStrokeColorDefaultBrush"],
@@ -1095,7 +1095,7 @@ public sealed partial class PreviewPage : Page
     // the row is.
     private static Microsoft.UI.Xaml.Shapes.Rectangle MakeToolbarGroupSeparator() => new()
     {
-        Width = 1, Opacity = 0.5,
+        Width = 1, Opacity = 0.75,
         Margin = new Thickness(2, 0, 2, 0),
         VerticalAlignment = VerticalAlignment.Stretch,
         Fill = (Brush)Application.Current.Resources["ControlStrongStrokeColorDefaultBrush"],

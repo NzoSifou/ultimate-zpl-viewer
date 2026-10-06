@@ -1561,7 +1561,9 @@
     "closePane": "Retirer de la vue fractionnée (l'onglet reste ouvert)",
     "focusTip": "Cliquer pour travailler sur ce document",
     "dropSplit": "Diviser l'aperçu",
-    "dropHere": "Afficher ici"
+    "dropHere": "Afficher ici",
+    "dropNewWindow": "Ouvrir dans une nouvelle fenêtre",
+    "dropJoinWindow": "Déplacer dans cette fenêtre"
   },
   "settings": {
     "nav": {

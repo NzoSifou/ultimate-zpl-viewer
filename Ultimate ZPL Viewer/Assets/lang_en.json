@@ -1561,7 +1561,9 @@
     "closePane": "Remove from the split view (the tab stays open)",
     "focusTip": "Click to work on this document",
     "dropSplit": "Split the preview",
-    "dropHere": "Show here"
+    "dropHere": "Show here",
+    "dropNewWindow": "Open in a new window",
+    "dropJoinWindow": "Move to this window"
   },
   "settings": {
     "nav": {

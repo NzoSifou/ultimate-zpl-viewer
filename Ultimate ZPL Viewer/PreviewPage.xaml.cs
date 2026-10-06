@@ -96,6 +96,7 @@ public sealed partial class PreviewPage : Page
         InitImageEditing();
         InitLabelPager();
         InitSplit();
+        InitTabDropZones();
         // The cursor is worked out from the state, but the state is not the only
         // thing that changes it: redrawing the label replaces the very element the
         // pointer is over, and the framework re-resolves the cursor from scratch
@@ -3383,8 +3384,70 @@ public sealed partial class PreviewPage : Page
 
     private void DocTabs_TabStripDragOver(object sender, DragEventArgs e)
     {
-        if (e.DataView.Properties.ContainsKey(TabDragState.Key))
+        if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return;
+        e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+        if (!ReferenceEquals(TabDragState.SourcePage, this)) e.DragUIOverride.Caption = SpL("dropJoinWindow");
+    }
+
+    // ── The whole strip, and the whole window, take a tab ────────────────────
+    // TabView only raises TabStripDragOver over the tabs themselves, and since the
+    // tabs are sized to their names that is a short stretch at the left of the bar:
+    // a tab let go over the empty part of another window's bar - where everyone
+    // lets go - was taken for a tab dropped nowhere, and became a window of its
+    // own instead of joining. And anywhere else in a window, the pointer showed
+    // the no-entry sign over a drop that does something: it opens the tab in a
+    // window of its own. Both now say what will happen, and do it.
+    private void InitTabDropZones()
+    {
+        DocTabs.AllowDrop = true;
+        DocTabs.DragOver += (_, e) =>
+        {
+            if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return;
             e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+            e.DragUIOverride.Caption = ReferenceEquals(TabDragState.SourcePage, this) ? "" : SpL("dropJoinWindow");
+            e.Handled = true;
+        };
+        DocTabs.Drop += (_, e) =>
+        {
+            if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return;
+            e.Handled = true;
+            // Over the tabs themselves TabStripDrop has done it already.
+            if (TabDragState.SourcePage is not { } source || TabDragState.Item is not { } item
+                || TabDragState.Tab is not { } tab) return;
+            if (ReferenceEquals(source, this)) { TabDragState.Clear(); return; }   // its own bar: it stays
+            TakeTabFrom(source, item, tab);
+        };
+    }
+
+    // Anywhere else in the window: a window of its own, as when let go outside.
+    private bool AcceptTabOverPage(DragEventArgs e)
+    {
+        if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return false;
+        if (SettingsOverlay.Visibility == Visibility.Visible) return true;   // taken, nothing offered
+        e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+        e.DragUIOverride.Caption = SpL("dropNewWindow");
+        return true;
+    }
+
+    private bool DropTabOverPage(DragEventArgs e)
+    {
+        if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return false;
+        if (SettingsOverlay.Visibility == Visibility.Visible) { TabDragState.Clear(); return true; }
+        if (TabDragState.SourcePage is { } source && TabDragState.Item is { } item && TabDragState.Tab is { } tab)
+        {
+            var (cx, cy) = CursorPosition();
+            TabDragState.Clear();
+            // Once TabView has finished with its drag (see DocTabs_TabDroppedOutside).
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                source.MoveTabToNewWindowIfStillThere(item, tab, cx, cy));
+        }
+        return true;
+    }
+
+    /// <summary>A tab let go somewhere that makes it a window of its own.</summary>
+    internal void MoveTabToNewWindowIfStillThere(TabViewItem item, DocTab tab, int x, int y)
+    {
+        if (DocTabs.TabItems.Contains(item)) MoveTabToNewWindow(item, tab, x, y);
     }
 
     private void DocTabs_TabStripDrop(object sender, DragEventArgs e)
@@ -3392,13 +3455,27 @@ public sealed partial class PreviewPage : Page
         if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return;
         if (TabDragState.SourcePage is not { } source || TabDragState.Item is null
             || TabDragState.Tab is null) return;
+        e.Handled = true;
         // Reordering inside the same strip is the TabView's own business.
         if (ReferenceEquals(source, this)) { TabDragState.Clear(); return; }
-
-        var carried = source.GiveAwayTab(TabDragState.Item, TabDragState.Tab);
-        TabDragState.Clear();
-        AdoptTab(carried);
+        TakeTabFrom(source, TabDragState.Item, TabDragState.Tab);
     }
+
+    /// <summary>
+    /// Brings another window's tab here. Once both TabViews are done with the drag:
+    /// changing a strip while its TabView is still moving a tab crashes XAML.
+    /// </summary>
+    private void TakeTabFrom(PreviewPage source, TabViewItem item, DocTab tab)
+    {
+        TabDragState.Clear();
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        {
+            if (!source.HoldsTab(item)) return;
+            AdoptTab(source.GiveAwayTab(item, tab));
+        });
+    }
+
+    internal bool HoldsTab(TabViewItem item) => DocTabs.TabItems.Contains(item);
 
     private void DocTabs_TabDroppedOutside(TabView sender, TabViewTabDroppedOutsideEventArgs args)
     {
@@ -3913,6 +3990,7 @@ public sealed partial class PreviewPage : Page
 
     private void Root_DragOver(object sender, DragEventArgs e)
     {
+        if (AcceptTabOverPage(e)) return;
         // Not over the settings screen, and only for files.
         if (SettingsOverlay.Visibility == Visibility.Visible) return;
         if (!e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems)) return;
@@ -3922,6 +4000,7 @@ public sealed partial class PreviewPage : Page
 
     private async void Root_Drop(object sender, DragEventArgs e)
     {
+        if (DropTabOverPage(e)) return;
         if (SettingsOverlay.Visibility == Visibility.Visible) return;
         if (!e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems)) return;
         var items = await e.DataView.GetStorageItemsAsync();

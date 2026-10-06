@@ -124,7 +124,6 @@ fonctionne désormais **hors connexion**.
 - **Tourner l'étiquette la dessinait deux fois** à chaque quart de tour.
 - **Les menus de l'éditeur de code restaient en anglais** (clic droit,
   recherche, palette de commandes) même avec l'application en français.
-
 - **En éditant un texte dans l'aperçu, le curseur restait collé à la dernière
   lettre après un espace**, même après plusieurs espaces, et ne se remettait en
   place qu'à la lettre suivante. Les espaces en fin de mot sont maintenant

@@ -3373,15 +3373,27 @@ public sealed partial class PreviewPage : Page
             args.Data.Properties.Add(TabDragState.Key, pressed.Id);
             TabDragState.Begin(this, p, pressed);
             args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
-            TabDropCatcher.Show();
+            ShowTabDropCatcher(p, pressed);
             return;
         }
         if (args.Tab is not TabViewItem item || item.Tag is not DocTab tab) return;
         TabDragState.Begin(this, item, tab);
         args.Data.Properties.Add(TabDragState.Key, tab.Id);
         args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
-        TabDropCatcher.Show();
+        ShowTabDropCatcher(item, tab);
     }
+
+    // Outside the windows: the invisible drop target says what letting go there
+    // does, and does it.
+    private void ShowTabDropCatcher(TabViewItem item, DocTab tab)
+        => TabDropCatcher.Show(SpL("dropNewWindow"), (x, y) =>
+        {
+            if (!ReferenceEquals(TabDragState.Tab, tab)) return;
+            TabDragState.Clear();   // TabDroppedOutside then has nothing left to do
+            // Once TabView has finished with its drag (see DocTabs_TabDroppedOutside).
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                () => MoveTabToNewWindowIfStillThere(item, tab, x, y));
+        });
 
     private void DocTabs_TabStripDragOver(object sender, DragEventArgs e)
     {

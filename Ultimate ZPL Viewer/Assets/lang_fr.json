@@ -2706,5 +2706,128 @@
     "previous": "Étiquette précédente (Page préc.)",
     "next": "Étiquette suivante (Page suiv.)",
     "numberTip": "Tapez un numéro puis Entrée ; ↑ et ↓ passent d'une étiquette à l'autre."
+  },
+  "app": {
+    "tabMenu": {
+      "close": "Fermer l'onglet",
+      "closeOthers": "Fermer les autres onglets",
+      "closeRight": "Fermer les onglets à droite",
+      "newWindow": "Ouvrir dans une nouvelle fenêtre",
+      "duplicate": "Dupliquer l'onglet",
+      "copyPath": "Copier le chemin du fichier"
+    },
+    "file": {
+      "openTitle": "Ouvrir un fichier",
+      "notFound": "Fichier introuvable :\n{0}",
+      "readFailed": "Lecture impossible :\n{0}",
+      "saveTitle": "Enregistrement",
+      "saveFailed": "L'enregistrement a échoué : {0}",
+      "unsaved": "« {0} » contient des modifications non enregistrées.",
+      "save": "Enregistrer",
+      "saveAs": "Enregistrer sous…",
+      "dontSave": "Ne pas enregistrer",
+      "cancel": "Annuler",
+      "closeTabTitle": "Fermer l'onglet",
+      "closeTabsTitle": "Fermer les onglets",
+      "closeAllTitle": "Fermer tous les onglets",
+      "quitTitle": "Quitter l'application"
+    },
+    "editor": {
+      "hide": "Masquer l'éditeur",
+      "show": "Afficher l'éditeur",
+      "docPlaceholder": "Placez le curseur sur une commande ZPL pour afficher sa documentation.",
+      "docButton": "Documentation de la commande sous le curseur",
+      "docParameter": "Paramètre",
+      "docDescription": "Description",
+      "docType": "Type"
+    },
+    "window": {
+      "minimize": "Réduire",
+      "exitFullscreen": "Quitter le plein écran",
+      "close": "Fermer"
+    },
+    "colorScheme": {
+      "title": "Schéma de couleurs invalide",
+      "body": "Le fichier de configuration des couleurs ne respecte pas le schéma attendu :\n\n{0}\n\nCorrigez le fichier puis relancez l'application.",
+      "open": "Ouvrir le JSON et quitter l'application",
+      "quit": "Quitter l'application",
+      "wrongType": "{0} : type attendu « {1} », trouvé « {2} ».",
+      "notAllowed": "{0} : valeur « {1} » non autorisée.",
+      "badFormat": "{0} : « {1} » ne respecte pas le format requis ({2}).",
+      "missing": "{0} : propriété obligatoire « {1} » manquante."
+    },
+    "screenPrompt": {
+      "title": "Configuration manuelle requise",
+      "bodyNamed": "Nous n'avons pas pu déterminer la taille de l'écran « {0} » afin de rendre l'aperçu du document ZPL aux dimensions réelles.\nSi vous connaissez la taille de cet écran (en pouces ou en centimètres), vous pouvez la configurer dans les paramètres.",
+      "body": "Nous n'avons pas pu déterminer la taille de votre écran afin de rendre l'aperçu du document ZPL aux dimensions réelles.\nSi vous connaissez la taille de votre écran (en pouces ou en centimètres), vous pouvez la configurer dans les paramètres.",
+      "dontShow": "Ne plus afficher",
+      "goSettings": "Aller aux paramètres",
+      "later": "Pas maintenant",
+      "screenName": "Écran {0}"
+    },
+    "fonts": {
+      "title": "Polices requises manquantes",
+      "intro": "Cette application requiert les polices suivantes pour un rendu ZPL fidèle.",
+      "autoTitle": "Polices installables automatiquement :",
+      "commercialTitle": "Polices commerciales (installation manuelle requise) :",
+      "commercialHint": "Achetez et installez cette police manuellement, puis relancez l'application.",
+      "installAll": "Installer les polices",
+      "installOne": "Installer 1 police",
+      "installMany": "Installer {0} polices",
+      "quit": "Quitter",
+      "installing": "Installation en cours…",
+      "resultOk": "Installation réussie",
+      "resultPartial": "Installation incomplète",
+      "resultAction": "Action requise",
+      "installed": "✔ Polices installées avec succès :",
+      "failed": "✖ Échecs :",
+      "manual": "⚠ Polices commerciales à installer manuellement :",
+      "restartHint": "Redémarrez l'application pour appliquer les changements.",
+      "restart": "Redémarrer",
+      "downloading": "Téléchargement : {0}…",
+      "installingOne": "Installation : {0}…",
+      "done": "{0} installée.",
+      "failedOne": "Échec : {0}."
+    },
+    "virtualPrinter": {
+      "title": "Imprimante virtuelle",
+      "failed": "Opération échouée.",
+      "scriptFailed": "Impossible d'écrire le script d'installation : {0}",
+      "reinstallScriptFailed": "Impossible d'écrire le script de réinstallation : {0}",
+      "installCancelled": "Installation annulée (élévation refusée).",
+      "reinstallCancelled": "Réinstallation annulée (élévation refusée).",
+      "uninstallCancelled": "Désinstallation annulée (élévation refusée).",
+      "installIncomplete": "L'installation ne s'est pas terminée. Réessayez, ou vérifiez que l'installation d'imprimantes n'est pas bloquée par une stratégie.",
+      "reinstallIncomplete": "La réinstallation ne s'est pas terminée. Réessayez, ou vérifiez que l'installation d'imprimantes n'est pas bloquée par une stratégie.",
+      "uninstallFailed": "La désinstallation n'a pas abouti."
+    },
+    "update": {
+      "unreadable": "réponse illisible"
+    },
+    "analyzer": {
+      "line": "Ligne {0}",
+      "missingXA": "Il manque ^XA (début de format)",
+      "missingXZ": "Il manque ^XZ (fin de format)",
+      "unknown": "Commande inconnue : {0}",
+      "stray": "Contenu non reconnu en dehors des commandes (ignoré à l'impression)",
+      "xaUnclosed": "^XA alors que l'étiquette précédente n'est pas fermée par ^XZ",
+      "xzWithoutXa": "^XZ sans ^XA : aucune étiquette n'est ouverte",
+      "beforeXa": "{0} se trouve avant ^XA (le format devrait commencer par ^XA)",
+      "afterXz": "{0} se trouve après ^XZ (le format devrait se terminer par ^XZ)",
+      "betweenLabels": "{0} se trouve entre deux étiquettes, hors de tout ^XA…^XZ",
+      "xNegative": "x={0} est négatif",
+      "xBeyond": "x={0} dépasse la largeur ({1} dots)",
+      "yNegative": "y={0} est négatif",
+      "yBeyond": "y={0} dépasse la hauteur ({1} dots)",
+      "and": " et ",
+      "outside": "{0} : élément en dehors du document — {1}",
+      "requiredOne": "{0} : le paramètre obligatoire {1} n'est pas renseigné",
+      "requiredMany": "{0} : les paramètres obligatoires {1} ne sont pas renseignés",
+      "noParams": "{0} n'accepte aucun paramètre",
+      "tooManyOne": "{0} : {1} paramètres fournis, 1 au maximum : {2}",
+      "tooMany": "{0} : {1} paramètres fournis, {2} au maximum : {3}",
+      "notNumber": "{0} : le paramètre {1} attend un nombre, {2} fourni",
+      "quote": "« {0} »"
+    }
   }
 }

@@ -108,6 +108,10 @@ namespace Ultimate_ZPL_Viewer
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FsBackButton, T("tooltipBack"));
             if (_titleSearchBox is not null) _titleSearchBox.PlaceholderText = LocalizationService.Get("settings.search.placeholder");
             Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FullScreenButton, T("tooltipFullscreen"));
+            string A(string k) => LocalizationService.Get("app.window." + k);
+            Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FsMinimizeButton, A("minimize"));
+            Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FsExitButton, A("exitFullscreen"));
+            Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(FsCloseButton, A("close"));
             // The toolbar-toggle tooltip depends on its current state; refresh it.
             SetToolbarToggleGlyph(_lastToolbarVisible);
             if (_inSettings) AppTitleText.Text = SettingsTitle();

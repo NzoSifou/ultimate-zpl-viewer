@@ -404,9 +404,7 @@ public sealed partial class PreviewPage : Page
 
         var body = new TextBlock
         {
-            Text = "Le fichier de configuration des couleurs ne respecte pas le schéma attendu :\n\n" +
-                   error +
-                   "\n\nCorrigez le fichier puis relancez l'application.",
+            Text = string.Format(AL("colorScheme.body"), error),
             TextWrapping = TextWrapping.Wrap,
             IsTextSelectionEnabled = true,
         };
@@ -414,10 +412,10 @@ public sealed partial class PreviewPage : Page
         {
             XamlRoot = XamlRoot,
             RequestedTheme = _settings.ToElementTheme(),
-            Title = "Schéma de couleurs invalide",
+            Title = AL("colorScheme.title"),
             Content = new ScrollViewer { MaxHeight = 340, Content = body },
-            PrimaryButtonText = "Ouvrir le JSON et quitter l'application",
-            CloseButtonText = "Quitter l'application",
+            PrimaryButtonText = AL("colorScheme.open"),
+            CloseButtonText = AL("colorScheme.quit"),
             DefaultButton = ContentDialogButton.Primary,
         };
 
@@ -454,26 +452,22 @@ public sealed partial class PreviewPage : Page
         bool multi = monitors.Count > 1;
 
         var message = multi
-            ? $"Nous n'avons pas pu déterminer la taille de l'écran « {mon.FriendlyName} » afin de rendre " +
-              "l'aperçu du document ZPL aux dimensions réelles.\n" +
-              "Si vous connaissez la taille de cet écran (en pouces ou en centimètres), vous pouvez la configurer dans les paramètres."
-            : "Nous n'avons pas pu déterminer la taille de votre écran afin de rendre l'aperçu du document ZPL " +
-              "aux dimensions réelles.\n" +
-              "Si vous connaissez la taille de votre écran (en pouces ou en centimètres), vous pouvez la configurer dans les paramètres.";
+            ? string.Format(AL("screenPrompt.bodyNamed"), mon.FriendlyName)
+            : AL("screenPrompt.body");
 
         var body = new StackPanel { Spacing = 12, MinWidth = 440 };
         body.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap });
-        var dontShow = new CheckBox { Content = "Ne plus afficher" };
+        var dontShow = new CheckBox { Content = AL("screenPrompt.dontShow") };
         body.Children.Add(dontShow);
 
         var dialog = new ContentDialog
         {
             XamlRoot            = XamlRoot,
             RequestedTheme = _settings.ToElementTheme(),
-            Title               = "Configuration manuelle requise",
+            Title               = AL("screenPrompt.title"),
             Content             = body,
-            PrimaryButtonText   = "Aller aux paramètres",
-            CloseButtonText     = "Pas maintenant",
+            PrimaryButtonText   = AL("screenPrompt.goSettings"),
+            CloseButtonText     = AL("screenPrompt.later"),
             DefaultButton       = ContentDialogButton.Primary,
         };
 
@@ -498,7 +492,7 @@ public sealed partial class PreviewPage : Page
         var listPanel = new StackPanel { Spacing = 4, MinWidth = 420 };
         listPanel.Children.Add(new TextBlock
         {
-            Text = "Cette application requiert les polices suivantes pour un rendu ZPL fidèle.",
+            Text = AL("fonts.intro"),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 12),
         });
@@ -508,7 +502,7 @@ public sealed partial class PreviewPage : Page
         {
             listPanel.Children.Add(new TextBlock
             {
-                Text = "Polices installables automatiquement :",
+                Text = AL("fonts.autoTitle"),
                 FontWeight = FontWeights.SemiBold,
                 Opacity = 0.75,
             });
@@ -525,7 +519,7 @@ public sealed partial class PreviewPage : Page
         {
             listPanel.Children.Add(new TextBlock
             {
-                Text = "Polices commerciales (installation manuelle requise) :",
+                Text = AL("fonts.commercialTitle"),
                 FontWeight = FontWeights.SemiBold,
                 Opacity = 0.75,
                 Margin = new Thickness(0, autoInstallable.Count > 0 ? 10 : 0, 0, 0),
@@ -539,7 +533,7 @@ public sealed partial class PreviewPage : Page
                 });
                 listPanel.Children.Add(new TextBlock
                 {
-                    Text = "    Achetez et installez cette police manuellement, puis relancez l'application.",
+                    Text = "    " + AL("fonts.commercialHint"),
                     Opacity = 0.6,
                     FontStyle = Windows.UI.Text.FontStyle.Italic,
                     TextWrapping = TextWrapping.Wrap,
@@ -569,17 +563,17 @@ public sealed partial class PreviewPage : Page
         var primaryText = autoInstallable.Count == 0
             ? string.Empty
             : commercial.Count == 0
-                ? "Installer les polices"
-                : $"Installer {autoInstallable.Count} police{(autoInstallable.Count > 1 ? "s" : "")}";
+                ? AL("fonts.installAll")
+                : autoInstallable.Count == 1 ? AL("fonts.installOne") : string.Format(AL("fonts.installMany"), autoInstallable.Count);
 
         var dialog = new ContentDialog
         {
             XamlRoot            = XamlRoot,
             RequestedTheme = _settings.ToElementTheme(),
-            Title               = "Polices requises manquantes",
+            Title               = AL("fonts.title"),
             Content             = content,
             PrimaryButtonText   = primaryText,
-            SecondaryButtonText = "Quitter",
+            SecondaryButtonText = AL("fonts.quit"),
             DefaultButton       = autoInstallable.Count > 0
                                     ? ContentDialogButton.Primary
                                     : ContentDialogButton.None,
@@ -598,7 +592,7 @@ public sealed partial class PreviewPage : Page
                 {
                     d.IsPrimaryButtonEnabled   = false;
                     d.IsSecondaryButtonEnabled = false;
-                    d.Title                    = "Installation en cours…";
+                    d.Title                    = AL("fonts.installing");
                     listPanel.Visibility       = Visibility.Collapsed;
                     progressBar.Visibility     = Visibility.Visible;
                     progressStatus.Visibility  = Visibility.Visible;
@@ -639,9 +633,9 @@ public sealed partial class PreviewPage : Page
         var failures  = results.Where(r => !r.Success).ToList();
         var allDone   = failures.Count == 0 && commercial.Count == 0;
 
-        var title = allDone          ? "Installation réussie"    :
-                    failures.Count > 0 ? "Installation incomplète" :
-                                         "Action requise";
+        var title = allDone          ? AL("fonts.resultOk")      :
+                    failures.Count > 0 ? AL("fonts.resultPartial") :
+                                         AL("fonts.resultAction");
 
         var content = new StackPanel { Spacing = 4, MinWidth = 420 };
 
@@ -650,7 +644,7 @@ public sealed partial class PreviewPage : Page
         {
             content.Children.Add(new TextBlock
             {
-                Text = "✔ Polices installées avec succès :",
+                Text = AL("fonts.installed"),
                 FontWeight = FontWeights.SemiBold,
             });
             foreach (var r in successes)
@@ -666,7 +660,7 @@ public sealed partial class PreviewPage : Page
         {
             content.Children.Add(new TextBlock
             {
-                Text = "✖ Échecs :",
+                Text = AL("fonts.failed"),
                 FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(0, successes.Count > 0 ? 10 : 0, 0, 0),
             });
@@ -693,7 +687,7 @@ public sealed partial class PreviewPage : Page
         {
             content.Children.Add(new TextBlock
             {
-                Text = "⚠ Polices commerciales à installer manuellement :",
+                Text = AL("fonts.manual"),
                 FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(0, (successes.Count > 0 || failures.Count > 0) ? 10 : 0, 0, 0),
             });
@@ -708,7 +702,7 @@ public sealed partial class PreviewPage : Page
         // ── Footer ────────────────────────────────────────────────────────
         content.Children.Add(new TextBlock
         {
-            Text = "Redémarrez l'application pour appliquer les changements.",
+            Text = AL("fonts.restartHint"),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 12, 0, 0),
             Opacity = 0.8,
@@ -720,7 +714,7 @@ public sealed partial class PreviewPage : Page
             RequestedTheme = _settings.ToElementTheme(),
             Title             = title,
             Content           = content,
-            PrimaryButtonText = "Redémarrer",
+            PrimaryButtonText = AL("fonts.restart"),
             DefaultButton     = ContentDialogButton.Primary,
         };
 
@@ -987,6 +981,7 @@ public sealed partial class PreviewPage : Page
         ToolTipService.SetToolTip(ZoomResetButton, T("zoomReset"));
         ToolTipService.SetToolTip(WidthWarningIcon,  T("widthTooLarge"));
         ToolTipService.SetToolTip(HeightWarningIcon, T("heightTooLarge"));
+        ToolTipService.SetToolTip(DocBadge, AL("editor.docButton"));
     }
 
     // Rebuilds the toolbar: one wrap panel per non-empty row (rows stack
@@ -1273,7 +1268,7 @@ public sealed partial class PreviewPage : Page
         bool pointLeft = _editorVisible ^ swap;
         EditorCollapseChevron.Glyph = pointLeft ? "" : ""; // ChevronLeft / ChevronRight
         ToolTipService.SetToolTip(EditorCollapseHandle,
-            _editorVisible ? "Masquer l'éditeur" : "Afficher l'éditeur");
+            _editorVisible ? AL("editor.hide") : AL("editor.show"));
         EditorCollapseHandle.SetCursor(SystemCursor(
             Microsoft.UI.Input.InputSystemCursorShape.Hand));
 
@@ -2808,7 +2803,7 @@ public sealed partial class PreviewPage : Page
     {
         if (!File.Exists(path))
         {
-            await ShowMessageAsync("Ouvrir un fichier", $"Fichier introuvable :\n{path}");
+            await ShowMessageAsync(AL("file.openTitle"), string.Format(AL("file.notFound"), path));
             RemoveRecentFile(path);
             _settings.Save();
             return;
@@ -2837,7 +2832,7 @@ public sealed partial class PreviewPage : Page
             try { text = await File.ReadAllTextAsync(path); }
             catch (Exception ex)
             {
-                await ShowMessageAsync("Ouvrir un fichier", $"Lecture impossible :\n{ex.Message}");
+                await ShowMessageAsync(AL("file.openTitle"), string.Format(AL("file.readFailed"), ex.Message));
                 return;
             }
 
@@ -2950,7 +2945,7 @@ public sealed partial class PreviewPage : Page
         }
         catch (Exception ex)
         {
-            await ShowMessageAsync("Enregistrement", $"L'enregistrement a échoué : {ex.Message}");
+            await ShowMessageAsync(AL("file.saveTitle"), string.Format(AL("file.saveFailed"), ex.Message));
         }
         finally { if (saving is not null) EndStatus(saving); }
     }
@@ -2976,7 +2971,7 @@ public sealed partial class PreviewPage : Page
         }
         catch (Exception ex)
         {
-            await ShowMessageAsync("Enregistrement", $"L'enregistrement a échoué : {ex.Message}");
+            await ShowMessageAsync(AL("file.saveTitle"), string.Format(AL("file.saveFailed"), ex.Message));
         }
     }
 
@@ -3220,7 +3215,7 @@ public sealed partial class PreviewPage : Page
         {
             // Make it the visible/active document so "Enregistrer" targets it.
             DocTabs.SelectedItem = item;
-            var result = await ShowUnsavedDialogAsync("Fermer l'onglet");
+            var result = await ShowUnsavedDialogAsync(AL("file.closeTabTitle"));
             if (result == ContentDialogResult.None) return;               // Annuler
             if (result == ContentDialogResult.Primary)
             {
@@ -3245,12 +3240,12 @@ public sealed partial class PreviewPage : Page
                 Title = title,
                 Content = new TextBlock
                 {
-                    Text = $"« {name} » contient des modifications non enregistrées.",
+                    Text = string.Format(AL("file.unsaved"), name),
                     TextWrapping = TextWrapping.Wrap,
                 },
-                PrimaryButtonText = _currentFilePath is null ? "Enregistrer sous…" : "Enregistrer",
-                SecondaryButtonText = "Ne pas enregistrer",
-                CloseButtonText = "Annuler",
+                PrimaryButtonText = _currentFilePath is null ? AL("file.saveAs") : AL("file.save"),
+                SecondaryButtonText = AL("file.dontSave"),
+                CloseButtonText = AL("file.cancel"),
                 DefaultButton = ContentDialogButton.Primary,
             }.ShowAsync();
         }
@@ -3293,23 +3288,23 @@ public sealed partial class PreviewPage : Page
         }
 
         int index = DocTabs.TabItems.IndexOf(item);
-        menu.Items.Add(Mk("Fermer l'onglet", GlyphTabClose,
+        menu.Items.Add(Mk(AL("tabMenu.close"), GlyphTabClose,
             () => _ = RequestCloseSingleAsync(item, tab)));
-        menu.Items.Add(Mk("Fermer les autres onglets", GlyphTabCloseOthers,
+        menu.Items.Add(Mk(AL("tabMenu.closeOthers"), GlyphTabCloseOthers,
             () => _ = CloseManyAsync(TabsExcept(item), item),
             enabled: DocCount > 1));
-        menu.Items.Add(Mk("Fermer les onglets à droite", GlyphTabCloseRight,
+        menu.Items.Add(Mk(AL("tabMenu.closeRight"), GlyphTabCloseRight,
             () => _ = CloseManyAsync(TabsRightOf(item), item),
             enabled: TabsRightOf(item).Count > 0));
         menu.Items.Add(new MenuFlyoutSeparator());
-        menu.Items.Add(Mk("Ouvrir dans une nouvelle fenêtre", GlyphTabNewWindow,
+        menu.Items.Add(Mk(AL("tabMenu.newWindow"), GlyphTabNewWindow,
             () => MoveTabToNewWindow(item, tab)));
-        menu.Items.Add(Mk("Dupliquer l'onglet", GlyphTabDuplicate,
+        menu.Items.Add(Mk(AL("tabMenu.duplicate"), GlyphTabDuplicate,
             () => DuplicateTab(tab)));
 
         var path = ReferenceEquals(tab, _activeTab) ? _currentFilePath : tab.FilePath;
         if (path is not null)
-            menu.Items.Add(Mk("Copier le chemin du fichier", GlyphTabCopyPath,
+            menu.Items.Add(Mk(AL("tabMenu.copyPath"), GlyphTabCopyPath,
                 () => CopyTextToClipboard(path)));
         AddSplitMenuItems(menu, tab);
     }
@@ -3338,7 +3333,7 @@ public sealed partial class PreviewPage : Page
 
             // Show the document being decided on (also makes SaveAsync target it).
             DocTabs.SelectedItem = item;
-            var result = await ShowUnsavedDialogAsync("Fermer les onglets");
+            var result = await ShowUnsavedDialogAsync(AL("file.closeTabsTitle"));
             if (result == ContentDialogResult.None) return; // Annuler → close nothing
             if (result == ContentDialogResult.Primary)
             {
@@ -3849,7 +3844,7 @@ public sealed partial class PreviewPage : Page
     // and cancelling still leaves everything open.
     private async Task CloseWindowWithPromptAsync()
     {
-        if (await PrepareAppCloseAsync("Fermer tous les onglets"))
+        if (await PrepareAppCloseAsync(AL("file.closeAllTitle")))
             (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.CloseWithoutPrompt();
     }
 
@@ -4041,7 +4036,7 @@ public sealed partial class PreviewPage : Page
     {
         // "Quitter l'application" when the window IS the app; "Fermer tous les onglets"
         // when the user asked for that with Ctrl+Shift+W.
-        title ??= "Quitter l'application";
+        title ??= AL("file.quitTitle");
         foreach (var item in DocItems().ToList())
         {
             var tab = (DocTab)item.Tag;
@@ -4594,6 +4589,7 @@ public sealed partial class PreviewPage : Page
 
     // Localized settings string / string-array shortcuts (settings.* keys).
     private static string SL(string key) => LocalizationService.Get("settings." + key);
+    private static string AL(string key) => LocalizationService.Get("app." + key);
     private static string[] SA(string key) => LocalizationService.GetArray("settings." + key);
 
     // Localized header: pulls settings.{section}.title / .subtitle from the language file.
@@ -5909,10 +5905,6 @@ public sealed partial class PreviewPage : Page
         return panel;
     }
 
-    private const string ScreenInfoText =
-        "La taille d'un ordinateur portable se situe souvent entre 13\" et 17\".\n" +
-        "La taille d'un écran de bureau se situe souvent entre 21\" et 27\".\n" +
-        "Vous pouvez mesurer la diagonale de la partie visible de votre écran (la zone qui affiche l'image, sans le cadre) afin de renseigner la taille de votre écran.";
 
     private async Task PopulateScreenSettingsAsync(StackPanel host)
     {
@@ -6104,7 +6096,7 @@ public sealed partial class PreviewPage : Page
             uninstallBtn.IsEnabled = false;
             var r = await Task.Run(VirtualPrinterService.Uninstall);
             Refresh();
-            if (!r.Ok) await ShowMessageAsync("Imprimante virtuelle", r.Error ?? "Opération échouée.");
+            if (!r.Ok) await ShowMessageAsync(AL("virtualPrinter.title"), r.Error ?? AL("virtualPrinter.failed"));
         };
         Refresh();
 
@@ -6887,7 +6879,7 @@ public sealed partial class PreviewPage : Page
         {
             DocContent.Children.Add(new TextBlock
             {
-                Text = "Placez le curseur sur une commande ZPL pour afficher sa documentation.",
+                Text = AL("editor.docPlaceholder"),
                 Opacity = 0.7,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 8, 0, 0),
@@ -6938,7 +6930,7 @@ public sealed partial class PreviewPage : Page
         if (parameters.Count > 0)
         {
             var table = new StackPanel { Margin = new Thickness(0, 4, 0, 0) };
-            table.Children.Add(MakeDocRow("Paramètre", "Description", "Type", null, header: true));
+            table.Children.Add(MakeDocRow(AL("editor.docParameter"), AL("editor.docDescription"), AL("editor.docType"), null, header: true));
             foreach (var p in parameters)
             {
                 var pDesc = LocalizationService.Resolve(p.Description);

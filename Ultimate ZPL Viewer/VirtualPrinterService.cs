@@ -35,6 +35,8 @@ public static class VirtualPrinterService
     // only remove it, and the app registers its own (see EnsureCaptureTask).
     private const string TaskName = "UltimateZplViewer_PrintCapture";
 
+    private static string VL(string key) => LocalizationService.Get("app.virtualPrinter." + key);
+
     // Argument that puts a fresh (elevated) instance of this exe into "run the
     // install/uninstall script" mode — see Program.Main.
     public const string ElevatedInstallArg = "--run-elevated-script";
@@ -172,11 +174,11 @@ public static class VirtualPrinterService
         }
         catch (Exception ex)
         {
-            return new InstallResult(false, $"Impossible d'écrire le script d'installation : {ex.Message}");
+            return new InstallResult(false, string.Format(VL("scriptFailed"), ex.Message));
         }
 
         var err = ElevateAndRun(scriptPath);
-        if (err == "cancelled") return new InstallResult(false, "Installation annulée (élévation refusée).");
+        if (err == "cancelled") return new InstallResult(false, VL("installCancelled"));
 
         if (IsInstalled()) { EnsureCaptureTask(); return new InstallResult(true, null); }
 
@@ -184,7 +186,7 @@ public static class VirtualPrinterService
         string? log = null;
         try { if (File.Exists(InstallLog)) log = File.ReadAllText(InstallLog).Trim(); } catch { }
         return new InstallResult(false, string.IsNullOrWhiteSpace(log)
-            ? "L'installation ne s'est pas terminée. Réessayez, ou vérifiez que l'installation d'imprimantes n'est pas bloquée par une stratégie."
+            ? VL("installIncomplete")
             : log);
     }
 
@@ -197,18 +199,18 @@ public static class VirtualPrinterService
         try { scriptPath = WriteReinstallScript(); }
         catch (Exception ex)
         {
-            return new InstallResult(false, $"Impossible d'écrire le script de réinstallation : {ex.Message}");
+            return new InstallResult(false, string.Format(VL("reinstallScriptFailed"), ex.Message));
         }
 
         var err = ElevateAndRun(scriptPath);
-        if (err == "cancelled") return new InstallResult(false, "Réinstallation annulée (élévation refusée).");
+        if (err == "cancelled") return new InstallResult(false, VL("reinstallCancelled"));
 
         if (IsInstalled()) { EnsureCaptureTask(); return new InstallResult(true, null); }
 
         string? log = null;
         try { if (File.Exists(InstallLog)) log = File.ReadAllText(InstallLog).Trim(); } catch { }
         return new InstallResult(false, string.IsNullOrWhiteSpace(log)
-            ? "La réinstallation ne s'est pas terminée. Réessayez, ou vérifiez que l'installation d'imprimantes n'est pas bloquée par une stratégie."
+            ? VL("reinstallIncomplete")
             : log);
     }
 
@@ -222,9 +224,9 @@ public static class VirtualPrinterService
         catch (Exception ex) { return new InstallResult(false, ex.Message); }
 
         var err = ElevateAndRun(scriptPath);
-        if (err == "cancelled") return new InstallResult(false, "Désinstallation annulée (élévation refusée).");
+        if (err == "cancelled") return new InstallResult(false, VL("uninstallCancelled"));
 
-        if (IsInstalled()) return new InstallResult(false, "La désinstallation n'a pas abouti.");
+        if (IsInstalled()) return new InstallResult(false, VL("uninstallFailed"));
         RemoveCaptureTask();
         return new InstallResult(true, null);
     }

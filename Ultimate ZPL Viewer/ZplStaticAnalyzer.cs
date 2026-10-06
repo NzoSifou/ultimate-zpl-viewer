@@ -14,7 +14,7 @@ public sealed class ZplDiagnostic
     public string Message { get; init; } = "";
     public int Severity { get; init; }     // Monaco MarkerSeverity: 8 = Error, 4 = Warning, 2 = LowWarning (Info)
 
-    public string Display => $"{Icon}  Ligne {Line} — {Message}";
+    public string Display => $"{Icon}  {string.Format(ZplStaticAnalyzer.M("line"), Line)} — {Message}";
 
     private string Icon => Severity switch
     {
@@ -49,8 +49,8 @@ public static class ZplStaticAnalyzer
         // reported nothing at all — while a file of plain prose got its two errors.
         if (string.IsNullOrWhiteSpace(text))
         {
-            Add(diags, new List<int> { 0 }, 0, 0, "Il manque ^XA (début de format)", Error);
-            Add(diags, new List<int> { 0 }, 0, 0, "Il manque ^XZ (fin de format)", Error);
+            Add(diags, new List<int> { 0 }, 0, 0, M("missingXA"), Error);
+            Add(diags, new List<int> { 0 }, 0, 0, M("missingXZ"), Error);
             return diags;
         }
 
@@ -86,7 +86,7 @@ public static class ZplStaticAnalyzer
                     // Unknown command: report the token, skip its arguments to avoid cascading.
                     int tokEnd = i + 1;
                     while (tokEnd < text.Length && tokEnd - i <= 2 && IsCommandChar(text[tokEnd])) tokEnd++;
-                    Add(diags, lineStarts, i, tokEnd, $"Commande inconnue : {text[i..tokEnd]}", Warning);
+                    Add(diags, lineStarts, i, tokEnd, M("unknown", text[i..tokEnd]), Warning);
                     i = SkipArgs(text, tokEnd);
                     continue;
                 }
@@ -120,17 +120,17 @@ public static class ZplStaticAnalyzer
             // Unrecognized content between commands: printers ignore it.
             int strayEnd = i;
             while (strayEnd < text.Length && text[strayEnd] is not ('^' or '~' or '\r' or '\n')) strayEnd++;
-            AddLow(i, strayEnd, "Contenu non reconnu en dehors des commandes (ignoré à l'impression)");
+            AddLow(i, strayEnd, M("stray"));
             i = strayEnd;
         }
 
         // ── ^XA / ^XZ structure ──────────────────────────────────────────────
         // The ONLY errors: a missing frame delimiter (wherever it should be).
         if (xaCount == 0)
-            Add(diags, lineStarts, 0, 1, "Il manque ^XA (début de format)", Error);
+            Add(diags, lineStarts, 0, 1, M("missingXA"), Error);
         if (xzCount == 0)
             Add(diags, lineStarts, Math.Max(0, text.Length - 1), text.Length,
-                "Il manque ^XZ (fin de format)", Error);
+                M("missingXZ"), Error);
 
         // A document may hold several labels, one ^XA…^XZ format after another —
         // the preview pages through them. What is wrong is a format left open or
@@ -144,23 +144,23 @@ public static class ZplStaticAnalyzer
                 {
                     if (open)
                         Add(diags, lineStarts, cmd.Start, cmd.TokenEnd,
-                            "^XA alors que l'étiquette précédente n'est pas fermée par ^XZ", Warning);
+                            M("xaUnclosed"), Warning);
                     open = true;
                 }
                 else if (cmd.Cmd == "^XZ")
                 {
                     if (!open)
                         Add(diags, lineStarts, cmd.Start, cmd.TokenEnd,
-                            "^XZ sans ^XA : aucune étiquette n'est ouverte", Warning);
+                            M("xzWithoutXa"), Warning);
                     open = false;
                 }
                 else if (!open)
                 {
                     string message = cmd.Start < firstXaStart
-                        ? $"{cmd.Cmd} se trouve avant ^XA (le format devrait commencer par ^XA)"
+                        ? M("beforeXa", cmd.Cmd)
                         : cmd.Start > lastXzStart
-                            ? $"{cmd.Cmd} se trouve après ^XZ (le format devrait se terminer par ^XZ)"
-                            : $"{cmd.Cmd} se trouve entre deux étiquettes, hors de tout ^XA…^XZ";
+                            ? M("afterXz", cmd.Cmd)
+                            : M("betweenLabels", cmd.Cmd);
                     Add(diags, lineStarts, cmd.Start, cmd.TokenEnd, message, Warning);
                 }
             }
@@ -176,12 +176,12 @@ public static class ZplStaticAnalyzer
             if (!outX && !outY && !negX && !negY) continue;
 
             var parts = new List<string>();
-            if (negX) parts.Add($"x={origin.X:0.##} est négatif");
-            else if (outX) parts.Add($"x={origin.X:0.##} dépasse la largeur ({pwValue:0.##} dots)");
-            if (negY) parts.Add($"y={origin.Y:0.##} est négatif");
-            else if (outY) parts.Add($"y={origin.Y:0.##} dépasse la hauteur ({llValue:0.##} dots)");
+            if (negX) parts.Add(M("xNegative", N(origin.X)));
+            else if (outX) parts.Add(M("xBeyond", N(origin.X), N(pwValue!.Value)));
+            if (negY) parts.Add(M("yNegative", N(origin.Y)));
+            else if (outY) parts.Add(M("yBeyond", N(origin.Y), N(llValue!.Value)));
             Add(diags, lineStarts, origin.Start, origin.End,
-                $"{origin.Cmd} : élément en dehors du document — {string.Join(" et ", parts)}", Warning);
+                M("outside", origin.Cmd, string.Join(M("and"), parts)), Warning);
         }
 
         diags.Sort((a, b) => a.Start.CompareTo(b.Start));
@@ -234,17 +234,17 @@ public static class ZplStaticAnalyzer
             var requiredNames = declared.Where(p => p.Required).Select(p => p.Name).ToList();
             if (requiredNames.Count == 1)
                 Add(diags, lineStarts, argsStart - cmd.Length, argsStart,
-                    $"{cmd} : le paramètre obligatoire « {requiredNames[0]} » n'est pas renseigné", Warning);
+                    M("requiredOne", cmd, Quote(requiredNames[0])), Warning);
             else if (requiredNames.Count > 1)
                 Add(diags, lineStarts, argsStart - cmd.Length, argsStart,
-                    $"{cmd} : les paramètres obligatoires {JoinQuoted(requiredNames)} ne sont pas renseignés", Warning);
+                    M("requiredMany", cmd, JoinQuoted(requiredNames)), Warning);
             return;
         }
 
         if (declared.Count == 0)
         {
             if (includeLowWarnings)
-                Add(diags, lineStarts, argsStart, argsEnd, $"{cmd} n'accepte aucun paramètre", LowWarning);
+                Add(diags, lineStarts, argsStart, argsEnd, M("noParams", cmd), LowWarning);
             return;
         }
 
@@ -275,15 +275,16 @@ public static class ZplStaticAnalyzer
             if (!missing) continue;
             var (s, e) = k < segs.Count ? segs[k] : (argsStart - cmd.Length, argsEnd);
             Add(diags, lineStarts, s, e,
-                $"{cmd} : le paramètre obligatoire « {declared[k].Name} » n'est pas renseigné", Warning);
+                M("requiredOne", cmd, Quote(declared[k].Name)), Warning);
         }
 
         // Extra parameters are ignored by the printer → low warning (clean code).
         if (segs.Count > declared.Count && includeLowWarnings)
         {
-            var max = declared.Count == 1 ? "1 au maximum" : $"{declared.Count} au maximum";
-            Add(diags, lineStarts, segs[declared.Count].S, argsEnd,
-                $"{cmd} : {segs.Count} paramètres fournis, {max} : {Names(declared)}", LowWarning);
+            var message = declared.Count == 1
+                ? M("tooManyOne", cmd, segs.Count, Names(declared))
+                : M("tooMany", cmd, segs.Count, declared.Count, Names(declared));
+            Add(diags, lineStarts, segs[declared.Count].S, argsEnd, message, LowWarning);
         }
 
         // A number parameter given a non-number → warning (wrong render).
@@ -297,7 +298,7 @@ public static class ZplStaticAnalyzer
             if (val.Length == 0) continue; // omitted middle parameter (",,") — allowed
             if (!IsNumeric(val))
                 Add(diags, lineStarts, s, e,
-                    $"{cmd} : le paramètre « {p.Name} » attend un nombre, « {val} » fourni", Warning);
+                    M("notNumber", cmd, Quote(p.Name), Quote(val)), Warning);
         }
     }
 
@@ -361,7 +362,18 @@ public static class ZplStaticAnalyzer
         => string.Join(", ", parameters.Select(p => p.Name));
 
     private static string JoinQuoted(List<string> names)
-        => string.Join(", ", names.Select(n => $"« {n} »"));
+        => string.Join(", ", names.Select(Quote));
+
+    private static string Quote(string text) => M("quote", text);
+
+    private static string N(double value) => value.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture);
+
+    // The messages come from the language file (app.analyzer.*).
+    internal static string M(string key, params object[] args)
+    {
+        var format = LocalizationService.Get("app.analyzer." + key);
+        return args.Length == 0 ? format : string.Format(format, args);
+    }
 
     private static void Add(List<ZplDiagnostic> diags, List<int> lineStarts,
         int start, int end, string message, int severity)

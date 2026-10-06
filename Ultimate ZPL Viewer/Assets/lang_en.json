@@ -2706,5 +2706,128 @@
     "previous": "Previous label (Page Up)",
     "next": "Next label (Page Down)",
     "numberTip": "Type a number and press Enter; Up and Down go from one label to the next."
+  },
+  "app": {
+    "tabMenu": {
+      "close": "Close tab",
+      "closeOthers": "Close other tabs",
+      "closeRight": "Close tabs to the right",
+      "newWindow": "Open in a new window",
+      "duplicate": "Duplicate tab",
+      "copyPath": "Copy file path"
+    },
+    "file": {
+      "openTitle": "Open a file",
+      "notFound": "File not found:\n{0}",
+      "readFailed": "Could not read the file:\n{0}",
+      "saveTitle": "Save",
+      "saveFailed": "Saving failed: {0}",
+      "unsaved": "\"{0}\" has unsaved changes.",
+      "save": "Save",
+      "saveAs": "Save as…",
+      "dontSave": "Don't save",
+      "cancel": "Cancel",
+      "closeTabTitle": "Close tab",
+      "closeTabsTitle": "Close tabs",
+      "closeAllTitle": "Close all tabs",
+      "quitTitle": "Quit the application"
+    },
+    "editor": {
+      "hide": "Hide the editor",
+      "show": "Show the editor",
+      "docPlaceholder": "Put the cursor on a ZPL command to show its documentation.",
+      "docButton": "Documentation of the command under the cursor",
+      "docParameter": "Parameter",
+      "docDescription": "Description",
+      "docType": "Type"
+    },
+    "window": {
+      "minimize": "Minimize",
+      "exitFullscreen": "Exit full screen",
+      "close": "Close"
+    },
+    "colorScheme": {
+      "title": "Invalid color scheme",
+      "body": "The color configuration file does not match the expected schema:\n\n{0}\n\nFix the file, then restart the application.",
+      "open": "Open the JSON and quit",
+      "quit": "Quit the application",
+      "wrongType": "{0}: expected type \"{1}\", found \"{2}\".",
+      "notAllowed": "{0}: value \"{1}\" is not allowed.",
+      "badFormat": "{0}: \"{1}\" does not match the required format ({2}).",
+      "missing": "{0}: required property \"{1}\" is missing."
+    },
+    "screenPrompt": {
+      "title": "Manual setup needed",
+      "bodyNamed": "The size of the screen \"{0}\" could not be determined, so the ZPL preview cannot be shown at real size.\nIf you know this screen's size (in inches or centimetres), you can set it in the settings.",
+      "body": "The size of your screen could not be determined, so the ZPL preview cannot be shown at real size.\nIf you know your screen's size (in inches or centimetres), you can set it in the settings.",
+      "dontShow": "Don't show again",
+      "goSettings": "Go to settings",
+      "later": "Not now",
+      "screenName": "Screen {0}"
+    },
+    "fonts": {
+      "title": "Required fonts missing",
+      "intro": "This application needs the following fonts to render ZPL faithfully.",
+      "autoTitle": "Fonts that can be installed automatically:",
+      "commercialTitle": "Commercial fonts (manual installation needed):",
+      "commercialHint": "Buy and install this font yourself, then restart the application.",
+      "installAll": "Install the fonts",
+      "installOne": "Install 1 font",
+      "installMany": "Install {0} fonts",
+      "quit": "Quit",
+      "installing": "Installing…",
+      "resultOk": "Installation complete",
+      "resultPartial": "Installation incomplete",
+      "resultAction": "Action needed",
+      "installed": "✔ Fonts installed:",
+      "failed": "✖ Failed:",
+      "manual": "⚠ Commercial fonts to install manually:",
+      "restartHint": "Restart the application to apply the changes.",
+      "restart": "Restart",
+      "downloading": "Downloading: {0}…",
+      "installingOne": "Installing: {0}…",
+      "done": "{0} installed.",
+      "failedOne": "Failed: {0}."
+    },
+    "virtualPrinter": {
+      "title": "Virtual printer",
+      "failed": "Operation failed.",
+      "scriptFailed": "Could not write the installation script: {0}",
+      "reinstallScriptFailed": "Could not write the reinstallation script: {0}",
+      "installCancelled": "Installation cancelled (elevation refused).",
+      "reinstallCancelled": "Reinstallation cancelled (elevation refused).",
+      "uninstallCancelled": "Uninstallation cancelled (elevation refused).",
+      "installIncomplete": "The installation did not finish. Try again, or check that installing printers is not blocked by a policy.",
+      "reinstallIncomplete": "The reinstallation did not finish. Try again, or check that installing printers is not blocked by a policy.",
+      "uninstallFailed": "The uninstallation did not complete."
+    },
+    "update": {
+      "unreadable": "unreadable response"
+    },
+    "analyzer": {
+      "line": "Line {0}",
+      "missingXA": "^XA is missing (start of format)",
+      "missingXZ": "^XZ is missing (end of format)",
+      "unknown": "Unknown command: {0}",
+      "stray": "Unrecognised content outside the commands (ignored when printing)",
+      "xaUnclosed": "^XA while the previous label is not closed by ^XZ",
+      "xzWithoutXa": "^XZ without ^XA: no label is open",
+      "beforeXa": "{0} comes before ^XA (the format should start with ^XA)",
+      "afterXz": "{0} comes after ^XZ (the format should end with ^XZ)",
+      "betweenLabels": "{0} sits between two labels, outside any ^XA…^XZ",
+      "xNegative": "x={0} is negative",
+      "xBeyond": "x={0} exceeds the width ({1} dots)",
+      "yNegative": "y={0} is negative",
+      "yBeyond": "y={0} exceeds the height ({1} dots)",
+      "and": " and ",
+      "outside": "{0}: element outside the document — {1}",
+      "requiredOne": "{0}: the required parameter {1} is not set",
+      "requiredMany": "{0}: the required parameters {1} are not set",
+      "noParams": "{0} takes no parameters",
+      "tooManyOne": "{0}: {1} parameters given, at most 1: {2}",
+      "tooMany": "{0}: {1} parameters given, at most {2}: {3}",
+      "notNumber": "{0}: parameter {1} expects a number, {2} given",
+      "quote": "\"{0}\""
+    }
   }
 }

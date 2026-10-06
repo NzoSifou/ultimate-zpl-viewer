@@ -28,7 +28,7 @@ public static class JsonSchemaValidator
             var expected = typeEl.GetString();
             if (!MatchesType(expected, inst))
             {
-                errors.Add($"{path} : type attendu « {expected} », trouvé « {ActualType(inst)} ».");
+                errors.Add(string.Format(LocalizationService.Get("app.colorScheme.wrongType"), path, expected, ActualType(inst)));
                 return;
             }
         }
@@ -40,7 +40,7 @@ public static class JsonSchemaValidator
             foreach (var allowed in enumEl.EnumerateArray())
                 if (JsonEquals(allowed, inst)) { ok = true; break; }
             if (!ok)
-                errors.Add($"{path} : valeur « {Raw(inst)} » non autorisée.");
+                errors.Add(string.Format(LocalizationService.Get("app.colorScheme.notAllowed"), path, Raw(inst)));
         }
 
         // pattern — regex constraint on strings.
@@ -50,7 +50,7 @@ public static class JsonSchemaValidator
         {
             var pattern = patEl.GetString();
             if (!string.IsNullOrEmpty(pattern) && !SafeIsMatch(inst.GetString() ?? "", pattern))
-                errors.Add($"{path} : « {inst.GetString()} » ne respecte pas le format requis ({pattern}).");
+                errors.Add(string.Format(LocalizationService.Get("app.colorScheme.badFormat"), path, inst.GetString(), pattern));
         }
 
         // object — required properties + recurse into declared properties.
@@ -61,7 +61,7 @@ public static class JsonSchemaValidator
                 {
                     var name = r.GetString();
                     if (name is not null && !inst.TryGetProperty(name, out _))
-                        errors.Add($"{path} : propriété obligatoire « {name} » manquante.");
+                        errors.Add(string.Format(LocalizationService.Get("app.colorScheme.missing"), path, name));
                 }
 
             if (schema.TryGetProperty("properties", out var propsEl) && propsEl.ValueKind == JsonValueKind.Object)

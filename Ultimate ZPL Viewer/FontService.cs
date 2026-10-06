@@ -110,7 +110,7 @@ public static class FontService
             var sliceStart = (double)i / installable.Count;
             var sliceEnd   = (double)(i + 1) / installable.Count;
 
-            progress?.Report((sliceStart, $"Téléchargement : {font.DisplayName}…"));
+            progress?.Report((sliceStart, string.Format(LocalizationService.Get("app.fonts.downloading"), font.DisplayName)));
 
             var tempFile = Path.Combine(Path.GetTempPath(), $"ultimatezplviewer_{Guid.NewGuid():N}.tar.gz");
             try
@@ -121,23 +121,23 @@ public static class FontService
                     font.ArchiveUrl!,
                     tempFile,
                     p => progress?.Report((sliceStart + p * (sliceEnd - sliceStart) * 0.75,
-                                          $"Téléchargement : {font.DisplayName}…")),
+                                          string.Format(LocalizationService.Get("app.fonts.downloading"), font.DisplayName))),
                     ct);
 
                 progress?.Report((sliceStart + (sliceEnd - sliceStart) * 0.75,
-                                  $"Installation : {font.DisplayName}…"));
+                                  string.Format(LocalizationService.Get("app.fonts.installingOne"), font.DisplayName)));
 
                 var installed = await ExtractAndInstallAsync(tempFile, font.FileNames, userFontsDir, ct);
                 RegisterFonts(installed);
 
                 results.Add(new FontInstallResult(font.DisplayName, Success: true));
-                progress?.Report((sliceEnd, $"{font.DisplayName} installée."));
+                progress?.Report((sliceEnd, string.Format(LocalizationService.Get("app.fonts.done"), font.DisplayName)));
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 results.Add(new FontInstallResult(font.DisplayName, Success: false, Error: ex.Message));
-                progress?.Report((sliceEnd, $"Échec : {font.DisplayName}."));
+                progress?.Report((sliceEnd, string.Format(LocalizationService.Get("app.fonts.failedOne"), font.DisplayName)));
             }
             finally
             {

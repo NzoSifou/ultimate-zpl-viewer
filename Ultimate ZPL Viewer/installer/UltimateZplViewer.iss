@@ -91,9 +91,10 @@ Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: LaunchedByUpdater
 Type: files; Name: "{localappdata}\Ultimate ZPL Viewer\onboarding.json"
 
 [UninstallRun]
-; Nettoyage a la desinstallation : retire l'imprimante virtuelle, son port et la
-; tache de capture si elles avaient ete installees depuis l'app (best-effort).
-Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command ""Remove-Printer -Name 'Ultimate ZPL Viewer' -EA SilentlyContinue; Remove-PrinterPort -Name (Join-Path $env:ProgramData 'UltimateZplViewer\spool.prn') -EA SilentlyContinue; Unregister-ScheduledTask -TaskName 'UltimateZplViewer_PrintCapture' -Confirm:$false -EA SilentlyContinue"""; RunOnceId: "RemoveVirtualPrinter"; Flags: runhidden
+; Nettoyage a la desinstallation : retire l'imprimante virtuelle, son port et les
+; taches de capture (l'ancienne, et celle que l'app cree pour chaque utilisateur).
+; Retirer l'imprimante demande les droits admin : sans eux elle reste (best-effort).
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command ""Remove-Printer -Name 'Ultimate ZPL Viewer' -EA SilentlyContinue; Remove-PrinterPort -Name (Join-Path $env:ProgramData 'UltimateZplViewer\spool.prn') -EA SilentlyContinue; Unregister-ScheduledTask -TaskName 'UltimateZplViewer_PrintCapture' -Confirm:$false -EA SilentlyContinue; Unregister-ScheduledTask -TaskName ('UltimateZplViewer_PrintCapture_' + $env:USERNAME) -Confirm:$false -EA SilentlyContinue"""; RunOnceId: "RemoveVirtualPrinter"; Flags: runhidden
 
 [Code]
 // True quand Setup a ete lance par l'updater interne de l'application.

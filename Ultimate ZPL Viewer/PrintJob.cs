@@ -308,6 +308,41 @@ public static class PrintJobService
         return null;
     }
 
+    /// <summary>A printer's sheets and the one it uses by default.</summary>
+    public sealed record PrinterPapers(List<Paper> Papers, (double W, double H)? Default);
+
+    // Asked once per printer and session: the driver takes a few hundred
+    // milliseconds to answer, and its list does not change while the app runs.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, PrinterPapers> KnownPapers
+        = new(StringComparer.OrdinalIgnoreCase);
+
+    public static PrinterPapers? CachedPapers(string printer)
+        => KnownPapers.TryGetValue(printer, out var known) ? known : null;
+
+    /// <summary>Asks the driver (slow: call it off the UI thread) and remembers the answer.</summary>
+    public static PrinterPapers LoadPapers(string printer)
+    {
+        var papers = new PrinterPapers(PaperSizes(printer), PaperSizeMm(printer));
+        KnownPapers[printer] = papers;
+        return papers;
+    }
+
+    /// <summary>
+    /// Fetches the default printer's sheets in the background, so the first print
+    /// dialog of the session opens with its list already there.
+    /// </summary>
+    public static void WarmUp(AppSettings settings)
+    {
+        try
+        {
+            var printer = settings.DefaultPrinter == "last" ? settings.LastPrinter : settings.DefaultPrinter;
+            if (string.IsNullOrWhiteSpace(printer) || CachedPapers(printer) is not null) return;
+            if (ModeFor(settings, printer) != SendMode.Image) return;
+            LoadPapers(printer);
+        }
+        catch { /* only a head start */ }
+    }
+
     /// <summary>The paper sizes this printer offers, in the order it lists them.</summary>
     public static List<Paper> PaperSizes(string printer)
     {

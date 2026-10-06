@@ -149,6 +149,13 @@ namespace Ultimate_ZPL_Viewer
                 // Puts right the task that opens the app when a job prints while it
                 // is closed (missing, from an older version, or pointing elsewhere).
                 System.Threading.Tasks.Task.Run(VirtualPrinterService.EnsureCaptureTask);
+                // A head start for the first print dialog: the default printer's
+                // sheets, read once startup has settled.
+                System.Threading.Tasks.Task.Run(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(4000);
+                    PrintJobService.WarmUp(AppSettings.Current);
+                });
             }
             void FirstFrame(object? sender, object e)
             {

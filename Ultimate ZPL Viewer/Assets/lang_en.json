@@ -1972,6 +1972,7 @@
         }
       },
       "lbl": {
+        "loadingPapers": "Reading paper sizes…",
         "lastPrinter": "Last selected printer",
         "setDefault": "Set as default",
         "clearDefault": "Clear the default",

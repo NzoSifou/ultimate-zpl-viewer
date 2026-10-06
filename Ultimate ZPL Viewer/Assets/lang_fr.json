@@ -1973,6 +1973,7 @@
       },
       "lbl": {
         "lastPrinter": "Dernière imprimante sélectionnée",
+        "loadingPapers": "Lecture des formats…",
         "setDefault": "Définir par défaut",
         "clearDefault": "Ne plus définir par défaut",
         "pinned": "Le type est défini pour cette imprimante. « Ne plus définir par défaut » rend la main, et les paramètres listent toutes les imprimantes."

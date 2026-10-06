@@ -169,7 +169,6 @@ public sealed partial class PreviewPage
         // The sheet the preview draws on, from the list itself: asking the driver
         // for it at each refresh is what made the spin buttons drag.
         (double W, double H)? paperMm = null;
-        var defaultPaper = new Dictionary<string, (double W, double H)?>();
 
         // Margins are typed in whichever of the two units suits the user; the job
         // itself only ever carries millimetres.
@@ -220,26 +219,22 @@ public sealed partial class PreviewPage
             layoutBox.SelectedIndex = index;
             layoutBox.Tag = layouts;
 
-            var papers = raw ? new List<Paper>() : PrintJobService.PaperSizes(job.Printer);
-            var items = FillPaperBox(paperBox, papers);
-            paperBox.IsEnabled = !raw && papers.Count > 0;
-            if (papers.Count > 0)
+            if (raw)
             {
-                var keep = papers.FirstOrDefault(p => p.Name == job.PaperSize);
-                if (keep is null)
-                {
-                    var current = PrinterDefaultPaper(job.Printer);
-                    keep = (current is { } c ? papers.FirstOrDefault(
-                        p => Math.Abs(p.WMm - c.W) < 0.6 && Math.Abs(p.HMm - c.H) < 0.6) : null) ?? papers[0];
-                }
-                paperBox.SelectedItem = items.First(i => ReferenceEquals(i.Tag, keep));
-                job = job with { PaperSize = keep.Name };
-                paperMm = (keep.WMm, keep.HMm);
+                ApplyPapers(new PrintJobService.PrinterPapers(new List<Paper>(), null));
+                paperMm = null;
             }
+            else if (PrintJobService.CachedPapers(job.Printer) is { } known) ApplyPapers(known);
             else
             {
-                job = job with { PaperSize = "" };
-                paperMm = raw ? null : PrinterDefaultPaper(job.Printer);
+                // Asking the driver for its sheets takes a few hundred milliseconds
+                // (~300 for Microsoft Print to PDF): the dialog opens without waiting
+                // and the list fills in once it is there.
+                paperBox.ItemsSource = new[] { SL("print.lbl.loadingPapers") };
+                paperBox.SelectedIndex = 0;
+                paperBox.IsEnabled = false;
+                paperMm = null;
+                LoadPapersAsync(job.Printer);
             }
 
             margins.IsEnabled = !raw;
@@ -254,12 +249,38 @@ public sealed partial class PreviewPage
             }
         }
 
-        // The printer's own default sheet, asked once per printer.
-        (double W, double H)? PrinterDefaultPaper(string printer)
+        void ApplyPapers(PrintJobService.PrinterPapers info)
         {
-            if (!defaultPaper.TryGetValue(printer, out var size))
-                defaultPaper[printer] = size = PrintJobService.PaperSizeMm(printer);
-            return size;
+            var papers = info.Papers;
+            var items = FillPaperBox(paperBox, papers);
+            paperBox.IsEnabled = job.Mode != SendMode.Raw && papers.Count > 0;
+            if (papers.Count > 0)
+            {
+                var keep = papers.FirstOrDefault(p => p.Name == job.PaperSize);
+                if (keep is null)
+                {
+                    var current = info.Default;
+                    keep = (current is { } c ? papers.FirstOrDefault(
+                        p => Math.Abs(p.WMm - c.W) < 0.6 && Math.Abs(p.HMm - c.H) < 0.6) : null) ?? papers[0];
+                }
+                paperBox.SelectedItem = items.First(i => ReferenceEquals(i.Tag, keep));
+                job = job with { PaperSize = keep.Name };
+                paperMm = (keep.WMm, keep.HMm);
+            }
+            else
+            {
+                job = job with { PaperSize = "" };
+                paperMm = job.Mode == SendMode.Raw ? null : info.Default;
+            }
+        }
+
+        async void LoadPapersAsync(string printer)
+        {
+            var info = await Task.Run(() => PrintJobService.LoadPapers(printer));
+            // The user may have moved on to another printer, or to the thermal road.
+            if (job.Printer != printer || job.Mode == SendMode.Raw) return;
+            ApplyPapers(info);
+            Refresh();
         }
 
         // One preview for the whole dialog: its drawings are kept and only moved
@@ -334,7 +355,8 @@ public sealed partial class PreviewPage
                 paperMm = (p.WMm, p.HMm);
                 Refresh();
             }
-            else if (paperBox.SelectedItem is not null && lastPaperItem is not null)
+            else if (paperBox.SelectedItem is ComboBoxItem { Tag: null } && lastPaperItem is not null
+                     && paperBox.Items.Contains(lastPaperItem))
             {
                 paperBox.SelectedItem = lastPaperItem;   // a heading is not a size
             }

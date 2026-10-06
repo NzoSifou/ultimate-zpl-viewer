@@ -490,8 +490,11 @@ namespace Ultimate_ZPL_Viewer
             {
                 _acrylicController.TintColor         = Windows.UI.Color.FromArgb(255, 0xF3, 0xF3, 0xF3);
                 _acrylicController.FallbackColor     = Windows.UI.Color.FromArgb(255, 0xF3, 0xF3, 0xF3);
-                _acrylicController.TintOpacity       = 0.20f;
-                _acrylicController.LuminosityOpacity = 0.55f;
+                // Light needs far more tint than dark: over a dark desktop the thin
+                // version turned the toolbar and tab strip a dull mid-grey, with
+                // grey text on it.
+                _acrylicController.TintOpacity       = 0.60f;
+                _acrylicController.LuminosityOpacity = 0.90f;
             }
         }
 

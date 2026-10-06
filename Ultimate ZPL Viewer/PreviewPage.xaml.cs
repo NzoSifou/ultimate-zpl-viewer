@@ -1070,7 +1070,7 @@ public sealed partial class PreviewPage : Page
         {
             Text = slot.IsGroup ? slot.Group : "",
             FontSize = 11,
-            Opacity = 0.6,
+            Opacity = 0.75,
             Height = 15,
             HorizontalAlignment = HorizontalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,

@@ -156,13 +156,32 @@ public static class LocalizationService
         {
             foreach (var path in Directory.EnumerateFiles(LanguagesDir, "*.json"))
             {
-                var (code, disp, based, valid) = ReadHeader(path);
+                var (code, disp, based, valid) = CachedHeader(path);
                 if (string.IsNullOrWhiteSpace(code) || !seen.Add(code!)) continue;
                 list.Add(new LangInfo(code!, disp, based, path, valid));
             }
         }
         catch { /* folder unreadable → whatever we gathered */ }
         return list;
+    }
+
+    // Every list of languages read and parsed each file whole (~190 KB apiece),
+    // several times over each time the appearance settings were built: 80 ms of
+    // opening the settings. A file is read again only once it has changed.
+    private static readonly Dictionary<string, (DateTime Written, long Length, (string?, string?, string?, bool) Header)> HeaderCache
+        = new(StringComparer.OrdinalIgnoreCase);
+
+    private static (string? Code, string? Display, string? BasedOn, bool Valid) CachedHeader(string path)
+    {
+        DateTime written; long length;
+        try { var info = new FileInfo(path); written = info.LastWriteTimeUtc; length = info.Length; }
+        catch { return ReadHeader(path); }
+        lock (HeaderCache)
+            if (HeaderCache.TryGetValue(path, out var hit) && hit.Written == written && hit.Length == length)
+                return hit.Header;
+        var header = ReadHeader(path);
+        lock (HeaderCache) HeaderCache[path] = (written, length, header);
+        return header;
     }
 
     // Extracts the header (language / displayName / basedOn) from a file. Parses as

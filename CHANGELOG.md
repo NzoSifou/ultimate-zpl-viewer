@@ -6,6 +6,66 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.7.1] — 2026-10-06 — performances
+
+Une version consacrée à la fluidité en usage courant : modifier une étiquette,
+passer d'un volet ou d'un onglet à l'autre, parcourir un lot d'étiquettes,
+taper dans un long fichier, ouvrir les paramètres. Et l'éditeur de code
+fonctionne désormais **hors connexion**.
+
+### ✨ Ajouté
+
+- **L'éditeur de code est livré avec l'application.** Il était téléchargé à
+  chaque lancement depuis Internet : sans connexion, la zone de code restait
+  vide. Il fonctionne maintenant hors ligne.
+
+### ⚡ Performances
+
+- **Modifier une étiquette ne fige plus l'aperçu.** Déplacer un élément d'une
+  étiquette DPD bloquait l'interface ~110 ms à chaque flèche, ~27 ms
+  aujourd'hui. Un code 2D (QR, Data Matrix, Aztec, PDF417) et un code-barres
+  sont dessinés d'un seul tenant : l'Aztec d'une étiquette DPD faisait à lui
+  seul 1 380 éléments, que chaque modification jetait et recréait — avec à la
+  clé cinq ramasse-miettes complets par frappe. Ses modules ne sont plus
+  encodés à nouveau quand ils n'ont pas changé.
+- **La légende de l'aperçu** (taille, dpi, zoom) n'est redessinée que si son
+  texte change, et sans redemander chaque fois le périphérique graphique :
+  25 ms de moins à chaque modification.
+- **La vue fractionnée** : changer de volet coûte ~45 ms au lieu de ~90, et
+  la créer ~80 ms au lieu de ~220.
+- **Les fichiers à plusieurs étiquettes** : les étiquettes avant celle qui est
+  affichée ne sont plus dessinées pour rien. Aller à la dernière d'un lot de
+  96 étiquettes prend ~30 ms au lieu de ~220, tourner une page d'un lot de
+  576 étiquettes ~40 ms au lieu de ~100.
+- **Taper dans un long document** : la coloration du code est faite par
+  l'éditeur lui-même, ligne par ligne et seulement là où on regarde, au lieu
+  d'être recalculée et renvoyée en entier après chaque frappe. Et quand
+  l'aperçu met du temps à se redessiner, il suit le texte dès que la frappe
+  marque une pause plutôt qu'à chaque touche : une frappe coûte ~2 ms au lieu
+  de ~140 ms dans un lot de 1,2 Mo.
+- **Les paramètres** s'ouvrent en ~100 ms au lieu de ~320 : chaque catégorie
+  est construite quand on l'affiche, et la liste des langues ne relit plus
+  chaque fichier de langue en entier. **La recherche** ne reconstruit plus
+  tous les réglages à chaque lettre tapée (~180 ms de gel à chaque fois) :
+  ils sont préparés une fois au début de la recherche.
+- **La grille de l'aperçu** est tracée d'un seul tenant au lieu d'une centaine
+  de lignes, redessinées à chaque redimensionnement.
+
+### 🐛 Corrigé
+
+- **Le nombre d'étiquettes d'un lot changeait selon l'étiquette affichée**
+  quand l'une d'elles ne contenait qu'un `^FD` vide : comptée depuis la
+  première étiquette, pas depuis les suivantes (« / 9 » puis « / 8 »).
+- **Tourner l'étiquette la dessinait deux fois** à chaque quart de tour.
+- **Les menus de l'éditeur de code restaient en anglais** (clic droit,
+  recherche, palette de commandes) même avec l'application en français.
+
+- **En éditant un texte dans l'aperçu, le curseur restait collé à la dernière
+  lettre après un espace**, même après plusieurs espaces, et ne se remettait en
+  place qu'à la lettre suivante. Les espaces en fin de mot sont maintenant
+  comptés dans la position du curseur, comme pour la sélection et le clic.
+
+---
 ## [1.7.0] — 2026-10-04 — profils, vues fractionnées et recherche
 
 Trois nouveautés de fond. Les **profils** rassemblent chacun un jeu complet de

@@ -118,6 +118,7 @@ namespace Ultimate_ZPL_Viewer
 
             _window = new MainWindow(parsed.Gui);
             _window.Activate();
+            PerfLog.Watch(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
 
             // From here on, later launches talk to this instance instead of starting
             // their own (see InstanceRouter).

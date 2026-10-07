@@ -18,8 +18,6 @@
            container paints the surface color so the browser canvas never shows. */
         #container { width: 100%; height: 100%; background: #131313; }
     </style>
-    <!-- ZPL color classes — injected at runtime via setColors message -->
-    <style id="zpl-theme"></style>
     <!-- Inspect-mode highlight; rewritten with the accent colour on each use -->
     <style id="zpl-inspect"></style>
 </head>
@@ -27,34 +25,96 @@
     <div id="container"></div>
 
     <!--
-        Monaco is loaded from CDN for quick startup.
-        To use local files instead (recommended for offline / production):
-          1. Run in Assets\: npm init -y && npm install monaco-editor@0.52.2
-          2. Copy node_modules\monaco-editor\min\ to Assets\monaco-editor\min\
-          3. Replace the two CDN references below with:
-               <script src="monaco-editor/min/vs/loader.js"></script>
-               require.config({ paths: { 'vs': 'monaco-editor/min/vs' } });
+        Monaco 0.52.2 ships with the application (Assets\monaco, from the npm package's
+        min\vs): the editor works offline and starts without a network round trip.
+        Only what a ZPL editor uses is kept — the loader, the editor, its worker and
+        the French messages; the bundled languages (TypeScript, JSON, HTML…) are not.
+        To update: npm pack monaco-editor@<version>, then copy min\vs\loader.js,
+        min\vs\nls.messages.fr.js, min\vs\base and min\vs\editor.
     -->
-    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+    <script src="monaco/vs/loader.js"></script>
     <script>
-        // Monaco ships localized UI (menus, tooltips, context menu). The host passes
-        // the app language via ?lang= so we set availableLanguages before loading.
-        // Monaco ships fr/de/es/it/ja/ko/ru/zh-cn/zh-tw; anything else falls back to English.
-        var _lang = (new URLSearchParams(location.search).get('lang') || 'en').toLowerCase();
-        var _nls = _lang !== 'en' ? { availableLanguages: { '*': _lang } } : {};
-        require.config({
-            paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' },
-            'vs/nls': _nls
-        });
+        require.config({ paths: { 'vs': 'monaco/vs' } });
 
+        // Monaco's own UI (menus, tooltips, the find box) in the app's language. Since
+        // 0.50 a translation is a module that sets globalThis._VSCODE_NLS_MESSAGES and
+        // has to be loaded BEFORE the editor; the 'vs/nls' availableLanguages setting
+        // used until now is ignored, which left them in English whatever the app's.
+        var _lang = (new URLSearchParams(location.search).get('lang') || 'en').toLowerCase();
+        require(_lang === 'fr' ? ['vs/nls.messages.fr'] : [], function () {
         require(['vs/editor/editor.main'], function () {
             // App dark theme: same surface color as the editor card (#131313).
-            monaco.editor.defineTheme('zpl-dark', {
-                base: 'vs-dark',
-                inherit: true,
-                rules: [],
-                colors: { 'editor.background': '#131313' }
-            });
+            // The ZPL colours are token colours of these two themes, defined
+            // again whenever the app sends its colours (setColors).
+            function defineZplThemes(c) {
+                function rules() {
+                    return c ? [
+                        { token: 'zpl-cmd', foreground: c['zpl-cmd'].slice(1) },
+                        { token: 'zpl-param', foreground: c['zpl-param'].slice(1) },
+                        { token: 'zpl-text', foreground: c['zpl-text'].slice(1) }
+                    ] : [];
+                }
+                monaco.editor.defineTheme('zpl-dark', {
+                    base: 'vs-dark',
+                    inherit: true,
+                    rules: rules(),
+                    colors: { 'editor.background': '#131313' }
+                });
+                monaco.editor.defineTheme('zpl-light', { base: 'vs', inherit: true, rules: rules(), colors: {} });
+            }
+            defineZplThemes(null);
+            window._dark = true;
+
+            // ── Colouring ─────────────────────────────────────────────────────
+            // A tokenizer, line by line: Monaco colours only what is on screen and
+            // only the lines that changed. The rules are the app's (setGrammar): a
+            // known command, then its arguments up to the next ^ or ~ or the end of
+            // the line, each argument coloured as text or as a value by its place,
+            // a comma taking the colour of the argument it closes.
+            window._zplGrammar = null;
+            monaco.languages.register({ id: 'zpl' });
+            var zplState = { clone: function () { return zplState; }, equals: function () { return true; } };
+            var zplTokens = {
+                getInitialState: function () { return zplState; },
+                tokenize: function (line) {
+                    var tokens = [];
+                    function add(start, type) {
+                        var n = tokens.length;
+                        if (n && tokens[n - 1].startIndex === start) {
+                            tokens[n - 1].scopes = type;
+                            if (n > 1 && tokens[n - 2].scopes === type) tokens.pop();
+                            return;
+                        }
+                        if (n && tokens[n - 1].scopes === type) return;
+                        tokens.push({ startIndex: start, scopes: type });
+                    }
+                    add(0, 'zpl-text');
+                    var g = window._zplGrammar;
+                    if (g && g.re) {
+                        g.re.lastIndex = 0;
+                        var m;
+                        while ((m = g.re.exec(line)) !== null) {
+                            var cs = m.index, as = cs + m[1].length, args = m[2];
+                            add(cs, 'zpl-cmd');
+                            if (args.length) {
+                                var flags = g.text[m[1]] || [];
+                                var segStart = as, pi = 0;
+                                for (var i = 0; i <= args.length; i++) {
+                                    if (i < args.length && args.charCodeAt(i) !== 44) continue;
+                                    var isText = pi >= flags.length || flags[pi];
+                                    if (as + i > segStart || i < args.length) add(segStart, isText ? 'zpl-text' : 'zpl-param');
+                                    segStart = as + i + 1;
+                                    pi++;
+                                }
+                            }
+                            var end = cs + m[0].length;
+                            if (end < line.length) add(end, 'zpl-text');
+                        }
+                    }
+                    return { tokens: tokens, endState: zplState };
+                }
+            };
+            monaco.languages.setTokensProvider('zpl', zplTokens);
 
             // Block file drops on the editor surface: Chromium would otherwise
             // navigate the WebView to the dropped file. (Files are opened by
@@ -68,8 +128,11 @@
 
             var editor = monaco.editor.create(document.getElementById('container'), {
                 value: '',
-                language: 'plaintext',
+                language: 'zpl',
                 theme: 'zpl-dark',
+                // ^GFA image data runs to tens of thousands of characters on one
+                // line; past Monaco's default limit it would lose its colours.
+                maxTokenizationLineLength: 1000000,
                 fontFamily: 'Consolas, "Courier New", monospace',
                 fontSize: 14,
                 lineHeight: 21,
@@ -99,43 +162,10 @@
             });
 
             window.editor = editor;
-            window._decorations = [];
-            // Inspect-mode highlight. Kept apart from the colour-run decorations
-            // above, which are replaced wholesale on every edit and would take the
-            // highlight with them.
+            // Inspect-mode highlight: the one decoration this editor uses.
             window._inspect = [];
             function clearInspect() {
                 window._inspect = editor.deltaDecorations(window._inspect, []);
-            }
-
-            // Concrete hex colours per decoration class, kept in sync with setColors.
-            // The minimap can't read the CSS inlineClassName, so each decoration also
-            // carries an explicit minimap colour taken from here.
-            window._zplColors = { 'zpl-cmd': '#569CD6', 'zpl-param': '#9CDCFE', 'zpl-text': '#D4D4D4' };
-            window._lastRuns = [];
-
-            // Builds Monaco decorations from colour runs: the CSS class colours the
-            // text, and minimap.{color,position:Inline} colours the minimap too.
-            function buildDecorations(runs) {
-                var model = editor.getModel();
-                return runs.map(function (r) {
-                    var s = model.getPositionAt(r.s);
-                    var en = model.getPositionAt(r.e);
-                    return {
-                        range: new monaco.Range(s.lineNumber, s.column, en.lineNumber, en.column),
-                        options: {
-                            inlineClassName: r.c,
-                            minimap: {
-                                color: window._zplColors[r.c],
-                                position: monaco.editor.MinimapPosition.Inline
-                            }
-                        }
-                    };
-                });
-            }
-            function reapplyDecorations() {
-                window._decorations = editor.deltaDecorations(
-                    window._decorations, buildDecorations(window._lastRuns));
             }
             window._minimapWanted = false;
             window._minimapOn = false;
@@ -357,14 +387,21 @@
                         // setValue resets the undo history — only used for file load / new file.
                         editor.setValue(msg.text);
                     } else if (msg.type === 'setColors') {
-                        // Inject CSS color classes so decorations can reference them by name.
-                        document.getElementById('zpl-theme').textContent =
-                            '.zpl-cmd{color:'   + msg.cmd   + '!important}' +
-                            '.zpl-param{color:' + msg.param + '!important}' +
-                            '.zpl-text{color:'  + msg.text  + '!important}';
-                        // Keep the minimap colours in sync and re-tint existing marks.
+                        // The colours are the themes' token colours (the minimap
+                        // takes them from there too).
                         window._zplColors = { 'zpl-cmd': msg.cmd, 'zpl-param': msg.param, 'zpl-text': msg.text };
-                        reapplyDecorations();
+                        defineZplThemes(window._zplColors);
+                        monaco.editor.setTheme(window._dark ? 'zpl-dark' : 'zpl-light');
+                    } else if (msg.type === 'setGrammar') {
+                        var names = Object.keys(msg.cmds || {}).sort(function (a, b) { return b.length - a.length; });
+                        var alt = names.map(function (n) { return n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|');
+                        window._zplGrammar = {
+                            re: alt ? new RegExp('(' + alt + ')([^\\^~\\r\\n]*)', 'g') : null,
+                            text: msg.cmds || {}
+                        };
+                        // Registering the provider again makes every model colour
+                        // itself afresh with the rules just received.
+                        monaco.languages.setTokensProvider('zpl', zplTokens);
                     } else if (msg.type === 'highlightRange') {
                         // The element clicked on the preview lives at [start, end)
                         // in the text; light it up and, when asked, bring it into
@@ -410,7 +447,8 @@
                             editor.revealLineNearTop(at.lineNumber);
                         }
                     } else if (msg.type === 'setTheme') {
-                        monaco.editor.setTheme(msg.dark ? 'zpl-dark' : 'vs');
+                        window._dark = !!msg.dark;
+                        monaco.editor.setTheme(msg.dark ? 'zpl-dark' : 'zpl-light');
                         // On #container, never on body: a body background propagates
                         // to the root canvas, which is painted square (it ignores the
                         // container's rounded clip-path) and shows as dark corners.
@@ -426,7 +464,7 @@
                         window._docId = msg.id;
                         var m = window._docModels[msg.id];
                         if (!m) {
-                            m = monaco.editor.createModel(msg.text || '', 'plaintext');
+                            m = monaco.editor.createModel(msg.text || '', 'zpl');
                             window._docModels[msg.id] = m;
                         }
                         editor.setModel(m);
@@ -500,9 +538,6 @@
                                 });
                             }
                         }
-                    } else if (msg.type === 'applyDecorations') {
-                        window._lastRuns = msg.runs;
-                        reapplyDecorations();
                     } else if (msg.type === 'setMarkers') {
                         // Native Monaco markers: red/yellow squiggles + hover tooltip with the message.
                         var mdl = editor.getModel();
@@ -530,6 +565,7 @@
 
             // Signal C# that Monaco is fully initialised and ready to receive messages.
             window.chrome.webview.postMessage(JSON.stringify({ type: 'ready' }));
+        });
         });
     </script>
 </body>

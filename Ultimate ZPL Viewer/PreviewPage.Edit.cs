@@ -72,6 +72,8 @@ public sealed partial class PreviewPage
 
     private void PreviewCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
+        // What is hit has to be what the text says now (see DeferTextRefresh).
+        FlushTextRefresh();
         if (!_editMode) return;
         if (!e.GetCurrentPoint(PreviewCanvas).Properties.IsLeftButtonPressed) return;
         // A press INSIDE the words being typed is the caret being placed, and none
@@ -280,6 +282,7 @@ public sealed partial class PreviewPage
 
     private void PreviewHost_KeyDown(object sender, KeyRoutedEventArgs e)
     {
+        FlushTextRefresh();
         // Ctrl+Z is a page-wide accelerator now (RegisterShortcuts): it has to work
         // whether the focus landed on the preview, the toolbar or nowhere at all.
         if (!_editMode || _dragging) return;
@@ -350,6 +353,7 @@ public sealed partial class PreviewPage
     /// </summary>
     private void ApplyEdits(IReadOnlyList<ZplPatcher.Edit> edits, SizeUpdate sizing = SizeUpdate.TextEdited)
     {
+        FlushTextRefresh();
         var valid = edits
             .Where(e => e.Start >= 0 && e.End <= _currentText.Length && e.Start <= e.End)
             .OrderBy(e => e.Start)
@@ -382,7 +386,7 @@ public sealed partial class PreviewPage
         // in its own font at its own size, so there is nothing to catch up on until
         // the caret leaves (PreviewPage.InPlace.cs).
         if (!IsEditingInPlace) RefreshPreview(sizing);
-        ScheduleHighlighting();
+        ScheduleAnalysis();
         // And ask the frame to find its element again once the new canvas has been
         // measured. RefreshPreview posts that itself, but it declines to run at all
         // when one redraw is already under way — which is exactly what happens when

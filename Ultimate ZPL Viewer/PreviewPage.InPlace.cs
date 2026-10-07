@@ -220,11 +220,28 @@ public sealed partial class PreviewPage
             FontWeight = layout.Weight,
             TextWrapping = TextWrapping.NoWrap,
         };
+        double Measure(string text)
+        {
+            probe.Text = text;
+            probe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            return probe.DesiredSize.Width;
+        }
+
+        // A TextBlock leaves trailing spaces out of its width: "test " measured as
+        // wide as "test", and the caret stayed against the t however many spaces
+        // were typed. A prefix that ends in spaces is measured with a stand-in
+        // letter after them, whose own width is then taken off.
+        const string StandIn = "|";
+        double standIn = -1;
         for (int i = 1; i <= line.Length; i++)
         {
-            probe.Text = line[..i];
-            probe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            widths[i] = probe.DesiredSize.Width;
+            var prefix = line[..i];
+            if (char.IsWhiteSpace(prefix[^1]))
+            {
+                if (standIn < 0) standIn = Measure(StandIn);
+                widths[i] = Measure(prefix + StandIn) - standIn;
+            }
+            else widths[i] = Measure(prefix);
         }
         if (_advances.Count > 64) _advances.Clear();
         _advances[key] = widths;

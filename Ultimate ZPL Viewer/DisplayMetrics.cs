@@ -104,7 +104,7 @@ public static class DisplayMetrics
             }
             catch { }
 
-            if (string.IsNullOrWhiteSpace(name)) name = $"Écran {result.Count + 1}";
+            if (string.IsNullOrWhiteSpace(name)) name = string.Format(LocalizationService.Get("app.screenPrompt.screenName"), result.Count + 1);
             result.Add(new MonitorInfo(iface, adapter.DeviceName, name, w, h, px, py, edidDiag));
         }
         return result;

@@ -14,11 +14,9 @@ namespace Ultimate_ZPL_Viewer
         private Mutex? _singleInstanceMutex;
         private FileSystemWatcher? _spoolWatcher;
 
-        // Set when a print-capture window loads, so captured jobs can be routed to it.
-        public PreviewPage? ActivePreviewPage { get; set; }
-
         public App()
         {
+            PerfLog.Mark("App()");
             InitializeComponent();
             // Crash diagnostics. THREE channels, because the XAML one alone misses
             // the crashes that matter most: a failure inside a XAML callback dies as
@@ -56,6 +54,7 @@ namespace Ultimate_ZPL_Viewer
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             var commandLine = Environment.GetCommandLineArgs();
+            PerfLog.Mark("OnLaunched");
 
             // The print-capture scheduled task relaunches the app with this flag
             // (unpackaged: a plain command-line argument, no MSIX protocol). It is not a
@@ -116,17 +115,62 @@ namespace Ultimate_ZPL_Viewer
 
             AccentColorService.ApplyAtStartup(this);
 
-            _window = new MainWindow(parsed.Gui);
+            PerfLog.Mark("new MainWindow");
+            // The window comes up first, with its title bar on its backdrop, and the
+            // page is built once that has reached the screen: the page takes a few
+            // hundred milliseconds, and a window that waited for it showed late and
+            // then black until its first frame.
+            var mainWindow = new MainWindow(parsed.Gui, deferPage: true);
+            _window = mainWindow;
             _window.Activate();
+            PerfLog.Mark("Activate done");
             PerfLog.Watch(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+            var queue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+            bool pageStarted = false;
+            void StartPage()
+            {
+                if (pageStarted) return;
+                pageStarted = true;
+                Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= FirstFrame;
+                mainWindow.ShowPage();
+                if (PerfLog.Enabled)
+                {
+                    void PageFrame(object? s, object a) { Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= PageFrame; PerfLog.Mark("page frame"); }
+                    Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += PageFrame;
+                }
 
-            // From here on, later launches talk to this instance instead of starting
-            // their own (see InstanceRouter).
-            InstanceRouter.Listen(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+                // From here on, later launches talk to this instance instead of
+                // starting their own (see InstanceRouter).
+                InstanceRouter.Listen(queue);
 
-            // Watch the spool folder and process anything already pending. The
-            // printer install itself is offered to the user by PreviewPage.
-            StartSpoolWatcher();
+                // Watch the spool folder and process anything already pending. The
+                // printer install itself is offered to the user by PreviewPage.
+                StartSpoolWatcher();
+                // Puts right the task that opens the app when a job prints while it
+                // is closed (missing, from an older version, or pointing elsewhere).
+                System.Threading.Tasks.Task.Run(VirtualPrinterService.EnsureCaptureTask);
+                // A head start for the first print dialog: the default printer's
+                // sheets, read once startup has settled.
+                System.Threading.Tasks.Task.Run(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(4000);
+                    PrintJobService.WarmUp(AppSettings.Current);
+                });
+            }
+            void FirstFrame(object? sender, object e)
+            {
+                Microsoft.UI.Xaml.Media.CompositionTarget.Rendering -= FirstFrame;
+                PerfLog.Mark("first frame");
+                // Low: after the frame that is being prepared has been presented.
+                queue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, StartPage);
+            }
+            Microsoft.UI.Xaml.Media.CompositionTarget.Rendering += FirstFrame;
+            // A window started minimized renders no frame: the page must not wait for one.
+            var fallback = queue.CreateTimer();
+            fallback.Interval = TimeSpan.FromSeconds(1);
+            fallback.IsRepeating = false;
+            fallback.Tick += (_, _) => StartPage();
+            fallback.Start();
         }
 
         private void StartSpoolWatcher()
@@ -161,7 +205,10 @@ namespace Ultimate_ZPL_Viewer
             // Do not consume the spool file until we have somewhere to route it,
             // otherwise TryReadPending would delete the job and lose it. It stays
             // on disk and is retried on the next watcher event / readiness.
-            if (_window is null || ActivePreviewPage is null) return;
+            // The window used last, among those still open: the page built last may
+            // belong to a window closed since.
+            var target = WindowManager.Active ?? WindowManager.Windows.FirstOrDefault();
+            if (target?.Page is not { } page) return;
 
             _processing = true;
             try
@@ -170,11 +217,11 @@ namespace Ultimate_ZPL_Viewer
                 if (job is null) return;
 
                 if (job.IsZpl)
-                    ActivePreviewPage.LoadCapturedZpl(job.Content);
+                    page.LoadCapturedZpl(job.Content);
                 else
-                    ActivePreviewPage.ShowUnsupportedPrintFormat();
+                    page.ShowUnsupportedPrintFormat();
 
-                BringToForeground();
+                BringToForeground(target);
             }
             finally
             {
@@ -182,10 +229,10 @@ namespace Ultimate_ZPL_Viewer
             }
         }
 
-        private void BringToForeground()
+        private static void BringToForeground(Window window)
         {
-            if (_window is null) return;
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+            if (IsIconic(hwnd)) ShowWindow(hwnd, SW_RESTORE);   // Show() leaves it minimized
             var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
             appWindow?.Show();
@@ -201,5 +248,10 @@ namespace Ultimate_ZPL_Viewer
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
+        private const int SW_RESTORE = 9;
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool IsIconic(IntPtr hWnd);
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     }
 }

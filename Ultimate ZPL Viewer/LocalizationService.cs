@@ -58,10 +58,23 @@ public static class LocalizationService
         EnsureFiles();
         _current = string.IsNullOrWhiteSpace(code) ? Fallback : code;
         var reg = ScanFiles();
+        // Asked again for the language already loaded from the same files (the app
+        // and then its first window both ask at startup): nothing to read again.
+        var loaded = _current + "|" + string.Join("|", reg.Select(l => l.Path + "@" + FileStamp(l.Path)));
+        if (_flat is not null && loaded == _loadedFrom) return;
+        _loadedFrom = loaded;
         (_flat, _arrays) = LoadByCode(_current, reg, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
         (_flatFallback, _arraysFallback) = _current.Equals(Fallback, StringComparison.OrdinalIgnoreCase)
             ? (_flat, _arrays)
             : LoadByCode(Fallback, reg, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+    }
+
+    private static string? _loadedFrom;
+
+    private static string FileStamp(string path)
+    {
+        try { var info = new FileInfo(path); return info.LastWriteTimeUtc.Ticks + ":" + info.Length; }
+        catch { return "?"; }
     }
 
     // Returns a localized string array (combo options). current → English → empty.
@@ -311,14 +324,38 @@ public static class LocalizationService
     // bundled file is copied; on later runs any NEW keys added by an app update are
     // merged in (missing keys only — the user's own edits are never overwritten), so
     // strings shipped with an update actually appear instead of showing raw keys.
+    //
+    // The merge reads and rewrites whole language files, and it ran on every
+    // language load and every listing of the languages - several times before the
+    // first window could show (~250 ms). What ships cannot change while the app
+    // runs: the merge is done once, after which only a missing file is put back.
+    private static bool _filesMerged;
+
+    private static bool SameBytes(string a, string b)
+    {
+        try
+        {
+            var fa = new FileInfo(a); var fb = new FileInfo(b);
+            if (!fb.Exists || fa.Length != fb.Length) return false;
+            return File.ReadAllBytes(a).AsSpan().SequenceEqual(File.ReadAllBytes(b));
+        }
+        catch { return false; }
+    }
+
+    // Unpackaged, asking for the package throws: once is enough.
+    private static readonly Lazy<string> PackagePath = new(() =>
+    {
+        try   { return Windows.ApplicationModel.Package.Current.InstalledLocation.Path; }
+        catch { return AppContext.BaseDirectory; }
+    });
+
     public static void EnsureFiles()
     {
         try { Directory.CreateDirectory(LanguagesDir); } catch { return; }
+        bool merge = !_filesMerged;
+        _filesMerged = true;
 
-        string packagePath;
-        try   { packagePath = Windows.ApplicationModel.Package.Current.InstalledLocation.Path; }
-        catch { packagePath = AppContext.BaseDirectory; }
-        string[] bases = { packagePath, AppContext.BaseDirectory, AppDomain.CurrentDomain.BaseDirectory };
+        string[] bases = { PackagePath.Value, AppContext.BaseDirectory, AppDomain.CurrentDomain.BaseDirectory };
 
         foreach (var code in Bundled)
         {
@@ -329,6 +366,10 @@ public static class LocalizationService
 
             var baseline = Path.Combine(BaselineDir, code + ".json");
             if (!File.Exists(dest)) { try { File.Copy(src, dest); } catch { } }
+            else if (!merge) continue;
+            // What ships is what was merged last time: there is nothing new to bring
+            // in (the merge is for the first launch after an update).
+            else if (SameBytes(src, baseline)) continue;
             else MergeFromBundled(src, dest, baseline);
             // Remember what shipped, so the next update can tell a value the user
             // rewrote from one they simply still have.

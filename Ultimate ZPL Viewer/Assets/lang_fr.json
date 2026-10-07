@@ -1561,7 +1561,9 @@
     "closePane": "Retirer de la vue fractionnée (l'onglet reste ouvert)",
     "focusTip": "Cliquer pour travailler sur ce document",
     "dropSplit": "Diviser l'aperçu",
-    "dropHere": "Afficher ici"
+    "dropHere": "Afficher ici",
+    "dropNewWindow": "Ouvrir dans une nouvelle fenêtre",
+    "dropJoinWindow": "Déplacer dans cette fenêtre"
   },
   "settings": {
     "nav": {
@@ -1953,7 +1955,7 @@
           "blocked": "Indisponible tant que l'imprimante ou l'un des réglages ci-dessous reprend la dernière valeur utilisée : les valeurs ne seraient pas connues d'avance. L'imprimante choisie doit aussi être présente."
         },
         "copies": {
-          "title": "Nombre d'exemplaires par défaut",
+          "title": "Nombre de copies par défaut",
           "desc": "Combien de fois l'étiquette est imprimée."
         },
         "layout": {
@@ -1965,12 +1967,13 @@
           "desc": "Marge laissée autour de l'étiquette sur la page. Sans effet sur une imprimante thermique."
         },
         "perPage": {
-          "title": "Exemplaires par page par défaut",
+          "title": "Étiquettes par page par défaut",
           "desc": "Combien de fois la même étiquette est répétée sur une feuille. Sans effet sur une imprimante thermique."
         }
       },
       "lbl": {
         "lastPrinter": "Dernière imprimante sélectionnée",
+        "loadingPapers": "Lecture des formats…",
         "setDefault": "Définir par défaut",
         "clearDefault": "Ne plus définir par défaut",
         "pinned": "Le type est défini pour cette imprimante. « Ne plus définir par défaut » rend la main, et les paramètres listent toutes les imprimantes."
@@ -1993,11 +1996,11 @@
       "field": {
         "printer": "Imprimante",
         "send": "Type d'imprimante",
-        "copies": "Nombre d'exemplaires",
+        "copies": "Nombre de copies",
         "layout": "Mise en page",
         "paper": "Taille du papier",
         "margins": "Marges",
-        "perPage": "Exemplaires par page"
+        "perPage": "Étiquettes par page"
       },
       "send": {
         "raw": "Imprimante thermique (ZPL brut)",
@@ -2013,7 +2016,25 @@
         "failedBody": "L'envoi à « {0} » a échoué : {1}"
       },
       "margins": {
-        "none": "aucune marge"
+        "none": "aucune marge",
+        "perSide": "Par côté",
+        "perSideTip": "Une marge différente pour chaque côté de la feuille",
+        "top": "Haut",
+        "right": "Droite",
+        "bottom": "Bas",
+        "left": "Gauche",
+        "unit": "Unité",
+        "sides": "haut {0}, droite {1}, bas {2}, gauche {3}"
+      },
+      "paperGroup": {
+        "common": "Les plus courants",
+        "isoA": "Série A (ISO)",
+        "isoB": "Série B (ISO, JIS)",
+        "northAmerica": "Formats nord-américains",
+        "envelopes": "Enveloppes",
+        "photoAndLabels": "Photos, cartes et étiquettes",
+        "asia": "Formats chinois et japonais",
+        "other": "Autres formats"
       },
       "perPage": {
         "summary": "{0} par page"
@@ -2140,7 +2161,9 @@
         "reinstall": "Réinstaller",
         "uninstall": "Désinstaller",
         "opFailed": "Opération échouée.",
-        "dlgTitle": "Imprimante virtuelle"
+        "dlgTitle": "Imprimante virtuelle",
+        "unsupportedTitle": "Format non pris en charge",
+        "unsupportedBody": "Le document envoyé à l'imprimante « Ultimate ZPL Viewer » n'est pas du ZPL.\n\nCette imprimante n'accepte que du ZPL : les PDF et autres formats ne peuvent pas être ouverts."
       }
     },
     "commandLine": {
@@ -2189,7 +2212,7 @@
         "print": "Imprime l'étiquette.",
         "printer": "Nom de l'imprimante. Par défaut, celle des paramètres, sinon celle de Windows. La liste : --list-printers.",
         "printerType": "Comment l'étiquette part : thermal (le ZPL brut, pour une imprimante d'étiquettes) ou classic (une page rendue). Par défaut (auto), le type choisi ou détecté pour cette imprimante.",
-        "copies": "Nombre d'exemplaires : de feuilles sur une imprimante classique, d'étiquettes sur une imprimante thermique.",
+        "copies": "Nombre de copies : de feuilles sur une imprimante classique, d'étiquettes sur une imprimante thermique.",
         "perPage": "Nombre d'étiquettes par feuille (imprimante classique).",
         "paper": "Format du papier, par exemple A4 (imprimante classique). La liste : --list-papers.",
         "layout": "Mise en page : portrait, landscape (paysage), portrait-flipped ou landscape-flipped (retournés). Une imprimante thermique ne sait que retourner.",
@@ -2206,7 +2229,7 @@
         "convert": "Convertir en 12 points/mm (305 dpi) et enregistrer le ZPL",
         "rotate": "Faire pivoter le document, puis enregistrer le ZPL et le PDF",
         "print": "Imprimer quatre étiquettes par feuille A4 sur une imprimante classique",
-        "printRaw": "Envoyer dix exemplaires à une imprimante thermique"
+        "printRaw": "Envoyer dix copies à une imprimante thermique"
       },
       "val": {
         "degrees": "degrés",
@@ -2272,8 +2295,8 @@
         "rawLandscape": "Le paysage n'existe pas en ZPL : une imprimante thermique imprime l'étiquette telle quelle (pour la faire pivoter : --transform-rotate).",
         "rawViewRotate": "--view-rotate ne tourne que le rendu, et une imprimante thermique reçoit le ZPL (pour le faire pivoter : --transform-rotate).",
         "printFailed": "Impression impossible sur {0} : {1}",
-        "sentRaw": "Envoyé à {0} (thermique, ZPL brut) : {1} exemplaire(s)",
-        "sentClassic": "Envoyé à {0} (classique) : {1} exemplaire(s), {2} par page, {3}",
+        "sentRaw": "Envoyé à {0} (thermique, ZPL brut) : {1} copie(s)",
+        "sentClassic": "Envoyé à {0} (classique) : {1} copie(s), {2} par page, {3}",
         "margins": "marges de {0} mm",
         "printerNotFound": "Imprimante introuvable : « {0} ». Imprimantes : {1}.",
         "noDefaultPrinter": "Aucune imprimante par défaut : indiquez-la avec --printer."
@@ -2684,5 +2707,128 @@
     "previous": "Étiquette précédente (Page préc.)",
     "next": "Étiquette suivante (Page suiv.)",
     "numberTip": "Tapez un numéro puis Entrée ; ↑ et ↓ passent d'une étiquette à l'autre."
+  },
+  "app": {
+    "tabMenu": {
+      "close": "Fermer l'onglet",
+      "closeOthers": "Fermer les autres onglets",
+      "closeRight": "Fermer les onglets à droite",
+      "newWindow": "Ouvrir dans une nouvelle fenêtre",
+      "duplicate": "Dupliquer l'onglet",
+      "copyPath": "Copier le chemin du fichier"
+    },
+    "file": {
+      "openTitle": "Ouvrir un fichier",
+      "notFound": "Fichier introuvable :\n{0}",
+      "readFailed": "Lecture impossible :\n{0}",
+      "saveTitle": "Enregistrement",
+      "saveFailed": "L'enregistrement a échoué : {0}",
+      "unsaved": "« {0} » contient des modifications non enregistrées.",
+      "save": "Enregistrer",
+      "saveAs": "Enregistrer sous…",
+      "dontSave": "Ne pas enregistrer",
+      "cancel": "Annuler",
+      "closeTabTitle": "Fermer l'onglet",
+      "closeTabsTitle": "Fermer les onglets",
+      "closeAllTitle": "Fermer tous les onglets",
+      "quitTitle": "Quitter l'application"
+    },
+    "editor": {
+      "hide": "Masquer l'éditeur",
+      "show": "Afficher l'éditeur",
+      "docPlaceholder": "Placez le curseur sur une commande ZPL pour afficher sa documentation.",
+      "docButton": "Documentation de la commande sous le curseur",
+      "docParameter": "Paramètre",
+      "docDescription": "Description",
+      "docType": "Type"
+    },
+    "window": {
+      "minimize": "Réduire",
+      "exitFullscreen": "Quitter le plein écran",
+      "close": "Fermer"
+    },
+    "colorScheme": {
+      "title": "Schéma de couleurs invalide",
+      "body": "Le fichier de configuration des couleurs ne respecte pas le schéma attendu :\n\n{0}\n\nCorrigez le fichier puis relancez l'application.",
+      "open": "Ouvrir le JSON et quitter l'application",
+      "quit": "Quitter l'application",
+      "wrongType": "{0} : type attendu « {1} », trouvé « {2} ».",
+      "notAllowed": "{0} : valeur « {1} » non autorisée.",
+      "badFormat": "{0} : « {1} » ne respecte pas le format requis ({2}).",
+      "missing": "{0} : propriété obligatoire « {1} » manquante."
+    },
+    "screenPrompt": {
+      "title": "Configuration manuelle requise",
+      "bodyNamed": "Nous n'avons pas pu déterminer la taille de l'écran « {0} » afin de rendre l'aperçu du document ZPL aux dimensions réelles.\nSi vous connaissez la taille de cet écran (en pouces ou en centimètres), vous pouvez la configurer dans les paramètres.",
+      "body": "Nous n'avons pas pu déterminer la taille de votre écran afin de rendre l'aperçu du document ZPL aux dimensions réelles.\nSi vous connaissez la taille de votre écran (en pouces ou en centimètres), vous pouvez la configurer dans les paramètres.",
+      "dontShow": "Ne plus afficher",
+      "goSettings": "Aller aux paramètres",
+      "later": "Pas maintenant",
+      "screenName": "Écran {0}"
+    },
+    "fonts": {
+      "title": "Polices requises manquantes",
+      "intro": "Cette application requiert les polices suivantes pour un rendu ZPL fidèle.",
+      "autoTitle": "Polices installables automatiquement :",
+      "commercialTitle": "Polices commerciales (installation manuelle requise) :",
+      "commercialHint": "Achetez et installez cette police manuellement, puis relancez l'application.",
+      "installAll": "Installer les polices",
+      "installOne": "Installer 1 police",
+      "installMany": "Installer {0} polices",
+      "quit": "Quitter",
+      "installing": "Installation en cours…",
+      "resultOk": "Installation réussie",
+      "resultPartial": "Installation incomplète",
+      "resultAction": "Action requise",
+      "installed": "✔ Polices installées avec succès :",
+      "failed": "✖ Échecs :",
+      "manual": "⚠ Polices commerciales à installer manuellement :",
+      "restartHint": "Redémarrez l'application pour appliquer les changements.",
+      "restart": "Redémarrer",
+      "downloading": "Téléchargement : {0}…",
+      "installingOne": "Installation : {0}…",
+      "done": "{0} installée.",
+      "failedOne": "Échec : {0}."
+    },
+    "virtualPrinter": {
+      "title": "Imprimante virtuelle",
+      "failed": "Opération échouée.",
+      "scriptFailed": "Impossible d'écrire le script d'installation : {0}",
+      "reinstallScriptFailed": "Impossible d'écrire le script de réinstallation : {0}",
+      "installCancelled": "Installation annulée (élévation refusée).",
+      "reinstallCancelled": "Réinstallation annulée (élévation refusée).",
+      "uninstallCancelled": "Désinstallation annulée (élévation refusée).",
+      "installIncomplete": "L'installation ne s'est pas terminée. Réessayez, ou vérifiez que l'installation d'imprimantes n'est pas bloquée par une stratégie.",
+      "reinstallIncomplete": "La réinstallation ne s'est pas terminée. Réessayez, ou vérifiez que l'installation d'imprimantes n'est pas bloquée par une stratégie.",
+      "uninstallFailed": "La désinstallation n'a pas abouti."
+    },
+    "update": {
+      "unreadable": "réponse illisible"
+    },
+    "analyzer": {
+      "line": "Ligne {0}",
+      "missingXA": "Il manque ^XA (début de format)",
+      "missingXZ": "Il manque ^XZ (fin de format)",
+      "unknown": "Commande inconnue : {0}",
+      "stray": "Contenu non reconnu en dehors des commandes (ignoré à l'impression)",
+      "xaUnclosed": "^XA alors que l'étiquette précédente n'est pas fermée par ^XZ",
+      "xzWithoutXa": "^XZ sans ^XA : aucune étiquette n'est ouverte",
+      "beforeXa": "{0} se trouve avant ^XA (le format devrait commencer par ^XA)",
+      "afterXz": "{0} se trouve après ^XZ (le format devrait se terminer par ^XZ)",
+      "betweenLabels": "{0} se trouve entre deux étiquettes, hors de tout ^XA…^XZ",
+      "xNegative": "x={0} est négatif",
+      "xBeyond": "x={0} dépasse la largeur ({1} dots)",
+      "yNegative": "y={0} est négatif",
+      "yBeyond": "y={0} dépasse la hauteur ({1} dots)",
+      "and": " et ",
+      "outside": "{0} : élément en dehors du document — {1}",
+      "requiredOne": "{0} : le paramètre obligatoire {1} n'est pas renseigné",
+      "requiredMany": "{0} : les paramètres obligatoires {1} ne sont pas renseignés",
+      "noParams": "{0} n'accepte aucun paramètre",
+      "tooManyOne": "{0} : {1} paramètres fournis, 1 au maximum : {2}",
+      "tooMany": "{0} : {1} paramètres fournis, {2} au maximum : {3}",
+      "notNumber": "{0} : le paramètre {1} attend un nombre, {2} fourni",
+      "quote": "« {0} »"
+    }
   }
 }

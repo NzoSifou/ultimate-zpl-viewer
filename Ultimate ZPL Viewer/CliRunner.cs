@@ -213,14 +213,17 @@ internal static class CliRunner
         int perPage = job.PerPage ?? (settings.PerPageMode == "fixed" ? settings.DefaultPerPage : 1);
         var layout = job.Layout ?? (settings.LayoutMode == "fixed"
             ? PrintJobService.LayoutFromKey(settings.DefaultLayout) : PrintLayout.Portrait);
-        double margins = job.MarginMm ?? (settings.MarginsMode == "fixed" ? settings.DefaultMarginsMm : 0);
+        var margins = job.MarginMm is { } given ? Margins.Uniform(given)
+            : settings.MarginsMode != "fixed" ? Margins.Uniform(0)
+            : settings.MarginsPerSide ? Margins.From(settings.DefaultMarginSidesMm, settings.DefaultMarginsMm)
+            : Margins.Uniform(settings.DefaultMarginsMm);
 
         string paper = "";
         if (job.Paper is { } wanted)
         {
             var papers = PrintJobService.PaperSizes(printer);
             var match = papers.FirstOrDefault(p => string.Equals(p.Name, wanted, StringComparison.OrdinalIgnoreCase));
-            if (match.Name is null)
+            if (match is null)
                 return Fail(M("unknownPaper", printer, wanted,
                               $"--list-papers --printer \"{printer}\""));
             paper = match.Name;
@@ -237,7 +240,7 @@ internal static class CliRunner
                 // line would be silently dropped, so it is said out loud instead.
                 if (job.PerPage is not null && perPage > 1) Warn(M("rawIgnores", "--per-page"));
                 if (job.Paper is not null) Warn(M("rawIgnores", "--paper"));
-                if (job.MarginMm is not null && margins > 0) Warn(M("rawIgnores", "--margin"));
+                if (job.MarginMm is not null && !margins.IsZero) Warn(M("rawIgnores", "--margin"));
                 if (layout is PrintLayout.Landscape or PrintLayout.LandscapeFlipped)
                     Warn(M("rawLandscape"));
                 if (viewRotate != 0)
@@ -266,7 +269,8 @@ internal static class CliRunner
             ? M("sentRaw", printer, copies)
             : M("sentClassic", printer, copies, perPage, PrintJobService.KeyOf(layout))
               + (paper.Length > 0 ? $", {paper}" : "")
-              + (margins > 0 ? ", " + M("margins", Mm(margins)) : "");
+              + (margins.IsZero ? "" : ", " + M("margins", margins.IsUniform ? Mm(margins.Top)
+                    : $"{Mm(margins.Top)}/{Mm(margins.Right)}/{Mm(margins.Bottom)}/{Mm(margins.Left)}"));
         Info(sent + (job.PrintFile is not null ? $" -> {job.PrintFile}" : ""));
         return Ok;
     }

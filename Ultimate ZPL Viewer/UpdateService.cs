@@ -119,7 +119,7 @@ public static class UpdateService
         }
         catch (Exception ex) { return Failed(ex.Message); }
 
-        if (release is null) return Failed("réponse illisible");
+        if (release is null) return Failed(LocalizationService.Get("app.update.unreadable"));
 
         var tag   = release["tag_name"]?.GetValue<string>() ?? "";
         var name  = release["name"]?.GetValue<string>();

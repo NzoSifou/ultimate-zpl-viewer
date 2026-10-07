@@ -68,8 +68,8 @@ public sealed partial class PreviewPage : Page
     public PreviewPage()
     {
         InitializeComponent();
+        PerfLog.Mark("PreviewPage: InitializeComponent");
         // Route captured print jobs (Ultimate ZPL Viewer printer) to this page.
-        if (Application.Current is App app) app.ActivePreviewPage = this;
         ZplColorSchemeService.EnsureUserConfig();
         LocalizationService.SetLanguage(_settings.Language); // load languages/{code}.json
         // React live to language files being added/edited/removed on disk.
@@ -95,6 +95,7 @@ public sealed partial class PreviewPage : Page
         InitImageEditing();
         InitLabelPager();
         InitSplit();
+        InitTabDropZones();
         // The cursor is worked out from the state, but the state is not the only
         // thing that changes it: redrawing the label replaces the very element the
         // pointer is over, and the framework re-resolves the cursor from scratch
@@ -247,22 +248,21 @@ public sealed partial class PreviewPage : Page
         DocPanelSplitter.PointerMoved       += DocPanelSplitter_PointerMoved;
         DocPanelSplitter.PointerReleased    += DocPanelSplitter_PointerReleased;
         DocPanelSplitter.PointerCaptureLost += (_, _) => _isResizingDocPanel = false;
+        PerfLog.Mark("PreviewPage: ctor done");
         Loaded += OnPageLoaded;
+        _ = StartEditorAsync().ContinueWith(_ => { }, TaskScheduler.Default);   // faults retried on Loaded
     }
 
-    private async void OnPageLoaded(object sender, RoutedEventArgs e)
+    // ── Starting the editor ──────────────────────────────────────────────────
+    // Started from the constructor, not once the page is on screen: creating the
+    // browser takes ~0.5 s and then Monaco loads, and none of it needs the window
+    // to be shown first. The page awaits the same task when it loads.
+    private Task? _editorStartup;
+
+    private Task StartEditorAsync() => _editorStartup ??= StartEditorCoreAsync();
+
+    private async Task StartEditorCoreAsync()
     {
-        Loaded -= OnPageLoaded;
-
-        // OnNavigatedTo runs while the window is still being constructed, so the
-        // title set there is lost — re-apply it now that the window exists.
-        UpdateDocumentTitle();
-
-        // The user color-scheme JSON must match the bundled schema. If not, the
-        // only choices are to quit or open the file to fix it (the app exits
-        // either way, then reloads a corrected file on the next launch).
-        if (!await ValidateColorSchemeOrExitAsync()) return;
-
         // Initialise WebView2 and navigate to the Monaco editor page.
         // Transparent default background: the browser otherwise paints an opaque
         // square surface that shows as dark corners behind the rounded clip.
@@ -283,14 +283,59 @@ public sealed partial class PreviewPage : Page
         Directory.CreateDirectory(wvUserData);
         var wvEnv = await Microsoft.Web.WebView2.Core.CoreWebView2Environment.CreateWithOptionsAsync(
             null, wvUserData, new Microsoft.Web.WebView2.Core.CoreWebView2EnvironmentOptions());
+        PerfLog.Mark("WebView2 environment");
         await EditorWebView.EnsureCoreWebView2Async(wvEnv);
+        PerfLog.Mark("WebView2 core ready");
+        // The editor only ever shows its own page, from the application's folder:
+        // SmartScreen has nothing to judge there, but its online reputation check
+        // held the page back ~2 s before a single line of it ran, at every launch
+        // its cached verdict had expired (measured: 1.9 s with it, 0.08 s without).
+        // Nothing else may load in this view, so the check guards nothing.
+        EditorWebView.CoreWebView2.Settings.IsReputationCheckingRequired = false;
+        EditorWebView.CoreWebView2.NavigationStarting += (_, args) =>
+        {
+            if (!Uri.TryCreate(args.Uri, UriKind.Absolute, out var target)
+                || !string.Equals(target.Host, EditorPageHost, StringComparison.OrdinalIgnoreCase))
+                args.Cancel = true;
+        };
+        EditorWebView.CoreWebView2.NewWindowRequested += (_, args) => args.Handled = true;
         EditorWebView.DefaultBackgroundColor = Microsoft.UI.Colors.Transparent;
         var assetsPath = Path.Combine(AppContext.BaseDirectory, "Assets");
         EditorWebView.CoreWebView2.SetVirtualHostNameToFolderMapping(
-            "zpl-editor.local", assetsPath, CoreWebView2HostResourceAccessKind.Allow);
+            EditorPageHost, assetsPath, CoreWebView2HostResourceAccessKind.Allow);
         EditorWebView.CoreWebView2.WebMessageReceived += EditorWebView_WebMessageReceived;
         _editorLang = _settings.Language == "en" ? "en" : "fr";
-        EditorWebView.Source = new Uri($"https://zpl-editor.local/editor.html?lang={_editorLang}");
+        EditorWebView.Source = new Uri($"https://{EditorPageHost}/editor.html?lang={_editorLang}");
+    }
+
+    // The editor page is served from the application's Assets folder under this name.
+    private const string EditorPageHost = "zpl-editor.local";
+
+    private async void OnPageLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnPageLoaded;
+        PerfLog.Mark("Page Loaded");
+
+        // OnNavigatedTo runs while the window is still being constructed, so the
+        // title set there is lost — re-apply it now that the window exists.
+        UpdateDocumentTitle();
+
+        // Window activation hands the focus to the first button it finds - the
+        // settings gear - drawn with its keyboard frame as if the user had tabbed
+        // there. The work area takes it instead, so typing can start at once.
+        if (_editorVisible) EditorWebView.Focus(FocusState.Programmatic);
+        else PreviewScrollViewer.Focus(FocusState.Programmatic);
+
+        // The user color-scheme JSON must match the bundled schema. If not, the
+        // only choices are to quit or open the file to fix it (the app exits
+        // either way, then reloads a corrected file on the next launch).
+        if (!await ValidateColorSchemeOrExitAsync()) return;
+        PerfLog.Mark("color scheme validated");
+
+        // The editor was started with the page (StartEditorAsync); a start that could
+        // not happen before the page was in the window is made again now.
+        try { await StartEditorAsync(); }
+        catch when (EditorWebView.CoreWebView2 is null) { _editorStartup = null; await StartEditorAsync(); }
 
         // Editor corner rounding happens inside the page (editor.html clip-path):
         // neither a XAML CornerRadius nor a composition clip affects the browser
@@ -365,9 +410,7 @@ public sealed partial class PreviewPage : Page
 
         var body = new TextBlock
         {
-            Text = "Le fichier de configuration des couleurs ne respecte pas le schéma attendu :\n\n" +
-                   error +
-                   "\n\nCorrigez le fichier puis relancez l'application.",
+            Text = string.Format(AL("colorScheme.body"), error),
             TextWrapping = TextWrapping.Wrap,
             IsTextSelectionEnabled = true,
         };
@@ -375,10 +418,10 @@ public sealed partial class PreviewPage : Page
         {
             XamlRoot = XamlRoot,
             RequestedTheme = _settings.ToElementTheme(),
-            Title = "Schéma de couleurs invalide",
+            Title = AL("colorScheme.title"),
             Content = new ScrollViewer { MaxHeight = 340, Content = body },
-            PrimaryButtonText = "Ouvrir le JSON et quitter l'application",
-            CloseButtonText = "Quitter l'application",
+            PrimaryButtonText = AL("colorScheme.open"),
+            CloseButtonText = AL("colorScheme.quit"),
             DefaultButton = ContentDialogButton.Primary,
         };
 
@@ -415,26 +458,22 @@ public sealed partial class PreviewPage : Page
         bool multi = monitors.Count > 1;
 
         var message = multi
-            ? $"Nous n'avons pas pu déterminer la taille de l'écran « {mon.FriendlyName} » afin de rendre " +
-              "l'aperçu du document ZPL aux dimensions réelles.\n" +
-              "Si vous connaissez la taille de cet écran (en pouces ou en centimètres), vous pouvez la configurer dans les paramètres."
-            : "Nous n'avons pas pu déterminer la taille de votre écran afin de rendre l'aperçu du document ZPL " +
-              "aux dimensions réelles.\n" +
-              "Si vous connaissez la taille de votre écran (en pouces ou en centimètres), vous pouvez la configurer dans les paramètres.";
+            ? string.Format(AL("screenPrompt.bodyNamed"), mon.FriendlyName)
+            : AL("screenPrompt.body");
 
         var body = new StackPanel { Spacing = 12, MinWidth = 440 };
         body.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap });
-        var dontShow = new CheckBox { Content = "Ne plus afficher" };
+        var dontShow = new CheckBox { Content = AL("screenPrompt.dontShow") };
         body.Children.Add(dontShow);
 
         var dialog = new ContentDialog
         {
             XamlRoot            = XamlRoot,
             RequestedTheme = _settings.ToElementTheme(),
-            Title               = "Configuration manuelle requise",
+            Title               = AL("screenPrompt.title"),
             Content             = body,
-            PrimaryButtonText   = "Aller aux paramètres",
-            CloseButtonText     = "Pas maintenant",
+            PrimaryButtonText   = AL("screenPrompt.goSettings"),
+            CloseButtonText     = AL("screenPrompt.later"),
             DefaultButton       = ContentDialogButton.Primary,
         };
 
@@ -459,7 +498,7 @@ public sealed partial class PreviewPage : Page
         var listPanel = new StackPanel { Spacing = 4, MinWidth = 420 };
         listPanel.Children.Add(new TextBlock
         {
-            Text = "Cette application requiert les polices suivantes pour un rendu ZPL fidèle.",
+            Text = AL("fonts.intro"),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 12),
         });
@@ -469,7 +508,7 @@ public sealed partial class PreviewPage : Page
         {
             listPanel.Children.Add(new TextBlock
             {
-                Text = "Polices installables automatiquement :",
+                Text = AL("fonts.autoTitle"),
                 FontWeight = FontWeights.SemiBold,
                 Opacity = 0.75,
             });
@@ -486,7 +525,7 @@ public sealed partial class PreviewPage : Page
         {
             listPanel.Children.Add(new TextBlock
             {
-                Text = "Polices commerciales (installation manuelle requise) :",
+                Text = AL("fonts.commercialTitle"),
                 FontWeight = FontWeights.SemiBold,
                 Opacity = 0.75,
                 Margin = new Thickness(0, autoInstallable.Count > 0 ? 10 : 0, 0, 0),
@@ -500,7 +539,7 @@ public sealed partial class PreviewPage : Page
                 });
                 listPanel.Children.Add(new TextBlock
                 {
-                    Text = "    Achetez et installez cette police manuellement, puis relancez l'application.",
+                    Text = "    " + AL("fonts.commercialHint"),
                     Opacity = 0.6,
                     FontStyle = Windows.UI.Text.FontStyle.Italic,
                     TextWrapping = TextWrapping.Wrap,
@@ -530,17 +569,17 @@ public sealed partial class PreviewPage : Page
         var primaryText = autoInstallable.Count == 0
             ? string.Empty
             : commercial.Count == 0
-                ? "Installer les polices"
-                : $"Installer {autoInstallable.Count} police{(autoInstallable.Count > 1 ? "s" : "")}";
+                ? AL("fonts.installAll")
+                : autoInstallable.Count == 1 ? AL("fonts.installOne") : string.Format(AL("fonts.installMany"), autoInstallable.Count);
 
         var dialog = new ContentDialog
         {
             XamlRoot            = XamlRoot,
             RequestedTheme = _settings.ToElementTheme(),
-            Title               = "Polices requises manquantes",
+            Title               = AL("fonts.title"),
             Content             = content,
             PrimaryButtonText   = primaryText,
-            SecondaryButtonText = "Quitter",
+            SecondaryButtonText = AL("fonts.quit"),
             DefaultButton       = autoInstallable.Count > 0
                                     ? ContentDialogButton.Primary
                                     : ContentDialogButton.None,
@@ -559,7 +598,7 @@ public sealed partial class PreviewPage : Page
                 {
                     d.IsPrimaryButtonEnabled   = false;
                     d.IsSecondaryButtonEnabled = false;
-                    d.Title                    = "Installation en cours…";
+                    d.Title                    = AL("fonts.installing");
                     listPanel.Visibility       = Visibility.Collapsed;
                     progressBar.Visibility     = Visibility.Visible;
                     progressStatus.Visibility  = Visibility.Visible;
@@ -600,9 +639,9 @@ public sealed partial class PreviewPage : Page
         var failures  = results.Where(r => !r.Success).ToList();
         var allDone   = failures.Count == 0 && commercial.Count == 0;
 
-        var title = allDone          ? "Installation réussie"    :
-                    failures.Count > 0 ? "Installation incomplète" :
-                                         "Action requise";
+        var title = allDone          ? AL("fonts.resultOk")      :
+                    failures.Count > 0 ? AL("fonts.resultPartial") :
+                                         AL("fonts.resultAction");
 
         var content = new StackPanel { Spacing = 4, MinWidth = 420 };
 
@@ -611,7 +650,7 @@ public sealed partial class PreviewPage : Page
         {
             content.Children.Add(new TextBlock
             {
-                Text = "✔ Polices installées avec succès :",
+                Text = AL("fonts.installed"),
                 FontWeight = FontWeights.SemiBold,
             });
             foreach (var r in successes)
@@ -627,7 +666,7 @@ public sealed partial class PreviewPage : Page
         {
             content.Children.Add(new TextBlock
             {
-                Text = "✖ Échecs :",
+                Text = AL("fonts.failed"),
                 FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(0, successes.Count > 0 ? 10 : 0, 0, 0),
             });
@@ -654,7 +693,7 @@ public sealed partial class PreviewPage : Page
         {
             content.Children.Add(new TextBlock
             {
-                Text = "⚠ Polices commerciales à installer manuellement :",
+                Text = AL("fonts.manual"),
                 FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(0, (successes.Count > 0 || failures.Count > 0) ? 10 : 0, 0, 0),
             });
@@ -669,7 +708,7 @@ public sealed partial class PreviewPage : Page
         // ── Footer ────────────────────────────────────────────────────────
         content.Children.Add(new TextBlock
         {
-            Text = "Redémarrez l'application pour appliquer les changements.",
+            Text = AL("fonts.restartHint"),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 12, 0, 0),
             Opacity = 0.8,
@@ -681,7 +720,7 @@ public sealed partial class PreviewPage : Page
             RequestedTheme = _settings.ToElementTheme(),
             Title             = title,
             Content           = content,
-            PrimaryButtonText = "Redémarrer",
+            PrimaryButtonText = AL("fonts.restart"),
             DefaultButton     = ContentDialogButton.Primary,
         };
 
@@ -706,6 +745,7 @@ public sealed partial class PreviewPage : Page
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
+        PerfLog.Mark("OnNavigatedTo");
         var options = e.Parameter as LaunchOptions ?? new LaunchOptions();
         // A --hide launch forces the panes hidden and, while it lasts, prevents the
         // visibility from being persisted on exit (it is a one-off override).
@@ -947,6 +987,7 @@ public sealed partial class PreviewPage : Page
         ToolTipService.SetToolTip(ZoomResetButton, T("zoomReset"));
         ToolTipService.SetToolTip(WidthWarningIcon,  T("widthTooLarge"));
         ToolTipService.SetToolTip(HeightWarningIcon, T("heightTooLarge"));
+        ToolTipService.SetToolTip(DocBadge, AL("editor.docButton"));
     }
 
     // Rebuilds the toolbar: one wrap panel per non-empty row (rows stack
@@ -1030,7 +1071,7 @@ public sealed partial class PreviewPage : Page
         {
             Text = slot.IsGroup ? slot.Group : "",
             FontSize = 11,
-            Opacity = 0.6,
+            Opacity = 0.75,
             Height = 15,
             HorizontalAlignment = HorizontalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
@@ -1043,7 +1084,7 @@ public sealed partial class PreviewPage : Page
     // already spaces its children.
     private static Microsoft.UI.Xaml.Shapes.Rectangle MakeToolbarSeparator(double height, double leftGap = 0) => new()
     {
-        Width = 1, Height = height, Opacity = 0.5,
+        Width = 1, Height = height, Opacity = 0.75,
         Margin = new Thickness(leftGap, 0, 0, 0),
         VerticalAlignment = VerticalAlignment.Center,
         Fill = (Brush)Application.Current.Resources["ControlStrongStrokeColorDefaultBrush"],
@@ -1055,7 +1096,7 @@ public sealed partial class PreviewPage : Page
     // the row is.
     private static Microsoft.UI.Xaml.Shapes.Rectangle MakeToolbarGroupSeparator() => new()
     {
-        Width = 1, Opacity = 0.5,
+        Width = 1, Opacity = 0.75,
         Margin = new Thickness(2, 0, 2, 0),
         VerticalAlignment = VerticalAlignment.Stretch,
         Fill = (Brush)Application.Current.Resources["ControlStrongStrokeColorDefaultBrush"],
@@ -1233,7 +1274,7 @@ public sealed partial class PreviewPage : Page
         bool pointLeft = _editorVisible ^ swap;
         EditorCollapseChevron.Glyph = pointLeft ? "" : ""; // ChevronLeft / ChevronRight
         ToolTipService.SetToolTip(EditorCollapseHandle,
-            _editorVisible ? "Masquer l'éditeur" : "Afficher l'éditeur");
+            _editorVisible ? AL("editor.hide") : AL("editor.show"));
         EditorCollapseHandle.SetCursor(SystemCursor(
             Microsoft.UI.Input.InputSystemCursorShape.Hand));
 
@@ -2542,14 +2583,27 @@ public sealed partial class PreviewPage : Page
     // laying the text out through Win2D costs some 25 ms each time for the same
     // words — a quarter of what moving an element with the arrow keys took.
     private (string Text, double? Arrow, float Scale, double Width)? _captionDrawn;
+    private bool _captionBuildQueued;
     private CanvasTextFormat? _captionFormat;
     private CanvasDevice? _captionDevice;
     private float _captionFormatScale;
 
     private void RenderCaption(string text, double? arrowStepDip)
     {
-        BuildCaptionVisual();
-        if (_captionSprite is null || _captionSurface is null) return;
+        // Bringing Win2D up for the first caption takes ~100 ms, and the window was
+        // waiting for it to show anything: the caption comes just after instead.
+        if (_captionSprite is null)
+        {
+            if (_captionBuildQueued) return;
+            _captionBuildQueued = true;
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                BuildCaptionVisual();
+                UpdatePreviewCaption();
+            });
+            return;
+        }
+        if (_captionSurface is null) return;
 
         float scale = (float)(XamlRoot?.RasterizationScale ?? 1.0);
         var drawn = (text, arrowStepDip, scale, PreviewSurface.ActualWidth);
@@ -2755,7 +2809,7 @@ public sealed partial class PreviewPage : Page
     {
         if (!File.Exists(path))
         {
-            await ShowMessageAsync("Ouvrir un fichier", $"Fichier introuvable :\n{path}");
+            await ShowMessageAsync(AL("file.openTitle"), string.Format(AL("file.notFound"), path));
             RemoveRecentFile(path);
             _settings.Save();
             return;
@@ -2784,7 +2838,7 @@ public sealed partial class PreviewPage : Page
             try { text = await File.ReadAllTextAsync(path); }
             catch (Exception ex)
             {
-                await ShowMessageAsync("Ouvrir un fichier", $"Lecture impossible :\n{ex.Message}");
+                await ShowMessageAsync(AL("file.openTitle"), string.Format(AL("file.readFailed"), ex.Message));
                 return;
             }
 
@@ -2897,7 +2951,7 @@ public sealed partial class PreviewPage : Page
         }
         catch (Exception ex)
         {
-            await ShowMessageAsync("Enregistrement", $"L'enregistrement a échoué : {ex.Message}");
+            await ShowMessageAsync(AL("file.saveTitle"), string.Format(AL("file.saveFailed"), ex.Message));
         }
         finally { if (saving is not null) EndStatus(saving); }
     }
@@ -2923,7 +2977,7 @@ public sealed partial class PreviewPage : Page
         }
         catch (Exception ex)
         {
-            await ShowMessageAsync("Enregistrement", $"L'enregistrement a échoué : {ex.Message}");
+            await ShowMessageAsync(AL("file.saveTitle"), string.Format(AL("file.saveFailed"), ex.Message));
         }
     }
 
@@ -3167,7 +3221,7 @@ public sealed partial class PreviewPage : Page
         {
             // Make it the visible/active document so "Enregistrer" targets it.
             DocTabs.SelectedItem = item;
-            var result = await ShowUnsavedDialogAsync("Fermer l'onglet");
+            var result = await ShowUnsavedDialogAsync(AL("file.closeTabTitle"));
             if (result == ContentDialogResult.None) return;               // Annuler
             if (result == ContentDialogResult.Primary)
             {
@@ -3192,12 +3246,12 @@ public sealed partial class PreviewPage : Page
                 Title = title,
                 Content = new TextBlock
                 {
-                    Text = $"« {name} » contient des modifications non enregistrées.",
+                    Text = string.Format(AL("file.unsaved"), name),
                     TextWrapping = TextWrapping.Wrap,
                 },
-                PrimaryButtonText = _currentFilePath is null ? "Enregistrer sous…" : "Enregistrer",
-                SecondaryButtonText = "Ne pas enregistrer",
-                CloseButtonText = "Annuler",
+                PrimaryButtonText = _currentFilePath is null ? AL("file.saveAs") : AL("file.save"),
+                SecondaryButtonText = AL("file.dontSave"),
+                CloseButtonText = AL("file.cancel"),
                 DefaultButton = ContentDialogButton.Primary,
             }.ShowAsync();
         }
@@ -3240,23 +3294,23 @@ public sealed partial class PreviewPage : Page
         }
 
         int index = DocTabs.TabItems.IndexOf(item);
-        menu.Items.Add(Mk("Fermer l'onglet", GlyphTabClose,
+        menu.Items.Add(Mk(AL("tabMenu.close"), GlyphTabClose,
             () => _ = RequestCloseSingleAsync(item, tab)));
-        menu.Items.Add(Mk("Fermer les autres onglets", GlyphTabCloseOthers,
+        menu.Items.Add(Mk(AL("tabMenu.closeOthers"), GlyphTabCloseOthers,
             () => _ = CloseManyAsync(TabsExcept(item), item),
             enabled: DocCount > 1));
-        menu.Items.Add(Mk("Fermer les onglets à droite", GlyphTabCloseRight,
+        menu.Items.Add(Mk(AL("tabMenu.closeRight"), GlyphTabCloseRight,
             () => _ = CloseManyAsync(TabsRightOf(item), item),
             enabled: TabsRightOf(item).Count > 0));
         menu.Items.Add(new MenuFlyoutSeparator());
-        menu.Items.Add(Mk("Ouvrir dans une nouvelle fenêtre", GlyphTabNewWindow,
+        menu.Items.Add(Mk(AL("tabMenu.newWindow"), GlyphTabNewWindow,
             () => MoveTabToNewWindow(item, tab)));
-        menu.Items.Add(Mk("Dupliquer l'onglet", GlyphTabDuplicate,
+        menu.Items.Add(Mk(AL("tabMenu.duplicate"), GlyphTabDuplicate,
             () => DuplicateTab(tab)));
 
         var path = ReferenceEquals(tab, _activeTab) ? _currentFilePath : tab.FilePath;
         if (path is not null)
-            menu.Items.Add(Mk("Copier le chemin du fichier", GlyphTabCopyPath,
+            menu.Items.Add(Mk(AL("tabMenu.copyPath"), GlyphTabCopyPath,
                 () => CopyTextToClipboard(path)));
         AddSplitMenuItems(menu, tab);
     }
@@ -3285,7 +3339,7 @@ public sealed partial class PreviewPage : Page
 
             // Show the document being decided on (also makes SaveAsync target it).
             DocTabs.SelectedItem = item;
-            var result = await ShowUnsavedDialogAsync("Fermer les onglets");
+            var result = await ShowUnsavedDialogAsync(AL("file.closeTabsTitle"));
             if (result == ContentDialogResult.None) return; // Annuler → close nothing
             if (result == ContentDialogResult.Primary)
             {
@@ -3320,18 +3374,94 @@ public sealed partial class PreviewPage : Page
             args.Data.Properties.Add(TabDragState.Key, pressed.Id);
             TabDragState.Begin(this, p, pressed);
             args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+            ShowTabDropCatcher(p, pressed);
             return;
         }
         if (args.Tab is not TabViewItem item || item.Tag is not DocTab tab) return;
         TabDragState.Begin(this, item, tab);
         args.Data.Properties.Add(TabDragState.Key, tab.Id);
         args.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+        ShowTabDropCatcher(item, tab);
     }
+
+    // Outside the windows: the invisible drop target says what letting go there
+    // does, and does it.
+    private void ShowTabDropCatcher(TabViewItem item, DocTab tab)
+        => TabDropCatcher.Show(SpL("dropNewWindow"), (x, y) =>
+        {
+            if (!ReferenceEquals(TabDragState.Tab, tab)) return;
+            TabDragState.Clear();   // TabDroppedOutside then has nothing left to do
+            // Once TabView has finished with its drag (see DocTabs_TabDroppedOutside).
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                () => MoveTabToNewWindowIfStillThere(item, tab, x, y));
+        });
 
     private void DocTabs_TabStripDragOver(object sender, DragEventArgs e)
     {
-        if (e.DataView.Properties.ContainsKey(TabDragState.Key))
+        if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return;
+        e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+        if (!ReferenceEquals(TabDragState.SourcePage, this)) e.DragUIOverride.Caption = SpL("dropJoinWindow");
+    }
+
+    // ── The whole strip, and the whole window, take a tab ────────────────────
+    // TabView only raises TabStripDragOver over the tabs themselves, and since the
+    // tabs are sized to their names that is a short stretch at the left of the bar:
+    // a tab let go over the empty part of another window's bar - where everyone
+    // lets go - was taken for a tab dropped nowhere, and became a window of its
+    // own instead of joining. And anywhere else in a window, the pointer showed
+    // the no-entry sign over a drop that does something: it opens the tab in a
+    // window of its own. Both now say what will happen, and do it.
+    private void InitTabDropZones()
+    {
+        DocTabs.AllowDrop = true;
+        DocTabs.DragOver += (_, e) =>
+        {
+            if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return;
             e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+            e.DragUIOverride.Caption = ReferenceEquals(TabDragState.SourcePage, this) ? "" : SpL("dropJoinWindow");
+            e.Handled = true;
+        };
+        DocTabs.Drop += (_, e) =>
+        {
+            if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return;
+            e.Handled = true;
+            // Over the tabs themselves TabStripDrop has done it already.
+            if (TabDragState.SourcePage is not { } source || TabDragState.Item is not { } item
+                || TabDragState.Tab is not { } tab) return;
+            if (ReferenceEquals(source, this)) { TabDragState.Clear(); return; }   // its own bar: it stays
+            TakeTabFrom(source, item, tab);
+        };
+    }
+
+    // Anywhere else in the window: a window of its own, as when let go outside.
+    private bool AcceptTabOverPage(DragEventArgs e)
+    {
+        if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return false;
+        if (SettingsOverlay.Visibility == Visibility.Visible) return true;   // taken, nothing offered
+        e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+        e.DragUIOverride.Caption = SpL("dropNewWindow");
+        return true;
+    }
+
+    private bool DropTabOverPage(DragEventArgs e)
+    {
+        if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return false;
+        if (SettingsOverlay.Visibility == Visibility.Visible) { TabDragState.Clear(); return true; }
+        if (TabDragState.SourcePage is { } source && TabDragState.Item is { } item && TabDragState.Tab is { } tab)
+        {
+            var (cx, cy) = CursorPosition();
+            TabDragState.Clear();
+            // Once TabView has finished with its drag (see DocTabs_TabDroppedOutside).
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                source.MoveTabToNewWindowIfStillThere(item, tab, cx, cy));
+        }
+        return true;
+    }
+
+    /// <summary>A tab let go somewhere that makes it a window of its own.</summary>
+    internal void MoveTabToNewWindowIfStillThere(TabViewItem item, DocTab tab, int x, int y)
+    {
+        if (DocTabs.TabItems.Contains(item)) MoveTabToNewWindow(item, tab, x, y);
     }
 
     private void DocTabs_TabStripDrop(object sender, DragEventArgs e)
@@ -3339,16 +3469,31 @@ public sealed partial class PreviewPage : Page
         if (!e.DataView.Properties.ContainsKey(TabDragState.Key)) return;
         if (TabDragState.SourcePage is not { } source || TabDragState.Item is null
             || TabDragState.Tab is null) return;
+        e.Handled = true;
         // Reordering inside the same strip is the TabView's own business.
         if (ReferenceEquals(source, this)) { TabDragState.Clear(); return; }
-
-        var carried = source.GiveAwayTab(TabDragState.Item, TabDragState.Tab);
-        TabDragState.Clear();
-        AdoptTab(carried);
+        TakeTabFrom(source, TabDragState.Item, TabDragState.Tab);
     }
+
+    /// <summary>
+    /// Brings another window's tab here. Once both TabViews are done with the drag:
+    /// changing a strip while its TabView is still moving a tab crashes XAML.
+    /// </summary>
+    private void TakeTabFrom(PreviewPage source, TabViewItem item, DocTab tab)
+    {
+        TabDragState.Clear();
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        {
+            if (!source.HoldsTab(item)) return;
+            AdoptTab(source.GiveAwayTab(item, tab));
+        });
+    }
+
+    internal bool HoldsTab(TabViewItem item) => DocTabs.TabItems.Contains(item);
 
     private void DocTabs_TabDroppedOutside(TabView sender, TabViewTabDroppedOutsideEventArgs args)
     {
+        TabDropCatcher.Hide();
         // Landing on another window's strip is handled by that window's Drop, which
         // already took the tab away — nothing left to do here.
         if (TabDragState.Tab is null) return;
@@ -3705,7 +3850,7 @@ public sealed partial class PreviewPage : Page
     // and cancelling still leaves everything open.
     private async Task CloseWindowWithPromptAsync()
     {
-        if (await PrepareAppCloseAsync("Fermer tous les onglets"))
+        if (await PrepareAppCloseAsync(AL("file.closeAllTitle")))
             (AppWindowLookup.MainWindowForXamlRoot(XamlRoot) as MainWindow)?.CloseWithoutPrompt();
     }
 
@@ -3860,6 +4005,7 @@ public sealed partial class PreviewPage : Page
 
     private void Root_DragOver(object sender, DragEventArgs e)
     {
+        if (AcceptTabOverPage(e)) return;
         // Not over the settings screen, and only for files.
         if (SettingsOverlay.Visibility == Visibility.Visible) return;
         if (!e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems)) return;
@@ -3869,6 +4015,7 @@ public sealed partial class PreviewPage : Page
 
     private async void Root_Drop(object sender, DragEventArgs e)
     {
+        if (DropTabOverPage(e)) return;
         if (SettingsOverlay.Visibility == Visibility.Visible) return;
         if (!e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems)) return;
         var items = await e.DataView.GetStorageItemsAsync();
@@ -3895,7 +4042,7 @@ public sealed partial class PreviewPage : Page
     {
         // "Quitter l'application" when the window IS the app; "Fermer tous les onglets"
         // when the user asked for that with Ctrl+Shift+W.
-        title ??= "Quitter l'application";
+        title ??= AL("file.quitTitle");
         foreach (var item in DocItems().ToList())
         {
             var tab = (DocTab)item.Tag;
@@ -4448,6 +4595,7 @@ public sealed partial class PreviewPage : Page
 
     // Localized settings string / string-array shortcuts (settings.* keys).
     private static string SL(string key) => LocalizationService.Get("settings." + key);
+    private static string AL(string key) => LocalizationService.Get("app." + key);
     private static string[] SA(string key) => LocalizationService.GetArray("settings." + key);
 
     // Localized header: pulls settings.{section}.title / .subtitle from the language file.
@@ -5763,10 +5911,6 @@ public sealed partial class PreviewPage : Page
         return panel;
     }
 
-    private const string ScreenInfoText =
-        "La taille d'un ordinateur portable se situe souvent entre 13\" et 17\".\n" +
-        "La taille d'un écran de bureau se situe souvent entre 21\" et 27\".\n" +
-        "Vous pouvez mesurer la diagonale de la partie visible de votre écran (la zone qui affiche l'image, sans le cadre) afin de renseigner la taille de votre écran.";
 
     private async Task PopulateScreenSettingsAsync(StackPanel host)
     {
@@ -5958,7 +6102,7 @@ public sealed partial class PreviewPage : Page
             uninstallBtn.IsEnabled = false;
             var r = await Task.Run(VirtualPrinterService.Uninstall);
             Refresh();
-            if (!r.Ok) await ShowMessageAsync("Imprimante virtuelle", r.Error ?? "Opération échouée.");
+            if (!r.Ok) await ShowMessageAsync(AL("virtualPrinter.title"), r.Error ?? AL("virtualPrinter.failed"));
         };
         Refresh();
 
@@ -6353,9 +6497,7 @@ public sealed partial class PreviewPage : Page
     // Reports that a non-ZPL document was sent to the virtual printer.
     public async void ShowUnsupportedPrintFormat()
     {
-        await ShowMessageAsync("Format non pris en charge",
-            "Le document envoyé à l'imprimante « Ultimate ZPL Viewer » n'est pas un fichier ZPL.\n\n" +
-            "Cette imprimante n'accepte que des fichiers ZPL — les PDF et autres formats ne peuvent pas être ouverts.");
+        await ShowMessageAsync(SL("virtualPrinter.lbl.unsupportedTitle"), SL("virtualPrinter.lbl.unsupportedBody"));
     }
 
     // ── Monaco Editor bridge ─────────────────────────────────────────────────
@@ -6495,11 +6637,12 @@ public sealed partial class PreviewPage : Page
         if (lang == _editorLang || EditorWebView.CoreWebView2 is null) return;
         _editorLang = lang;
         _editorReady = false;
-        EditorWebView.Source = new Uri($"https://zpl-editor.local/editor.html?lang={lang}");
+        EditorWebView.Source = new Uri($"https://{EditorPageHost}/editor.html?lang={lang}");
     }
 
     private void OnEditorReady()
     {
+        PerfLog.Mark("Monaco ready");
         _editorReady = true;
         PostToEditor(ZplHighlighter.GetGrammarJson());
         ApplyEditorTheme();
@@ -6742,7 +6885,7 @@ public sealed partial class PreviewPage : Page
         {
             DocContent.Children.Add(new TextBlock
             {
-                Text = "Placez le curseur sur une commande ZPL pour afficher sa documentation.",
+                Text = AL("editor.docPlaceholder"),
                 Opacity = 0.7,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 8, 0, 0),
@@ -6793,7 +6936,7 @@ public sealed partial class PreviewPage : Page
         if (parameters.Count > 0)
         {
             var table = new StackPanel { Margin = new Thickness(0, 4, 0, 0) };
-            table.Children.Add(MakeDocRow("Paramètre", "Description", "Type", null, header: true));
+            table.Children.Add(MakeDocRow(AL("editor.docParameter"), AL("editor.docDescription"), AL("editor.docType"), null, header: true));
             foreach (var p in parameters)
             {
                 var pDesc = LocalizationService.Resolve(p.Description);

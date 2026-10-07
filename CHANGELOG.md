@@ -6,6 +6,89 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) 
 
 ---
 
+## [1.7.2] — 2026-10-07 — démarrage, impression, onglets
+
+Le démarrage est plus rapide et sans écran noir, la fenêtre d'impression gagne
+les **marges par côté** et des **formats de papier classés**, l'imprimante
+virtuelle **ouvre enfin l'application quand elle est fermée**, et les onglets se
+détachent et se regroupent de nouveau comme on s'y attend. L'interface est aussi
+entièrement traduite : des dizaines de textes restaient en français en anglais.
+
+### ✨ Ajouté
+
+- **Marges par côté** à l'impression : un interrupteur « Par côté » donne
+  une marge au haut, à la droite, au bas et à la gauche (deux par deux, l'unité
+  à côté de chaque case). Dans la fenêtre d'impression comme dans les
+  paramètres ; la marge unique reste disponible.
+- **Tailles de papier classées par catégories**, les plus courantes en tête
+  (A4, Lettre, A5, Legal, A3, A6, 4 × 6), puis séries A et B, formats
+  nord-américains, enveloppes, photos et étiquettes, formats chinois et
+  japonais.
+
+### 🔄 Modifié
+
+- « Nombre d'exemplaires » devient **« Nombre de copies »** et « Exemplaires
+  par page » devient **« Étiquettes par page »**.
+- **Mode clair plus lisible** : sur un fond d'écran sombre, la barre d'outils
+  et la barre d'onglets étaient d'un gris terne ; elles sont désormais claires,
+  et les noms de groupes et les séparateurs de la barre d'outils sont plus
+  contrastés.
+- Au démarrage, le curseur est dans l'éditeur : on peut taper tout de suite, et
+  l'engrenage des paramètres n'est plus entouré d'un cadre de focus.
+
+### 🐛 Corrigé
+
+- **Imprimante virtuelle, application fermée** : imprimer sur « Ultimate ZPL
+  Viewer » n'ouvrait jamais l'application — la tâche planifiée attendait le
+  nom de l'imprimante au mauvais endroit de l'événement Windows. L'application
+  installe maintenant elle-même sa tâche, sans demande d'administrateur, et
+  répare celle des installations existantes au démarrage. L'application ainsi
+  lancée n'est plus en priorité réduite ni arrêtée au bout de 72 h, et la
+  désinstallation retire la tâche.
+- Imprimante virtuelle, application ouverte : le travail reçu va dans la
+  dernière fenêtre utilisée (il pouvait viser une fenêtre déjà fermée).
+- **Onglets** :
+  - deux fenêtres d'un seul onglet ne fusionnaient plus : seul l'onglet
+    lui-même acceptait le dépôt, pas le reste de la barre ;
+  - hors de la fenêtre, le pointeur affichait « interdit » puis « Déplacer »,
+    et lâcher l'onglet n'ouvrait pas toujours de fenêtre. Il affiche
+    désormais « Ouvrir dans une nouvelle fenêtre », sur tous les écrans.
+- **Textes restés en français** quelle que soit la langue : menu des onglets,
+  demandes d'enregistrement, erreurs d'ouverture et d'enregistrement, messages
+  de l'analyseur ZPL, installation des polices, taille de l'écran, schéma de
+  couleurs, imprimante virtuelle, boutons du plein écran.
+- **Fenêtre d'impression** : sur un grand écran, le bas de la colonne des
+  réglages était coupé (l'unité des marges par côté était hors d'atteinte).
+- **Recherche dans les paramètres** : taper vite pouvait provoquer une erreur
+  en remettant en place des résultats déjà remplacés.
+
+### ⚡ Performances
+
+- **Démarrage plus rapide, sans écran noir.** Mesuré du clic à l'écran :
+  la fenêtre apparaît en ~0,65 s au lieu de ~1,3 s, la page en ~1,2 s au
+  lieu de ~1,8 s, le code dans l'éditeur en ~1,8 s au lieu de ~2,4 s — et
+  l'écran noir de ~450 ms n'est plus qu'une image.
+  - La fenêtre s'affiche d'abord (barre de titre et fond), la page se
+    construit juste après au lieu d'être attendue.
+  - **L'éditeur ne subit plus la vérification SmartScreen** de Windows : sa
+    page est un fichier de l'application, mais la vérification en ligne la
+    retenait ~2 s avant qu'une ligne s'exécute, à chaque fois que le verdict
+    mis en cache avait expiré (d'où un éditeur parfois long à apparaître).
+    Rien d'autre que cette page ne peut s'ouvrir dans l'éditeur.
+  - L'éditeur est créé avec la page au lieu d'attendre qu'elle soit affichée.
+  - Le code de l'application est précompilé à la publication (ReadyToRun) au
+    lieu d'être compilé à chaque lancement.
+  - Les fichiers de langue ne sont plus relus ni fusionnés plusieurs fois au
+    démarrage (la fusion avec la version livrée n'a lieu qu'après une mise à
+    jour), et la légende de l'aperçu est créée après le premier affichage.
+- **Fenêtre d'impression** :
+  - elle s'ouvre sans attendre le pilote de l'imprimante (~0,5 s de gel en
+    moins) : les formats de papier sont lus en arrière-plan et gardés ;
+  - augmenter les étiquettes par page cran par cran ne rame plus (~13 ms par
+    cran au lieu de redessiner toutes les copies et d'interroger le pilote à
+    chaque fois).
+
+---
 ## [1.7.1] — 2026-10-06 — performances
 
 Une version consacrée à la fluidité en usage courant : modifier une étiquette,
@@ -59,7 +142,6 @@ fonctionne désormais **hors connexion**.
 - **Tourner l'étiquette la dessinait deux fois** à chaque quart de tour.
 - **Les menus de l'éditeur de code restaient en anglais** (clic droit,
   recherche, palette de commandes) même avec l'application en français.
-
 - **En éditant un texte dans l'aperçu, le curseur restait collé à la dernière
   lettre après un espace**, même après plusieurs espaces, et ne se remettait en
   place qu'à la lettre suivante. Les espaces en fin de mot sont maintenant

@@ -104,6 +104,7 @@ public sealed partial class PreviewPage
         DocTabs.TabDragCompleted += (_, _) =>
         {
             _tabDragging = false;
+            TabDropCatcher.Hide();
             var moved = _draggedItem;
             _draggedItem = null;
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
